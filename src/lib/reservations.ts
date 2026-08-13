@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { generateSixDigitCode } from '@/lib/codes';
 
 /**
  * Code de confirmation de réservation.
@@ -7,5 +7,5 @@ import { randomInt } from 'node:crypto';
  * l'accueil du restaurant — pas un identifiant technique.
  */
 export function generateReservationCode(): string {
-  return String(randomInt(0, 1_000_000)).padStart(6, '0');
+  return generateSixDigitCode();
 }

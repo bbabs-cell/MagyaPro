@@ -38,6 +38,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
       fulfillmentType: true,
       cancelReason: true,
       statusUpdatedAt: true,
+      deliveryCode: true,
       customerName: true,
       deliveryAddress: true,
       subtotal: true,
@@ -95,6 +96,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
             fulfillmentType: order.fulfillmentType,
             cancelReason: order.cancelReason,
             statusUpdatedAt: order.statusUpdatedAt.toISOString(),
+            deliveryCode: order.fulfillmentType === 'DELIVERY' ? order.deliveryCode : null,
           }}
         />
       </div>

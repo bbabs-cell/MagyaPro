@@ -83,6 +83,8 @@ export const POST = route(async (request) => {
     customerPhone: input.customerPhone,
     customerEmail: input.customerEmail,
     deliveryAddress: input.deliveryAddress,
+    deliveryLat: input.deliveryLat,
+    deliveryLng: input.deliveryLng,
     instructions: input.instructions,
     paymentProvider: input.paymentProvider,
     tableId,

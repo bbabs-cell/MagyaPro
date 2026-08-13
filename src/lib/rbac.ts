@@ -34,6 +34,8 @@ export const PERMISSIONS = [
   'tables:view',
   'tables:manage',
 
+  'deliveries:drive',
+
   'analytics:view',
 
   'team:view',
@@ -55,6 +57,7 @@ const EMPLOYEE_PERMISSIONS: Permission[] = [
   'customers:view',
   'reservations:manage',
   'tables:view',
+  'deliveries:drive',
 ];
 
 const ADMIN_PERMISSIONS: Permission[] = [
@@ -134,6 +137,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'reservations:manage': 'Gérer les réservations',
   'tables:view': 'Voir le plan de salle',
   'tables:manage': 'Gérer les tables',
+  'deliveries:drive': 'Effectuer des livraisons',
   'analytics:view': 'Voir les statistiques',
   'team:view': "Voir l'équipe",
   'team:manage': "Gérer l'équipe",

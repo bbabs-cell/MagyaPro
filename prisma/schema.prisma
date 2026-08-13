@@ -51,6 +51,7 @@ model User {
   auditLogs     AuditLog[]
   supportAccess SupportAccess[]
   notifications Notification[]
+  courierOrders Order[]             @relation("CourierOrders")
 
   @@index([platformRole])
   @@map("users")
@@ -430,6 +431,10 @@ model Order {
   customerPhone   String
   customerEmail   String?
   deliveryAddress String?
+  /// Position GPS partagée volontairement par le client, pour aider le
+  /// livreur. Absente si le client n'a rien partagé.
+  deliveryLat     Float?
+  deliveryLng     Float?
   instructions    String?
 
   // Montants recalculés côté serveur (unité mineure).
@@ -444,6 +449,12 @@ model Order {
   promoCode      String?
   /// Renseigné pour une commande passée depuis la table (service à table).
   tableId        String?
+  /// Livreur qui a pris en charge la course (commandes en livraison
+  /// uniquement).
+  courierId      String?
+  /// Code à six chiffres communiqué au client, vérifié par le livreur à la
+  /// remise pour confirmer qu'il livre la bonne commande à la bonne personne.
+  deliveryCode   String?
 
   placedAt        DateTime  @default(now())
   statusUpdatedAt DateTime  @default(now())
@@ -458,6 +469,7 @@ model Order {
   deliveryZone DeliveryZone?    @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
   promotion    Promotion?       @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   table        RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  courier      User?            @relation("CourierOrders", fields: [courierId], references: [id], onDelete: SetNull)
 
   items    OrderItem[]
   events   OrderStatusEvent[]
@@ -468,6 +480,7 @@ model Order {
   @@index([restaurantId, status])
   @@index([restaurantId, placedAt])
   @@index([customerId])
+  @@index([courierId, status])
   @@map("orders")
 }
 

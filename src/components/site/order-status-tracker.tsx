@@ -30,7 +30,10 @@ type OrderSnapshot = {
   fulfillmentType: FulfillmentType;
   cancelReason: string | null;
   statusUpdatedAt: string;
+  deliveryCode: string | null;
 };
+
+const CODE_VISIBLE_STATUSES: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY'];
 
 /** Étapes affichées, selon le mode de récupération. */
 function stepsFor(fulfillmentType: FulfillmentType): OrderStatus[] {
@@ -164,6 +167,17 @@ export function OrderStatusTracker({
       <p className="mt-5 text-sm text-ink-muted">
         Paiement : <span className="font-medium">{PAYMENT_STATUS_LABELS[snapshot.paymentStatus]}</span>
       </p>
+
+      {snapshot.deliveryCode && CODE_VISIBLE_STATUSES.includes(snapshot.status) && (
+        <div className="mt-3 rounded-xl border border-surface-border bg-surface-sunken p-3">
+          <p className="text-xs text-ink-muted">
+            Donnez ce code au livreur à la remise :
+          </p>
+          <p className="mt-0.5 font-mono text-lg font-semibold tracking-widest">
+            {snapshot.deliveryCode}
+          </p>
+        </div>
+      )}
 
       <p className="mt-1 text-xs text-ink-faint">
         Dernière mise à jour :{' '}

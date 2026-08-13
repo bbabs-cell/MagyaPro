@@ -88,6 +88,32 @@ export function CheckoutFlow({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Position GPS, partagée volontairement pour aider le livreur — jamais
+  // demandée automatiquement, seulement sur un geste explicite du client.
+  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  function shareLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("La localisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (result) => {
+        setPosition({ lat: result.coords.latitude, lng: result.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocationError('Position non partagée. Vous pouvez continuer sans.');
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
   const [providerId, setProviderId] = useState(providers[0]?.id ?? '');
 
   const refreshQuote = useCallback(async () => {
@@ -159,6 +185,8 @@ export function CheckoutFlow({
         customerPhone: String(formData.get('customerPhone') ?? ''),
         customerEmail: String(formData.get('customerEmail') ?? ''),
         deliveryAddress: String(formData.get('deliveryAddress') ?? ''),
+        deliveryLat: fulfillment === 'DELIVERY' ? position?.lat : undefined,
+        deliveryLng: fulfillment === 'DELIVERY' ? position?.lng : undefined,
         instructions: String(formData.get('instructions') ?? ''),
         paymentProvider: providerId,
       });
@@ -401,6 +429,26 @@ export function CheckoutFlow({
                     className={inputClass}
                   />
                 </Field>
+              )}
+
+              {fulfillment === 'DELIVERY' && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={shareLocation}
+                    disabled={locating}
+                    className="inline-flex h-10 items-center rounded-xl border border-surface-border px-3.5 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
+                  >
+                    {position
+                      ? 'Position partagée ✓'
+                      : locating
+                        ? 'Localisation…'
+                        : 'Partager ma position pour aider le livreur'}
+                  </button>
+                  {locationError && (
+                    <p className="mt-1.5 text-xs text-ink-faint">{locationError}</p>
+                  )}
+                </div>
               )}
 
               <Field label="Instructions (facultatif)" htmlFor="instructions">

@@ -28,6 +28,7 @@ export const GET = route(async (_request, { params }: Params) => {
       fulfillmentType: true,
       cancelReason: true,
       statusUpdatedAt: true,
+      deliveryCode: true,
       events: {
         orderBy: { createdAt: 'asc' },
         select: { toStatus: true, note: true, createdAt: true },
@@ -43,6 +44,9 @@ export const GET = route(async (_request, { params }: Params) => {
     fulfillmentType: order.fulfillmentType,
     cancelReason: order.cancelReason,
     statusUpdatedAt: order.statusUpdatedAt,
+    // Utile au client une fois la commande prête à partir : c'est le code
+    // qu'il donnera au livreur pour confirmer la remise.
+    deliveryCode: order.fulfillmentType === 'DELIVERY' ? order.deliveryCode : null,
     events: order.events,
   });
 });

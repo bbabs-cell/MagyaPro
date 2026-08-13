@@ -34,6 +34,7 @@ export default async function OrderDetailPage({
       customer: { select: { id: true, ordersCount: true, totalSpent: true } },
       deliveryZone: { select: { name: true } },
       table: { select: { label: true } },
+      courier: { select: { name: true } },
       payments: { orderBy: { createdAt: 'desc' } },
       events: { orderBy: { createdAt: 'asc' } },
     },
@@ -243,6 +244,12 @@ export default async function OrderDetailPage({
                     Adresse
                   </dt>
                   <dd className="mt-0.5">{order.deliveryAddress}</dd>
+                </div>
+              )}
+              {order.courier && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-ink-faint">Livreur</dt>
+                  <dd className="mt-0.5">{order.courier.name}</dd>
                 </div>
               )}
               {order.instructions && (

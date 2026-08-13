@@ -33,6 +33,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: '/dashboard/alertes', label: 'Alertes', permission: 'orders:view' },
       { href: '/dashboard/commandes', label: 'Commandes', permission: 'orders:view' },
       { href: '/dashboard/cuisine', label: 'Cuisine', permission: 'orders:update_status' },
+      { href: '/dashboard/livraisons', label: 'Mes livraisons', permission: 'deliveries:drive' },
       { href: '/dashboard/reservations', label: 'Réservations', permission: 'reservations:manage' },
       { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
       { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
@@ -100,7 +101,9 @@ export function DashboardShell({
   })).filter((section) => section.items.length > 0);
 
   function isActive(item: NavItem) {
-    return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+    return item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
 
   async function handleLogout() {

@@ -1,11 +1,13 @@
 import type { OrderStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/db';
-import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
 import { priceOrder, type CartInput } from '@/lib/orders/pricing';
 import { notifyNewOrder, notifyOrderStatusChanged } from '@/lib/notifications';
+import { applyPaymentStatus } from '@/lib/payments/service';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
+import { generateSixDigitCode } from '@/lib/codes';
 
 // Les transitions et libellés vivent dans un module pur, partagé avec
 // l'interface : le dashboard ne peut pas proposer une transition que le
@@ -26,6 +28,8 @@ export type CreateOrderInput = {
   customerPhone: string;
   customerEmail?: string | null;
   deliveryAddress?: string | null;
+  deliveryLat?: number | null;
+  deliveryLng?: number | null;
   instructions?: string | null;
   paymentProvider: string;
   tableId?: string | null;
@@ -105,6 +109,11 @@ export async function createOrder(input: CreateOrderInput) {
         customerPhone: input.customerPhone,
         customerEmail: input.customerEmail ?? null,
         deliveryAddress: input.deliveryAddress ?? null,
+        deliveryLat: input.deliveryLat ?? null,
+        deliveryLng: input.deliveryLng ?? null,
+        // Un code par livraison : demandé par le livreur à la remise, pour
+        // s'assurer qu'il livre la bonne commande à la bonne personne.
+        deliveryCode: input.fulfillmentType === 'DELIVERY' ? generateSixDigitCode() : null,
         instructions: input.instructions ?? null,
         subtotal: priced.subtotal,
         discount: priced.discount,
@@ -258,6 +267,125 @@ export async function updateOrderStatus(params: {
     ip: params.ip,
     metadata: { from: order.status, to: params.status, number: order.number },
   });
+
+  return updated;
+}
+
+/**
+ * Prise en charge d'une livraison par un livreur.
+ *
+ * L'affectation et le passage à `OUT_FOR_DELIVERY` se font en une seule
+ * écriture conditionnelle (`updateMany` avec `courierId: null` dans le
+ * `where`) : si deux livreurs tentent de prendre la même course en même
+ * temps, un seul y parvient — le second reçoit une erreur claire plutôt
+ * qu'une double affectation silencieuse.
+ */
+export async function claimDelivery(params: {
+  restaurantId: string;
+  orderId: string;
+  courierId: string;
+  courierEmail?: string | null;
+}) {
+  const claimed = await prisma.order.updateMany({
+    where: {
+      id: params.orderId,
+      restaurantId: params.restaurantId,
+      fulfillmentType: 'DELIVERY',
+      status: 'READY',
+      courierId: null,
+    },
+    data: { courierId: params.courierId, status: 'OUT_FOR_DELIVERY', statusUpdatedAt: new Date() },
+  });
+
+  if (claimed.count === 0) {
+    const order = await prisma.order.findFirst({
+      where: { id: params.orderId, restaurantId: params.restaurantId },
+      select: { courierId: true, status: true },
+    });
+    if (!order) throw new NotFoundError('Livraison introuvable.');
+    if (order.courierId) throw new ConflictError('Cette livraison est déjà prise en charge.');
+    throw new ConflictError("Cette commande n'est pas encore prête à livrer.");
+  }
+
+  const order = await prisma.order.findUniqueOrThrow({ where: { id: params.orderId } });
+
+  await prisma.orderStatusEvent.create({
+    data: { orderId: order.id, fromStatus: 'READY', toStatus: 'OUT_FOR_DELIVERY', byUserId: params.courierId },
+  });
+
+  await notifyOrderStatusChanged(order.restaurantId, order.id, order.number, 'OUT_FOR_DELIVERY');
+  await recordAudit({
+    action: AUDIT_ACTIONS.ORDER_STATUS_CHANGED,
+    actorUserId: params.courierId,
+    actorEmail: params.courierEmail,
+    restaurantId: params.restaurantId,
+    targetType: 'order',
+    targetId: order.id,
+    metadata: { from: 'READY', to: 'OUT_FOR_DELIVERY', number: order.number, courierId: params.courierId },
+  });
+
+  return order;
+}
+
+/**
+ * Confirmation de livraison par le livreur.
+ *
+ * Le code à six chiffres, connu du client, prouve que le livreur se trouve
+ * bien face au bon destinataire — sans lui, n'importe quel livreur pourrait
+ * clore n'importe quelle course. L'encaissement suit automatiquement : un
+ * paiement encore en attente (espèces) passe à « payé », un paiement déjà
+ * réglé en ligne ne change pas.
+ */
+export async function confirmDelivery(params: {
+  restaurantId: string;
+  orderId: string;
+  courierId: string;
+  courierEmail?: string | null;
+  code: string;
+  ip?: string | null;
+}) {
+  const order = await prisma.order.findFirst({
+    where: { id: params.orderId, restaurantId: params.restaurantId },
+    select: { id: true, status: true, courierId: true, deliveryCode: true },
+  });
+  if (!order) throw new NotFoundError('Livraison introuvable.');
+  if (order.courierId !== params.courierId) {
+    throw new ForbiddenError("Cette livraison n'est pas la vôtre.");
+  }
+  if (order.status !== 'OUT_FOR_DELIVERY') {
+    throw new ConflictError("Cette commande n'est pas en cours de livraison.");
+  }
+  if (order.deliveryCode !== params.code) {
+    throw new ValidationError('Code de livraison incorrect.', {
+      code: 'Vérifiez le code auprès du client.',
+    });
+  }
+
+  const updated = await updateOrderStatus({
+    restaurantId: params.restaurantId,
+    orderId: order.id,
+    status: 'COMPLETED',
+    userId: params.courierId,
+    actorEmail: params.courierEmail,
+    ip: params.ip,
+  });
+
+  const payment = await prisma.payment.findFirst({
+    where: { orderId: order.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (payment && payment.status !== 'PAID') {
+    await applyPaymentStatus({
+      restaurantId: params.restaurantId,
+      paymentId: payment.id,
+      status: 'PAID',
+      actorUserId: params.courierId,
+      actorEmail: params.courierEmail,
+    });
+    // `updated` a été capturé avant cet encaissement ; on renvoie l'état
+    // final pour que l'appelant ne voie jamais un `paymentStatus` périmé.
+    return { ...updated, paymentStatus: 'PAID' as const };
+  }
 
   return updated;
 }

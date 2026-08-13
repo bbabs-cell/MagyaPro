@@ -274,6 +274,10 @@ export const checkoutSchema = z.object({
   customerPhone: phoneSchema,
   customerEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
   deliveryAddress: optionalText(300),
+  /// Position GPS, partagée volontairement par le client pour aider le
+  /// livreur — jamais requise.
+  deliveryLat: z.number().min(-90).max(90).nullable().optional(),
+  deliveryLng: z.number().min(-180).max(180).nullable().optional(),
   instructions: optionalText(500),
   promoCode: z
     .string()
@@ -333,6 +337,15 @@ export const tableStatusSchema = z.object({
 
 export const tableRequestSchema = z.object({
   type: z.enum(['CALL', 'BILL']),
+});
+
+// --- Livraison ---------------------------------------------------------------
+
+export const deliveryConfirmationSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Code à six chiffres.'),
 });
 
 // --- Équipe -----------------------------------------------------------------
