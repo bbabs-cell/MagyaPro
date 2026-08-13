@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+      Roboto, 'Helvetica Neue', sans-serif;
+  }
+
+  * {
+    @apply border-surface-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface text-ink antialiased;
+    font-family: var(--font-sans);
+  }
+
+  /* Un focus toujours visible : la navigation au clavier doit rester lisible,
+     y compris sur les fonds colorés. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-brand;
+  }
+
+  /* Respecte le réglage système de réduction des animations. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply rounded-2xl border border-surface-border bg-white;
+  }
+
+  /* Rend un tableau lisible sur mobile en le transformant en liste de fiches.
+     Chaque cellule reprend son intitulé via data-label. */
+  @media (max-width: 767px) {
+    .table-stack thead {
+      @apply hidden;
+    }
+    .table-stack tbody tr {
+      @apply block rounded-xl border border-surface-border p-4 mb-3;
+    }
+    .table-stack tbody td {
+      @apply flex items-baseline justify-between gap-4 border-0 px-0 py-1.5 text-right;
+    }
+    .table-stack tbody td::before {
+      content: attr(data-label);
+      @apply text-xs font-medium uppercase tracking-wide text-ink-faint text-left;
+    }
+    .table-stack tbody td[data-label='']::before {
+      content: none;
+    }
+  }
+}
+
+/* Masque visuellement sans retirer du flux d'accessibilité. */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

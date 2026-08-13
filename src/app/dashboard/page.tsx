@@ -1,0 +1,269 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+
+import { prisma } from '@/lib/db';
+import { requireTenant } from '@/lib/tenant';
+import { formatMoney } from '@/lib/money';
+import { getDashboardMetrics, getPopularProducts, getRevenueSeries } from '@/lib/analytics';
+import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
+import { getEntitlements } from '@/lib/entitlements';
+import {
+  Badge,
+  Card,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  StatCard,
+} from '@/components/ui';
+import { RevenueChart } from '@/components/dashboard/revenue-chart';
+import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+
+export const metadata: Metadata = { title: 'Vue d\'ensemble' };
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
+  const { restaurant } = await requireTenant('restaurant:view');
+  const currency = restaurant.currency;
+
+  const [metrics, series, popular, recentOrders, entitlements] = await Promise.all([
+    getDashboardMetrics(restaurant.id, '30d'),
+    getRevenueSeries(restaurant.id, '30d'),
+    getPopularProducts(restaurant.id, '30d', 5),
+    prisma.order.findMany({
+      where: { restaurantId: restaurant.id },
+      orderBy: { placedAt: 'desc' },
+      take: 6,
+      select: {
+        id: true,
+        number: true,
+        status: true,
+        total: true,
+        customerName: true,
+        placedAt: true,
+      },
+    }),
+    getEntitlements(restaurant.id),
+  ]);
+
+  const hasActivity = metrics.ordersCount > 0;
+
+  return (
+    <>
+      <PageHeader
+        title={`Bonjour, ${restaurant.name}`}
+        description="Votre activité des 30 derniers jours."
+        action={
+          <LinkButton href="/dashboard/commandes" variant="secondary" size="sm">
+            Voir les commandes
+          </LinkButton>
+        }
+      />
+
+      {/* Alertes réellement actionnables uniquement. */}
+      <div className="mb-6 space-y-3">
+        {restaurant.status === 'DRAFT' && (
+          <Card className="flex flex-col gap-3 border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-amber-900">
+                Votre site n&apos;est pas encore publié
+              </p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                Publiez-le pour qu&apos;il devienne accessible à vos clients.
+              </p>
+            </div>
+            <LinkButton href="/dashboard/parametres" size="sm" className="shrink-0">
+              Publier mon site
+            </LinkButton>
+          </Card>
+        )}
+
+        {!entitlements.isActive && (
+          <Card className="flex flex-col gap-3 border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-red-900">
+                Abonnement inactif
+              </p>
+              <p className="mt-0.5 text-sm text-red-800">
+                Certaines fonctionnalités sont indisponibles jusqu&apos;à la
+                régularisation.
+              </p>
+            </div>
+            <LinkButton href="/dashboard/abonnement" size="sm" className="shrink-0">
+              Gérer l&apos;abonnement
+            </LinkButton>
+          </Card>
+        )}
+
+        {metrics.pendingOrders > 0 && (
+          <Card className="flex flex-col gap-3 border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-sky-900">
+              <span className="font-medium">
+                {metrics.pendingOrders} commande{metrics.pendingOrders > 1 ? 's' : ''}
+              </span>{' '}
+              en cours de traitement.
+            </p>
+            <LinkButton href="/dashboard/commandes" size="sm" className="shrink-0">
+              Traiter maintenant
+            </LinkButton>
+          </Card>
+        )}
+      </div>
+
+      <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Chiffre d'affaires"
+          value={formatMoney(metrics.revenue, currency)}
+          hint={
+            metrics.revenueChange === null
+              ? 'Pas de période précédente à comparer'
+              : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} % vs 30 j précédents`
+          }
+          tone={
+            metrics.revenueChange === null
+              ? undefined
+              : metrics.revenueChange >= 0
+                ? 'success'
+                : 'danger'
+          }
+        />
+        <StatCard
+          label="Commandes"
+          value={String(metrics.ordersCount)}
+          hint={
+            metrics.ordersChange === null
+              ? 'Pas de période précédente à comparer'
+              : `${metrics.ordersChange > 0 ? '+' : ''}${metrics.ordersChange} % vs 30 j précédents`
+          }
+          tone={
+            metrics.ordersChange === null
+              ? undefined
+              : metrics.ordersChange >= 0
+                ? 'success'
+                : 'danger'
+          }
+        />
+        <StatCard
+          label="Panier moyen"
+          value={
+            metrics.averageBasket === null
+              ? '—'
+              : formatMoney(metrics.averageBasket, currency)
+          }
+          hint={metrics.averageBasket === null ? 'Aucune commande sur la période' : undefined}
+        />
+        <StatCard
+          label="Nouveaux clients"
+          value={String(metrics.newCustomers)}
+          hint="Sur les 30 derniers jours"
+        />
+      </section>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section aria-label="Évolution du chiffre d'affaires" className="lg:col-span-2">
+          <Card className="p-4 sm:p-5">
+            <h2 className="text-sm font-medium text-ink">
+              Chiffre d&apos;affaires sur 30 jours
+            </h2>
+            {hasActivity ? (
+              <div className="mt-4">
+                <RevenueChart points={series} currency={currency} />
+              </div>
+            ) : (
+              <p className="mt-6 text-sm text-ink-muted">
+                Le graphique apparaîtra dès votre première commande.
+              </p>
+            )}
+          </Card>
+        </section>
+
+        <section aria-label="Plats les plus commandés">
+          <Card className="p-4 sm:p-5">
+            <h2 className="text-sm font-medium text-ink">Plats les plus commandés</h2>
+            {popular.length === 0 ? (
+              <p className="mt-4 text-sm text-ink-muted">
+                Aucune vente sur la période.
+              </p>
+            ) : (
+              <ol className="mt-4 space-y-3">
+                {popular.map((product, index) => (
+                  <li key={product.name} className="flex items-baseline gap-3">
+                    <span className="text-xs font-medium text-ink-faint">
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {product.name}
+                    </span>
+                    <span className="shrink-0 text-sm font-medium">
+                      {product.quantity}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        </section>
+      </div>
+
+      <section aria-label="Commandes récentes" className="mt-6">
+        <Card className="p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-ink">Activité récente</h2>
+            <Link
+              href="/dashboard/commandes"
+              className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
+            >
+              Tout voir
+            </Link>
+          </div>
+
+          {recentOrders.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="Aucune commande pour le moment"
+                description="Dès qu'un client passera commande sur votre site, elle apparaîtra ici."
+                action={
+                  <LinkButton href="/dashboard/menu" size="sm">
+                    Compléter mon menu
+                  </LinkButton>
+                }
+              />
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-surface-border">
+              {recentOrders.map((order) => (
+                <li key={order.id}>
+                  <Link
+                    href={`/dashboard/commandes/${order.id}`}
+                    className="flex items-center justify-between gap-3 py-3 hover:bg-surface-sunken"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        n°{order.number} · {order.customerName}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-faint">
+                        {order.placedAt.toLocaleString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Badge tone={ORDER_STATUS_TONES[order.status]}>
+                        {ORDER_STATUS_LABELS[order.status]}
+                      </Badge>
+                      <span className="text-sm font-medium">
+                        {formatMoney(order.total, currency)}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </section>
+    </>
+  );
+}

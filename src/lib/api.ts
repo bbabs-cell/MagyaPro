@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ZodError, type ZodSchema } from 'zod';
+import { ZodError, type z, type ZodTypeAny } from 'zod';
 import { Prisma } from '@prisma/client';
 
 import { AppError, RateLimitError, ValidationError } from '@/lib/errors';
@@ -48,8 +48,17 @@ export function zodFieldErrors(error: ZodError): Record<string, string> {
   return fieldErrors;
 }
 
-/** Valide un corps de requête, ou lève une `ValidationError` exploitable. */
-export function parseOrThrow<T>(schema: ZodSchema<T>, input: unknown): T {
+/**
+ * Valide un corps de requête, ou lève une `ValidationError` exploitable.
+ *
+ * Le type de retour est celui de *sortie* du schéma : un champ déclaré avec
+ * `.default()` est optionnel à l'entrée mais garanti présent en sortie, et
+ * l'appelant doit voir cette garantie.
+ */
+export function parseOrThrow<S extends ZodTypeAny>(
+  schema: S,
+  input: unknown,
+): z.output<S> {
   const result = schema.safeParse(input);
   if (!result.success) {
     throw new ValidationError(
