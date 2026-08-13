@@ -19,7 +19,7 @@ export {
 export type CreateOrderInput = {
   restaurantId: string;
   items: CartInput[];
-  fulfillmentType: 'DELIVERY' | 'PICKUP';
+  fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
   deliveryZoneId?: string | null;
   promoCode?: string | null;
   customerName: string;
@@ -28,6 +28,7 @@ export type CreateOrderInput = {
   deliveryAddress?: string | null;
   instructions?: string | null;
   paymentProvider: string;
+  tableId?: string | null;
   ip?: string | null;
 };
 
@@ -99,6 +100,7 @@ export async function createOrder(input: CreateOrderInput) {
         number: restaurant.orderCounter,
         fulfillmentType: input.fulfillmentType,
         paymentProvider: input.paymentProvider,
+        tableId: input.tableId ?? null,
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         customerEmail: input.customerEmail ?? null,
@@ -136,6 +138,16 @@ export async function createOrder(input: CreateOrderInput) {
       await tx.promotion.update({
         where: { id: priced.promotionId },
         data: { usedCount: { increment: 1 } },
+      });
+    }
+
+    // 6. Une commande passée depuis une table occupe cette table : ça
+    //    reflète l'état réel de la salle sans action supplémentaire du
+    //    personnel.
+    if (input.tableId) {
+      await tx.restaurantTable.updateMany({
+        where: { id: input.tableId, restaurantId: input.restaurantId, status: 'FREE' },
+        data: { status: 'OCCUPIED' },
       });
     }
 

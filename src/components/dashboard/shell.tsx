@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
+import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import type { Permission } from '@/lib/rbac';
 
 /**
@@ -29,7 +30,9 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Pilotage',
     items: [
       { href: '/dashboard', label: 'Vue d\'ensemble', exact: true },
+      { href: '/dashboard/alertes', label: 'Alertes', permission: 'orders:view' },
       { href: '/dashboard/commandes', label: 'Commandes', permission: 'orders:view' },
+      { href: '/dashboard/cuisine', label: 'Cuisine', permission: 'orders:update_status' },
       { href: '/dashboard/reservations', label: 'Réservations', permission: 'reservations:manage' },
       { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
       { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
@@ -39,6 +42,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Restaurant',
     items: [
       { href: '/dashboard/menu', label: 'Menu', permission: 'menu:view' },
+      { href: '/dashboard/salle', label: 'Salle', permission: 'tables:view' },
       { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
       { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
       { href: '/dashboard/promotions', label: 'Promotions', permission: 'promotions:manage' },
@@ -61,6 +65,7 @@ export function DashboardShell({
   memberships,
   permissions,
   unreadCount,
+  alertCount,
   subscription,
   isSupportAccess,
   children,
@@ -76,6 +81,7 @@ export function DashboardShell({
   memberships: Array<{ id: string; name: string; slug: string }>;
   permissions: string[];
   unreadCount: number;
+  alertCount: number;
   subscription: { planName: string; status: string; isActive: boolean };
   isSupportAccess: boolean;
   children: React.ReactNode;
@@ -141,6 +147,11 @@ export function DashboardShell({
                       {unreadCount}
                     </span>
                   )}
+                  {item.href === '/dashboard/alertes' && alertCount > 0 && (
+                    <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+                      {alertCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -152,6 +163,8 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-surface-sunken">
+      {allowed.has('orders:view') && <AlertWatcher />}
+
       {/* Bandeau d'accès support : impossible à manquer, pour que
           l'administrateur sache qu'il agit dans l'espace d'un client. */}
       {isSupportAccess && (

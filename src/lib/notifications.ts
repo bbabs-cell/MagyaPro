@@ -109,6 +109,23 @@ export async function notifyOrderStatusChanged(
   });
 }
 
+export async function notifyNewReservation(
+  restaurantId: string,
+  reservationId: string,
+  customerName: string,
+  partySize: number,
+  reservedFor: Date,
+): Promise<void> {
+  await createNotification({
+    restaurantId,
+    type: 'RESERVATION_CREATED',
+    title: `Réservation — ${customerName}`,
+    body: `${customerName} demande une table pour ${partySize} personne${partySize > 1 ? 's' : ''} le ${reservedFor.toLocaleDateString('fr-FR')} à ${reservedFor.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.`,
+    href: '/dashboard/reservations',
+    metadata: { reservationId },
+  });
+}
+
 export async function markNotificationRead(
   restaurantId: string,
   notificationId: string,

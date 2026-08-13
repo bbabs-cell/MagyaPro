@@ -33,6 +33,7 @@ export default async function OrderDetailPage({
       items: true,
       customer: { select: { id: true, ordersCount: true, totalSpent: true } },
       deliveryZone: { select: { name: true } },
+      table: { select: { label: true } },
       payments: { orderBy: { createdAt: 'desc' } },
       events: { orderBy: { createdAt: 'asc' } },
     },
@@ -228,6 +229,12 @@ export default async function OrderDetailPage({
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-ink-faint">Email</dt>
                   <dd className="mt-0.5 break-all">{order.customerEmail}</dd>
+                </div>
+              )}
+              {order.table && (
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-ink-faint">Table</dt>
+                  <dd className="mt-0.5">{order.table.label}</dd>
                 </div>
               )}
               {order.deliveryAddress && (

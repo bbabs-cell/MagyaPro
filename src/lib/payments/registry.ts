@@ -36,7 +36,7 @@ export function getProvider(id: string): PaymentProvider | null {
 export function availableProvidersFor(params: {
   enabledIds: string[];
   currency: string;
-  fulfillmentType?: 'DELIVERY' | 'PICKUP';
+  fulfillmentType?: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
 }): PaymentProvider[] {
   return REGISTRY.filter((provider) => {
     if (!params.enabledIds.includes(provider.id)) return false;
@@ -49,8 +49,12 @@ export function availableProvidersFor(params: {
     }
 
     // Les deux modes hors ligne sont liés au mode de retrait : proposer
-    // « paiement à la livraison » sur une commande à emporter n'aurait pas de sens.
-    if (params.fulfillmentType === 'PICKUP' && provider.id === 'cash_on_delivery') {
+    // « paiement à la livraison » n'a de sens que pour une livraison, et
+    // « paiement sur place » que sans livreur (retrait ou table).
+    if (
+      (params.fulfillmentType === 'PICKUP' || params.fulfillmentType === 'DINE_IN') &&
+      provider.id === 'cash_on_delivery'
+    ) {
       return false;
     }
     if (params.fulfillmentType === 'DELIVERY' && provider.id === 'pay_at_store') {

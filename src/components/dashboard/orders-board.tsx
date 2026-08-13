@@ -29,7 +29,8 @@ type Order = {
   number: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  fulfillmentType: 'DELIVERY' | 'PICKUP';
+  fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
+  tableLabel: string | null;
   customerName: string;
   customerPhone: string;
   total: number;
@@ -129,7 +130,11 @@ export function OrdersBoard({
                       {' · '}
                       {order.itemCount} article{order.itemCount > 1 ? 's' : ''}
                       {' · '}
-                      {order.fulfillmentType === 'DELIVERY' ? 'Livraison' : 'Retrait'}
+                      {order.fulfillmentType === 'DELIVERY'
+                        ? 'Livraison'
+                        : order.fulfillmentType === 'DINE_IN'
+                          ? `Sur place${order.tableLabel ? ` · ${order.tableLabel}` : ''}`
+                          : 'Retrait'}
                     </span>
                   </td>
 

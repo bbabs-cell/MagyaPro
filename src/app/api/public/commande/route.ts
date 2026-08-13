@@ -12,6 +12,7 @@ import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { trackEvent } from '@/lib/analytics';
 import { env } from '@/lib/env';
+import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
 
 const schema = checkoutSchema.extend({ restaurantId: z.string().min(1) });
 
@@ -36,6 +37,28 @@ export const POST = route(async (request) => {
     select: { id: true, slug: true, currency: true, settings: true },
   });
   if (!restaurant) throw new NotFoundError('Restaurant introuvable.');
+
+  // Une commande « sur place » doit venir d'une table réelle du restaurant,
+  // et le service à table doit être à la fois inclus dans le plan et activé
+  // par le restaurant — deux garde-fous indépendants, comme pour les autres
+  // options soumises au plan.
+  let tableId: string | null = null;
+  if (input.fulfillmentType === 'DINE_IN') {
+    if (!input.tableToken) {
+      throw new ValidationError('Table introuvable.');
+    }
+    const entitlements = await getEntitlements(restaurant.id);
+    requireFeature(entitlements, FEATURES.TABLE_SERVICE);
+    if (!restaurant.settings?.tableOrderingEnabled) {
+      throw new ValidationError('La commande depuis la table est désactivée.');
+    }
+    const table = await prisma.restaurantTable.findFirst({
+      where: { token: input.tableToken, restaurantId: restaurant.id },
+      select: { id: true },
+    });
+    if (!table) throw new NotFoundError('Table introuvable.');
+    tableId = table.id;
+  }
 
   // Le moyen de paiement doit être activé par ce restaurant, opérationnel sur
   // l'instance et compatible avec le mode de retrait choisi.
@@ -62,6 +85,7 @@ export const POST = route(async (request) => {
     deliveryAddress: input.deliveryAddress,
     instructions: input.instructions,
     paymentProvider: input.paymentProvider,
+    tableId,
     ip,
   });
 

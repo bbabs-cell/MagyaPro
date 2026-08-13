@@ -57,7 +57,7 @@ export type CartInput = {
 export type PriceOrderInput = {
   restaurantId: string;
   items: CartInput[];
-  fulfillmentType: 'DELIVERY' | 'PICKUP';
+  fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
   deliveryZoneId?: string | null;
   promoCode?: string | null;
 };
@@ -94,6 +94,9 @@ export async function priceOrder(
   }
   if (input.fulfillmentType === 'PICKUP' && settings && !settings.pickupEnabled) {
     throw new ValidationError("Ce restaurant ne propose pas le retrait sur place.");
+  }
+  if (input.fulfillmentType === 'DINE_IN' && settings && !settings.tableOrderingEnabled) {
+    throw new ValidationError("Ce restaurant ne propose pas la commande depuis la table.");
   }
 
   const items = await priceItems(db, input.restaurantId, input.items);
@@ -307,10 +310,10 @@ async function computeDeliveryFee(
   db: DbClient,
   restaurantId: string,
   subtotal: number,
-  fulfillmentType: 'DELIVERY' | 'PICKUP',
+  fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN',
   zoneId?: string | null,
 ): Promise<{ deliveryFee: number; deliveryZoneId: string | null }> {
-  if (fulfillmentType === 'PICKUP') {
+  if (fulfillmentType !== 'DELIVERY') {
     return { deliveryFee: 0, deliveryZoneId: null };
   }
 

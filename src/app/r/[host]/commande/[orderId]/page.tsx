@@ -104,7 +104,11 @@ export default async function OrderConfirmationPage({ params }: Props) {
           <div>
             <dt className="text-xs uppercase tracking-wide text-ink-faint">Mode</dt>
             <dd className="mt-0.5 font-medium">
-              {order.fulfillmentType === 'DELIVERY' ? 'Livraison' : 'Retrait sur place'}
+              {order.fulfillmentType === 'DELIVERY'
+                ? 'Livraison'
+                : order.fulfillmentType === 'DINE_IN'
+                  ? 'Sur place'
+                  : 'Retrait sur place'}
             </dd>
           </div>
           <div>

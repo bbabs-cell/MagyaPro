@@ -9,7 +9,7 @@ import { priceOrder } from '@/lib/orders/pricing';
 const schema = z.object({
   restaurantId: z.string().min(1),
   items: z.array(cartItemSchema).min(1).max(50),
-  fulfillmentType: z.enum(['DELIVERY', 'PICKUP']),
+  fulfillmentType: z.enum(['DELIVERY', 'PICKUP', 'DINE_IN']),
   deliveryZoneId: z.string().min(1).nullable().optional(),
   promoCode: z.string().trim().toUpperCase().max(24).optional(),
 });

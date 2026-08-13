@@ -65,6 +65,7 @@ export default async function SettingsPage() {
           orderingEnabled: settings?.orderingEnabled ?? true,
           deliveryEnabled: settings?.deliveryEnabled ?? true,
           pickupEnabled: settings?.pickupEnabled ?? true,
+          tableOrderingEnabled: settings?.tableOrderingEnabled ?? false,
           minOrderAmount: settings?.minOrderAmount ?? 0,
           prepTimeMinutes: settings?.prepTimeMinutes ?? 30,
           paymentProviders: settings?.paymentProviders ?? [],

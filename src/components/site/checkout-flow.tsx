@@ -8,6 +8,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { Field, inputClass } from '@/components/ui';
 import { toCheckoutItems, useCart } from '@/components/site/cart-context';
+import { getTableToken } from '@/lib/site/table-session';
 
 /**
  * Tunnel de commande.
@@ -61,9 +62,19 @@ export function CheckoutFlow({
   const router = useRouter();
   const { lines, estimatedSubtotal, setQuantity, removeLine, clear } = useCart();
 
-  const [fulfillment, setFulfillment] = useState<'DELIVERY' | 'PICKUP'>(
+  // Un client qui a scanné le QR d'une table commande depuis sa table : le
+  // mode est déduit du jeton mémorisé au scan, pas d'un choix qu'il ferait ici.
+  const [tableToken, setTableTokenState] = useState<string | null>(null);
+  useEffect(() => {
+    setTableTokenState(getTableToken(restaurantId));
+  }, [restaurantId]);
+
+  const [fulfillment, setFulfillment] = useState<'DELIVERY' | 'PICKUP' | 'DINE_IN'>(
     deliveryEnabled ? 'DELIVERY' : 'PICKUP',
   );
+  useEffect(() => {
+    if (tableToken) setFulfillment('DINE_IN');
+  }, [tableToken]);
   const [zoneId, setZoneId] = useState<string | null>(zones[0]?.id ?? null);
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
@@ -142,6 +153,7 @@ export function CheckoutFlow({
         items: toCheckoutItems(lines),
         fulfillmentType: fulfillment,
         deliveryZoneId: fulfillment === 'DELIVERY' ? zoneId : null,
+        tableToken: fulfillment === 'DINE_IN' ? (tableToken ?? undefined) : undefined,
         promoCode: appliedPromo ?? undefined,
         customerName: String(formData.get('customerName') ?? ''),
         customerPhone: String(formData.get('customerPhone') ?? ''),
@@ -277,23 +289,31 @@ export function CheckoutFlow({
 
         {/* ----------------------------------------------------- Récupération */}
         <section aria-label="Mode de récupération" className="rounded-2xl border border-surface-border p-4">
-          <h2 className="text-sm font-medium">Comment souhaitez-vous être servi ?</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {deliveryEnabled && (
-              <FulfillmentButton
-                active={fulfillment === 'DELIVERY'}
-                onClick={() => setFulfillment('DELIVERY')}
-                label="Livraison"
-              />
-            )}
-            {pickupEnabled && (
-              <FulfillmentButton
-                active={fulfillment === 'PICKUP'}
-                onClick={() => setFulfillment('PICKUP')}
-                label="Retrait sur place"
-              />
-            )}
-          </div>
+          {tableToken ? (
+            <p className="text-sm font-medium">
+              Vous commandez depuis votre table — servi directement sur place.
+            </p>
+          ) : (
+            <>
+              <h2 className="text-sm font-medium">Comment souhaitez-vous être servi ?</h2>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {deliveryEnabled && (
+                  <FulfillmentButton
+                    active={fulfillment === 'DELIVERY'}
+                    onClick={() => setFulfillment('DELIVERY')}
+                    label="Livraison"
+                  />
+                )}
+                {pickupEnabled && (
+                  <FulfillmentButton
+                    active={fulfillment === 'PICKUP'}
+                    onClick={() => setFulfillment('PICKUP')}
+                    label="Retrait sur place"
+                  />
+                )}
+              </div>
+            </>
+          )}
 
           {fulfillment === 'DELIVERY' && zones.length > 0 && (
             <div className="mt-4">

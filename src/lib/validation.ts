@@ -151,6 +151,7 @@ export const restaurantSettingsSchema = z.object({
   orderingEnabled: z.boolean(),
   deliveryEnabled: z.boolean(),
   pickupEnabled: z.boolean(),
+  tableOrderingEnabled: z.boolean(),
   minOrderAmount: amountSchema,
   prepTimeMinutes: z.number().int().min(0).max(600),
   paymentProviders: z.array(z.string().max(50)).max(10),
@@ -265,8 +266,10 @@ export const cartItemSchema = z.object({
 
 export const checkoutSchema = z.object({
   items: z.array(cartItemSchema).min(1, 'Votre panier est vide.').max(50),
-  fulfillmentType: z.enum(['DELIVERY', 'PICKUP']),
+  fulfillmentType: z.enum(['DELIVERY', 'PICKUP', 'DINE_IN']),
   deliveryZoneId: z.string().min(1).nullable().optional(),
+  /// Présent uniquement pour une commande passée depuis une table.
+  tableToken: z.string().min(1).max(60).optional(),
   customerName: nameSchema,
   customerPhone: phoneSchema,
   customerEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
@@ -316,6 +319,20 @@ export const reservationSchema = z.object({
 
 export const reservationStatusSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']),
+});
+
+// --- Service à table ---------------------------------------------------------
+
+export const tableSchema = z.object({
+  label: cleanString(60).pipe(z.string().min(1, 'Nom requis.')),
+});
+
+export const tableStatusSchema = z.object({
+  status: z.enum(['FREE', 'OCCUPIED', 'NEEDS_CLEANING']),
+});
+
+export const tableRequestSchema = z.object({
+  type: z.enum(['CALL', 'BILL']),
 });
 
 // --- Équipe -----------------------------------------------------------------

@@ -21,6 +21,7 @@ export const FEATURES = {
   REMOVE_BRANDING: 'remove_branding',
   REVIEWS: 'reviews',
   RESERVATIONS: 'reservations',
+  TABLE_SERVICE: 'table_service',
 } as const;
 
 export type Feature = (typeof FEATURES)[keyof typeof FEATURES];
@@ -34,6 +35,7 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   remove_branding: 'Retirer la mention « Propulsé par Magya »',
   reviews: 'Avis clients',
   reservations: 'Réservations de table',
+  table_service: 'Service à table (QR code)',
 };
 
 export type PlanLimits = {

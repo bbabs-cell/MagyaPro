@@ -43,6 +43,7 @@ type Settings = {
   orderingEnabled: boolean;
   deliveryEnabled: boolean;
   pickupEnabled: boolean;
+  tableOrderingEnabled: boolean;
   minOrderAmount: number;
   prepTimeMinutes: number;
   paymentProviders: string[];
@@ -163,6 +164,7 @@ export function SettingsPanels({
         orderingEnabled: formData.get('orderingEnabled') === 'on',
         deliveryEnabled: formData.get('deliveryEnabled') === 'on',
         pickupEnabled: formData.get('pickupEnabled') === 'on',
+        tableOrderingEnabled: formData.get('tableOrderingEnabled') === 'on',
         minOrderAmount: toMinor(
           String(formData.get('minOrderAmount') ?? '0'),
           restaurant.currency,
@@ -486,6 +488,15 @@ export function SettingsPanels({
                   className="h-4 w-4 accent-ink"
                 />
                 Proposer le retrait sur place
+              </label>
+              <label className="flex items-center gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  name="tableOrderingEnabled"
+                  defaultChecked={settings.tableOrderingEnabled}
+                  className="h-4 w-4 accent-ink"
+                />
+                Autoriser la commande autonome depuis les tables (QR code)
               </label>
             </div>
 

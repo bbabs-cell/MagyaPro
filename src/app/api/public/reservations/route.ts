@@ -7,6 +7,7 @@ import { NotFoundError } from '@/lib/errors';
 import { reservationSchema } from '@/lib/validation';
 import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
 import { generateReservationCode } from '@/lib/reservations';
+import { notifyNewReservation } from '@/lib/notifications';
 import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 
@@ -55,6 +56,14 @@ export const POST = route(async (request) => {
       if (attempt === 4) throw err;
     }
   }
+
+  await notifyNewReservation(
+    restaurant.id,
+    reservation!.id,
+    reservation!.customerName,
+    reservation!.partySize,
+    reservation!.reservedFor,
+  );
 
   return ok(
     {
