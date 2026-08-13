@@ -8,6 +8,7 @@ import { applyPaymentStatus } from '@/lib/payments/service';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
 import { generateSixDigitCode } from '@/lib/codes';
+import { grantLoyaltyRewards } from '@/lib/loyalty';
 
 // Les transitions et libellés vivent dans un module pur, partagé avec
 // l'interface : le dashboard ne peut pas proposer une transition que le
@@ -50,7 +51,7 @@ export async function createOrder(input: CreateOrderInput) {
     });
   }
 
-  const order = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // 1. Recalcul intégral des montants à partir de la base.
     const priced = await priceOrder(tx, {
       restaurantId: input.restaurantId,
@@ -160,8 +161,10 @@ export async function createOrder(input: CreateOrderInput) {
       });
     }
 
-    return created;
+    return { order: created, customerTotalSpent: customer.totalSpent };
   });
+
+  const { order, customerTotalSpent } = result;
 
   // Effets de bord hors transaction : leur échec ne doit pas annuler une
   // commande déjà payée par le client.
@@ -173,6 +176,16 @@ export async function createOrder(input: CreateOrderInput) {
     targetId: order.id,
     ip: input.ip,
     metadata: { number: order.number, total: order.total, provider: input.paymentProvider },
+  });
+
+  // Une commande peut faire franchir un palier de fidélité au client : on
+  // l'accorde avant de rendre la main, pour que la page de confirmation
+  // puisse l'afficher immédiatement.
+  await grantLoyaltyRewards({
+    restaurantId: order.restaurantId,
+    customerId: order.customerId,
+    orderId: order.id,
+    customerTotalSpent,
   });
 
   return order;

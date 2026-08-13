@@ -43,10 +43,12 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Restaurant',
     items: [
       { href: '/dashboard/menu', label: 'Menu', permission: 'menu:view' },
+      { href: '/dashboard/photos', label: 'Atelier photo', permission: 'menu:manage' },
       { href: '/dashboard/salle', label: 'Salle', permission: 'tables:view' },
       { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
       { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
       { href: '/dashboard/promotions', label: 'Promotions', permission: 'promotions:manage' },
+      { href: '/dashboard/fidelite', label: 'Fidélité', permission: 'loyalty:manage' },
       { href: '/dashboard/avis', label: 'Avis', permission: 'reviews:moderate' },
     ],
   },

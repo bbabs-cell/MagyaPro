@@ -22,6 +22,7 @@ export const FEATURES = {
   REVIEWS: 'reviews',
   RESERVATIONS: 'reservations',
   TABLE_SERVICE: 'table_service',
+  LOYALTY: 'loyalty',
 } as const;
 
 export type Feature = (typeof FEATURES)[keyof typeof FEATURES];
@@ -36,6 +37,7 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   reviews: 'Avis clients',
   reservations: 'Réservations de table',
   table_service: 'Service à table (QR code)',
+  loyalty: 'Programme de fidélité',
 };
 
 export type PlanLimits = {

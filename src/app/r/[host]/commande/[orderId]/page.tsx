@@ -68,6 +68,15 @@ export default async function OrderConfirmationPage({ params }: Props) {
     ? `/r/${host}/commande/${order.id}/avis`
     : undefined;
 
+  // Récompenses de fidélité que cette commande précise vient de faire
+  // franchir — visibles uniquement ici, au moment où elles sont gagnées.
+  const loyaltyRewards = hasFeature(entitlements, FEATURES.LOYALTY)
+    ? await prisma.loyaltyReward.findMany({
+        where: { orderId: order.id },
+        include: { tier: { select: { name: true } }, promotion: { select: { code: true } } },
+      })
+    : [];
+
   return (
     <div className="container-page max-w-2xl py-10 sm:py-16">
       <div className="text-center">
@@ -85,6 +94,25 @@ export default async function OrderConfirmationPage({ params }: Props) {
           transmise à {restaurant.name}.
         </p>
       </div>
+
+      {loyaltyRewards.length > 0 && (
+        <div className="mt-6 space-y-2">
+          {loyaltyRewards.map((reward) => (
+            <div
+              key={reward.id}
+              className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center"
+            >
+              <p className="font-medium text-amber-900">
+                Palier « {reward.tier.name} » atteint !
+              </p>
+              <p className="mt-1 text-sm text-amber-800">
+                Votre récompense, à utiliser sur une prochaine commande :{' '}
+                <span className="font-mono font-semibold">{reward.promotion.code}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-8">
         <OrderStatusTracker

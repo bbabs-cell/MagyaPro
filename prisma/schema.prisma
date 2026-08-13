@@ -199,6 +199,8 @@ model Restaurant {
   reviews         Review[]
   reservations    Reservation[]
   tables          RestaurantTable[]
+  loyaltyTiers    LoyaltyTier[]
+  loyaltyRewards  LoyaltyReward[]
 
   @@index([status])
   @@map("restaurants")
@@ -379,9 +381,10 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orders     Order[]
-  payments   Payment[]
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  payments       Payment[]
+  loyaltyRewards LoyaltyReward[]
 
   @@unique([restaurantId, phone])
   @@index([restaurantId, lastOrderAt])
@@ -471,10 +474,11 @@ model Order {
   table        RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   courier      User?            @relation("CourierOrders", fields: [courierId], references: [id], onDelete: SetNull)
 
-  items    OrderItem[]
-  events   OrderStatusEvent[]
-  payments Payment[]
-  review   Review?
+  items          OrderItem[]
+  events         OrderStatusEvent[]
+  payments       Payment[]
+  review         Review?
+  loyaltyRewards LoyaltyReward[]
 
   @@unique([restaurantId, number])
   @@index([restaurantId, status])
@@ -572,12 +576,64 @@ model Promotion {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orders     Order[]
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders         Order[]
+  loyaltyRewards LoyaltyReward[]
 
   @@unique([restaurantId, code])
   @@index([restaurantId])
   @@map("promotions")
+}
+
+// ---------------------------------------------------------------------------
+// Fidélité
+// ---------------------------------------------------------------------------
+
+model LoyaltyTier {
+  id             String        @id @default(cuid())
+  restaurantId   String
+  /// Nom du palier, ex. « Argent », « Habitué ».
+  name           String
+  /// Seuil de dépenses cumulées déclenchant l'obtention (unité mineure).
+  thresholdSpent Int
+  /// Récompense accordée : un code promo généré automatiquement, du même
+  /// type qu'un code manuel (pourcentage ou montant fixe).
+  rewardType     PromotionType
+  rewardValue    Int
+  position       Int           @default(0)
+  isActive       Boolean       @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  rewards    LoyaltyReward[]
+
+  @@index([restaurantId, thresholdSpent])
+  @@map("loyalty_tiers")
+}
+
+/// Une ligne par récompense effectivement accordée — au plus une par couple
+/// (client, palier), pour ne jamais récompenser deux fois le même seuil.
+model LoyaltyReward {
+  id           String   @id @default(cuid())
+  restaurantId String
+  customerId   String
+  tierId       String
+  promotionId  String
+  /// Commande qui a fait franchir le seuil.
+  orderId      String
+  grantedAt    DateTime @default(now())
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tier       LoyaltyTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  promotion  Promotion   @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, tierId])
+  @@index([restaurantId, orderId])
+  @@map("loyalty_rewards")
 }
 
 // ---------------------------------------------------------------------------

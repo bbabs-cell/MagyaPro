@@ -30,6 +30,7 @@ export const PERMISSIONS = [
 
   'reviews:moderate',
   'reservations:manage',
+  'loyalty:manage',
 
   'tables:view',
   'tables:manage',
@@ -70,6 +71,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   'promotions:manage',
   'payments:view',
   'reviews:moderate',
+  'loyalty:manage',
   'tables:manage',
   'analytics:view',
   'team:view',
@@ -135,6 +137,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'payments:manage': 'Gérer les paiements',
   'reviews:moderate': 'Modérer les avis',
   'reservations:manage': 'Gérer les réservations',
+  'loyalty:manage': 'Gérer la fidélité',
   'tables:view': 'Voir le plan de salle',
   'tables:manage': 'Gérer les tables',
   'deliveries:drive': 'Effectuer des livraisons',

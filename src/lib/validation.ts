@@ -212,6 +212,11 @@ export const reorderSchema = z.object({
   ids: z.array(z.string().min(1)).max(500),
 });
 
+/** Attribution rapide d'une photo, sans repasser tout le produit. */
+export const productPhotoSchema = z.object({
+  imageUrl: urlSchema,
+});
+
 // --- Livraison & promotions -------------------------------------------------
 
 export const deliveryZoneSchema = z.object({
@@ -246,6 +251,21 @@ export const promotionSchema = z
   .refine((promo) => !promo.startsAt || !promo.endsAt || promo.endsAt > promo.startsAt, {
     message: 'La date de fin doit être postérieure à la date de début.',
     path: ['endsAt'],
+  });
+
+export const loyaltyTierSchema = z
+  .object({
+    name: cleanString(60).pipe(z.string().min(1, 'Nom requis.')),
+    thresholdSpent: amountSchema.refine((value) => value > 0, {
+      message: 'Le seuil doit être supérieur à zéro.',
+    }),
+    rewardType: z.enum(['PERCENT', 'FIXED']),
+    rewardValue: z.number().int().min(1, 'La valeur doit être supérieure à zéro.'),
+    isActive: z.boolean().default(true),
+  })
+  .refine((tier) => tier.rewardType !== 'PERCENT' || tier.rewardValue <= 100, {
+    message: 'Une remise en pourcentage ne peut pas dépasser 100 %.',
+    path: ['rewardValue'],
   });
 
 // --- Commande publique ------------------------------------------------------
