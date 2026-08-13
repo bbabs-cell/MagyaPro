@@ -7,8 +7,8 @@ import type { OrderStatus, PaymentStatus } from '@prisma/client';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
-import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/service';
-import { PAYMENT_STATUS_LABELS } from '@/lib/payments/service';
+import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
+import { PAYMENT_STATUS_LABELS } from '@/lib/payments/status';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { Badge, Button } from '@/components/ui';
 

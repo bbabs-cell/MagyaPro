@@ -5,38 +5,16 @@ import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { priceOrder, type CartInput } from '@/lib/orders/pricing';
 import { notifyNewOrder, notifyOrderStatusChanged } from '@/lib/notifications';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
 
-/**
- * Cycle de vie d'une commande.
- *
- * Les transitions autorisées sont déclarées ici plutôt que dispersées dans
- * l'interface : le dashboard peut proposer ce qu'il veut, seul ce tableau fait
- * foi. Il empêche notamment de « ressusciter » une commande terminée ou
- * annulée.
- */
-export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  NEW: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['PREPARING', 'CANCELLED'],
-  PREPARING: ['READY', 'CANCELLED'],
-  READY: ['OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'],
-  OUT_FOR_DELIVERY: ['COMPLETED', 'CANCELLED'],
-  COMPLETED: [],
-  CANCELLED: [],
-};
-
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  NEW: 'Nouvelle',
-  CONFIRMED: 'Confirmée',
-  PREPARING: 'En préparation',
-  READY: 'Prête',
-  OUT_FOR_DELIVERY: 'En livraison',
-  COMPLETED: 'Terminée',
-  CANCELLED: 'Annulée',
-};
-
-export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
-  return ORDER_TRANSITIONS[from].includes(to);
-}
+// Les transitions et libellés vivent dans un module pur, partagé avec
+// l'interface : le dashboard ne peut pas proposer une transition que le
+// serveur refuserait.
+export {
+  ORDER_TRANSITIONS,
+  ORDER_STATUS_LABELS,
+  canTransition,
+} from '@/lib/orders/status';
 
 export type CreateOrderInput = {
   restaurantId: string;

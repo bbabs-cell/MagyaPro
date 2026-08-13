@@ -2,7 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { teamMemberSchema } from '@/lib/validation';
-import { ConflictError, ValidationError } from '@/lib/errors';
+import { ConflictError } from '@/lib/errors';
 import { FEATURES, getEntitlements, requireFeature, requireWithinLimit } from '@/lib/entitlements';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken } from '@/lib/auth/tokens';

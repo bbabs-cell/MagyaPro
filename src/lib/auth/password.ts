@@ -20,7 +20,12 @@ const PARAMS = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 } as const;
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 
-export const PASSWORD_MIN_LENGTH = 8;
+// La politique vit dans un module pur, réutilisable côté navigateur.
+export {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validatePasswordStrength,
+} from '@/lib/auth/password-policy';
 
 /** Format : scrypt$N$r$p$<salt base64>$<clé base64> */
 export async function hashPassword(password: string): Promise<string> {
@@ -71,22 +76,4 @@ export async function verifyPassword(
   );
 
   return derived.length === expected.length && timingSafeEqual(derived, expected);
-}
-
-/**
- * Politique de mot de passe. Volontairement simple : la longueur est le
- * facteur qui compte le plus, imposer des classes de caractères pousse surtout
- * les utilisateurs vers « Motdepasse1! ».
- */
-export function validatePasswordStrength(password: string): string | null {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`;
-  }
-  if (password.length > 200) {
-    return 'Le mot de passe ne peut pas dépasser 200 caractères.';
-  }
-  if (/^\s+$/.test(password)) {
-    return 'Le mot de passe ne peut pas être composé uniquement d\'espaces.';
-  }
-  return null;
 }

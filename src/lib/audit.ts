@@ -18,6 +18,8 @@ export const AUDIT_ACTIONS = {
   USER_LOGOUT: 'user.logout',
   USER_PASSWORD_RESET: 'user.password_reset',
   USER_EMAIL_VERIFIED: 'user.email_verified',
+  USER_SUSPENDED: 'user.suspended',
+  USER_REACTIVATED: 'user.reactivated',
 
   RESTAURANT_CREATED: 'restaurant.created',
   RESTAURANT_UPDATED: 'restaurant.updated',

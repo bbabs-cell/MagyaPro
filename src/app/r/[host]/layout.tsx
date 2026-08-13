@@ -5,6 +5,7 @@ import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { getTemplate } from '@/lib/templates/registry';
 import { CartProvider } from '@/components/site/cart-context';
 import { SiteChrome } from '@/components/site/chrome';
+import { ServiceWorkerRegistration } from '@/components/site/service-worker';
 
 type Props = {
   params: Promise<{ host: string }>;
@@ -42,6 +43,8 @@ export async function generateMetadata({
     description,
     // Le site du restaurant ne doit pas hériter du template de titre de Magya.
     applicationName: restaurant.name,
+    manifest: `/r/${host}/manifest.webmanifest`,
+    appleWebApp: { capable: true, title: restaurant.name, statusBarStyle: 'default' },
     icons: restaurant.faviconUrl ? { icon: restaurant.faviconUrl } : undefined,
     openGraph: {
       type: 'website',
@@ -91,6 +94,7 @@ export default async function PublicSiteLayout({ params, children }: Props) {
       >
         {children}
       </SiteChrome>
+      <ServiceWorkerRegistration scope={`/r/${host}/`} />
     </CartProvider>
   );
 }

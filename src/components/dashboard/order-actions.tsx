@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { OrderStatus } from '@prisma/client';
 
 import { ApiError, api } from '@/lib/client/api';
-import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/service';
+import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { Button, Field, inputClass } from '@/components/ui';
 
 /**

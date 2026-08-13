@@ -6,6 +6,7 @@ import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getProvider } from '@/lib/payments/registry';
 import type { PaymentInitResult } from '@/lib/payments/types';
+import { PAYMENT_STATUS_LABELS, PAYMENT_TRANSITIONS } from '@/lib/payments/status';
 
 /**
  * Orchestration des paiements : crée l'enregistrement, délègue au fournisseur,
@@ -19,29 +20,8 @@ function newReference(): string {
     .toUpperCase()}`;
 }
 
-/**
- * Transitions de statut autorisées.
- *
- * Elles empêchent un webhook rejoué — ou reçu dans le désordre — de faire
- * repasser un paiement remboursé à « payé ».
- */
-const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
-  PENDING: ['PROCESSING', 'PAID', 'FAILED', 'CANCELLED'],
-  PROCESSING: ['PAID', 'FAILED', 'CANCELLED'],
-  PAID: ['REFUNDED'],
-  FAILED: ['PENDING', 'PROCESSING'],
-  REFUNDED: [],
-  CANCELLED: [],
-};
-
-export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
-  PENDING: 'En attente',
-  PROCESSING: 'En cours',
-  PAID: 'Payé',
-  FAILED: 'Échoué',
-  REFUNDED: 'Remboursé',
-  CANCELLED: 'Annulé',
-};
+// Statuts et transitions vivent dans un module pur, partagé avec l'interface.
+export { PAYMENT_STATUS_LABELS, PAYMENT_TRANSITIONS } from '@/lib/payments/status';
 
 export async function initiatePayment(params: {
   orderId: string;
