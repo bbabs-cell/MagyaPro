@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+.env
+.env.local
+.env.*.local
+
+# Local uploads written by the filesystem storage driver
+public/uploads/*
+!public/uploads/.gitkeep
+
+coverage/
+.DS_Store
+*.log

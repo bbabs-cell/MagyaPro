@@ -1,0 +1,801 @@
+// Magya — schéma multi-tenant.
+//
+// Règle structurante : toute donnée appartenant à un restaurant porte une
+// colonne `restaurantId` non nullable et un index dessus. Les requêtes
+// applicatives passent systématiquement par les helpers de `src/lib/tenant.ts`
+// qui injectent ce filtre côté serveur — jamais depuis une valeur du client.
+//
+// Tous les montants sont stockés en entiers, dans l'unité mineure de la devise
+// du restaurant (voir `src/lib/money.ts`). Aucun flottant pour l'argent.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identité & accès
+// ---------------------------------------------------------------------------
+
+enum PlatformRole {
+  USER
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model User {
+  id              String       @id @default(cuid())
+  email           String       @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  platformRole    PlatformRole @default(USER)
+  status          UserStatus   @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  isDemo          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  memberships   RestaurantUser[]
+  sessions      Session[]
+  tokens        VerificationToken[]
+  auditLogs     AuditLog[]
+  supportAccess SupportAccess[]
+  notifications Notification[]
+
+  @@index([platformRole])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationToken {
+  id        String                @id @default(cuid())
+  userId    String
+  type      VerificationTokenType
+  tokenHash String                @unique
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("verification_tokens")
+}
+
+/// Rôle d'un utilisateur **au sein d'un restaurant**. Distinct de PlatformRole.
+enum MembershipRole {
+  OWNER
+  ADMIN
+  EMPLOYEE
+}
+
+model RestaurantUser {
+  id           String         @id @default(cuid())
+  restaurantId String
+  userId       String
+  role         MembershipRole @default(EMPLOYEE)
+  /// Permissions accordées en plus de celles du rôle (système extensible).
+  extraPermissions String[]   @default([])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, userId])
+  @@index([userId])
+  @@index([restaurantId])
+  @@map("restaurant_users")
+}
+
+// ---------------------------------------------------------------------------
+// Tenant
+// ---------------------------------------------------------------------------
+
+enum RestaurantStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+}
+
+model Restaurant {
+  id          String           @id @default(cuid())
+  /// Sous-domaine public : <slug>.magya.app
+  slug        String           @unique
+  name        String
+  description String?
+  status      RestaurantStatus @default(DRAFT)
+  isDemo      Boolean          @default(false)
+
+  // Identité visuelle
+  logoUrl     String?
+  coverUrl    String?
+  faviconUrl  String?
+  primaryColor   String @default("#e2483d")
+  secondaryColor String @default("#12151a")
+  fontFamily     String @default("Inter")
+  templateKey    String @default("modern")
+
+  // Coordonnées
+  phone       String?
+  email       String?
+  addressLine String?
+  city        String?
+  country     String?
+  latitude    Float?
+  longitude   Float?
+
+  // Réseaux sociaux
+  facebookUrl  String?
+  instagramUrl String?
+  tiktokUrl    String?
+  whatsappNumber String?
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoImageUrl    String?
+
+  currency String @default("XOF")
+  timezone String @default("Africa/Abidjan")
+
+  // Onboarding
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
+
+  /// Compteur de numérotation des commandes, incrémenté transactionnellement.
+  orderCounter Int      @default(0)
+  publishedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings      RestaurantSettings?
+  subscription  Subscription?
+  members       RestaurantUser[]
+  openingHours  OpeningHour[]
+  categories    Category[]
+  products      Product[]
+  orders        Order[]
+  customers     Customer[]
+  deliveryZones DeliveryZone[]
+  promotions    Promotion[]
+  payments      Payment[]
+  domains       Domain[]
+  notifications Notification[]
+  analyticsEvents AnalyticsEvent[]
+  auditLogs     AuditLog[]
+  supportAccess SupportAccess[]
+
+  @@index([status])
+  @@map("restaurants")
+}
+
+model RestaurantSettings {
+  id           String  @id @default(cuid())
+  restaurantId String  @unique
+
+  orderingEnabled Boolean @default(true)
+  deliveryEnabled Boolean @default(true)
+  pickupEnabled   Boolean @default(true)
+  /// Montant minimum de commande, toutes zones confondues (unité mineure).
+  minOrderAmount  Int     @default(0)
+  prepTimeMinutes Int     @default(30)
+  /// Identifiants des fournisseurs de paiement activés (voir src/lib/payments).
+  paymentProviders String[] @default(["cash_on_delivery"])
+  notificationEmail String?
+  /// Notes internes affichées au personnel dans le dashboard.
+  staffNotes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("restaurant_settings")
+}
+
+model OpeningHour {
+  id           String  @id @default(cuid())
+  restaurantId String
+  /// 0 = dimanche … 6 = samedi
+  dayOfWeek    Int
+  isClosed     Boolean @default(false)
+  /// Format "HH:MM" en heure locale du restaurant.
+  opensAt      String  @default("09:00")
+  closesAt     String  @default("22:00")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, dayOfWeek])
+  @@index([restaurantId])
+  @@map("opening_hours")
+}
+
+// ---------------------------------------------------------------------------
+// Menu
+// ---------------------------------------------------------------------------
+
+model Category {
+  id           String  @id @default(cuid())
+  restaurantId String
+  name         String
+  slug         String
+  description  String?
+  imageUrl     String?
+  position     Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId, position])
+  @@map("categories")
+}
+
+enum ProductBadge {
+  NONE
+  POPULAR
+  NEW
+  PROMOTION
+  SOLD_OUT
+}
+
+model Product {
+  id           String  @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  name         String
+  slug         String
+  description  String?
+  imageUrl     String?
+  /// Prix de base en unité mineure. Une variante sélectionnée le remplace.
+  price          Int
+  /// Ancien prix, affiché barré. Purement informatif.
+  compareAtPrice Int?
+  isAvailable  Boolean      @default(true)
+  badge        ProductBadge @default(NONE)
+  position     Int          @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant   Restaurant           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category     Category             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  optionGroups ProductOptionGroup[]
+  variants     ProductVariant[]
+  orderItems   OrderItem[]
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId, categoryId, position])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductOptionGroup {
+  id        String  @id @default(cuid())
+  productId String
+  name      String
+  /// Nombre minimum d'options à choisir (0 = facultatif).
+  minSelect Int     @default(0)
+  /// Nombre maximum d'options sélectionnables.
+  maxSelect Int     @default(1)
+  position  Int     @default(0)
+
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options ProductOption[]
+
+  @@index([productId, position])
+  @@map("product_option_groups")
+}
+
+model ProductOption {
+  id          String  @id @default(cuid())
+  groupId     String
+  name        String
+  /// Supplément appliqué au prix unitaire (unité mineure, peut être négatif).
+  priceDelta  Int     @default(0)
+  isAvailable Boolean @default(true)
+  position    Int     @default(0)
+
+  group ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, position])
+  @@map("product_options")
+}
+
+model ProductVariant {
+  id          String  @id @default(cuid())
+  productId   String
+  name        String
+  /// Prix complet de la variante (remplace le prix de base du produit).
+  price       Int
+  isAvailable Boolean @default(true)
+  position    Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+  @@map("product_variants")
+}
+
+// ---------------------------------------------------------------------------
+// Clients & commandes
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id           String  @id @default(cuid())
+  restaurantId String
+  name         String
+  phone        String
+  email        String?
+
+  /// Agrégats dénormalisés, recalculés à chaque commande créée.
+  ordersCount  Int       @default(0)
+  totalSpent   Int       @default(0)
+  lastOrderAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  payments   Payment[]
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId, lastOrderAt])
+  @@map("customers")
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum FulfillmentType {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+model Order {
+  id           String @id @default(cuid())
+  restaurantId String
+  customerId   String
+  /// Numéro séquentiel par restaurant, affiché au client.
+  number       Int
+
+  status          OrderStatus     @default(NEW)
+  fulfillmentType FulfillmentType @default(DELIVERY)
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentProvider String?
+
+  // Instantané des coordonnées client au moment de la commande : le profil
+  // client peut changer, la commande doit rester fidèle à ce qui a été saisi.
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  deliveryAddress String?
+  instructions    String?
+
+  // Montants recalculés côté serveur (unité mineure).
+  subtotal    Int
+  discount    Int    @default(0)
+  deliveryFee Int    @default(0)
+  total       Int
+  currency    String @default("XOF")
+
+  deliveryZoneId String?
+  promotionId    String?
+  promoCode      String?
+
+  placedAt        DateTime  @default(now())
+  statusUpdatedAt DateTime  @default(now())
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deliveryZone DeliveryZone? @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
+  promotion    Promotion?    @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+
+  items    OrderItem[]
+  events   OrderStatusEvent[]
+  payments Payment[]
+
+  @@unique([restaurantId, number])
+  @@index([restaurantId, status])
+  @@index([restaurantId, placedAt])
+  @@index([customerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String?
+  variantId String?
+
+  /// Instantanés : le produit peut être renommé ou supprimé ensuite.
+  productName String
+  variantName String?
+  /// Options choisies, figées : [{ groupName, optionName, priceDelta }]
+  options     Json    @default("[]")
+
+  /// Prix unitaire options comprises (unité mineure).
+  unitPrice Int
+  quantity  Int
+  lineTotal Int
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusEvent {
+  id        String       @id @default(cuid())
+  orderId   String
+  fromStatus OrderStatus?
+  toStatus  OrderStatus
+  byUserId  String?
+  note      String?
+  createdAt DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("order_status_events")
+}
+
+// ---------------------------------------------------------------------------
+// Livraison & promotions
+// ---------------------------------------------------------------------------
+
+model DeliveryZone {
+  id           String  @id @default(cuid())
+  restaurantId String
+  name         String
+  /// Frais de livraison de la zone (unité mineure).
+  fee          Int     @default(0)
+  /// Montant minimum de commande pour livrer dans cette zone.
+  minOrder     Int     @default(0)
+  /// Au-delà de ce sous-total, la livraison est offerte. Null = jamais.
+  freeAbove    Int?
+  isActive     Boolean @default(true)
+  position     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@index([restaurantId, position])
+  @@map("delivery_zones")
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED
+}
+
+model Promotion {
+  id           String        @id @default(cuid())
+  restaurantId String
+  code         String
+  type         PromotionType
+  /// Pourcentage (1-100) si PERCENT, montant en unité mineure si FIXED.
+  value        Int
+  minOrder     Int           @default(0)
+  maxRedemptions Int?
+  usedCount    Int           @default(0)
+  startsAt     DateTime?
+  endsAt       DateTime?
+  isActive     Boolean       @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@unique([restaurantId, code])
+  @@index([restaurantId])
+  @@map("promotions")
+}
+
+// ---------------------------------------------------------------------------
+// Paiements
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id           String        @id @default(cuid())
+  restaurantId String
+  orderId      String?
+  customerId   String?
+  /// Identifiant du PaymentProvider (src/lib/payments/registry.ts).
+  provider     String
+  amount       Int
+  currency     String        @default("XOF")
+  status       PaymentStatus @default(PENDING)
+  /// Référence interne unique transmise au fournisseur.
+  reference    String        @unique
+  /// Référence retournée par le fournisseur (transaction id).
+  providerRef  String?
+  failureReason String?
+  /// Charge utile non sensible renvoyée par le fournisseur.
+  metadata     Json          @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  order      Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId, status])
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// Plans & abonnements
+// ---------------------------------------------------------------------------
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+model Plan {
+  id          String          @id @default(cuid())
+  key         String          @unique
+  name        String
+  description String?
+  /// Prix en unité mineure. Jamais codé en dur dans l'application.
+  price       Int
+  currency    String          @default("XOF")
+  interval    BillingInterval @default(MONTH)
+  trialDays   Int             @default(14)
+  /// Clés de fonctionnalités accordées (voir src/lib/entitlements.ts).
+  features    String[]        @default([])
+  /// Limites quantitatives : { maxProducts, maxUsers, maxCategories, ... }
+  limits      Json            @default("{}")
+  isActive    Boolean         @default(true)
+  position    Int             @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  restaurantId String             @unique
+  planId       String
+  status       SubscriptionStatus @default(TRIALING)
+  startedAt    DateTime           @default(now())
+  currentPeriodEnd DateTime
+  trialEndsAt  DateTime?
+  cancelledAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  plan       Plan       @relation(fields: [planId], references: [id])
+
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ---------------------------------------------------------------------------
+// Templates & domaines
+// ---------------------------------------------------------------------------
+
+model Template {
+  id              String  @id @default(cuid())
+  key             String  @unique
+  name            String
+  description     String?
+  previewImageUrl String?
+  isActive        Boolean @default(true)
+  position        Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("templates")
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+model Domain {
+  id           String       @id @default(cuid())
+  restaurantId String
+  hostname     String       @unique
+  type         DomainType   @default(CUSTOM)
+  status       DomainStatus @default(PENDING)
+  /// Valeur attendue dans l'enregistrement TXT _magya-verify.<hostname>
+  verificationToken String
+  verifiedAt   DateTime?
+  lastCheckedAt DateTime?
+  isPrimary    Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId])
+  @@map("domains")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications, analytics, audit
+// ---------------------------------------------------------------------------
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS_CHANGED
+  SUBSCRIPTION_TRIAL_ENDING
+  SUBSCRIPTION_EXPIRED
+  SYSTEM_ALERT
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  restaurantId String?
+  userId       String?
+  type         NotificationType
+  title        String
+  body         String
+  /// Lien interne à ouvrir au clic (ex: /dashboard/orders/<id>).
+  href         String?
+  metadata     Json             @default("{}")
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, readAt])
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_STARTED
+  ORDER_PLACED
+}
+
+model AnalyticsEvent {
+  id           String             @id @default(cuid())
+  restaurantId String
+  type         AnalyticsEventType
+  path         String?
+  /// Identifiant de visiteur anonyme (cookie first-party, non nominatif).
+  visitorId    String?
+  metadata     Json               @default("{}")
+  occurredAt   DateTime           @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, occurredAt])
+  @@index([restaurantId, type, occurredAt])
+  @@map("analytics_events")
+}
+
+model AuditLog {
+  id           String  @id @default(cuid())
+  actorUserId  String?
+  /// Conservé même si le compte est supprimé.
+  actorEmail   String?
+  restaurantId String?
+  action       String
+  targetType   String?
+  targetId     String?
+  ip           String?
+  metadata     Json    @default("{}")
+  createdAt    DateTime @default(now())
+
+  actor      User?       @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+/// Traçabilité des accès support d'un Super Admin à l'espace d'un restaurant.
+model SupportAccess {
+  id           String    @id @default(cuid())
+  adminUserId  String
+  restaurantId String
+  reason       String
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  ip           String?
+
+  admin      User       @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, startedAt])
+  @@index([adminUserId, startedAt])
+  @@map("support_access")
+}

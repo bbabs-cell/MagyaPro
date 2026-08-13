@@ -1,0 +1,119 @@
+import { env } from '@/lib/env';
+import { ValidationError } from '@/lib/errors';
+import { localStorageDriver } from '@/lib/storage/local';
+import type { StorageDriver, StoredFile } from '@/lib/storage/types';
+
+export type { StorageDriver, StoredFile };
+
+/**
+ * Couche de stockage des images.
+ *
+ * L'application ne connaît que l'interface `StorageDriver`. Passer du disque
+ * local à un stockage objet (S3, R2, Spaces) se fait en ajoutant un pilote et
+ * en changeant `STORAGE_DRIVER` — aucun appelant n'est modifié.
+ *
+ * Les fichiers ne sont jamais stockés en base : seule leur URL l'est.
+ */
+
+const drivers: Record<string, () => StorageDriver> = {
+  local: () => localStorageDriver,
+};
+
+let cached: StorageDriver | null = null;
+
+export function storage(): StorageDriver {
+  if (cached) return cached;
+
+  const factory = drivers[env.storageDriver];
+  if (!factory) {
+    throw new Error(
+      `Pilote de stockage inconnu : « ${env.storageDriver} ». Pilotes disponibles : ${Object.keys(drivers).join(', ')}.`,
+    );
+  }
+  cached = factory();
+  return cached;
+}
+
+/** Formats acceptés. La liste est restrictive à dessein. */
+export const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+] as const;
+
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 Mo
+
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+};
+
+/**
+ * Signatures de fichiers (magic numbers).
+ *
+ * Le `Content-Type` déclaré par le navigateur est une simple affirmation du
+ * client. On vérifie les premiers octets pour qu'un script déguisé en `.png`
+ * ne soit pas accepté puis servi depuis notre domaine.
+ */
+function detectImageType(bytes: Uint8Array): string | null {
+  if (bytes.length < 12) return null;
+
+  // JPEG : FF D8 FF
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  // PNG : 89 50 4E 47 0D 0A 1A 0A
+  if (
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e &&
+    bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a &&
+    bytes[6] === 0x1a && bytes[7] === 0x0a
+  ) {
+    return 'image/png';
+  }
+  // RIFF....WEBP
+  const ascii = (start: number, length: number) =>
+    String.fromCharCode(...bytes.slice(start, start + length));
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') return 'image/webp';
+  // ....ftypavif
+  if (ascii(4, 4) === 'ftyp' && ascii(8, 4).startsWith('avi')) return 'image/avif';
+
+  return null;
+}
+
+/**
+ * Valide puis enregistre une image téléversée.
+ *
+ * Le chemin est préfixé par l'identifiant du restaurant : les fichiers sont
+ * rangés par tenant, ce qui rend la purge d'un restaurant supprimé triviale.
+ */
+export async function uploadImage(params: {
+  file: File;
+  restaurantId: string;
+  folder: 'logos' | 'covers' | 'products' | 'categories' | 'seo';
+}): Promise<StoredFile> {
+  const { file, restaurantId, folder } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  const key = `${restaurantId}/${folder}/${crypto.randomUUID()}.${EXTENSIONS[detected]}`;
+  return storage().put(key, buffer, detected);
+}
