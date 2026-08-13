@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { FulfillmentType, OrderStatus, PaymentStatus } from '@prisma/client';
 
 import { ORDER_STATUS_LABELS } from '@/lib/orders/status';
@@ -42,9 +43,12 @@ function stepsFor(fulfillmentType: FulfillmentType): OrderStatus[] {
 export function OrderStatusTracker({
   orderId,
   initial,
+  reviewUrl,
 }: {
   orderId: string;
   initial: OrderSnapshot;
+  /** Lien vers le formulaire d'avis, fourni uniquement si l'option est active. */
+  reviewUrl?: string;
 }) {
   const [snapshot, setSnapshot] = useState(initial);
   const [connectionError, setConnectionError] = useState(false);
@@ -173,6 +177,15 @@ export function OrderStatusTracker({
         <p role="status" className="mt-2 text-xs text-amber-700">
           Connexion instable — nouvelle tentative en cours.
         </p>
+      )}
+
+      {snapshot.status === 'COMPLETED' && reviewUrl && (
+        <Link
+          href={reviewUrl}
+          className="mt-4 inline-flex h-10 items-center rounded-xl border border-surface-border px-4 text-sm font-medium hover:bg-surface-sunken"
+        >
+          Laisser un avis
+        </Link>
       )}
     </div>
   );

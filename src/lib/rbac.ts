@@ -28,6 +28,9 @@ export const PERMISSIONS = [
   'payments:view',
   'payments:manage',
 
+  'reviews:moderate',
+  'reservations:manage',
+
   'analytics:view',
 
   'team:view',
@@ -47,6 +50,7 @@ const EMPLOYEE_PERMISSIONS: Permission[] = [
   'orders:view',
   'orders:update_status',
   'customers:view',
+  'reservations:manage',
 ];
 
 const ADMIN_PERMISSIONS: Permission[] = [
@@ -58,6 +62,7 @@ const ADMIN_PERMISSIONS: Permission[] = [
   'delivery:manage',
   'promotions:manage',
   'payments:view',
+  'reviews:moderate',
   'analytics:view',
   'team:view',
   'settings:manage',
@@ -120,6 +125,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'promotions:manage': 'Gérer les promotions',
   'payments:view': 'Voir les paiements',
   'payments:manage': 'Gérer les paiements',
+  'reviews:moderate': 'Modérer les avis',
+  'reservations:manage': 'Gérer les réservations',
   'analytics:view': 'Voir les statistiques',
   'team:view': "Voir l'équipe",
   'team:manage': "Gérer l'équipe",

@@ -290,6 +290,34 @@ export const orderStatusSchema = z.object({
   note: optionalText(500),
 });
 
+// --- Avis & réservations -----------------------------------------------------
+
+export const reviewSchema = z.object({
+  orderId: z.string().min(1).nullable().optional(),
+  customerName: nameSchema,
+  rating: z.number().int().min(1, 'Note minimale : 1.').max(5, 'Note maximale : 5.'),
+  comment: optionalText(1000),
+});
+
+export const reviewModerationSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED']),
+});
+
+export const reservationSchema = z.object({
+  customerName: nameSchema,
+  customerPhone: phoneSchema,
+  partySize: z.number().int().min(1, 'Au moins une personne.').max(50),
+  // Coercition depuis une chaîne ISO envoyée par le formulaire public.
+  reservedFor: z.coerce.date().refine((date) => date.getTime() > Date.now(), {
+    message: 'Choisissez une date et une heure à venir.',
+  }),
+  notes: optionalText(500),
+});
+
+export const reservationStatusSchema = z.object({
+  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']),
+});
+
 // --- Équipe -----------------------------------------------------------------
 
 export const teamMemberSchema = z.object({

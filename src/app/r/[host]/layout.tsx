@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { getTemplate } from '@/lib/templates/registry';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { CartProvider } from '@/components/site/cart-context';
 import { SiteChrome } from '@/components/site/chrome';
 import { ServiceWorkerRegistration } from '@/components/site/service-worker';
@@ -74,6 +75,7 @@ export default async function PublicSiteLayout({ params, children }: Props) {
   if (!restaurant) notFound();
 
   const template = getTemplate(restaurant.templateKey);
+  const entitlements = await getEntitlements(restaurant.id);
 
   return (
     <CartProvider restaurantId={restaurant.id} currency={restaurant.currency}>
@@ -88,6 +90,7 @@ export default async function PublicSiteLayout({ params, children }: Props) {
           fontFamily: restaurant.fontFamily,
           isDemo: restaurant.isDemo,
           orderingEnabled: restaurant.settings?.orderingEnabled ?? true,
+          reservationsEnabled: hasFeature(entitlements, FEATURES.RESERVATIONS),
         }}
         host={host}
         templateKey={template.key}

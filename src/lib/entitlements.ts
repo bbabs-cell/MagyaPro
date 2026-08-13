@@ -19,6 +19,8 @@ export const FEATURES = {
   MULTIPLE_USERS: 'multiple_users',
   PREMIUM_TEMPLATES: 'premium_templates',
   REMOVE_BRANDING: 'remove_branding',
+  REVIEWS: 'reviews',
+  RESERVATIONS: 'reservations',
 } as const;
 
 export type Feature = (typeof FEATURES)[keyof typeof FEATURES];
@@ -30,6 +32,8 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   multiple_users: 'Plusieurs comptes utilisateurs',
   premium_templates: 'Templates premium',
   remove_branding: 'Retirer la mention « Propulsé par Magya »',
+  reviews: 'Avis clients',
+  reservations: 'Réservations de table',
 };
 
 export type PlanLimits = {

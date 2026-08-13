@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
+import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { DAY_NAMES, computeOpenState } from '@/lib/site/hours';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 
 type Props = { params: Promise<{ host: string }> };
@@ -19,6 +21,21 @@ export default async function InfoPage({ params }: Props) {
 
   const openState = computeOpenState(restaurant.openingHours, restaurant.timezone);
   const today = new Date().getDay();
+
+  const entitlements = await getEntitlements(restaurant.id);
+  const reviewsEnabled = hasFeature(entitlements, FEATURES.REVIEWS);
+  const reviews = reviewsEnabled
+    ? await prisma.review.findMany({
+        where: { restaurantId: restaurant.id, status: 'APPROVED' },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, customerName: true, rating: true, comment: true, createdAt: true },
+      })
+    : [];
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      : null;
 
   const socials = [
     { label: 'Facebook', url: restaurant.facebookUrl },
@@ -176,6 +193,48 @@ export default async function InfoPage({ params }: Props) {
             )}
           </section>
         </div>
+
+        {reviewsEnabled && reviews.length > 0 && (
+          <section aria-labelledby="avis" className="mt-6 rounded-2xl border border-surface-border p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="avis" className="text-sm font-medium">
+                Avis clients
+              </h2>
+              {averageRating !== null && (
+                <p className="text-sm">
+                  <span aria-hidden="true" className="text-amber-500">
+                    {'★'.repeat(Math.round(averageRating))}
+                    <span className="text-surface-border">
+                      {'★'.repeat(5 - Math.round(averageRating))}
+                    </span>
+                  </span>{' '}
+                  <span className="text-ink-muted">
+                    {averageRating.toFixed(1)} sur {reviews.length} avis
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <ul className="mt-4 divide-y divide-surface-border">
+              {reviews.map((review) => (
+                <li key={review.id} className="py-3">
+                  <p className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">{review.customerName}</span>
+                    <span aria-label={`${review.rating} sur 5 étoiles`} className="text-amber-500">
+                      {'★'.repeat(review.rating)}
+                      <span className="text-surface-border">
+                        {'★'.repeat(5 - review.rating)}
+                      </span>
+                    </span>
+                  </p>
+                  {review.comment && (
+                    <p className="mt-1 text-sm text-ink-muted">{review.comment}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </>
   );

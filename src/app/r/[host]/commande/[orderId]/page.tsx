@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { formatMoney } from '@/lib/money';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { OrderStatusTracker } from '@/components/site/order-status-tracker';
 
 type Props = { params: Promise<{ host: string; orderId: string }> };
@@ -61,6 +62,10 @@ export default async function OrderConfirmationPage({ params }: Props) {
   if (!order) notFound();
 
   const prepTime = restaurant.settings?.prepTimeMinutes ?? 30;
+  const entitlements = await getEntitlements(restaurant.id);
+  const reviewUrl = hasFeature(entitlements, FEATURES.REVIEWS)
+    ? `/r/${host}/commande/${order.id}/avis`
+    : undefined;
 
   return (
     <div className="container-page max-w-2xl py-10 sm:py-16">
@@ -83,6 +88,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
       <div className="mt-8">
         <OrderStatusTracker
           orderId={order.id}
+          reviewUrl={reviewUrl}
           initial={{
             status: order.status,
             paymentStatus: order.paymentStatus,

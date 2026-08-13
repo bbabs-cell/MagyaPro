@@ -195,6 +195,8 @@ model Restaurant {
   analyticsEvents AnalyticsEvent[]
   auditLogs     AuditLog[]
   supportAccess SupportAccess[]
+  reviews       Review[]
+  reservations  Reservation[]
 
   @@index([status])
   @@map("restaurants")
@@ -451,6 +453,7 @@ model Order {
   items    OrderItem[]
   events   OrderStatusEvent[]
   payments Payment[]
+  review   Review?
 
   @@unique([restaurantId, number])
   @@index([restaurantId, status])
@@ -553,6 +556,67 @@ model Promotion {
   @@unique([restaurantId, code])
   @@index([restaurantId])
   @@map("promotions")
+}
+
+// ---------------------------------------------------------------------------
+// Avis clients & réservations
+// ---------------------------------------------------------------------------
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id           String       @id @default(cuid())
+  restaurantId String
+  /// Un avis peut être rattaché à une commande livrée (avis vérifié), ou
+  /// laissé librement depuis le site public.
+  orderId      String?      @unique
+  customerName String
+  /// Note de 1 à 5, contrôlée en base comme en validation applicative.
+  rating       Int
+  comment      String?
+  status       ReviewStatus @default(PENDING)
+  moderatedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  order      Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId, status, createdAt])
+  @@map("reviews")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  restaurantId  String
+  customerName  String
+  customerPhone String
+  partySize     Int
+  reservedFor   DateTime
+  notes         String?
+  status        ReservationStatus @default(PENDING)
+  /// Code communiqué au client, à présenter sur place.
+  confirmationCode String         @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, reservedFor])
+  @@index([restaurantId, status])
+  @@map("reservations")
 }
 
 // ---------------------------------------------------------------------------

@@ -39,6 +39,7 @@ export function SiteChrome({
     fontFamily: string;
     isDemo: boolean;
     orderingEnabled: boolean;
+    reservationsEnabled: boolean;
   };
   host: string;
   templateKey: string;
@@ -54,6 +55,9 @@ export function SiteChrome({
   const nav = [
     { href: base || '/', label: 'Accueil' },
     { href: `${base}/menu`, label: 'Menu' },
+    ...(restaurant.reservationsEnabled
+      ? [{ href: `${base}/reservation`, label: 'Réserver' }]
+      : []),
     { href: `${base}/infos`, label: 'Informations' },
   ];
 

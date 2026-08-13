@@ -30,6 +30,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/dashboard', label: 'Vue d\'ensemble', exact: true },
       { href: '/dashboard/commandes', label: 'Commandes', permission: 'orders:view' },
+      { href: '/dashboard/reservations', label: 'Réservations', permission: 'reservations:manage' },
       { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
       { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
     ],
@@ -41,6 +42,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
       { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
       { href: '/dashboard/promotions', label: 'Promotions', permission: 'promotions:manage' },
+      { href: '/dashboard/avis', label: 'Avis', permission: 'reviews:moderate' },
     ],
   },
   {

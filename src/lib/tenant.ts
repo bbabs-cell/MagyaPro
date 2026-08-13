@@ -213,7 +213,9 @@ type TenantScopedModel =
   | 'deliveryZone'
   | 'promotion'
   | 'payment'
-  | 'domain';
+  | 'domain'
+  | 'review'
+  | 'reservation';
 
 export async function findScopedOrThrow<T>(
   model: TenantScopedModel,
