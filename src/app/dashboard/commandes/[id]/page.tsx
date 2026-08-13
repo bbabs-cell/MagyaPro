@@ -8,8 +8,10 @@ import { formatMoney } from '@/lib/money';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { PAYMENT_STATUS_LABELS } from '@/lib/payments/service';
 import { getProvider } from '@/lib/payments/registry';
+import { env } from '@/lib/env';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { OrderActions } from '@/components/dashboard/order-actions';
+import { WhatsAppNotifyButton } from '@/components/dashboard/whatsapp-notify-button';
 import { Badge, Card, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Détail de la commande' };
@@ -61,15 +63,28 @@ export default async function OrderDetailPage({
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card className="p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <Badge tone={ORDER_STATUS_TONES[order.status]}>
-                {ORDER_STATUS_LABELS[order.status]}
-              </Badge>
-              <span className="text-sm text-ink-muted">
-                Paiement : {PAYMENT_STATUS_LABELS[order.paymentStatus]}
-                {order.paymentProvider &&
-                  ` · ${getProvider(order.paymentProvider)?.label ?? order.paymentProvider}`}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge tone={ORDER_STATUS_TONES[order.status]}>
+                  {ORDER_STATUS_LABELS[order.status]}
+                </Badge>
+                <span className="text-sm text-ink-muted">
+                  Paiement : {PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                  {order.paymentProvider &&
+                    ` · ${getProvider(order.paymentProvider)?.label ?? order.paymentProvider}`}
+                </span>
+              </div>
+
+              {order.status !== 'CANCELLED' && (
+                <WhatsAppNotifyButton
+                  restaurantName={context.restaurant.name}
+                  customerName={order.customerName}
+                  customerPhone={order.customerPhone}
+                  orderNumber={order.number}
+                  status={order.status}
+                  trackingUrl={`${env.appUrl}/r/${context.restaurant.slug}/commande/${order.id}`}
+                />
+              )}
             </div>
 
             <div className="mt-5">

@@ -5,8 +5,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { formatMoney } from '@/lib/money';
-import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
-import { PAYMENT_STATUS_LABELS } from '@/lib/payments/service';
+import { OrderStatusTracker } from '@/components/site/order-status-tracker';
 
 type Props = { params: Promise<{ host: string; orderId: string }> };
 
@@ -36,6 +35,8 @@ export default async function OrderConfirmationPage({ params }: Props) {
       status: true,
       paymentStatus: true,
       fulfillmentType: true,
+      cancelReason: true,
+      statusUpdatedAt: true,
       customerName: true,
       deliveryAddress: true,
       subtotal: true,
@@ -79,18 +80,21 @@ export default async function OrderConfirmationPage({ params }: Props) {
         </p>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-surface-border p-5">
+      <div className="mt-8">
+        <OrderStatusTracker
+          orderId={order.id}
+          initial={{
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            fulfillmentType: order.fulfillmentType,
+            cancelReason: order.cancelReason,
+            statusUpdatedAt: order.statusUpdatedAt.toISOString(),
+          }}
+        />
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-surface-border p-5">
         <dl className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">Statut</dt>
-            <dd className="mt-0.5 font-medium">{ORDER_STATUS_LABELS[order.status]}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-ink-faint">Paiement</dt>
-            <dd className="mt-0.5 font-medium">
-              {PAYMENT_STATUS_LABELS[order.paymentStatus]}
-            </dd>
-          </div>
           <div>
             <dt className="text-xs uppercase tracking-wide text-ink-faint">Mode</dt>
             <dd className="mt-0.5 font-medium">
