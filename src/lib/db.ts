@@ -40,7 +40,10 @@ function connectionString(): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: connectionString() });
+  // `max: 1` : Hyperdrive maintient déjà le vrai pool de connexions côté
+  // origine ; un pool local plus large ne ferait que multiplier des
+  // connexions Worker → Hyperdrive pour rien, sans gagner en débit.
+  const adapter = new PrismaPg({ connectionString: connectionString(), max: 1 });
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
