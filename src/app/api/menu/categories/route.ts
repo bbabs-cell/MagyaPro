@@ -45,6 +45,10 @@ export const POST = route(async (request) => {
       imageUrl: input.imageUrl ?? null,
       isActive: input.isActive,
       position: (last?.position ?? -1) + 1,
+      nameEn: input.nameEn ?? null,
+      nameAr: input.nameAr ?? null,
+      descriptionEn: input.descriptionEn ?? null,
+      descriptionAr: input.descriptionAr ?? null,
     },
   });
 

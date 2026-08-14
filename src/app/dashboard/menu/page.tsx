@@ -52,6 +52,10 @@ export default async function MenuPage() {
           description: category.description,
           isActive: category.isActive,
           productCount: category._count.products,
+          nameEn: category.nameEn,
+          nameAr: category.nameAr,
+          descriptionEn: category.descriptionEn,
+          descriptionAr: category.descriptionAr,
         }))}
         initialProducts={products.map((product) => ({
           id: product.id,
@@ -64,6 +68,10 @@ export default async function MenuPage() {
           costPrice: product.costPrice,
           isAvailable: product.isAvailable,
           badge: product.badge,
+          nameEn: product.nameEn,
+          nameAr: product.nameAr,
+          descriptionEn: product.descriptionEn,
+          descriptionAr: product.descriptionAr,
           variants: product.variants.map((variant) => ({
             name: variant.name,
             price: variant.price,

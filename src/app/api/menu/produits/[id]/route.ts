@@ -83,6 +83,10 @@ export const PATCH = route(async (request, { params }: Params) => {
         costPrice: input.costPrice ?? null,
         isAvailable: input.isAvailable,
         badge: input.badge,
+        nameEn: input.nameEn ?? null,
+        nameAr: input.nameAr ?? null,
+        descriptionEn: input.descriptionEn ?? null,
+        descriptionAr: input.descriptionAr ?? null,
         variants: {
           create: input.variants.map((variant, position) => ({ ...variant, position })),
         },

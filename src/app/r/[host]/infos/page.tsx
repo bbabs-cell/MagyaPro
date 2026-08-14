@@ -6,6 +6,7 @@ import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { DAY_NAMES, computeOpenState } from '@/lib/site/hours';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -49,6 +50,8 @@ export default async function InfoPage({ params }: Props) {
     { label: 'TikTok', url: restaurant.tiktokUrl },
   ].filter((social): social is { label: string; url: string } => Boolean(social.url));
 
+  const { dict } = await getServerDictionary();
+
   const mapUrl =
     restaurant.latitude !== null && restaurant.longitude !== null
       ? `https://www.openstreetmap.org/?mlat=${restaurant.latitude}&mlon=${restaurant.longitude}#map=17/${restaurant.latitude}/${restaurant.longitude}`
@@ -66,13 +69,13 @@ export default async function InfoPage({ params }: Props) {
 
       <div className="container-page py-8 sm:py-12">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Informations
+          {dict.info.title}
         </h1>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <section aria-labelledby="horaires" className="rounded-2xl border border-surface-border p-5">
             <h2 id="horaires" className="text-sm font-medium">
-              Horaires d&apos;ouverture
+              {dict.info.hours}
             </h2>
             <p className="mt-1 flex items-center gap-2 text-sm">
               <span
@@ -94,7 +97,7 @@ export default async function InfoPage({ params }: Props) {
                 >
                   <dt>{DAY_NAMES[hour.dayOfWeek]}</dt>
                   <dd>
-                    {hour.isClosed ? 'Fermé' : `${hour.opensAt} – ${hour.closesAt}`}
+                    {hour.isClosed ? dict.info.closed : `${hour.opensAt} – ${hour.closesAt}`}
                   </dd>
                 </div>
               ))}
@@ -103,14 +106,14 @@ export default async function InfoPage({ params }: Props) {
 
           <section aria-labelledby="contact" className="rounded-2xl border border-surface-border p-5">
             <h2 id="contact" className="text-sm font-medium">
-              Nous contacter
+              {dict.info.contact}
             </h2>
 
             <dl className="mt-4 space-y-3 text-sm">
               {restaurant.addressLine && (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-ink-faint">
-                    Adresse
+                    {dict.info.address}
                   </dt>
                   <dd className="mt-0.5">
                     {restaurant.addressLine}
@@ -123,7 +126,7 @@ export default async function InfoPage({ params }: Props) {
               {restaurant.phone && (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-ink-faint">
-                    Téléphone
+                    {dict.info.phone}
                   </dt>
                   <dd className="mt-0.5">
                     <a
@@ -157,7 +160,7 @@ export default async function InfoPage({ params }: Props) {
               {restaurant.email && (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-ink-faint">
-                    Email
+                    {dict.info.email}
                   </dt>
                   <dd className="mt-0.5">
                     <a
@@ -194,7 +197,7 @@ export default async function InfoPage({ params }: Props) {
                 rel="noopener noreferrer"
                 className="mt-5 inline-flex h-11 items-center rounded-xl border border-surface-border px-4 text-sm font-medium hover:bg-surface-sunken"
               >
-                Voir sur la carte
+                {dict.info.seeOnMap}
               </a>
             )}
           </section>
@@ -203,7 +206,7 @@ export default async function InfoPage({ params }: Props) {
         {galleryImages.length > 0 && (
           <section aria-labelledby="galerie" className="mt-6 rounded-2xl border border-surface-border p-5">
             <h2 id="galerie" className="text-sm font-medium">
-              Galerie
+              {dict.info.gallery}
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {galleryImages.map((image) => (
@@ -227,7 +230,7 @@ export default async function InfoPage({ params }: Props) {
           <section aria-labelledby="avis" className="mt-6 rounded-2xl border border-surface-border p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 id="avis" className="text-sm font-medium">
-                Avis clients
+                {dict.info.reviews}
               </h2>
               {averageRating !== null && (
                 <p className="text-sm">
@@ -238,7 +241,7 @@ export default async function InfoPage({ params }: Props) {
                     </span>
                   </span>{' '}
                   <span className="text-ink-muted">
-                    {averageRating.toFixed(1)} sur {reviews.length} avis
+                    {dict.info.ratingSummary(averageRating.toFixed(1), reviews.length)}
                   </span>
                 </p>
               )}
@@ -249,7 +252,7 @@ export default async function InfoPage({ params }: Props) {
                 <li key={review.id} className="py-3">
                   <p className="flex items-center gap-2 text-sm">
                     <span className="font-medium">{review.customerName}</span>
-                    <span aria-label={`${review.rating} sur 5 étoiles`} className="text-amber-500">
+                    <span aria-label={dict.info.starsOutOf5(review.rating)} className="text-amber-500">
                       {'★'.repeat(review.rating)}
                       <span className="text-surface-border">
                         {'★'.repeat(5 - review.rating)}

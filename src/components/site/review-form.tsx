@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Field, inputClass } from '@/components/ui';
+import { useI18n } from '@/components/site/i18n-provider';
 
 export function ReviewForm({
   restaurantId,
@@ -17,6 +18,7 @@ export function ReviewForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const { dict } = useI18n();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +44,7 @@ export function ReviewForm({
         setError(err.message);
         setFieldErrors(err.fieldErrors ?? {});
       } else {
-        setError("L'avis n'a pas pu être envoyé.");
+        setError(dict.review.error);
       }
     } finally {
       setPending(false);
@@ -52,10 +54,8 @@ export function ReviewForm({
   if (submitted) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-        <p className="font-medium text-emerald-900">Merci pour votre avis</p>
-        <p className="mt-1 text-sm text-emerald-800">
-          Il sera visible sur le site une fois validé par le restaurant.
-        </p>
+        <p className="font-medium text-emerald-900">{dict.review.thanks}</p>
+        <p className="mt-1 text-sm text-emerald-800">{dict.review.thanksSubtitle}</p>
       </div>
     );
   }
@@ -69,8 +69,8 @@ export function ReviewForm({
       )}
 
       <fieldset>
-        <legend className="mb-1.5 block text-sm font-medium text-ink">Note</legend>
-        <div className="flex gap-1" role="radiogroup" aria-label="Note sur 5">
+        <legend className="mb-1.5 block text-sm font-medium text-ink">{dict.review.rating}</legend>
+        <div className="flex gap-1" role="radiogroup" aria-label={dict.review.ratingOutOf(5)}>
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
@@ -83,7 +83,7 @@ export function ReviewForm({
               <span className={value <= rating ? 'text-amber-500' : 'text-surface-border'}>
                 ★
               </span>
-              <span className="sr-only">{value} sur 5</span>
+              <span className="sr-only">{dict.review.ratingOutOf(value)}</span>
             </button>
           ))}
         </div>
@@ -94,11 +94,11 @@ export function ReviewForm({
         )}
       </fieldset>
 
-      <Field label="Votre nom" htmlFor="customerName" required error={fieldErrors.customerName}>
+      <Field label={dict.review.name} htmlFor="customerName" required error={fieldErrors.customerName}>
         <input id="customerName" name="customerName" required autoComplete="name" className={inputClass} />
       </Field>
 
-      <Field label="Commentaire" htmlFor="comment" hint="Facultatif" error={fieldErrors.comment}>
+      <Field label={dict.review.comment} htmlFor="comment" hint={dict.review.optional} error={fieldErrors.comment}>
         <textarea id="comment" name="comment" rows={4} className={inputClass} />
       </Field>
 
@@ -107,7 +107,7 @@ export function ReviewForm({
         disabled={pending}
         className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-white hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
-        {pending ? 'Envoi…' : "Envoyer l'avis"}
+        {pending ? dict.review.sending : dict.review.submit}
       </button>
     </form>
   );

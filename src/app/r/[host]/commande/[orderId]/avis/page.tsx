@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { ReviewForm } from '@/components/site/review-form';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 type Props = { params: Promise<{ host: string; orderId: string }> };
 
@@ -27,23 +28,23 @@ export default async function OrderReviewPage({ params }: Props) {
   });
   if (!order) notFound();
 
+  const { dict } = await getServerDictionary();
+
   return (
     <div className="container-page max-w-xl py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        Laisser un avis
+        {dict.review.title}
       </h1>
-      <p className="mt-2 text-ink-muted">
-        Votre retour sur {restaurant.name} aide les prochains clients.
-      </p>
+      <p className="mt-2 text-ink-muted">{dict.review.subtitle(restaurant.name)}</p>
 
       <div className="mt-8">
         {order.status !== 'COMPLETED' ? (
           <p className="rounded-2xl border border-surface-border p-5 text-sm text-ink-muted">
-            Vous pourrez laisser un avis une fois votre commande terminée.
+            {dict.review.notCompletedYet}
           </p>
         ) : order.review ? (
           <p className="rounded-2xl border border-surface-border p-5 text-sm text-ink-muted">
-            Vous avez déjà laissé un avis pour cette commande. Merci !
+            {dict.review.alreadySubmitted}
           </p>
         ) : (
           <ReviewForm restaurantId={restaurant.id} orderId={order.id} />

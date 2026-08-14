@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { useCart } from '@/components/site/cart-context';
+import { useI18n } from '@/components/site/i18n-provider';
+import { LanguageSwitcher } from '@/components/site/language-switcher';
+import { dirFor } from '@/lib/i18n/locales';
 import { cx } from '@/components/ui';
 
 /**
@@ -47,22 +50,24 @@ export function SiteChrome({
 }) {
   const { itemCount } = useCart();
   const pathname = usePathname();
+  const { locale, dict } = useI18n();
 
   // Les liens doivent rester valides que la page soit servie depuis un
   // sous-domaine (chemin `/menu`) ou depuis `/r/<slug>/menu` en aperçu.
   const base = pathname.startsWith(`/r/${host}`) ? `/r/${host}` : '';
 
   const nav = [
-    { href: base || '/', label: 'Accueil' },
-    { href: `${base}/menu`, label: 'Menu' },
+    { href: base || '/', label: dict.nav.home },
+    { href: `${base}/menu`, label: dict.nav.menu },
     ...(restaurant.reservationsEnabled
-      ? [{ href: `${base}/reservation`, label: 'Réserver' }]
+      ? [{ href: `${base}/reservation`, label: dict.nav.reserve }]
       : []),
-    { href: `${base}/infos`, label: 'Informations' },
+    { href: `${base}/infos`, label: dict.nav.info },
   ];
 
   return (
     <div
+      dir={dirFor(locale)}
       className="flex min-h-screen flex-col bg-white"
       data-template={templateKey}
       style={
@@ -122,25 +127,26 @@ export function SiteChrome({
             ))}
           </nav>
 
-          {restaurant.orderingEnabled && (
-            <Link
-              href={`${base}/panier`}
-              className="relative inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white"
-              style={{ backgroundColor: restaurant.primaryColor }}
-            >
-              Panier
-              {itemCount > 0 && (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/25 px-1.5 text-xs">
-                  {itemCount}
+          <div className="flex shrink-0 items-center gap-3">
+            <LanguageSwitcher />
+            {restaurant.orderingEnabled && (
+              <Link
+                href={`${base}/panier`}
+                className="relative inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium text-white"
+                style={{ backgroundColor: restaurant.primaryColor }}
+              >
+                {dict.nav.cart}
+                {itemCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/25 px-1.5 text-xs">
+                    {itemCount}
+                  </span>
+                )}
+                <span className="sr-only">
+                  {itemCount === 0 ? dict.cart.empty : dict.cart.items(itemCount)}
                 </span>
-              )}
-              <span className="sr-only">
-                {itemCount === 0
-                  ? 'Panier vide'
-                  : `${itemCount} article${itemCount > 1 ? 's' : ''} dans le panier`}
-              </span>
-            </Link>
-          )}
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Navigation secondaire mobile : la barre principale ne peut pas
@@ -175,7 +181,7 @@ export function SiteChrome({
             © {new Date().getFullYear()} {restaurant.name}
           </p>
           <p className="text-xs text-ink-faint">
-            Propulsé par{' '}
+            {dict.footer.poweredBy}{' '}
             <a
               href="/"
               className="underline underline-offset-4 hover:text-ink"

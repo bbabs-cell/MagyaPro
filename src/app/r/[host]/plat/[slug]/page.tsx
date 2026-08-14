@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { ProductOrderForm } from '@/components/site/product-order-form';
+import { getServerDictionary } from '@/lib/i18n/server';
+import { localize, localizeNullable } from '@/lib/i18n/content';
 
 type Props = { params: Promise<{ host: string; slug: string }> };
 
@@ -17,7 +19,7 @@ async function loadProduct(restaurantId: string, slug: string) {
   return prisma.product.findFirst({
     where: { restaurantId, slug, category: { isActive: true } },
     include: {
-      category: { select: { name: true } },
+      category: { select: { name: true, nameEn: true, nameAr: true } },
       variants: { where: { isAvailable: true }, orderBy: { position: 'asc' } },
       optionGroups: {
         orderBy: { position: 'asc' },
@@ -58,6 +60,18 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const orderingEnabled = restaurant.settings?.orderingEnabled ?? true;
+  const { locale } = await getServerDictionary();
+  const categoryName = localize(
+    product.category.name,
+    { en: product.category.nameEn, ar: product.category.nameAr },
+    locale,
+  );
+  const productName = localize(product.name, { en: product.nameEn, ar: product.nameAr }, locale);
+  const productDescription = localizeNullable(
+    product.description,
+    { en: product.descriptionEn, ar: product.descriptionAr },
+    locale,
+  );
 
   return (
     <div className="container-page py-8 sm:py-12">
@@ -67,7 +81,7 @@ export default async function ProductPage({ params }: Props) {
             // eslint-disable-next-line @next/next/no-img-element -- image de tenant
             <img
               src={product.imageUrl}
-              alt={product.name}
+              alt={productName}
               className="aspect-[4/3] w-full rounded-2xl object-cover"
             />
           ) : (
@@ -79,12 +93,12 @@ export default async function ProductPage({ params }: Props) {
         </div>
 
         <div>
-          <p className="text-sm text-ink-muted">{product.category.name}</p>
+          <p className="text-sm text-ink-muted">{categoryName}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {product.name}
+            {productName}
           </h1>
-          {product.description && (
-            <p className="mt-3 text-ink-muted">{product.description}</p>
+          {productDescription && (
+            <p className="mt-3 text-ink-muted">{productDescription}</p>
           )}
 
           <div className="mt-6">
@@ -94,7 +108,7 @@ export default async function ProductPage({ params }: Props) {
               orderingEnabled={orderingEnabled}
               product={{
                 id: product.id,
-                name: product.name,
+                name: productName,
                 imageUrl: product.imageUrl,
                 price: product.price,
                 compareAtPrice: product.compareAtPrice,

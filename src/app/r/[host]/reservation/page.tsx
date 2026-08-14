@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { ReservationForm } from '@/components/site/reservation-form';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -20,15 +21,14 @@ export default async function ReservationPage({ params }: Props) {
   const entitlements = await getEntitlements(restaurant.id);
   if (!hasFeature(entitlements, FEATURES.RESERVATIONS)) notFound();
 
+  const { dict } = await getServerDictionary();
+
   return (
     <div className="container-page max-w-xl py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        Réserver une table
+        {dict.reservation.title}
       </h1>
-      <p className="mt-2 text-ink-muted">
-        Envoyez votre demande à {restaurant.name} ; vous recevrez un code de
-        confirmation dès qu&apos;elle sera validée.
-      </p>
+      <p className="mt-2 text-ink-muted">{dict.reservation.subtitle(restaurant.name)}</p>
 
       <div className="mt-8">
         <ReservationForm restaurantId={restaurant.id} restaurantName={restaurant.name} />

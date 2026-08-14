@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { setTableToken } from '@/lib/site/table-session';
+import { useI18n } from '@/components/site/i18n-provider';
 
 export function TableLanding({
   host,
@@ -22,6 +23,7 @@ export function TableLanding({
   const [sent, setSent] = useState<'CALL' | 'BILL' | null>(null);
   const [pending, setPending] = useState<'CALL' | 'BILL' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { dict } = useI18n();
 
   useEffect(() => {
     setTableToken(restaurantId, token);
@@ -34,7 +36,7 @@ export function TableLanding({
       await api.post(`/api/public/tables/${token}/appel`, { type });
       setSent(type);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La demande n'a pas pu être envoyée.");
+      setError(err instanceof ApiError ? err.message : dict.table.error);
     } finally {
       setPending(null);
     }
@@ -55,9 +57,9 @@ export function TableLanding({
           onClick={() => request('CALL')}
           className="rounded-2xl border border-surface-border p-5 text-left hover:bg-surface-sunken disabled:opacity-50"
         >
-          <p className="font-medium">Appeler le serveur</p>
+          <p className="font-medium">{dict.table.callServer}</p>
           <p className="mt-1 text-sm text-ink-muted">
-            {sent === 'CALL' ? 'Un serveur a été prévenu.' : 'On arrive à votre table.'}
+            {sent === 'CALL' ? dict.table.callSent : dict.table.callHint}
           </p>
         </button>
 
@@ -67,9 +69,9 @@ export function TableLanding({
           onClick={() => request('BILL')}
           className="rounded-2xl border border-surface-border p-5 text-left hover:bg-surface-sunken disabled:opacity-50"
         >
-          <p className="font-medium">Demander l&apos;addition</p>
+          <p className="font-medium">{dict.table.requestBill}</p>
           <p className="mt-1 text-sm text-ink-muted">
-            {sent === 'BILL' ? "L'addition arrive." : 'Le restaurant est prévenu.'}
+            {sent === 'BILL' ? dict.table.billSent : dict.table.billHint}
           </p>
         </button>
       </div>
@@ -79,13 +81,10 @@ export function TableLanding({
           href={`/r/${host}/menu`}
           className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-white hover:bg-ink/90 sm:w-auto"
         >
-          Voir la carte et commander pour {tableLabel}
+          {dict.table.seeMenuFor(tableLabel)}
         </Link>
       ) : (
-        <p className="text-sm text-ink-muted">
-          Consultez le menu au comptoir ou demandez au serveur : la commande
-          depuis votre téléphone n&apos;est pas activée pour le moment.
-        </p>
+        <p className="text-sm text-ink-muted">{dict.table.orderingDisabled}</p>
       )}
     </div>
   );

@@ -31,6 +31,10 @@ type Category = {
   description: string | null;
   isActive: boolean;
   productCount: number;
+  nameEn: string | null;
+  nameAr: string | null;
+  descriptionEn: string | null;
+  descriptionAr: string | null;
 };
 
 type Variant = { name: string; price: number; isAvailable: boolean };
@@ -55,6 +59,10 @@ type Product = {
   badge: string;
   variants: Variant[];
   optionGroups: OptionGroup[];
+  nameEn: string | null;
+  nameAr: string | null;
+  descriptionEn: string | null;
+  descriptionAr: string | null;
 };
 
 const BADGES = [
@@ -410,6 +418,10 @@ function CategoryForm({
       name: String(formData.get('name') ?? ''),
       description: String(formData.get('description') ?? ''),
       isActive: formData.get('isActive') === 'on',
+      nameEn: String(formData.get('nameEn') ?? ''),
+      nameAr: String(formData.get('nameAr') ?? ''),
+      descriptionEn: String(formData.get('descriptionEn') ?? ''),
+      descriptionAr: String(formData.get('descriptionAr') ?? ''),
     };
 
     try {
@@ -473,6 +485,60 @@ function CategoryForm({
           Visible sur le site public
         </label>
 
+        <details className="rounded-xl border border-surface-border p-3">
+          <summary className="cursor-pointer text-sm font-medium">
+            Traductions (facultatif)
+          </summary>
+          <p className="mt-1 text-xs text-ink-muted">
+            Laissez vide pour afficher le nom et la description en français aux
+            visiteurs anglophones ou arabophones.
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <Field label="Nom (anglais)" htmlFor="nameEn" error={fieldErrors.nameEn}>
+              <input
+                id="nameEn"
+                name="nameEn"
+                defaultValue={category?.nameEn ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Nom (arabe)" htmlFor="nameAr" error={fieldErrors.nameAr}>
+              <input
+                id="nameAr"
+                name="nameAr"
+                dir="rtl"
+                defaultValue={category?.nameAr ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field
+              label="Description (anglais)"
+              htmlFor="descriptionEn"
+              error={fieldErrors.descriptionEn}
+            >
+              <input
+                id="descriptionEn"
+                name="descriptionEn"
+                defaultValue={category?.descriptionEn ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field
+              label="Description (arabe)"
+              htmlFor="descriptionAr"
+              error={fieldErrors.descriptionAr}
+            >
+              <input
+                id="descriptionAr"
+                name="descriptionAr"
+                dir="rtl"
+                defaultValue={category?.descriptionAr ?? ''}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </details>
+
         <div className="flex gap-2 pt-2">
           <Button type="submit" disabled={pending}>
             {pending ? 'Enregistrement…' : 'Enregistrer'}
@@ -528,6 +594,10 @@ function ProductForm({
       costPrice: costRaw ? toMinor(costRaw, currency) : null,
       isAvailable: formData.get('isAvailable') === 'on',
       badge: String(formData.get('badge') ?? 'NONE'),
+      nameEn: String(formData.get('nameEn') ?? ''),
+      nameAr: String(formData.get('nameAr') ?? ''),
+      descriptionEn: String(formData.get('descriptionEn') ?? ''),
+      descriptionAr: String(formData.get('descriptionAr') ?? ''),
       // Les lignes laissées vides par mégarde sont écartées plutôt que de
       // provoquer une erreur de validation peu compréhensible.
       variants: variants.filter((variant) => variant.name.trim() !== ''),
@@ -968,6 +1038,60 @@ function ProductForm({
             Ajouter un groupe d&apos;options
           </Button>
         </fieldset>
+
+        <details className="rounded-xl border border-surface-border p-3">
+          <summary className="cursor-pointer text-sm font-medium">
+            Traductions (facultatif)
+          </summary>
+          <p className="mt-1 text-xs text-ink-muted">
+            Laissez vide pour afficher le nom et la description en français aux
+            visiteurs anglophones ou arabophones.
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <Field label="Nom (anglais)" htmlFor="nameEn" error={fieldErrors.nameEn}>
+              <input
+                id="nameEn"
+                name="nameEn"
+                defaultValue={product?.nameEn ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Nom (arabe)" htmlFor="nameAr" error={fieldErrors.nameAr}>
+              <input
+                id="nameAr"
+                name="nameAr"
+                dir="rtl"
+                defaultValue={product?.nameAr ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field
+              label="Description (anglais)"
+              htmlFor="descriptionEn"
+              error={fieldErrors.descriptionEn}
+            >
+              <input
+                id="descriptionEn"
+                name="descriptionEn"
+                defaultValue={product?.descriptionEn ?? ''}
+                className={inputClass}
+              />
+            </Field>
+            <Field
+              label="Description (arabe)"
+              htmlFor="descriptionAr"
+              error={fieldErrors.descriptionAr}
+            >
+              <input
+                id="descriptionAr"
+                name="descriptionAr"
+                dir="rtl"
+                defaultValue={product?.descriptionAr ?? ''}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </details>
 
         <div className="flex gap-2">
           <Button type="submit" disabled={pending}>

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { loadDeliveryZones, resolvePublicRestaurant } from '@/lib/site/resolve';
 import { availableProvidersFor } from '@/lib/payments/registry';
 import { CheckoutFlow } from '@/components/site/checkout-flow';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -31,10 +32,12 @@ export default async function CartPage({ params }: Props) {
     description: provider.description,
   }));
 
+  const { dict } = await getServerDictionary();
+
   return (
     <div className="container-page py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        Votre commande
+        {dict.cartPage.title}
       </h1>
 
       <div className="mt-6">

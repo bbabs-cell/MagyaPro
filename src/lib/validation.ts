@@ -167,6 +167,10 @@ export const categorySchema = z.object({
   description: optionalText(500),
   imageUrl: urlSchema.nullable().optional(),
   isActive: z.boolean().default(true),
+  nameEn: optionalText(120),
+  nameAr: optionalText(120),
+  descriptionEn: optionalText(500),
+  descriptionAr: optionalText(500),
 });
 
 export const productOptionGroupSchema = z.object({
@@ -198,6 +202,10 @@ export const productSchema = z.object({
   costPrice: amountSchema.nullable().optional(),
   isAvailable: z.boolean().default(true),
   badge: z.enum(['NONE', 'POPULAR', 'NEW', 'PROMOTION', 'SOLD_OUT']).default('NONE'),
+  nameEn: optionalText(120),
+  nameAr: optionalText(120),
+  descriptionEn: optionalText(2000),
+  descriptionAr: optionalText(2000),
   variants: z
     .array(
       z.object({

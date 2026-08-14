@@ -270,6 +270,11 @@ model Category {
   imageUrl     String?
   position     Int     @default(0)
   isActive     Boolean @default(true)
+  /// Traductions facultatives. Vide = le site affiche le nom français.
+  nameEn        String?
+  nameAr        String?
+  descriptionEn String?
+  descriptionAr String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -305,6 +310,11 @@ model Product {
   /// Coût de revient, pour le calcul de marge. Facultatif : sans lui, la
   /// marge de ce plat n'est simplement pas affichée.
   costPrice      Int?
+  /// Traductions facultatives. Vide = le site affiche le nom français.
+  nameEn         String?
+  nameAr         String?
+  descriptionEn  String?
+  descriptionAr  String?
   isAvailable    Boolean      @default(true)
   badge          ProductBadge @default(NONE)
   position       Int          @default(0)

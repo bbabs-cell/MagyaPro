@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Field, inputClass } from '@/components/ui';
+import { useI18n } from '@/components/site/i18n-provider';
 
 type ReservationResult = {
   reservation: { id: string; confirmationCode: string; reservedFor: string };
@@ -28,6 +29,7 @@ export function ReservationForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [confirmation, setConfirmation] = useState<ReservationResult['reservation'] | null>(null);
+  const { locale, dict } = useI18n();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +44,7 @@ export function ReservationForm({
     // d'entrer dans le bloc try/catch.
     const reservedForDate = new Date(String(formData.get('reservedFor') ?? ''));
     if (Number.isNaN(reservedForDate.getTime())) {
-      setFieldErrors({ reservedFor: 'Choisissez une date et une heure.' });
+      setFieldErrors({ reservedFor: dict.reservation.invalidDateTime });
       setPending(false);
       return;
     }
@@ -64,7 +66,7 @@ export function ReservationForm({
         setError(err.message);
         setFieldErrors(err.fieldErrors ?? {});
       } else {
-        setError("La réservation n'a pas pu être envoyée.");
+        setError(dict.reservation.error);
       }
     } finally {
       setPending(false);
@@ -72,23 +74,20 @@ export function ReservationForm({
   }
 
   if (confirmation) {
+    const when = new Date(confirmation.reservedFor).toLocaleString(
+      locale === 'ar' ? 'ar' : locale === 'en' ? 'en-US' : 'fr-FR',
+      { dateStyle: 'full', timeStyle: 'short' },
+    );
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-        <p className="font-medium text-emerald-900">Demande envoyée</p>
+        <p className="font-medium text-emerald-900">{dict.reservation.sent}</p>
         <p className="mt-1 text-sm text-emerald-800">
-          {restaurantName} doit encore confirmer votre réservation du{' '}
-          {new Date(confirmation.reservedFor).toLocaleString('fr-FR', {
-            dateStyle: 'full',
-            timeStyle: 'short',
-          })}
-          .
+          {dict.reservation.pending(restaurantName, when)}
         </p>
         <p className="mt-3 font-mono text-lg font-semibold text-emerald-900">
           {confirmation.confirmationCode}
         </p>
-        <p className="mt-1 text-xs text-emerald-800">
-          Conservez ce code, il vous sera demandé sur place.
-        </p>
+        <p className="mt-1 text-xs text-emerald-800">{dict.reservation.keepCode}</p>
       </div>
     );
   }
@@ -102,10 +101,10 @@ export function ReservationForm({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nom" htmlFor="customerName" required error={fieldErrors.customerName}>
+        <Field label={dict.reservation.name} htmlFor="customerName" required error={fieldErrors.customerName}>
           <input id="customerName" name="customerName" required autoComplete="name" className={inputClass} />
         </Field>
-        <Field label="Téléphone" htmlFor="customerPhone" required error={fieldErrors.customerPhone}>
+        <Field label={dict.reservation.phone} htmlFor="customerPhone" required error={fieldErrors.customerPhone}>
           <input
             id="customerPhone"
             name="customerPhone"
@@ -117,7 +116,7 @@ export function ReservationForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nombre de personnes" htmlFor="partySize" required error={fieldErrors.partySize}>
+        <Field label={dict.reservation.partySize} htmlFor="partySize" required error={fieldErrors.partySize}>
           <input
             id="partySize"
             name="partySize"
@@ -129,7 +128,7 @@ export function ReservationForm({
             className={inputClass}
           />
         </Field>
-        <Field label="Date et heure" htmlFor="reservedFor" required error={fieldErrors.reservedFor}>
+        <Field label={dict.reservation.dateTime} htmlFor="reservedFor" required error={fieldErrors.reservedFor}>
           <input
             id="reservedFor"
             name="reservedFor"
@@ -141,8 +140,8 @@ export function ReservationForm({
         </Field>
       </div>
 
-      <Field label="Notes" htmlFor="notes" hint="Facultatif" error={fieldErrors.notes}>
-        <input id="notes" name="notes" className={inputClass} placeholder="Anniversaire, allergie…" />
+      <Field label={dict.reservation.notes} htmlFor="notes" hint={dict.reservation.optional} error={fieldErrors.notes}>
+        <input id="notes" name="notes" className={inputClass} placeholder={dict.reservation.notesPlaceholder} />
       </Field>
 
       <button
@@ -150,7 +149,7 @@ export function ReservationForm({
         disabled={pending}
         className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-white hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
-        {pending ? 'Envoi…' : 'Demander la réservation'}
+        {pending ? dict.reservation.sending : dict.reservation.submit}
       </button>
     </form>
   );

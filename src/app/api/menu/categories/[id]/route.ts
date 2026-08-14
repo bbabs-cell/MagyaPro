@@ -33,6 +33,10 @@ export const PATCH = route(async (request, { params }: Params) => {
       description: input.description ?? null,
       imageUrl: input.imageUrl ?? null,
       isActive: input.isActive,
+      nameEn: input.nameEn ?? null,
+      nameAr: input.nameAr ?? null,
+      descriptionEn: input.descriptionEn ?? null,
+      descriptionAr: input.descriptionAr ?? null,
     },
   });
 

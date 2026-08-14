@@ -78,6 +78,10 @@ export const POST = route(async (request) => {
       isAvailable: input.isAvailable,
       badge: input.badge,
       position: (last?.position ?? -1) + 1,
+      nameEn: input.nameEn ?? null,
+      nameAr: input.nameAr ?? null,
+      descriptionEn: input.descriptionEn ?? null,
+      descriptionAr: input.descriptionAr ?? null,
       variants: {
         create: input.variants.map((variant, position) => ({ ...variant, position })),
       },

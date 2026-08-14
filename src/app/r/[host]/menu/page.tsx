@@ -5,6 +5,8 @@ import { loadPublicMenu, resolvePublicRestaurant } from '@/lib/site/resolve';
 import { templateRenderer } from '@/components/site/templates';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { CategoryNav } from '@/components/site/category-nav';
+import { getServerDictionary } from '@/lib/i18n/server';
+import { localize, localizeNullable } from '@/lib/i18n/content';
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -21,16 +23,25 @@ export default async function MenuPage({ params }: Props) {
   const categories = await loadPublicMenu(restaurant.id);
   const { Menu } = templateRenderer(restaurant.templateKey);
   const base = `/r/${host}`;
+  const { locale, dict } = await getServerDictionary();
 
   const menuData = categories.map((category) => ({
     id: category.id,
-    name: category.name,
-    description: category.description,
+    name: localize(category.name, { en: category.nameEn, ar: category.nameAr }, locale),
+    description: localizeNullable(
+      category.description,
+      { en: category.descriptionEn, ar: category.descriptionAr },
+      locale,
+    ),
     products: category.products.map((product) => ({
       id: product.id,
       slug: product.slug,
-      name: product.name,
-      description: product.description,
+      name: localize(product.name, { en: product.nameEn, ar: product.nameAr }, locale),
+      description: localizeNullable(
+        product.description,
+        { en: product.descriptionEn, ar: product.descriptionAr },
+        locale,
+      ),
       imageUrl: product.imageUrl,
       price: product.price,
       compareAtPrice: product.compareAtPrice,
@@ -46,13 +57,11 @@ export default async function MenuPage({ params }: Props) {
 
       <div className="container-page py-8 sm:py-12">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Notre carte
+          {dict.menuPage.title}
         </h1>
 
         {menuData.length === 0 ? (
-          <p className="mt-6 text-ink-muted">
-            La carte est en cours de préparation. Revenez très bientôt.
-          </p>
+          <p className="mt-6 text-ink-muted">{dict.menuPage.preparing}</p>
         ) : (
           <>
             <CategoryNav

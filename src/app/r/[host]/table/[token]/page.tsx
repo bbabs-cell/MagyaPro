@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { TableLanding } from '@/components/site/table-landing';
+import { getServerDictionary } from '@/lib/i18n/server';
 
 type Props = { params: Promise<{ host: string; token: string }> };
 
@@ -27,10 +28,12 @@ export default async function TablePage({ params }: Props) {
   });
   if (!table) notFound();
 
+  const { dict } = await getServerDictionary();
+
   return (
     <div className="container-page max-w-xl py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        Bienvenue — {table.label}
+        {dict.table.welcome(table.label)}
       </h1>
       <p className="mt-2 text-ink-muted">{restaurant.name}</p>
 

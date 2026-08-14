@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { FulfillmentType, OrderStatus, PaymentStatus } from '@prisma/client';
 
-import { ORDER_STATUS_LABELS } from '@/lib/orders/status';
-import { PAYMENT_STATUS_LABELS } from '@/lib/payments/status';
 import { api } from '@/lib/client/api';
+import { useI18n } from '@/components/site/i18n-provider';
 
 /**
  * Suivi de commande en temps réel.
@@ -56,6 +55,7 @@ export function OrderStatusTracker({
   const [snapshot, setSnapshot] = useState(initial);
   const [connectionError, setConnectionError] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { locale, dict } = useI18n();
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +98,7 @@ export function OrderStatusTracker({
   if (snapshot.status === 'CANCELLED') {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-        <p className="font-medium text-red-900">Commande annulée</p>
+        <p className="font-medium text-red-900">{dict.tracker.cancelled}</p>
         {snapshot.cancelReason && (
           <p className="mt-1 text-sm text-red-800">{snapshot.cancelReason}</p>
         )}
@@ -112,14 +112,14 @@ export function OrderStatusTracker({
   return (
     <div className="rounded-2xl border border-surface-border p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium">Suivi de la commande</h2>
+        <h2 className="text-sm font-medium">{dict.tracker.title}</h2>
         {isLive && (
           <span className="flex items-center gap-1.5 text-xs text-ink-faint">
             <span
               aria-hidden="true"
               className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
             />
-            Mise à jour automatique
+            {dict.tracker.live}
           </span>
         )}
       </div>
@@ -150,7 +150,7 @@ export function OrderStatusTracker({
                     active ? 'font-medium text-ink' : 'text-ink-faint'
                   }`}
                 >
-                  {ORDER_STATUS_LABELS[step]}
+                  {dict.orderStatus[step]}
                 </span>
               </div>
               {!isLast && (
@@ -165,14 +165,13 @@ export function OrderStatusTracker({
       </ol>
 
       <p className="mt-5 text-sm text-ink-muted">
-        Paiement : <span className="font-medium">{PAYMENT_STATUS_LABELS[snapshot.paymentStatus]}</span>
+        {dict.tracker.payment} :{' '}
+        <span className="font-medium">{dict.paymentStatus[snapshot.paymentStatus]}</span>
       </p>
 
       {snapshot.deliveryCode && CODE_VISIBLE_STATUSES.includes(snapshot.status) && (
         <div className="mt-3 rounded-xl border border-surface-border bg-surface-sunken p-3">
-          <p className="text-xs text-ink-muted">
-            Donnez ce code au livreur à la remise :
-          </p>
+          <p className="text-xs text-ink-muted">{dict.deliveryCode}</p>
           <p className="mt-0.5 font-mono text-lg font-semibold tracking-widest">
             {snapshot.deliveryCode}
           </p>
@@ -180,11 +179,11 @@ export function OrderStatusTracker({
       )}
 
       <p className="mt-1 text-xs text-ink-faint">
-        Dernière mise à jour :{' '}
-        {new Date(snapshot.statusUpdatedAt).toLocaleTimeString('fr-FR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
+        {dict.tracker.lastUpdate} :{' '}
+        {new Date(snapshot.statusUpdatedAt).toLocaleTimeString(
+          locale === 'ar' ? 'ar' : locale === 'en' ? 'en-US' : 'fr-FR',
+          { hour: '2-digit', minute: '2-digit' },
+        )}
       </p>
 
       {connectionError && (
@@ -198,7 +197,7 @@ export function OrderStatusTracker({
           href={reviewUrl}
           className="mt-4 inline-flex h-10 items-center rounded-xl border border-surface-border px-4 text-sm font-medium hover:bg-surface-sunken"
         >
-          Laisser un avis
+          {dict.tracker.leaveReview}
         </Link>
       )}
     </div>

@@ -4,8 +4,10 @@ import type { Metadata } from 'next';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { getTemplate } from '@/lib/templates/registry';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
+import { resolveLocale } from '@/lib/i18n/server';
 import { CartProvider } from '@/components/site/cart-context';
 import { SiteChrome } from '@/components/site/chrome';
+import { I18nProvider } from '@/components/site/i18n-provider';
 import { ServiceWorkerRegistration } from '@/components/site/service-worker';
 
 type Props = {
@@ -76,28 +78,31 @@ export default async function PublicSiteLayout({ params, children }: Props) {
 
   const template = getTemplate(restaurant.templateKey);
   const entitlements = await getEntitlements(restaurant.id);
+  const locale = await resolveLocale();
 
   return (
-    <CartProvider restaurantId={restaurant.id} currency={restaurant.currency}>
-      <SiteChrome
-        restaurant={{
-          id: restaurant.id,
-          slug: restaurant.slug,
-          name: restaurant.name,
-          logoUrl: restaurant.logoUrl,
-          primaryColor: restaurant.primaryColor,
-          secondaryColor: restaurant.secondaryColor,
-          fontFamily: restaurant.fontFamily,
-          isDemo: restaurant.isDemo,
-          orderingEnabled: restaurant.settings?.orderingEnabled ?? true,
-          reservationsEnabled: hasFeature(entitlements, FEATURES.RESERVATIONS),
-        }}
-        host={host}
-        templateKey={template.key}
-      >
-        {children}
-      </SiteChrome>
-      <ServiceWorkerRegistration scope={`/r/${host}/`} />
-    </CartProvider>
+    <I18nProvider locale={locale}>
+      <CartProvider restaurantId={restaurant.id} currency={restaurant.currency}>
+        <SiteChrome
+          restaurant={{
+            id: restaurant.id,
+            slug: restaurant.slug,
+            name: restaurant.name,
+            logoUrl: restaurant.logoUrl,
+            primaryColor: restaurant.primaryColor,
+            secondaryColor: restaurant.secondaryColor,
+            fontFamily: restaurant.fontFamily,
+            isDemo: restaurant.isDemo,
+            orderingEnabled: restaurant.settings?.orderingEnabled ?? true,
+            reservationsEnabled: hasFeature(entitlements, FEATURES.RESERVATIONS),
+          }}
+          host={host}
+          templateKey={template.key}
+        >
+          {children}
+        </SiteChrome>
+        <ServiceWorkerRegistration scope={`/r/${host}/`} />
+      </CartProvider>
+    </I18nProvider>
   );
 }

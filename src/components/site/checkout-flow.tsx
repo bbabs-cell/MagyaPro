@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/money';
 import { Field, inputClass } from '@/components/ui';
 import { toCheckoutItems, useCart } from '@/components/site/cart-context';
 import { clearTableToken, getTableToken } from '@/lib/site/table-session';
+import { useI18n } from '@/components/site/i18n-provider';
 
 /**
  * Tunnel de commande.
@@ -61,6 +62,7 @@ export function CheckoutFlow({
 }) {
   const router = useRouter();
   const { lines, estimatedSubtotal, setQuantity, removeLine, clear } = useCart();
+  const { dict } = useI18n();
 
   // Un client qui a scanné le QR d'une table commande depuis sa table : le
   // mode est déduit du jeton mémorisé au scan, pas d'un choix qu'il ferait ici.
@@ -97,7 +99,7 @@ export function CheckoutFlow({
 
   function shareLocation() {
     if (!navigator.geolocation) {
-      setLocationError("La localisation n'est pas disponible sur cet appareil.");
+      setLocationError(dict.cartPage.locationUnavailable);
       return;
     }
     setLocating(true);
@@ -108,7 +110,7 @@ export function CheckoutFlow({
         setLocating(false);
       },
       () => {
-        setLocationError('Position non partagée. Vous pouvez continuer sans.');
+        setLocationError(dict.cartPage.locationDenied);
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10_000 },
@@ -137,9 +139,7 @@ export function CheckoutFlow({
     } catch (error) {
       setQuote(null);
       setQuoteError(
-        error instanceof ApiError
-          ? error.message
-          : 'Le total n\'a pas pu être calculé. Réessayez.',
+        error instanceof ApiError ? error.message : dict.cartPage.quoteErrorDefault,
       );
       // Un code promo devenu invalide (expiré, épuisé) est retiré pour que le
       // client puisse continuer sa commande sans rester bloqué.
@@ -150,7 +150,7 @@ export function CheckoutFlow({
     } finally {
       setQuoting(false);
     }
-  }, [lines, restaurantId, fulfillment, zoneId, appliedPromo]);
+  }, [lines, restaurantId, fulfillment, zoneId, appliedPromo, dict]);
 
   useEffect(() => {
     void refreshQuote();
@@ -212,7 +212,7 @@ export function CheckoutFlow({
         setSubmitError(error.message);
         setFieldErrors(error.fieldErrors ?? {});
       } else {
-        setSubmitError("La commande n'a pas pu être envoyée. Réessayez.");
+        setSubmitError(dict.cartPage.submitErrorDefault);
       }
       setSubmitting(false);
     }
@@ -221,10 +221,8 @@ export function CheckoutFlow({
   if (!orderingEnabled) {
     return (
       <div className="rounded-2xl border border-surface-border bg-surface-sunken p-6">
-        <p className="font-medium">Les commandes en ligne sont fermées.</p>
-        <p className="mt-1 text-sm text-ink-muted">
-          Ce restaurant n&apos;accepte pas de commande pour le moment.
-        </p>
+        <p className="font-medium">{dict.cartPage.closed}</p>
+        <p className="mt-1 text-sm text-ink-muted">{dict.cartPage.closedHint}</p>
       </div>
     );
   }
@@ -232,15 +230,13 @@ export function CheckoutFlow({
   if (lines.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-surface-border p-10 text-center">
-        <p className="font-medium">Votre panier est vide</p>
-        <p className="mt-1 text-sm text-ink-muted">
-          Parcourez la carte pour composer votre commande.
-        </p>
+        <p className="font-medium">{dict.cartPage.empty}</p>
+        <p className="mt-1 text-sm text-ink-muted">{dict.cartPage.browseMenu}</p>
         <Link
           href={`/r/${host}/menu`}
           className="mt-5 inline-flex h-11 items-center rounded-xl bg-brand px-6 font-medium text-white"
         >
-          Voir le menu
+          {dict.cartPage.seeMenu}
         </Link>
       </div>
     );
@@ -253,7 +249,7 @@ export function CheckoutFlow({
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
       <div className="space-y-6">
         {/* ------------------------------------------------------- Articles */}
-        <section aria-label="Articles du panier">
+        <section aria-label={dict.cartPage.cartItemsLabel}>
           <ul className="divide-y divide-surface-border rounded-2xl border border-surface-border">
             {lines.map((line) => (
               <li key={line.key} className="flex gap-3 p-3 sm:p-4">
@@ -288,7 +284,7 @@ export function CheckoutFlow({
                         type="button"
                         onClick={() => setQuantity(line.key, line.quantity - 1)}
                         className="h-9 w-9 hover:bg-surface-sunken"
-                        aria-label={`Diminuer la quantité de ${line.productName}`}
+                        aria-label={dict.cartPage.decreaseQty(line.productName)}
                       >
                         −
                       </button>
@@ -297,7 +293,7 @@ export function CheckoutFlow({
                         type="button"
                         onClick={() => setQuantity(line.key, line.quantity + 1)}
                         className="h-9 w-9 hover:bg-surface-sunken"
-                        aria-label={`Augmenter la quantité de ${line.productName}`}
+                        aria-label={dict.cartPage.increaseQty(line.productName)}
                       >
                         +
                       </button>
@@ -315,7 +311,7 @@ export function CheckoutFlow({
                   className="self-start text-sm text-ink-faint hover:text-red-600"
                 >
                   <span aria-hidden="true">✕</span>
-                  <span className="sr-only">Retirer {line.productName}</span>
+                  <span className="sr-only">{dict.cartPage.remove(line.productName)}</span>
                 </button>
               </li>
             ))}
@@ -323,27 +319,25 @@ export function CheckoutFlow({
         </section>
 
         {/* ----------------------------------------------------- Récupération */}
-        <section aria-label="Mode de récupération" className="rounded-2xl border border-surface-border p-4">
+        <section aria-label={dict.cartPage.fulfillmentLabel} className="rounded-2xl border border-surface-border p-4">
           {tableToken ? (
-            <p className="text-sm font-medium">
-              Vous commandez depuis votre table — servi directement sur place.
-            </p>
+            <p className="text-sm font-medium">{dict.cartPage.dineIn}</p>
           ) : (
             <>
-              <h2 className="text-sm font-medium">Comment souhaitez-vous être servi ?</h2>
+              <h2 className="text-sm font-medium">{dict.cartPage.howServed}</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {deliveryEnabled && (
                   <FulfillmentButton
                     active={fulfillment === 'DELIVERY'}
                     onClick={() => setFulfillment('DELIVERY')}
-                    label="Livraison"
+                    label={dict.cartPage.delivery}
                   />
                 )}
                 {pickupEnabled && (
                   <FulfillmentButton
                     active={fulfillment === 'PICKUP'}
                     onClick={() => setFulfillment('PICKUP')}
-                    label="Retrait sur place"
+                    label={dict.cartPage.pickup}
                   />
                 )}
               </div>
@@ -352,7 +346,7 @@ export function CheckoutFlow({
 
           {fulfillment === 'DELIVERY' && zones.length > 0 && (
             <div className="mt-4">
-              <Field label="Zone de livraison" htmlFor="zone" required>
+              <Field label={dict.cartPage.zoneLabel} htmlFor="zone" required>
                 <select
                   id="zone"
                   value={zoneId ?? ''}
@@ -363,7 +357,7 @@ export function CheckoutFlow({
                     <option key={zone.id} value={zone.id}>
                       {zone.name} · {formatMoney(zone.fee, currency)}
                       {zone.freeAbove
-                        ? ` (offerte dès ${formatMoney(zone.freeAbove, currency)})`
+                        ? dict.cartPage.freeAbove(formatMoney(zone.freeAbove, currency))
                         : ''}
                     </option>
                   ))}
@@ -373,14 +367,14 @@ export function CheckoutFlow({
           )}
 
           <p className="mt-3 text-sm text-ink-muted">
-            Préparation estimée : environ {prepTimeMinutes} minutes.
+            {dict.cartPage.prepEstimate(prepTimeMinutes)}
           </p>
         </section>
 
         {/* ------------------------------------------------------ Coordonnées */}
         {step === 'details' && (
-          <section aria-label="Vos coordonnées" className="rounded-2xl border border-surface-border p-4">
-            <h2 className="text-sm font-medium">Vos coordonnées</h2>
+          <section aria-label={dict.cartPage.yourDetails} className="rounded-2xl border border-surface-border p-4">
+            <h2 className="text-sm font-medium">{dict.cartPage.yourDetails}</h2>
 
             <form id="checkout-form" onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
               {submitError && (
@@ -389,15 +383,15 @@ export function CheckoutFlow({
                 </div>
               )}
 
-              <Field label="Nom complet" htmlFor="customerName" required error={fieldErrors.customerName}>
+              <Field label={dict.cartPage.fullName} htmlFor="customerName" required error={fieldErrors.customerName}>
                 <input id="customerName" name="customerName" required autoComplete="name" className={inputClass} />
               </Field>
 
               <Field
-                label="Téléphone"
+                label={dict.cartPage.phone}
                 htmlFor="customerPhone"
                 required
-                hint="Le restaurant vous contactera à ce numéro."
+                hint={dict.cartPage.phoneHint}
                 error={fieldErrors.customerPhone}
               >
                 <input
@@ -410,7 +404,7 @@ export function CheckoutFlow({
                 />
               </Field>
 
-              <Field label="Email (facultatif)" htmlFor="customerEmail" error={fieldErrors.customerEmail}>
+              <Field label={dict.cartPage.email} htmlFor="customerEmail" error={fieldErrors.customerEmail}>
                 <input
                   id="customerEmail"
                   name="customerEmail"
@@ -422,7 +416,7 @@ export function CheckoutFlow({
 
               {fulfillment === 'DELIVERY' && (
                 <Field
-                  label="Adresse de livraison"
+                  label={dict.cartPage.deliveryAddress}
                   htmlFor="deliveryAddress"
                   required
                   error={fieldErrors.deliveryAddress}
@@ -447,10 +441,10 @@ export function CheckoutFlow({
                     className="inline-flex h-10 items-center rounded-xl border border-surface-border px-3.5 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
                   >
                     {position
-                      ? 'Position partagée ✓'
+                      ? dict.cartPage.locationShared
                       : locating
-                        ? 'Localisation…'
-                        : 'Partager ma position pour aider le livreur'}
+                        ? dict.cartPage.locating
+                        : dict.cartPage.shareLocation}
                   </button>
                   {locationError && (
                     <p className="mt-1.5 text-xs text-ink-faint">{locationError}</p>
@@ -458,22 +452,21 @@ export function CheckoutFlow({
                 </div>
               )}
 
-              <Field label="Instructions (facultatif)" htmlFor="instructions">
+              <Field label={dict.cartPage.instructions} htmlFor="instructions">
                 <textarea
                   id="instructions"
                   name="instructions"
                   rows={2}
-                  placeholder="Étage, code, précisions…"
+                  placeholder={dict.cartPage.instructionsPlaceholder}
                   className={inputClass}
                 />
               </Field>
 
               <fieldset>
-                <legend className="text-sm font-medium">Moyen de paiement</legend>
+                <legend className="text-sm font-medium">{dict.cartPage.paymentMethod}</legend>
                 {providers.length === 0 ? (
                   <p className="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    Aucun moyen de paiement n&apos;est disponible actuellement.
-                    Contactez le restaurant directement.
+                    {dict.cartPage.noProviders}
                   </p>
                 ) : (
                   <div className="mt-2 space-y-1.5">
@@ -509,24 +502,24 @@ export function CheckoutFlow({
       {/* ----------------------------------------------------------- Résumé */}
       <aside className="lg:sticky lg:top-24 lg:self-start">
         <div className="rounded-2xl border border-surface-border p-4">
-          <h2 className="text-sm font-medium">Récapitulatif</h2>
+          <h2 className="text-sm font-medium">{dict.cartPage.summary}</h2>
 
           <form onSubmit={applyPromo} className="mt-3 flex gap-2">
             <label htmlFor="promo" className="sr-only">
-              Code promo
+              {dict.cartPage.promoCode}
             </label>
             <input
               id="promo"
               value={promoInput}
               onChange={(event) => setPromoInput(event.target.value)}
-              placeholder="Code promo"
+              placeholder={dict.cartPage.promoCode}
               className={inputClass}
             />
             <button
               type="submit"
               className="h-11 shrink-0 rounded-xl border border-surface-border px-4 text-sm font-medium hover:bg-surface-sunken"
             >
-              Appliquer
+              {dict.cartPage.apply}
             </button>
           </form>
           {promoError && (
@@ -537,29 +530,29 @@ export function CheckoutFlow({
 
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-muted">Sous-total</dt>
+              <dt className="text-ink-muted">{dict.cartPage.subtotal}</dt>
               <dd>{formatMoney(quote?.subtotal ?? estimatedSubtotal, currency)}</dd>
             </div>
             {quote && quote.discount > 0 && (
               <div className="flex justify-between text-emerald-700">
-                <dt>Remise {quote.promoCode ? `(${quote.promoCode})` : ''}</dt>
+                <dt>{dict.cartPage.discount(quote.promoCode)}</dt>
                 <dd>−{formatMoney(quote.discount, currency)}</dd>
               </div>
             )}
             {fulfillment === 'DELIVERY' && (
               <div className="flex justify-between">
-                <dt className="text-ink-muted">Livraison</dt>
+                <dt className="text-ink-muted">{dict.cartPage.deliveryFee}</dt>
                 <dd>
                   {quote
                     ? quote.deliveryFee === 0
-                      ? 'Offerte'
+                      ? dict.cartPage.free
                       : formatMoney(quote.deliveryFee, currency)
                     : '—'}
                 </dd>
               </div>
             )}
             <div className="flex justify-between border-t border-surface-border pt-2 text-base font-semibold">
-              <dt>Total</dt>
+              <dt>{dict.cartPage.total}</dt>
               <dd aria-live="polite">
                 {quoting ? '…' : formatMoney(displayTotal, currency)}
               </dd>
@@ -574,8 +567,7 @@ export function CheckoutFlow({
 
           {belowMinimum && (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Montant minimum de commande :{' '}
-              {formatMoney(minOrderAmount, currency)}.
+              {dict.cartPage.minOrderNotice(formatMoney(minOrderAmount, currency))}
             </p>
           )}
 
@@ -586,7 +578,7 @@ export function CheckoutFlow({
               disabled={!quote || belowMinimum || quoting}
               className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              Continuer
+              {dict.cartPage.continue}
             </button>
           ) : (
             <button
@@ -595,12 +587,12 @@ export function CheckoutFlow({
               disabled={submitting || !quote || belowMinimum || providers.length === 0}
               className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {submitting ? 'Envoi de la commande…' : 'Valider ma commande'}
+              {submitting ? dict.cartPage.sending : dict.cartPage.placeOrder}
             </button>
           )}
 
           <p className="mt-3 text-center text-xs text-ink-faint">
-            Le montant final est calculé par le restaurant à la validation.
+            {dict.cartPage.finalAmountNote}
           </p>
         </div>
       </aside>
