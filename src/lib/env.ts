@@ -21,8 +21,6 @@ export const env = {
   isProduction,
   isTest: process.env.NODE_ENV === 'test',
 
-  databaseUrl: required('DATABASE_URL', process.env.DATABASE_URL),
-
   get sessionSecret(): string {
     const secret = required('SESSION_SECRET', process.env.SESSION_SECRET);
     if (isProduction && secret.length < 32) {
