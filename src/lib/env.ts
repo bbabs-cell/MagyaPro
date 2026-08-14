@@ -48,6 +48,10 @@ export const env = {
   /// `true`/`465` = TLS implicite ; sinon STARTTLS sur le port indiqué.
   smtpSecure: process.env.SMTP_SECURE === 'true',
 
+  /// Pilote HTTP (api.resend.com) — seul chemin d'envoi d'email qui fonctionne
+  /// sur un runtime sans sockets TCP bruts (Cloudflare Workers).
+  resendApiKey: process.env.RESEND_API_KEY,
+
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,

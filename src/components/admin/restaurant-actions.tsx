@@ -80,7 +80,9 @@ export function RestaurantAdminActions({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirmation }),
       }).then(async (response) => {
-        const payload = await response.json();
+        const payload = (await response.json()) as
+          | { ok: true }
+          | { ok: false; error: { message: string; code: string } };
         if (!payload.ok) {
           throw new ApiError(payload.error.message, response.status, payload.error.code);
         }

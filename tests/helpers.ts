@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 import { hashPassword } from '@/lib/auth/password';
@@ -9,7 +10,9 @@ import { hashPassword } from '@/lib/auth/password';
  * aléatoires, ce qui évite les collisions entre fichiers et rend les tests
  * indépendants de l'ordre d'exécution.
  */
-export const prisma = new PrismaClient();
+export const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.TEST_DATABASE_URL }),
+});
 
 let counter = 0;
 
@@ -167,8 +170,10 @@ export async function addMember(
  * état déterministe entre les suites, sans avoir à ordonner les suppressions.
  */
 export async function resetDatabase(): Promise<void> {
+  // `tablename` est du type interne Postgres `name`, non désérialisable par
+  // le moteur « client » (sans binaire) sans conversion explicite en texte.
   const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
-    SELECT tablename FROM pg_tables
+    SELECT tablename::text AS tablename FROM pg_tables
     WHERE schemaname = 'public' AND tablename NOT LIKE '_prisma%'
   `;
 

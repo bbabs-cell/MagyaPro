@@ -16,11 +16,14 @@
  * l'application.
  */
 
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, type PrismaPromise } from '@prisma/client';
 import { randomBytes, scrypt as scryptCb } from 'node:crypto';
 import { promisify } from 'node:util';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 const scrypt = promisify(scryptCb) as (
   password: string,
   salt: Buffer,

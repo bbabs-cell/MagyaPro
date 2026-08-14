@@ -9,7 +9,11 @@
 // du restaurant (voir `src/lib/money.ts`). Aucun flottant pour l'argent.
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  // Sans binaire Rust : nécessaire pour Cloudflare Workers, où aucun
+  // exécutable natif ne peut tourner. Fonctionne identiquement sur Node
+  // (Railway...) via l'adaptateur `pg` — un seul chemin pour les deux cibles.
+  engineType = "client"
 }
 
 datasource db {

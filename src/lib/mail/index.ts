@@ -11,7 +11,10 @@ import { env } from '@/lib/env';
  * et sans faire croire qu'un email a réellement été expédié.
  *
  * En production, `smtp` envoie réellement le message via le serveur SMTP
- * configuré (`SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`).
+ * configuré (`SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`). `resend`
+ * envoie via l'API HTTP de Resend (`RESEND_API_KEY`) — seul chemin qui
+ * fonctionne sur un runtime sans sockets TCP bruts, comme Cloudflare Workers,
+ * où le pilote `smtp` (nodemailer, connexions TCP directes) n'est pas fiable.
  */
 
 export type MailMessage = {
@@ -84,9 +87,39 @@ const smtpDriver: MailDriver = {
   },
 };
 
+const resendDriver: MailDriver = {
+  name: 'resend',
+  async send(message) {
+    if (!env.resendApiKey) {
+      throw new Error('Pilote Resend demandé mais RESEND_API_KEY manquant. Voir .env.example.');
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.mailFrom,
+        to: message.to,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`Resend a refusé l'envoi (${response.status}) : ${body.slice(0, 300)}`);
+    }
+  },
+};
+
 const drivers: Record<string, MailDriver> = {
   console: consoleDriver,
   smtp: smtpDriver,
+  resend: resendDriver,
 };
 
 export function mailer(): MailDriver {
