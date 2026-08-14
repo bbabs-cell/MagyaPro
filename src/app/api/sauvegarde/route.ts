@@ -15,7 +15,9 @@ import { requireTenant } from '@/lib/tenant';
 export const GET = route(async () => {
   const { restaurant } = await requireTenant('settings:manage');
 
-  const [profile, settings, openingHours, categories, products, promotions, loyaltyTiers, tables, deliveryZones, customers, orders] =
+  const ORDER_EXPORT_LIMIT = 10_000;
+
+  const [profile, settings, openingHours, categories, products, promotions, loyaltyTiers, tables, deliveryZones, customers, ordersCount, orders] =
     await Promise.all([
       prisma.restaurant.findUnique({ where: { id: restaurant.id } }),
       prisma.restaurantSettings.findUnique({ where: { restaurantId: restaurant.id } }),
@@ -30,16 +32,25 @@ export const GET = route(async () => {
       prisma.restaurantTable.findMany({ where: { restaurantId: restaurant.id } }),
       prisma.deliveryZone.findMany({ where: { restaurantId: restaurant.id } }),
       prisma.customer.findMany({ where: { restaurantId: restaurant.id } }),
+      prisma.order.count({ where: { restaurantId: restaurant.id } }),
       prisma.order.findMany({
         where: { restaurantId: restaurant.id },
         include: { items: true },
         orderBy: { placedAt: 'desc' },
-        take: 10_000,
+        take: ORDER_EXPORT_LIMIT,
       }),
     ]);
 
+  // Une sauvegarde qui tronquerait silencieusement une partie des commandes
+  // ne serait pas une sauvegarde : le fichier dit explicitement s'il est
+  // complet, pour qu'on ne s'y fie pas à tort.
+  const ordersTruncated = ordersCount > orders.length;
+
   const backup = {
     exportedAt: new Date().toISOString(),
+    ordersTotal: ordersCount,
+    ordersExported: orders.length,
+    ordersTruncated,
     restaurant: profile,
     settings,
     openingHours,

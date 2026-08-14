@@ -661,7 +661,9 @@ function ProductForm({
             type="number"
             min="0"
             step="any"
-            defaultValue={product?.costPrice ? toMajor(product.costPrice, currency) : ''}
+            defaultValue={
+              product?.costPrice != null ? toMajor(product.costPrice, currency) : ''
+            }
             className={inputClass}
           />
         </Field>

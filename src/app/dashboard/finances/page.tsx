@@ -74,12 +74,21 @@ export default async function FinancesPage({
           hint={avgPerDay.average === null ? 'Aucune commande sur la période' : `${avgPerDay.workedDays} jour${avgPerDay.workedDays > 1 ? 's' : ''} travaillé${avgPerDay.workedDays > 1 ? 's' : ''}`}
         />
         <StatCard label="Dépenses" value={formatMoney(expensesSummary.total, currency)} />
-        <StatCard
-          label="Résultat net"
-          value={formatMoney(net, currency)}
-          tone={net >= 0 ? 'success' : 'danger'}
-          hint={`${PERIODS[period].label} · CA − dépenses`}
-        />
+        <div className="card p-4 sm:p-5">
+          <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+            Résultat net
+          </p>
+          <p
+            className={`mt-2 text-2xl font-semibold tracking-tight ${
+              net >= 0 ? 'text-emerald-700' : 'text-red-700'
+            }`}
+          >
+            {formatMoney(net, currency)}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {PERIODS[period].label} · CA − dépenses
+          </p>
+        </div>
       </section>
 
       <Card className="mt-6 p-4 sm:p-5">
