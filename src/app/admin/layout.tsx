@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { AdminNav } from '@/components/admin/nav';
+import { AdminLogoutButton } from '@/components/admin/logout-button';
 
 /**
  * Espace d'administration de la plateforme.
@@ -43,6 +44,7 @@ export default async function AdminLayout({
             >
               Mon restaurant
             </Link>
+            <AdminLogoutButton />
           </div>
         </div>
 
