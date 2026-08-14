@@ -47,6 +47,8 @@ type Settings = {
   minOrderAmount: number;
   prepTimeMinutes: number;
   paymentProviders: string[];
+  orangeMoneyNumber: string | null;
+  waveNumber: string | null;
   notificationEmail: string | null;
 };
 
@@ -172,6 +174,8 @@ export function SettingsPanels({
         ),
         prepTimeMinutes: Number(formData.get('prepTimeMinutes') ?? 30),
         paymentProviders: selectedProviders,
+        orangeMoneyNumber: String(formData.get('orangeMoneyNumber') ?? ''),
+        waveNumber: String(formData.get('waveNumber') ?? ''),
         notificationEmail: String(formData.get('notificationEmail') ?? ''),
       });
     }, 'Réglages de commande enregistrés.');
@@ -550,6 +554,37 @@ export function SettingsPanels({
                 className={inputClass}
               />
             </Field>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Numéro Orange Money"
+                htmlFor="orangeMoneyNumber"
+                hint="Requis pour activer le dépôt manuel Orange Money."
+                error={fieldErrors.orangeMoneyNumber}
+              >
+                <input
+                  id="orangeMoneyNumber"
+                  name="orangeMoneyNumber"
+                  defaultValue={settings.orangeMoneyNumber ?? ''}
+                  className={inputClass}
+                  placeholder="07 00 00 00 00"
+                />
+              </Field>
+              <Field
+                label="Numéro Wave"
+                htmlFor="waveNumber"
+                hint="Requis pour activer le dépôt manuel Wave."
+                error={fieldErrors.waveNumber}
+              >
+                <input
+                  id="waveNumber"
+                  name="waveNumber"
+                  defaultValue={settings.waveNumber ?? ''}
+                  className={inputClass}
+                  placeholder="07 00 00 00 00"
+                />
+              </Field>
+            </div>
 
             <fieldset>
               <legend className="text-sm font-medium">Moyens de paiement</legend>

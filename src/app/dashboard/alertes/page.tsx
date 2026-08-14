@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function AlertsPage() {
   const { restaurant } = await requireTenant('orders:view');
 
-  const [orders, tableCalls, reservations] = await Promise.all([
+  const [orders, tableCalls, reservations, paymentProofs] = await Promise.all([
     prisma.order.findMany({
       where: { restaurantId: restaurant.id, status: 'NEW' },
       orderBy: { placedAt: 'asc' },
@@ -31,18 +31,32 @@ export default async function AlertsPage() {
       orderBy: { reservedFor: 'asc' },
       select: { id: true, customerName: true, partySize: true, reservedFor: true },
     }),
+    prisma.payment.findMany({
+      where: { restaurantId: restaurant.id, status: 'PROCESSING', proofImageUrl: { not: null } },
+      orderBy: { proofSubmittedAt: 'asc' },
+      include: { order: { select: { id: true, number: true } } },
+    }),
   ]);
 
   return (
     <>
       <PageHeader
         title="Centre d'alertes"
-        description="Tout ce qui attend une action, au même endroit : commandes à confirmer, appels de salle, réservations à valider."
+        description="Tout ce qui attend une action, au même endroit : commandes à confirmer, appels de salle, réservations à valider, preuves de paiement à vérifier."
       />
       <AlertCenter
         orders={orders.map((o) => ({ ...o, placedAt: o.placedAt.toISOString() }))}
         tableCalls={tableCalls.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() }))}
         reservations={reservations.map((r) => ({ ...r, reservedFor: r.reservedFor.toISOString() }))}
+        paymentProofs={paymentProofs.map((payment) => ({
+          id: payment.id,
+          orderId: payment.order?.id ?? null,
+          orderNumber: payment.order?.number ?? null,
+          provider: payment.provider,
+          amount: payment.amount,
+          currency: payment.currency,
+          proofImageUrl: payment.proofImageUrl!,
+        }))}
       />
     </>
   );

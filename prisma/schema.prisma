@@ -224,6 +224,10 @@ model RestaurantSettings {
   prepTimeMinutes      Int      @default(30)
   /// Identifiants des fournisseurs de paiement activés (voir src/lib/payments).
   paymentProviders     String[] @default(["cash_on_delivery"])
+  /// Numéros receveurs du restaurant pour le paiement mobile manuel — jamais
+  /// codés en dur, configurés ici.
+  orangeMoneyNumber    String?
+  waveNumber           String?
   notificationEmail    String?
   /// Notes internes affichées au personnel dans le dashboard.
   staffNotes           String?
@@ -738,22 +742,25 @@ model Reservation {
 // ---------------------------------------------------------------------------
 
 model Payment {
-  id            String        @id @default(cuid())
-  restaurantId  String
-  orderId       String?
-  customerId    String?
+  id               String        @id @default(cuid())
+  restaurantId     String
+  orderId          String?
+  customerId       String?
   /// Identifiant du PaymentProvider (src/lib/payments/registry.ts).
-  provider      String
-  amount        Int
-  currency      String        @default("XOF")
-  status        PaymentStatus @default(PENDING)
+  provider         String
+  amount           Int
+  currency         String        @default("XOF")
+  status           PaymentStatus @default(PENDING)
   /// Référence interne unique transmise au fournisseur.
-  reference     String        @unique
+  reference        String        @unique
   /// Référence retournée par le fournisseur (transaction id).
-  providerRef   String?
-  failureReason String?
+  providerRef      String?
+  failureReason    String?
   /// Charge utile non sensible renvoyée par le fournisseur.
-  metadata      Json          @default("{}")
+  metadata         Json          @default("{}")
+  /// Preuve de paiement déposée par le client (paiement mobile manuel).
+  proofImageUrl    String?
+  proofSubmittedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -893,6 +900,7 @@ enum NotificationType {
   TABLE_CALL
   TABLE_BILL_REQUEST
   RESERVATION_CREATED
+  PAYMENT_PROOF_SUBMITTED
 }
 
 model Notification {

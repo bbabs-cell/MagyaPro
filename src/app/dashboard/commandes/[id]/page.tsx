@@ -12,6 +12,7 @@ import { env } from '@/lib/env';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { OrderActions } from '@/components/dashboard/order-actions';
 import { WhatsAppNotifyButton } from '@/components/dashboard/whatsapp-notify-button';
+import { PaymentVerifyButtons } from '@/components/dashboard/payment-verify-buttons';
 import { Badge, Card, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Détail de la commande' };
@@ -292,6 +293,25 @@ export default async function OrderDetailPage({
                         {payment.failureReason}
                       </p>
                     )}
+                    {payment.proofImageUrl && (
+                      <a
+                        href={payment.proofImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element -- capture d'écran déposée par le client */}
+                        <img
+                          src={payment.proofImageUrl}
+                          alt="Preuve de paiement"
+                          className="h-20 w-20 rounded-lg border border-surface-border object-cover"
+                        />
+                      </a>
+                    )}
+                    {payment.status === 'PROCESSING' &&
+                      context.permissions.has('payments:manage') && (
+                        <PaymentVerifyButtons paymentId={payment.id} />
+                      )}
                   </li>
                 ))}
               </ul>

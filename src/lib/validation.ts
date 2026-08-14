@@ -155,6 +155,8 @@ export const restaurantSettingsSchema = z.object({
   minOrderAmount: amountSchema,
   prepTimeMinutes: z.number().int().min(0).max(600),
   paymentProviders: z.array(z.string().max(50)).max(10),
+  orangeMoneyNumber: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
+  waveNumber: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
   notificationEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
 });
 
@@ -369,6 +371,11 @@ export const tableStatusSchema = z.object({
 
 export const tableRequestSchema = z.object({
   type: z.enum(['CALL', 'BILL']),
+});
+
+export const paymentVerificationSchema = z.object({
+  status: z.enum(['PAID', 'FAILED']),
+  failureReason: optionalText(300),
 });
 
 // --- Finances ------------------------------------------------------------------

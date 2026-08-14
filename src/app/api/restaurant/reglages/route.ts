@@ -31,6 +31,22 @@ export const PATCH = route(async (request) => {
     );
   }
 
+  // Le paiement mobile manuel n'a pas d'identifiant d'API à vérifier, mais il
+  // ne peut pas fonctionner sans le numéro receveur du restaurant : l'activer
+  // sans ce numéro afficherait des instructions de paiement incomplètes.
+  if (input.paymentProviders.includes('orange_money_manual') && !input.orangeMoneyNumber) {
+    throw new ValidationError(
+      'Renseignez votre numéro Orange Money pour activer ce moyen de paiement.',
+      { orangeMoneyNumber: 'Numéro requis.' },
+    );
+  }
+  if (input.paymentProviders.includes('wave_manual') && !input.waveNumber) {
+    throw new ValidationError(
+      'Renseignez votre numéro Wave pour activer ce moyen de paiement.',
+      { waveNumber: 'Numéro requis.' },
+    );
+  }
+
   if (!input.deliveryEnabled && !input.pickupEnabled) {
     throw new ValidationError(
       'Activez la livraison ou le retrait sur place : sans les deux, aucune commande ne peut aboutir.',
@@ -48,6 +64,8 @@ export const PATCH = route(async (request) => {
       minOrderAmount: input.minOrderAmount,
       prepTimeMinutes: input.prepTimeMinutes,
       paymentProviders: input.paymentProviders,
+      orangeMoneyNumber: input.orangeMoneyNumber ?? null,
+      waveNumber: input.waveNumber ?? null,
       notificationEmail: input.notificationEmail ?? null,
     },
     update: {
@@ -58,6 +76,8 @@ export const PATCH = route(async (request) => {
       minOrderAmount: input.minOrderAmount,
       prepTimeMinutes: input.prepTimeMinutes,
       paymentProviders: input.paymentProviders,
+      orangeMoneyNumber: input.orangeMoneyNumber ?? null,
+      waveNumber: input.waveNumber ?? null,
       notificationEmail: input.notificationEmail ?? null,
     },
   });

@@ -7,6 +7,9 @@ import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { formatMoney } from '@/lib/money';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { OrderStatusTracker } from '@/components/site/order-status-tracker';
+import { PaymentProofUpload } from '@/components/site/payment-proof-upload';
+
+const MANUAL_MOBILE_MONEY_PROVIDERS = ['orange_money_manual', 'wave_manual'];
 
 type Props = { params: Promise<{ host: string; orderId: string }> };
 
@@ -62,6 +65,17 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
   if (!order) notFound();
 
+  const payment = await prisma.payment.findFirst({
+    where: { orderId: order.id },
+    orderBy: { createdAt: 'desc' },
+    select: { provider: true, status: true, metadata: true, proofImageUrl: true },
+  });
+  const isManualMobileMoney = payment && MANUAL_MOBILE_MONEY_PROVIDERS.includes(payment.provider);
+  const receivingNumber =
+    payment && typeof payment.metadata === 'object' && payment.metadata !== null
+      ? (payment.metadata as { receivingNumber?: string }).receivingNumber
+      : undefined;
+
   const prepTime = restaurant.settings?.prepTimeMinutes ?? 30;
   const entitlements = await getEntitlements(restaurant.id);
   const reviewUrl = hasFeature(entitlements, FEATURES.REVIEWS)
@@ -112,6 +126,18 @@ export default async function OrderConfirmationPage({ params }: Props) {
             </div>
           ))}
         </div>
+      )}
+
+      {isManualMobileMoney && receivingNumber && (
+        <PaymentProofUpload
+          orderId={order.id}
+          provider={payment.provider}
+          amount={order.total}
+          currency={order.currency}
+          receivingNumber={receivingNumber}
+          status={payment.status}
+          hasProof={Boolean(payment.proofImageUrl)}
+        />
       )}
 
       <div className="mt-8">

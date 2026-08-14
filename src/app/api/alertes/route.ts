@@ -4,14 +4,14 @@ import { requireTenant } from '@/lib/tenant';
 
 /**
  * Centre d'alertes : tout ce qui attend une action du personnel, dans un seul
- * appel. D'autres sources (preuves de paiement, livraisons) s'ajouteront ici
- * au fur et à mesure qu'elles seront construites — la forme de la réponse ne
- * changera pas, seuls les tableaux se rempliront.
+ * appel. D'autres sources (livraisons) s'ajouteront ici au fur et à mesure
+ * qu'elles seront construites — la forme de la réponse ne changera pas,
+ * seuls les tableaux se rempliront.
  */
 export const GET = route(async () => {
   const { restaurant } = await requireTenant('orders:view');
 
-  const [pendingOrders, tableCalls, pendingReservations] = await Promise.all([
+  const [pendingOrders, tableCalls, pendingReservations, paymentProofs] = await Promise.all([
     prisma.order.findMany({
       where: { restaurantId: restaurant.id, status: 'NEW' },
       orderBy: { placedAt: 'asc' },
@@ -31,12 +31,27 @@ export const GET = route(async () => {
       orderBy: { reservedFor: 'asc' },
       select: { id: true, customerName: true, partySize: true, reservedFor: true },
     }),
+    prisma.payment.findMany({
+      where: { restaurantId: restaurant.id, status: 'PROCESSING', proofImageUrl: { not: null } },
+      orderBy: { proofSubmittedAt: 'asc' },
+      include: { order: { select: { id: true, number: true } } },
+    }),
   ]);
 
   return ok({
     orders: pendingOrders,
     tableCalls,
     reservations: pendingReservations,
-    total: pendingOrders.length + tableCalls.length + pendingReservations.length,
+    paymentProofs: paymentProofs.map((payment) => ({
+      id: payment.id,
+      orderId: payment.order?.id ?? null,
+      orderNumber: payment.order?.number ?? null,
+      provider: payment.provider,
+      amount: payment.amount,
+      currency: payment.currency,
+      proofImageUrl: payment.proofImageUrl,
+    })),
+    total:
+      pendingOrders.length + tableCalls.length + pendingReservations.length + paymentProofs.length,
   });
 });

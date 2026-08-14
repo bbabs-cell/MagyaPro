@@ -7,6 +7,10 @@ import {
   orangeMoneyProvider,
   waveProvider,
 } from '@/lib/payments/providers/mobile-money';
+import {
+  orangeMoneyManualProvider,
+  waveManualProvider,
+} from '@/lib/payments/providers/manual-mobile-money';
 
 /**
  * Registre des fournisseurs de paiement.
@@ -19,6 +23,8 @@ const REGISTRY: PaymentProvider[] = [
   payAtStoreProvider,
   orangeMoneyProvider,
   waveProvider,
+  orangeMoneyManualProvider,
+  waveManualProvider,
 ];
 
 export function allProviders(): PaymentProvider[] {

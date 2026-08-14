@@ -109,6 +109,21 @@ export async function notifyOrderStatusChanged(
   });
 }
 
+export async function notifyPaymentProofSubmitted(
+  restaurantId: string,
+  orderId: string,
+  orderNumber: number,
+): Promise<void> {
+  await createNotification({
+    restaurantId,
+    type: 'PAYMENT_PROOF_SUBMITTED',
+    title: `Preuve de paiement — commande n°${orderNumber}`,
+    body: `Une preuve de paiement a été déposée pour la commande n°${orderNumber}. Vérifiez-la avant de préparer la commande.`,
+    href: `/dashboard/commandes/${orderId}`,
+    metadata: { orderId, orderNumber },
+  });
+}
+
 export async function notifyNewReservation(
   restaurantId: string,
   reservationId: string,

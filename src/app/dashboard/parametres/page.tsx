@@ -69,6 +69,8 @@ export default async function SettingsPage() {
           minOrderAmount: settings?.minOrderAmount ?? 0,
           prepTimeMinutes: settings?.prepTimeMinutes ?? 30,
           paymentProviders: settings?.paymentProviders ?? [],
+          orangeMoneyNumber: settings?.orangeMoneyNumber ?? null,
+          waveNumber: settings?.waveNumber ?? null,
           notificationEmail: settings?.notificationEmail ?? null,
         }}
         hours={hours.map((hour) => ({
