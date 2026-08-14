@@ -37,6 +37,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: '/dashboard/reservations', label: 'Réservations', permission: 'reservations:manage' },
       { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
       { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
+      { href: '/dashboard/finances', label: 'Finances', permission: 'finances:manage' },
     ],
   },
   {
@@ -44,6 +45,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/dashboard/menu', label: 'Menu', permission: 'menu:view' },
       { href: '/dashboard/photos', label: 'Atelier photo', permission: 'menu:manage' },
+      { href: '/dashboard/galerie', label: 'Galerie', permission: 'restaurant:update' },
       { href: '/dashboard/salle', label: 'Salle', permission: 'tables:view' },
       { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
       { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
@@ -57,6 +59,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/dashboard/parametres', label: 'Réglages', permission: 'settings:manage' },
       { href: '/dashboard/equipe', label: 'Équipe', permission: 'team:view' },
+      { href: '/dashboard/journal', label: 'Journal', permission: 'audit:view' },
       { href: '/dashboard/abonnement', label: 'Abonnement', permission: 'subscription:view' },
     ],
   },

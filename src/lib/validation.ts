@@ -193,6 +193,7 @@ export const productSchema = z.object({
   imageUrl: urlSchema.nullable().optional(),
   price: amountSchema,
   compareAtPrice: amountSchema.nullable().optional(),
+  costPrice: amountSchema.nullable().optional(),
   isAvailable: z.boolean().default(true),
   badge: z.enum(['NONE', 'POPULAR', 'NEW', 'PROMOTION', 'SOLD_OUT']).default('NONE'),
   variants: z
@@ -345,6 +346,17 @@ export const reservationStatusSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']),
 });
 
+// --- Galerie -------------------------------------------------------------------
+
+export const galleryImageSchema = z.object({
+  imageUrl: urlSchema,
+  caption: optionalText(200),
+});
+
+export const galleryCaptionSchema = z.object({
+  caption: optionalText(200),
+});
+
 // --- Service à table ---------------------------------------------------------
 
 export const tableSchema = z.object({
@@ -357,6 +369,18 @@ export const tableStatusSchema = z.object({
 
 export const tableRequestSchema = z.object({
   type: z.enum(['CALL', 'BILL']),
+});
+
+// --- Finances ------------------------------------------------------------------
+
+export const expenseSchema = z.object({
+  label: cleanString(120).pipe(z.string().min(1, 'Nom requis.')),
+  amount: amountSchema.refine((value) => value > 0, {
+    message: 'Le montant doit être supérieur à zéro.',
+  }),
+  category: z.enum(['INGREDIENTS', 'STAFF', 'RENT', 'UTILITIES', 'OTHER']),
+  incurredAt: z.coerce.date(),
+  notes: optionalText(500),
 });
 
 // --- Livraison ---------------------------------------------------------------

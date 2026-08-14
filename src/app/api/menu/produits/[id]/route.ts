@@ -6,7 +6,7 @@ import { findScopedOrThrow, requireTenant } from '@/lib/tenant';
 import { productSchema } from '@/lib/validation';
 import { ValidationError } from '@/lib/errors';
 import { uniqueChildSlug } from '@/lib/slug';
-import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { AUDIT_ACTIONS, diffFields, recordAudit } from '@/lib/audit';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,11 +17,16 @@ export const PATCH = route(async (request, { params }: Params) => {
   const context = await requireTenant('menu:manage');
   const { id } = await params;
 
-  const existing = await findScopedOrThrow<{ id: string; name: string }>(
-    'product',
-    context.restaurant.id,
-    id,
-  );
+  const existing = await findScopedOrThrow<{
+    id: string;
+    name: string;
+    price: number;
+    compareAtPrice: number | null;
+    costPrice: number | null;
+    isAvailable: boolean;
+  }>('product', context.restaurant.id, id, {
+    select: { id: true, name: true, price: true, compareAtPrice: true, costPrice: true, isAvailable: true },
+  });
 
   const body = await readJson(request);
 
@@ -75,6 +80,7 @@ export const PATCH = route(async (request, { params }: Params) => {
         imageUrl: input.imageUrl ?? null,
         price: input.price,
         compareAtPrice: input.compareAtPrice ?? null,
+        costPrice: input.costPrice ?? null,
         isAvailable: input.isAvailable,
         badge: input.badge,
         variants: {
@@ -109,6 +115,24 @@ export const PATCH = route(async (request, { params }: Params) => {
     restaurantId: context.restaurant.id,
     targetType: 'product',
     targetId: product.id,
+    metadata: {
+      changes: diffFields(
+        {
+          name: existing.name,
+          price: existing.price,
+          compareAtPrice: existing.compareAtPrice,
+          costPrice: existing.costPrice,
+          isAvailable: existing.isAvailable,
+        },
+        {
+          name: product.name,
+          price: product.price,
+          compareAtPrice: product.compareAtPrice,
+          costPrice: product.costPrice,
+          isAvailable: product.isAvailable,
+        },
+      ),
+    },
   });
 
   return ok({ product });

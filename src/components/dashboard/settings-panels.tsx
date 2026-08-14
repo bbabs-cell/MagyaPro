@@ -68,6 +68,7 @@ const TABS = [
   { key: 'seo', label: 'Référencement' },
   { key: 'domaines', label: 'Domaines' },
   { key: 'publication', label: 'Publication' },
+  { key: 'sauvegarde', label: 'Sauvegarde' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -725,6 +726,24 @@ export function SettingsPanels({
               )}
             </div>
           )}
+        </Card>
+      )}
+
+      {tab === 'sauvegarde' && (
+        <Card className="p-4 sm:p-5">
+          <h2 className="text-sm font-medium">Export complet</h2>
+          <p className="mt-2 text-sm text-ink-muted">
+            Téléchargez l&apos;intégralité des données de votre restaurant au
+            format JSON : profil, réglages, menu, promotions, fidélité,
+            tables, zones de livraison, clients et commandes. À conserver
+            comme sauvegarde, ou pour partir avec vos données.
+          </p>
+          <a
+            href="/api/sauvegarde"
+            className="mt-4 inline-flex h-11 items-center rounded-xl bg-ink px-5 text-sm font-medium text-white hover:bg-ink/90"
+          >
+            Télécharger la sauvegarde (JSON)
+          </a>
         </Card>
       )}
     </div>

@@ -217,7 +217,9 @@ type TenantScopedModel =
   | 'review'
   | 'reservation'
   | 'restaurantTable'
-  | 'loyaltyTier';
+  | 'loyaltyTier'
+  | 'expense'
+  | 'galleryImage';
 
 export async function findScopedOrThrow<T>(
   model: TenantScopedModel,

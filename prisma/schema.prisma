@@ -201,6 +201,8 @@ model Restaurant {
   tables          RestaurantTable[]
   loyaltyTiers    LoyaltyTier[]
   loyaltyRewards  LoyaltyReward[]
+  expenses        Expense[]
+  galleryImages   GalleryImage[]
 
   @@index([status])
   @@map("restaurants")
@@ -296,6 +298,9 @@ model Product {
   price          Int
   /// Ancien prix, affiché barré. Purement informatif.
   compareAtPrice Int?
+  /// Coût de revient, pour le calcul de marge. Facultatif : sans lui, la
+  /// marge de ce plat n'est simplement pas affichée.
+  costPrice      Int?
   isAvailable    Boolean      @default(true)
   badge          ProductBadge @default(NONE)
   position       Int          @default(0)
@@ -934,6 +939,48 @@ model AnalyticsEvent {
   @@index([restaurantId, occurredAt])
   @@index([restaurantId, type, occurredAt])
   @@map("analytics_events")
+}
+
+enum ExpenseCategory {
+  INGREDIENTS
+  STAFF
+  RENT
+  UTILITIES
+  OTHER
+}
+
+model Expense {
+  id           String          @id @default(cuid())
+  restaurantId String
+  label        String
+  /// Montant en unité mineure, comme tous les autres montants.
+  amount       Int
+  category     ExpenseCategory @default(OTHER)
+  incurredAt   DateTime
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, incurredAt])
+  @@map("expenses")
+}
+
+model GalleryImage {
+  id           String  @id @default(cuid())
+  restaurantId String
+  imageUrl     String
+  caption      String?
+  position     Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, position])
+  @@map("gallery_images")
 }
 
 model AuditLog {

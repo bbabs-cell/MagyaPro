@@ -61,6 +61,7 @@ export default async function MenuPage() {
           imageUrl: product.imageUrl,
           price: product.price,
           compareAtPrice: product.compareAtPrice,
+          costPrice: product.costPrice,
           isAvailable: product.isAvailable,
           badge: product.badge,
           variants: product.variants.map((variant) => ({

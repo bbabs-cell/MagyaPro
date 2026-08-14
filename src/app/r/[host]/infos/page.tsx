@@ -37,6 +37,12 @@ export default async function InfoPage({ params }: Props) {
       ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
       : null;
 
+  const galleryImages = await prisma.galleryImage.findMany({
+    where: { restaurantId: restaurant.id },
+    orderBy: { position: 'asc' },
+    select: { id: true, imageUrl: true, caption: true },
+  });
+
   const socials = [
     { label: 'Facebook', url: restaurant.facebookUrl },
     { label: 'Instagram', url: restaurant.instagramUrl },
@@ -193,6 +199,29 @@ export default async function InfoPage({ params }: Props) {
             )}
           </section>
         </div>
+
+        {galleryImages.length > 0 && (
+          <section aria-labelledby="galerie" className="mt-6 rounded-2xl border border-surface-border p-5">
+            <h2 id="galerie" className="text-sm font-medium">
+              Galerie
+            </h2>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {galleryImages.map((image) => (
+                <figure key={image.id}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
+                  <img
+                    src={image.imageUrl}
+                    alt={image.caption ?? ''}
+                    className="aspect-square w-full rounded-xl object-cover"
+                  />
+                  {image.caption && (
+                    <figcaption className="mt-1 text-xs text-ink-muted">{image.caption}</figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
 
         {reviewsEnabled && reviews.length > 0 && (
           <section aria-labelledby="avis" className="mt-6 rounded-2xl border border-surface-border p-5">

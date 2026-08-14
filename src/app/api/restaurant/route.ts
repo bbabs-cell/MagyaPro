@@ -2,7 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { restaurantProfileSchema } from '@/lib/validation';
-import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { AUDIT_ACTIONS, diffFields, recordAudit } from '@/lib/audit';
 import { currentClientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 
@@ -16,6 +16,16 @@ export const PATCH = route(async (request) => {
   hit(`restaurant:${context.restaurant.id}`, RATE_LIMITS.write);
 
   const input = parseOrThrow(restaurantProfileSchema, await readJson(request));
+
+  const before = {
+    name: context.restaurant.name,
+    description: context.restaurant.description,
+    phone: context.restaurant.phone,
+    email: context.restaurant.email,
+    addressLine: context.restaurant.addressLine,
+    city: context.restaurant.city,
+    country: context.restaurant.country,
+  };
 
   // `context.restaurant.id` provient de la session, jamais du corps de la
   // requête : c'est ce qui garantit qu'on ne modifie que son propre restaurant.
@@ -46,7 +56,19 @@ export const PATCH = route(async (request) => {
     targetType: 'restaurant',
     targetId: restaurant.id,
     ip: await currentClientIp(),
-    metadata: { section: 'profil', bySupport: context.isSupportAccess },
+    metadata: {
+      section: 'profil',
+      bySupport: context.isSupportAccess,
+      changes: diffFields(before, {
+        name: restaurant.name,
+        description: restaurant.description,
+        phone: restaurant.phone,
+        email: restaurant.email,
+        addressLine: restaurant.addressLine,
+        city: restaurant.city,
+        country: restaurant.country,
+      }),
+    },
   });
 
   return ok({ restaurant });

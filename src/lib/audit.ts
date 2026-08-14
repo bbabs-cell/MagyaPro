@@ -99,6 +99,27 @@ export type AuditInput = {
  * de journal est regrettable, refuser une commande à cause d'elle serait pire.
  * L'échec est en revanche remonté dans les logs serveur.
  */
+/**
+ * Compare deux instantanés d'une même ressource et ne garde que les champs
+ * qui ont réellement changé — c'est cette liste réduite qui alimente la
+ * comparaison avant/après du journal, plutôt que deux objets complets peu
+ * lisibles.
+ */
+export function diffFields<T extends Record<string, unknown>>(
+  before: T,
+  after: T,
+): Record<string, { from: unknown; to: unknown }> {
+  const diff: Record<string, { from: unknown; to: unknown }> = {};
+  for (const key of Object.keys(after)) {
+    const from = before[key];
+    const to = after[key];
+    if (JSON.stringify(from) !== JSON.stringify(to)) {
+      diff[key] = { from: from ?? null, to: to ?? null };
+    }
+  }
+  return diff;
+}
+
 export async function recordAudit(input: AuditInput): Promise<void> {
   try {
     await prisma.auditLog.create({

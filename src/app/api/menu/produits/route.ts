@@ -74,6 +74,7 @@ export const POST = route(async (request) => {
       imageUrl: input.imageUrl ?? null,
       price: input.price,
       compareAtPrice: input.compareAtPrice ?? null,
+      costPrice: input.costPrice ?? null,
       isAvailable: input.isAvailable,
       badge: input.badge,
       position: (last?.position ?? -1) + 1,

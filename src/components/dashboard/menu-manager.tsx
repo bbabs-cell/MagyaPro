@@ -50,6 +50,7 @@ type Product = {
   imageUrl: string | null;
   price: number;
   compareAtPrice: number | null;
+  costPrice: number | null;
   isAvailable: boolean;
   badge: string;
   variants: Variant[];
@@ -515,6 +516,7 @@ function ProductForm({
 
     const formData = new FormData(event.currentTarget);
     const compareRaw = String(formData.get('compareAtPrice') ?? '').trim();
+    const costRaw = String(formData.get('costPrice') ?? '').trim();
 
     const payload = {
       categoryId: String(formData.get('categoryId') ?? ''),
@@ -523,6 +525,7 @@ function ProductForm({
       imageUrl,
       price: toMinor(String(formData.get('price') ?? '0'), currency),
       compareAtPrice: compareRaw ? toMinor(compareRaw, currency) : null,
+      costPrice: costRaw ? toMinor(costRaw, currency) : null,
       isAvailable: formData.get('isAvailable') === 'on',
       badge: String(formData.get('badge') ?? 'NONE'),
       // Les lignes laissées vides par mégarde sont écartées plutôt que de
@@ -645,6 +648,23 @@ function ProductForm({
             />
           </Field>
         </div>
+
+        <Field
+          label={`Coût de revient (${currency})`}
+          htmlFor="costPrice"
+          hint="Facultatif — sert au calcul de marge dans Finances. Laissez vide si inconnu."
+          error={fieldErrors.costPrice}
+        >
+          <input
+            id="costPrice"
+            name="costPrice"
+            type="number"
+            min="0"
+            step="any"
+            defaultValue={product?.costPrice ? toMajor(product.costPrice, currency) : ''}
+            className={inputClass}
+          />
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Badge" htmlFor="badge">

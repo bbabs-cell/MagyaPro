@@ -38,6 +38,8 @@ export const PERMISSIONS = [
   'deliveries:drive',
 
   'analytics:view',
+  'finances:manage',
+  'audit:view',
 
   'team:view',
   'team:manage',
@@ -74,6 +76,8 @@ const ADMIN_PERMISSIONS: Permission[] = [
   'loyalty:manage',
   'tables:manage',
   'analytics:view',
+  'finances:manage',
+  'audit:view',
   'team:view',
   'settings:manage',
   'subscription:view',
@@ -142,6 +146,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'tables:manage': 'Gérer les tables',
   'deliveries:drive': 'Effectuer des livraisons',
   'analytics:view': 'Voir les statistiques',
+  'finances:manage': 'Gérer les finances',
+  'audit:view': 'Voir le journal',
   'team:view': "Voir l'équipe",
   'team:manage': "Gérer l'équipe",
   'settings:manage': 'Gérer les réglages',
