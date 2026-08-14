@@ -1040,3 +1040,29 @@ model SupportAccess {
   @@index([adminUserId, startedAt])
   @@map("support_access")
 }
+
+enum AnnouncementSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+/// Message publié par un Super Admin, visible dans le dashboard de tous les
+/// restaurants tant qu'il est dans sa fenêtre de publication.
+model PlatformAnnouncement {
+  id        String                @id @default(cuid())
+  title     String
+  body      String
+  severity  AnnouncementSeverity  @default(INFO)
+  /// Conservé même si le compte administrateur est supprimé.
+  createdByEmail String
+  publishedAt DateTime            @default(now())
+  /// `null` = pas de date de fin programmée ; reste actif jusqu'à suppression.
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([publishedAt, expiresAt])
+  @@map("platform_announcements")
+}

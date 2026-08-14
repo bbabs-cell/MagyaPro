@@ -5,6 +5,7 @@ import { getTenantContext, listMemberships } from '@/lib/tenant';
 import { countUnreadNotifications } from '@/lib/notifications';
 import { countPendingAlerts } from '@/lib/alerts';
 import { getEntitlements } from '@/lib/entitlements';
+import { getActiveAnnouncements } from '@/lib/announcements';
 import { DashboardShell } from '@/components/dashboard/shell';
 
 export default async function DashboardLayout({
@@ -28,11 +29,12 @@ export default async function DashboardLayout({
     redirect('/bienvenue');
   }
 
-  const [memberships, unreadCount, alertCount, entitlements] = await Promise.all([
+  const [memberships, unreadCount, alertCount, entitlements, announcements] = await Promise.all([
     listMemberships(),
     countUnreadNotifications(context.restaurant.id),
     countPendingAlerts(context.restaurant.id),
     getEntitlements(context.restaurant.id),
+    getActiveAnnouncements(),
   ]);
 
   return (
@@ -59,6 +61,7 @@ export default async function DashboardLayout({
         isActive: entitlements.isActive,
       }}
       isSupportAccess={context.isSupportAccess}
+      announcements={announcements}
     >
       {children}
     </DashboardShell>

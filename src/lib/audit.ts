@@ -57,6 +57,10 @@ export const AUDIT_ACTIONS = {
   DOMAIN_ADDED: 'domain.added',
   DOMAIN_VERIFIED: 'domain.verified',
   DOMAIN_REMOVED: 'domain.removed',
+
+  ANNOUNCEMENT_CREATED: 'announcement.created',
+  ANNOUNCEMENT_UPDATED: 'announcement.updated',
+  ANNOUNCEMENT_DELETED: 'announcement.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -313,3 +313,137 @@ export async function getPlatformMetrics() {
     newRestaurants,
   };
 }
+
+/** Normalise le prix d'un plan en équivalent mensuel, pour comparer MENSUEL et ANNUEL. */
+function monthlyEquivalent(price: number, interval: 'MONTH' | 'YEAR'): number {
+  return interval === 'YEAR' ? Math.round(price / 12) : price;
+}
+
+export type PlatformAnalytics = {
+  /** MRR actuel, par devise — les abonnements résiliés ou en retard n'y contribuent pas. */
+  mrrByCurrency: Record<string, number>;
+  /** Nouveaux restaurants par mois, sur les `months` derniers mois (dont le mois en cours). */
+  signupsByMonth: Array<{ month: string; count: number }>;
+  /** Volume brut traité (hors commandes annulées) par mois, toutes devises confondues. */
+  gmvByMonth: Array<{ month: string; amount: number }>;
+  /** Répartition des abonnements actifs par plan, avec leur contribution au MRR. */
+  byPlan: Array<{ planId: string; planName: string; count: number; mrr: number; currency: string }>;
+  /** Résiliations dans les 30 derniers jours vs abonnements actifs au début de la période. */
+  churn: { cancelledLast30: number; activeAtPeriodStart: number; rate: number | null };
+};
+
+/**
+ * Analyses approfondies de la plateforme, pour le Super Admin.
+ *
+ * Toutes les valeurs proviennent de données réellement enregistrées :
+ * inscriptions et volumes sont bucketés depuis `createdAt`/`placedAt` en
+ * mémoire (le nombre de restaurants reste modeste), sans table de snapshots
+ * historiques — il n'existe donc pas d'historique de MRR mois par mois,
+ * seulement sa valeur actuelle.
+ */
+export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytics> {
+  const monthsAgo = new Date();
+  monthsAgo.setDate(1);
+  monthsAgo.setHours(0, 0, 0, 0);
+  monthsAgo.setMonth(monthsAgo.getMonth() - (months - 1));
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [activeSubscriptions, restaurants, orders, activeAtPeriodStart, cancelledLast30] =
+    await Promise.all([
+      prisma.subscription.findMany({
+        where: { status: 'ACTIVE' },
+        select: {
+          plan: { select: { id: true, name: true, price: true, currency: true, interval: true } },
+        },
+      }),
+      prisma.restaurant.findMany({
+        where: { createdAt: { gte: monthsAgo } },
+        select: { createdAt: true },
+      }),
+      prisma.order.findMany({
+        where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo } },
+        select: { placedAt: true, total: true },
+      }),
+      prisma.subscription.count({
+        where: { createdAt: { lt: thirtyDaysAgo }, status: { not: 'CANCELLED' } },
+      }),
+      prisma.subscription.count({
+        where: { status: 'CANCELLED', cancelledAt: { gte: thirtyDaysAgo } },
+      }),
+    ]);
+
+  const mrrByCurrency: Record<string, number> = {};
+  const byPlanMap = new Map<
+    string,
+    { planId: string; planName: string; count: number; mrr: number; currency: string }
+  >();
+  for (const { plan } of activeSubscriptions) {
+    const monthly = monthlyEquivalent(plan.price, plan.interval);
+    mrrByCurrency[plan.currency] = (mrrByCurrency[plan.currency] ?? 0) + monthly;
+    const existing = byPlanMap.get(plan.id);
+    if (existing) {
+      existing.count += 1;
+      existing.mrr += monthly;
+    } else {
+      byPlanMap.set(plan.id, {
+        planId: plan.id,
+        planName: plan.name,
+        count: 1,
+        mrr: monthly,
+        currency: plan.currency,
+      });
+    }
+  }
+
+  // Buckets mensuels initialisés à zéro pour que les mois sans activité
+  // apparaissent quand même dans le graphique, plutôt que d'être absents.
+  const monthKeys: string[] = [];
+  const cursor = new Date(monthsAgo);
+  for (let i = 0; i < months; i++) {
+    monthKeys.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  const monthKeyOf = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+  const signupCounts = new Map(monthKeys.map((key) => [key, 0]));
+  for (const restaurant of restaurants) {
+    const key = monthKeyOf(restaurant.createdAt);
+    if (signupCounts.has(key)) signupCounts.set(key, (signupCounts.get(key) ?? 0) + 1);
+  }
+
+  const gmvSums = new Map(monthKeys.map((key) => [key, 0]));
+  for (const order of orders) {
+    const key = monthKeyOf(order.placedAt);
+    if (gmvSums.has(key)) gmvSums.set(key, (gmvSums.get(key) ?? 0) + order.total);
+  }
+
+  const MONTH_LABELS = [
+    'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  ];
+  const labelFor = (key: string) => {
+    const [, month] = key.split('-');
+    return MONTH_LABELS[Number(month) - 1] ?? key;
+  };
+
+  return {
+    mrrByCurrency,
+    signupsByMonth: monthKeys.map((key) => ({
+      month: labelFor(key),
+      count: signupCounts.get(key) ?? 0,
+    })),
+    gmvByMonth: monthKeys.map((key) => ({
+      month: labelFor(key),
+      amount: gmvSums.get(key) ?? 0,
+    })),
+    byPlan: [...byPlanMap.values()].sort((a, b) => b.mrr - a.mrr),
+    churn: {
+      cancelledLast30,
+      activeAtPeriodStart,
+      rate: activeAtPeriodStart > 0 ? cancelledLast30 / activeAtPeriodStart : null,
+    },
+  };
+}

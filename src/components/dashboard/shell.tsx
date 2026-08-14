@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
+import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
 
 /**
@@ -74,6 +75,7 @@ export function DashboardShell({
   alertCount,
   subscription,
   isSupportAccess,
+  announcements,
   children,
 }: {
   user: { name: string; email: string; isSuperAdmin: boolean };
@@ -90,6 +92,12 @@ export function DashboardShell({
   alertCount: number;
   subscription: { planName: string; status: string; isActive: boolean };
   isSupportAccess: boolean;
+  announcements: Array<{
+    id: string;
+    title: string;
+    body: string;
+    severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  }>;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -195,6 +203,8 @@ export function DashboardShell({
           modifications sont bloquées.
         </div>
       )}
+
+      <AnnouncementBanner announcements={announcements} />
 
       <header className="sticky top-0 z-30 border-b border-surface-border bg-white lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">

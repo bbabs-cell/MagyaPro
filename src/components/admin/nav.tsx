@@ -11,6 +11,8 @@ const LINKS = [
   { href: '/admin/utilisateurs', label: 'Utilisateurs' },
   { href: '/admin/plans', label: 'Plans' },
   { href: '/admin/abonnements', label: 'Abonnements' },
+  { href: '/admin/analytics', label: 'Analytics' },
+  { href: '/admin/annonces', label: 'Annonces' },
   { href: '/admin/templates', label: 'Templates' },
   { href: '/admin/journal', label: 'Journal' },
 ];

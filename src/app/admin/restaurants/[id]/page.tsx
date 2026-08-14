@@ -7,6 +7,7 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StatusPill } from '@/app/admin/page';
 import { RestaurantAdminActions } from '@/components/admin/restaurant-actions';
+import { SubscriptionManager } from '@/components/admin/subscription-manager';
 
 export const metadata: Metadata = { title: 'Fiche restaurant' };
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,7 @@ export default async function AdminRestaurantDetailPage({
 
   if (!restaurant) notFound();
 
-  const [revenue, supportHistory] = await Promise.all([
+  const [revenue, supportHistory, plans] = await Promise.all([
     prisma.order.aggregate({
       where: { restaurantId: restaurant.id, status: { not: 'CANCELLED' } },
       _sum: { total: true },
@@ -44,6 +45,11 @@ export default async function AdminRestaurantDetailPage({
       orderBy: { startedAt: 'desc' },
       take: 10,
       include: { admin: { select: { email: true } } },
+    }),
+    prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { position: 'asc' },
+      select: { id: true, name: true },
     }),
   ]);
 
@@ -110,21 +116,29 @@ export default async function AdminRestaurantDetailPage({
           </h2>
           <div className="mt-3 rounded-2xl border border-white/10 p-4 text-sm">
             {restaurant.subscription ? (
-              <dl className="space-y-2">
-                <Row label="Plan" value={restaurant.subscription.plan.name} />
-                <Row label="Statut" value={restaurant.subscription.status} />
-                <Row
-                  label="Prix"
-                  value={formatMoney(
-                    restaurant.subscription.plan.price,
-                    restaurant.subscription.plan.currency,
-                  )}
-                />
-                <Row
-                  label="Fin de période"
-                  value={restaurant.subscription.currentPeriodEnd.toLocaleDateString('fr-FR')}
-                />
-              </dl>
+              <>
+                <dl className="space-y-2">
+                  <Row
+                    label="Prix du plan actuel"
+                    value={formatMoney(
+                      restaurant.subscription.plan.price,
+                      restaurant.subscription.plan.currency,
+                    )}
+                  />
+                </dl>
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <SubscriptionManager
+                    restaurantId={restaurant.id}
+                    plans={plans}
+                    subscription={{
+                      planId: restaurant.subscription.planId,
+                      status: restaurant.subscription.status,
+                      currentPeriodEnd: restaurant.subscription.currentPeriodEnd.toISOString(),
+                      trialEndsAt: restaurant.subscription.trialEndsAt?.toISOString() ?? null,
+                    }}
+                  />
+                </div>
+              </>
             ) : (
               <p className="text-white/60">Aucun abonnement rattaché.</p>
             )}
