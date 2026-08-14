@@ -11,9 +11,9 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Remplacer par l'ID réel de la configuration Hyperdrive créée dans le
-      // dashboard Cloudflare (Workers & Pages → Hyperdrive).
-      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      // Configuration Hyperdrive « magyapro-db », créée dans le dashboard
+      // Cloudflare (Workers & Pages → Hyperdrive), pointant vers Supabase.
+      "id": "a57eab4f94284f52917c9b78afb04308",
       // Utilisé uniquement par `wrangler dev` en local, jamais en production
       // (l'ID ci-dessus prend le relais une fois déployé).
       "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:5432/magyapro_dev?schema=public"
