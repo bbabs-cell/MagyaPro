@@ -166,10 +166,16 @@ Points notables :
 2. `npm run db:deploy` (applique les migrations sans prompt interactif).
 3. `npm run db:seed` pour les données de référence (plans, templates,
    Super Admin) — ajoutez `-- --no-demo` pour omettre les restaurants de
-   démonstration en production.
+   démonstration en production. Ce script est idempotent (upsert des plans et
+   templates, création du Super Admin seulement s'il n'existe pas encore) :
+   le relancer à chaque déploiement ne duplique rien et ne réinitialise pas
+   le mot de passe d'un compte existant.
 4. `npm run build` puis `npm run start`, ou déployez sur une plateforme
    compatible Next.js (le projet n'utilise aucune API spécifique à un
-   hébergeur).
+   hébergeur). Sur **Railway**, `railway.json` chaîne déjà
+   `db:deploy && db:seed -- --no-demo && start` dans la commande de
+   démarrage : migrations et données de référence s'appliquent automatiquement
+   à chaque déploiement, sans étape manuelle.
 5. Configurez `APP_ROOT_DOMAIN` sur le domaine réel, avec un DNS wildcard
    (`*.magyapro.app`) pointant vers l'application, pour que chaque nouveau
    restaurant obtienne son sous-domaine sans intervention manuelle. C'est une
