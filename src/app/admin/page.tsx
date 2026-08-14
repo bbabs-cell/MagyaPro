@@ -94,7 +94,7 @@ export default async function AdminDashboardPage() {
 
       <p className="mt-3 text-xs text-white/40">
         Le volume traité correspond au montant des commandes passées chez les
-        restaurants ; il ne s&apos;agit pas du revenu de Magya, qui provient des
+        restaurants ; il ne s&apos;agit pas du revenu de Magyapro, qui provient des
         abonnements.
       </p>
 

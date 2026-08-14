@@ -82,7 +82,7 @@ export default async function AdminAnalyticsPage() {
           </div>
           <p className="mt-2 text-xs text-white/40">
             Volume brut, toutes devises confondues affichées en XOF — à ne pas
-            confondre avec le revenu d&apos;abonnement de Magya.
+            confondre avec le revenu d&apos;abonnement de Magyapro.
           </p>
         </section>
       </div>

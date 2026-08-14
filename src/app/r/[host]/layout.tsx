@@ -20,7 +20,7 @@ type Props = {
  *
  * Chaque restaurant produit ses propres balises : titre, description, image de
  * partage et favicon. C'est ce qui rend chaque site indexable pour lui-même
- * plutôt que comme une page de Magya.
+ * plutôt que comme une page de Magyapro.
  */
 export async function generateMetadata({
   params,
@@ -44,7 +44,7 @@ export async function generateMetadata({
   return {
     title: { default: title, template: `%s — ${restaurant.name}` },
     description,
-    // Le site du restaurant ne doit pas hériter du template de titre de Magya.
+    // Le site du restaurant ne doit pas hériter du template de titre de Magyapro.
     applicationName: restaurant.name,
     manifest: `/r/${host}/manifest.webmanifest`,
     appleWebApp: { capable: true, title: restaurant.name, statusBarStyle: 'default' },

@@ -77,12 +77,12 @@ describe('Inscription et connexion', () => {
   it('crée un utilisateur, son restaurant et son adhésion propriétaire', async () => {
     const { user, restaurant } = await registerAccount({
       name: 'Fatou Diallo',
-      email: 'fatou@test.magya',
+      email: 'fatou@test.magyapro',
       password: 'MotDePasse!2345',
       restaurantName: 'Chez Fatou',
     });
 
-    expect(user.email).toBe('fatou@test.magya');
+    expect(user.email).toBe('fatou@test.magyapro');
     expect(restaurant.slug).toBe('chez-fatou');
     expect(restaurant.status).toBe('DRAFT');
 
@@ -113,7 +113,7 @@ describe('Inscription et connexion', () => {
     await expect(
       registerAccount({
         name: 'Autre personne',
-        email: 'fatou@test.magya',
+        email: 'fatou@test.magyapro',
         password: 'MotDePasse!2345',
         restaurantName: 'Autre restaurant',
       }),
@@ -123,7 +123,7 @@ describe('Inscription et connexion', () => {
   it('attribue un slug distinct à deux restaurants homonymes', async () => {
     const { restaurant } = await registerAccount({
       name: 'Second propriétaire',
-      email: 'second@test.magya',
+      email: 'second@test.magyapro',
       password: 'MotDePasse!2345',
       restaurantName: 'Chez Fatou',
     });
@@ -133,27 +133,27 @@ describe('Inscription et connexion', () => {
 
   it('authentifie avec les bons identifiants', async () => {
     const user = await authenticate({
-      email: 'fatou@test.magya',
+      email: 'fatou@test.magyapro',
       password: 'MotDePasse!2345',
     });
-    expect(user.email).toBe('fatou@test.magya');
+    expect(user.email).toBe('fatou@test.magyapro');
   });
 
   it('rejette un mauvais mot de passe', async () => {
     await expect(
-      authenticate({ email: 'fatou@test.magya', password: 'MauvaisMotDePasse' }),
+      authenticate({ email: 'fatou@test.magyapro', password: 'MauvaisMotDePasse' }),
     ).rejects.toThrow(/incorrect/i);
   });
 
   it('renvoie le même message pour un email inconnu, sans révéler son absence', async () => {
     // Deux messages différents permettraient d'énumérer les comptes existants.
     const unknown = await authenticate({
-      email: 'inconnu@test.magya',
+      email: 'inconnu@test.magyapro',
       password: 'peu importe',
     }).catch((error: Error) => error.message);
 
     const wrongPassword = await authenticate({
-      email: 'fatou@test.magya',
+      email: 'fatou@test.magyapro',
       password: 'MauvaisMotDePasse',
     }).catch((error: Error) => error.message);
 
@@ -162,12 +162,12 @@ describe('Inscription et connexion', () => {
 
   it('refuse la connexion d\'un compte suspendu', async () => {
     await prisma.user.update({
-      where: { email: 'second@test.magya' },
+      where: { email: 'second@test.magyapro' },
       data: { status: 'SUSPENDED' },
     });
 
     await expect(
-      authenticate({ email: 'second@test.magya', password: 'MotDePasse!2345' }),
+      authenticate({ email: 'second@test.magyapro', password: 'MotDePasse!2345' }),
     ).rejects.toThrow(/suspendu/i);
   });
 });
@@ -177,14 +177,14 @@ describe('Réinitialisation de mot de passe', () => {
     await resetDatabase();
     await registerAccount({
       name: 'Awa Koné',
-      email: 'awa@test.magya',
+      email: 'awa@test.magyapro',
       password: 'AncienMotDePasse!1',
       restaurantName: 'Chez Awa',
     });
   });
 
   it("n'échoue pas — et ne révèle rien — pour une adresse inconnue", async () => {
-    await expect(requestPasswordReset('inconnu@test.magya')).resolves.toBeUndefined();
+    await expect(requestPasswordReset('inconnu@test.magyapro')).resolves.toBeUndefined();
 
     const tokens = await prisma.verificationToken.count({
       where: { type: 'PASSWORD_RESET' },
@@ -193,7 +193,7 @@ describe('Réinitialisation de mot de passe', () => {
   });
 
   it('change le mot de passe et révoque toutes les sessions', async () => {
-    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magya' } });
+    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magyapro' } });
 
     // Session ouverte avant la réinitialisation.
     await prisma.session.create({
@@ -219,11 +219,11 @@ describe('Réinitialisation de mot de passe', () => {
     await resetPassword({ token, password: 'NouveauMotDePasse!2' });
 
     await expect(
-      authenticate({ email: 'awa@test.magya', password: 'NouveauMotDePasse!2' }),
+      authenticate({ email: 'awa@test.magyapro', password: 'NouveauMotDePasse!2' }),
     ).resolves.toBeTruthy();
 
     await expect(
-      authenticate({ email: 'awa@test.magya', password: 'AncienMotDePasse!1' }),
+      authenticate({ email: 'awa@test.magyapro', password: 'AncienMotDePasse!1' }),
     ).rejects.toThrow();
 
     const sessions = await prisma.session.count({ where: { userId: user!.id } });
@@ -231,7 +231,7 @@ describe('Réinitialisation de mot de passe', () => {
   });
 
   it('refuse de réutiliser un jeton déjà consommé', async () => {
-    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magya' } });
+    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magyapro' } });
     const token = generateToken();
 
     await prisma.verificationToken.create({
@@ -251,7 +251,7 @@ describe('Réinitialisation de mot de passe', () => {
   });
 
   it('refuse un jeton expiré', async () => {
-    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magya' } });
+    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magyapro' } });
     const token = generateToken();
 
     await prisma.verificationToken.create({
@@ -269,7 +269,7 @@ describe('Réinitialisation de mot de passe', () => {
   });
 
   it("refuse d'utiliser un jeton de vérification d'email pour changer le mot de passe", async () => {
-    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magya' } });
+    const user = await prisma.user.findUnique({ where: { email: 'awa@test.magyapro' } });
     const token = generateToken();
 
     await prisma.verificationToken.create({
@@ -295,7 +295,7 @@ describe("Vérification d'email", () => {
   it("marque l'adresse comme vérifiée", async () => {
     const { user } = await registerAccount({
       name: 'Marc Kouassi',
-      email: 'marc@test.magya',
+      email: 'marc@test.magyapro',
       password: 'MotDePasse!2345',
       restaurantName: 'Chez Marc',
     });

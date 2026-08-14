@@ -12,7 +12,7 @@ export default function AuthLayout({
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
             M
           </span>
-          <span className="text-lg font-semibold tracking-tight">Magya</span>
+          <span className="text-lg font-semibold tracking-tight">Magyapro</span>
         </Link>
       </header>
 

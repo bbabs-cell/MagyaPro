@@ -8,7 +8,7 @@ import { requireTenant } from '@/lib/tenant';
  * Export complet des données du restaurant, au format JSON.
  *
  * Une sauvegarde de secours et un moyen de partir avec ses données : rien
- * n'est propriétaire de Magya. Les commandes et clients sont inclus tels
+ * n'est propriétaire de Magyapro. Les commandes et clients sont inclus tels
  * quels ; c'est au restaurateur de traiter ce fichier avec la même prudence
  * que n'importe quel export contenant des coordonnées de clients.
  */
@@ -68,7 +68,7 @@ export const GET = route(async () => {
     status: 200,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="magya-${restaurant.slug}-${new Date().toISOString().slice(0, 10)}.json"`,
+      'Content-Disposition': `attachment; filename="magyapro-${restaurant.slug}-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   });
 });

@@ -12,9 +12,9 @@ import {
   hashToken,
 } from '@/lib/auth/tokens';
 
-export const SESSION_COOKIE = 'magya_session';
+export const SESSION_COOKIE = 'magyapro_session';
 /** Cookie posé lorsqu'un Super Admin ouvre l'espace d'un restaurant en support. */
-export const SUPPORT_COOKIE = 'magya_support';
+export const SUPPORT_COOKIE = 'magyapro_support';
 
 export type SessionUser = {
   id: string;
@@ -136,7 +136,7 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireSuperAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (user.platformRole !== 'SUPER_ADMIN') {
-    throw new UnauthorizedError("Accès réservé à l'administration Magya.");
+    throw new UnauthorizedError("Accès réservé à l'administration Magyapro.");
   }
   return user;
 }

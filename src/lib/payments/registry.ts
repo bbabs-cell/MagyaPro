@@ -3,10 +3,8 @@ import {
   cashOnDeliveryProvider,
   payAtStoreProvider,
 } from '@/lib/payments/providers/offline';
-import {
-  orangeMoneyProvider,
-  waveProvider,
-} from '@/lib/payments/providers/mobile-money';
+import { orangeMoneyProvider } from '@/lib/payments/providers/mobile-money';
+import { waveApiProvider } from '@/lib/payments/providers/wave-api';
 import {
   orangeMoneyManualProvider,
   waveManualProvider,
@@ -22,7 +20,7 @@ const REGISTRY: PaymentProvider[] = [
   cashOnDeliveryProvider,
   payAtStoreProvider,
   orangeMoneyProvider,
-  waveProvider,
+  waveApiProvider,
   orangeMoneyManualProvider,
   waveManualProvider,
 ];

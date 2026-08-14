@@ -18,4 +18,4 @@ export function dirFor(locale: Locale): 'rtl' | 'ltr' {
   return RTL_LOCALES.includes(locale) ? 'rtl' : 'ltr';
 }
 
-export const LOCALE_COOKIE = 'magya_locale';
+export const LOCALE_COOKIE = 'magyapro_locale';

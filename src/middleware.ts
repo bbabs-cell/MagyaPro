@@ -4,8 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Routage multi-domaine.
  *
  * Une seule application sert trois familles d'URL :
- *   - le domaine racine (magya.app)        → landing, dashboard, administration
- *   - un sous-domaine (chez-fatou.magya.app) → site public du restaurant
+ *   - le domaine racine (magyapro.app)        → landing, dashboard, administration
+ *   - un sous-domaine (chez-fatou.magyapro.app) → site public du restaurant
  *   - un domaine personnalisé (mon-resto.com) → site public du restaurant
  *
  * Le middleware ne fait que réécrire : il identifie l'hôte et route la requête
@@ -15,7 +15,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * de statut associés.
  */
 
-const ROOT_DOMAIN = (process.env.APP_ROOT_DOMAIN ?? 'magya.localhost:3000')
+const ROOT_DOMAIN = (process.env.APP_ROOT_DOMAIN ?? 'magyapro.localhost:3000')
   .split(':')[0]!
   .toLowerCase();
 

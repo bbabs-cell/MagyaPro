@@ -1,4 +1,4 @@
-// Magya — schéma multi-tenant.
+// Magyapro — schéma multi-tenant.
 //
 // Règle structurante : toute donnée appartenant à un restaurant porte une
 // colonne `restaurantId` non nullable et un index dessus. Les requêtes
@@ -131,7 +131,7 @@ enum RestaurantStatus {
 
 model Restaurant {
   id          String           @id @default(cuid())
-  /// Sous-domaine public : <slug>.magya.app
+  /// Sous-domaine public : <slug>.magyapro.app
   slug        String           @unique
   name        String
   description String?
@@ -882,7 +882,7 @@ model Domain {
   hostname          String       @unique
   type              DomainType   @default(CUSTOM)
   status            DomainStatus @default(PENDING)
-  /// Valeur attendue dans l'enregistrement TXT _magya-verify.<hostname>
+  /// Valeur attendue dans l'enregistrement TXT _magyapro-verify.<hostname>
   verificationToken String
   verifiedAt        DateTime?
   lastCheckedAt     DateTime?

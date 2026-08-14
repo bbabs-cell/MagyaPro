@@ -31,7 +31,7 @@ export default async function AdminLayout({
               M
             </span>
             <span className="font-semibold tracking-tight">
-              Magya <span className="font-normal text-white/60">Administration</span>
+              Magyapro <span className="font-normal text-white/60">Administration</span>
             </span>
           </Link>
 

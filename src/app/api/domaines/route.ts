@@ -54,7 +54,7 @@ export const POST = route(async (request) => {
       hostname,
       type: 'CUSTOM',
       status: 'PENDING',
-      verificationToken: `magya-verify-${generateToken(16)}`,
+      verificationToken: `magyapro-verify-${generateToken(16)}`,
     },
   });
 

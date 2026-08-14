@@ -187,7 +187,7 @@ export async function authenticate(input: {
 
   if (user.status !== 'ACTIVE') {
     throw new UnauthorizedError(
-      'Ce compte est suspendu. Contactez le support Magya.',
+      'Ce compte est suspendu. Contactez le support Magyapro.',
     );
   }
 

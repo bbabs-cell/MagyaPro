@@ -59,7 +59,7 @@ export const DELETE = route(async (_request, { params }: Params) => {
   // le supprimer rendrait le site inaccessible.
   if (domain.type === 'SUBDOMAIN') {
     throw new ConflictError(
-      "L'adresse Magya du restaurant ne peut pas être supprimée.",
+      "L'adresse Magyapro du restaurant ne peut pas être supprimée.",
     );
   }
 

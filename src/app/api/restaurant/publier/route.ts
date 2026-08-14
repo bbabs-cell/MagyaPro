@@ -23,7 +23,7 @@ export const POST = route(async (request) => {
 
   if (context.restaurant.status === 'SUSPENDED') {
     throw new ValidationError(
-      'Ce restaurant est suspendu. Contactez le support Magya pour le réactiver.',
+      'Ce restaurant est suspendu. Contactez le support Magyapro pour le réactiver.',
     );
   }
 

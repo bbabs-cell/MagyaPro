@@ -720,7 +720,7 @@ export function SettingsPanels({
               <>
                 <Badge tone="danger">Suspendu</Badge>
                 <span className="text-ink-muted">
-                  Contactez le support Magya pour réactiver votre restaurant.
+                  Contactez le support Magyapro pour réactiver votre restaurant.
                 </span>
               </>
             ) : (
@@ -878,7 +878,7 @@ function DomainsPanel({
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 font-mono text-sm">
                   {domain.hostname}
-                  {domain.type === 'SUBDOMAIN' && <Badge tone="neutral">Magya</Badge>}
+                  {domain.type === 'SUBDOMAIN' && <Badge tone="neutral">Magyapro</Badge>}
                   {domain.status === 'VERIFIED' && <Badge tone="success">Vérifié</Badge>}
                   {domain.status === 'PENDING' && <Badge tone="warning">En attente</Badge>}
                   {domain.status === 'FAILED' && <Badge tone="danger">Échec</Badge>}
@@ -951,7 +951,7 @@ function DomainsPanel({
       ) : (
         <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Les domaines personnalisés sont inclus dans les plans supérieurs.
-          Votre adresse Magya reste disponible et fonctionnelle.
+          Votre adresse Magyapro reste disponible et fonctionnelle.
         </p>
       )}
     </Card>

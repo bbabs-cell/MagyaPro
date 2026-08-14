@@ -23,7 +23,7 @@ export default function SiteNotFound() {
           href="/"
           className="mt-6 inline-flex h-11 items-center rounded-xl border border-surface-border px-6 text-sm font-medium hover:bg-surface-sunken"
         >
-          Découvrir Magya
+          Découvrir Magyapro
         </Link>
       </div>
     </div>

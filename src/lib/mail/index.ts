@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 import { env } from '@/lib/env';
 
 /**
@@ -8,9 +10,8 @@ import { env } from '@/lib/env';
  * lien de réinitialisation reste ainsi accessible sans configurer un SMTP,
  * et sans faire croire qu'un email a réellement été expédié.
  *
- * Aucun pilote SMTP n'est fourni pour l'instant : le brancher demande une
- * dépendance d'envoi et des identifiants. Le point d'extension est prêt, il
- * n'est pas simulé.
+ * En production, `smtp` envoie réellement le message via le serveur SMTP
+ * configuré (`SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`).
  */
 
 export type MailMessage = {
@@ -45,8 +46,47 @@ const consoleDriver: MailDriver = {
   },
 };
 
+/** Adresse d'expédition, sans le nom d'affichage (nodemailer exige `to` sans display-name côté enveloppe). */
+function parseFromAddress(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  return match ? match[1]! : from;
+}
+
+let cachedTransport: ReturnType<typeof nodemailer.createTransport> | null = null;
+
+function smtpTransport() {
+  if (cachedTransport) return cachedTransport;
+  if (!env.smtpHost || !env.smtpUser || !env.smtpPassword) {
+    throw new Error(
+      'Pilote SMTP demandé mais SMTP_HOST/SMTP_USER/SMTP_PASSWORD manquants. Voir .env.example.',
+    );
+  }
+  cachedTransport = nodemailer.createTransport({
+    host: env.smtpHost,
+    port: env.smtpPort,
+    secure: env.smtpSecure,
+    auth: { user: env.smtpUser, pass: env.smtpPassword },
+  });
+  return cachedTransport;
+}
+
+const smtpDriver: MailDriver = {
+  name: 'smtp',
+  async send(message) {
+    await smtpTransport().sendMail({
+      from: env.mailFrom,
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
+      envelope: { from: parseFromAddress(env.mailFrom), to: message.to },
+    });
+  },
+};
+
 const drivers: Record<string, MailDriver> = {
   console: consoleDriver,
+  smtp: smtpDriver,
 };
 
 export function mailer(): MailDriver {
@@ -83,16 +123,16 @@ export async function sendVerificationEmail(
   const link = `${env.appUrl}/verifier-email?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
-    subject: 'Confirmez votre adresse email — Magya',
+    subject: 'Confirmez votre adresse email — Magyapro',
     text: [
       `Bonjour ${name},`,
       '',
-      'Bienvenue sur Magya. Confirmez votre adresse email pour activer votre compte :',
+      'Bienvenue sur Magyapro. Confirmez votre adresse email pour activer votre compte :',
       link,
       '',
       "Ce lien expire dans 48 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.",
       '',
-      "L'équipe Magya",
+      "L'équipe Magyapro",
     ].join('\n'),
   });
 }
@@ -105,7 +145,7 @@ export async function sendPasswordResetEmail(
   const link = `${env.appUrl}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
-    subject: 'Réinitialisation de votre mot de passe — Magya',
+    subject: 'Réinitialisation de votre mot de passe — Magyapro',
     text: [
       `Bonjour ${name},`,
       '',
@@ -115,7 +155,7 @@ export async function sendPasswordResetEmail(
       "Ce lien expire dans 60 minutes et ne peut servir qu'une fois.",
       "Si vous n'êtes pas à l'origine de cette demande, aucune action n'est nécessaire : votre mot de passe reste inchangé.",
       '',
-      "L'équipe Magya",
+      "L'équipe Magyapro",
     ].join('\n'),
   });
 }

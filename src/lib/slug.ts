@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 const RESERVED_SLUGS = new Set([
   'www', 'app', 'api', 'admin', 'dashboard', 'auth', 'login', 'register',
   'mail', 'smtp', 'ftp', 'cdn', 'static', 'assets', 'blog', 'docs', 'help',
-  'support', 'status', 'magya', 'demo', 'test', 'staging', 'preview',
+  'support', 'status', 'magyapro', 'demo', 'test', 'staging', 'preview',
 ]);
 
 /**

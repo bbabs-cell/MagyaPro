@@ -305,7 +305,7 @@ export async function getPlatformMetrics() {
     users,
     orders,
     // Volume brut traité par la plateforme, toutes devises confondues : à ne
-    // pas confondre avec le revenu de Magya, qui provient des abonnements.
+    // pas confondre avec le revenu de Magyapro, qui provient des abonnements.
     grossVolume: revenue._sum.total ?? 0,
     subscriptionsByStatus: Object.fromEntries(
       subscriptions.map((row) => [row.status, row._count]),

@@ -10,7 +10,7 @@
  */
 
 function storageKey(restaurantId: string): string {
-  return `magya:table:${restaurantId}`;
+  return `magyapro:table:${restaurantId}`;
 }
 
 export function getTableToken(restaurantId: string): string | null {

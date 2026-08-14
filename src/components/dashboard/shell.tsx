@@ -249,7 +249,7 @@ export function DashboardShell({
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
                 M
               </span>
-              <span className="font-semibold tracking-tight">Magya</span>
+              <span className="font-semibold tracking-tight">Magyapro</span>
             </Link>
 
             <div className="mt-4 rounded-xl border border-surface-border p-3">
@@ -301,7 +301,7 @@ export function DashboardShell({
                   href="/admin"
                   className="mt-1 block rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-surface-sunken"
                 >
-                  Administration Magya
+                  Administration Magyapro
                 </Link>
               )}
 

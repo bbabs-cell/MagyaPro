@@ -22,10 +22,10 @@ export function PageViewTracker({
   useEffect(() => {
     let visitorId: string | null = null;
     try {
-      visitorId = window.sessionStorage.getItem('magya:visitor');
+      visitorId = window.sessionStorage.getItem('magyapro:visitor');
       if (!visitorId) {
         visitorId = crypto.randomUUID();
-        window.sessionStorage.setItem('magya:visitor', visitorId);
+        window.sessionStorage.setItem('magyapro:visitor', visitorId);
       }
     } catch {
       // Stockage indisponible : la visite est comptée sans identifiant, elle

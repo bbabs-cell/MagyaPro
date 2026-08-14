@@ -122,7 +122,7 @@ export function CartProvider({
   currency: string;
   children: React.ReactNode;
 }) {
-  const storageKey = `magya:cart:${restaurantId}`;
+  const storageKey = `magyapro:cart:${restaurantId}`;
   const [state, dispatch] = useReducer(reducer, { lines: [] });
 
   // Restauration au montage. `localStorage` n'existe pas au rendu serveur,

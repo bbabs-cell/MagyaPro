@@ -15,7 +15,7 @@ const STYLES: Record<Announcement['severity'], string> = {
   CRITICAL: 'bg-red-50 text-red-900 border-red-200',
 };
 
-const DISMISSED_KEY = 'magya_dismissed_announcements';
+const DISMISSED_KEY = 'magyapro_dismissed_announcements';
 
 function readDismissed(): string[] {
   try {

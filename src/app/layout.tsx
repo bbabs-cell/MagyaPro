@@ -6,15 +6,15 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL(env.appUrl),
   title: {
-    default: 'Magya — Créez votre restaurant en ligne simplement',
-    template: '%s — Magya',
+    default: 'Magyapro — Créez votre restaurant en ligne simplement',
+    template: '%s — Magyapro',
   },
   description:
-    'Magya vous permet de créer rapidement un site professionnel pour votre restaurant, présenter votre menu, recevoir des commandes et développer votre présence digitale.',
-  applicationName: 'Magya',
+    'Magyapro vous permet de créer rapidement un site professionnel pour votre restaurant, présenter votre menu, recevoir des commandes et développer votre présence digitale.',
+  applicationName: 'Magyapro',
   openGraph: {
     type: 'website',
-    siteName: 'Magya',
+    siteName: 'Magyapro',
     locale: 'fr_FR',
   },
 };

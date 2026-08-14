@@ -188,7 +188,7 @@ export function SiteChrome({
               target="_blank"
               rel="noopener"
             >
-              Magya
+              Magyapro
             </a>
           </p>
         </div>

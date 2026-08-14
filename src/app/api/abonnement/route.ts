@@ -12,7 +12,7 @@ const schema = z.object({ planKey: z.string().min(1).max(40) });
 /**
  * Changement de plan.
  *
- * Aucun encaissement n'a lieu ici : Magya n'a pas encore de fournisseur de
+ * Aucun encaissement n'a lieu ici : Magyapro n'a pas encore de fournisseur de
  * facturation branché. Le changement est enregistré et journalisé, et
  * l'abonnement démarre une nouvelle période. Le jour où un fournisseur est
  * intégré, c'est cette route qui déclenchera le paiement avant d'appliquer le

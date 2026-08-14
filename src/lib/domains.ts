@@ -10,7 +10,7 @@ import { env, rootHostname } from '@/lib/env';
  * le domaine ne prouverait rien — n'importe qui peut faire pointer un CNAME.
  *
  * Le certificat TLS est délivré par la plateforme d'hébergement une fois le
- * domaine vérifié et le DNS propagé ; Magya n'émet pas de certificat lui-même.
+ * domaine vérifié et le DNS propagé ; Magyapro n'émet pas de certificat lui-même.
  */
 
 export type DomainVerification = {
@@ -21,7 +21,7 @@ export type DomainVerification = {
 
 /** Nom de l'enregistrement TXT que le restaurateur doit créer. */
 export function verificationRecordName(hostname: string): string {
-  return `_magya-verify.${hostname}`;
+  return `_magyapro-verify.${hostname}`;
 }
 
 /** Cible CNAME vers laquelle le domaine doit pointer. */

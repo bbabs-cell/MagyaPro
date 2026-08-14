@@ -39,7 +39,7 @@ export async function createTestRestaurant(options?: {
 
   const owner = await prisma.user.create({
     data: {
-      email: `${slug}@test.magya`,
+      email: `${slug}@test.magyapro`,
       name: `Propriétaire ${slug}`,
       passwordHash,
       emailVerifiedAt: new Date(),
@@ -147,7 +147,7 @@ export async function addMember(
   const slug = unique('membre');
   const user = await prisma.user.create({
     data: {
-      email: `${slug}@test.magya`,
+      email: `${slug}@test.magyapro`,
       name: `Membre ${slug}`,
       passwordHash: await hashPassword('MotDePasse!2345'),
     },

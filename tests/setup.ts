@@ -41,5 +41,5 @@ Object.defineProperty(process.env, 'NODE_ENV', {
 });
 process.env.SESSION_SECRET ??= 'test-secret-suffisamment-long-pour-les-tests-1234';
 process.env.MAIL_DRIVER = 'console';
-process.env.APP_ROOT_DOMAIN ??= 'magya.test';
-process.env.NEXT_PUBLIC_APP_URL ??= 'http://magya.test';
+process.env.APP_ROOT_DOMAIN ??= 'magyapro.test';
+process.env.NEXT_PUBLIC_APP_URL ??= 'http://magyapro.test';

@@ -12,12 +12,12 @@ import { getCurrentUser, SUPPORT_COOKIE, type SessionUser } from '@/lib/auth/ses
  *
  * Principe non négociable : le restaurant actif est déterminé **côté serveur**
  * à partir de l'utilisateur authentifié. Le client peut demander à basculer
- * vers un restaurant (cookie `magya_restaurant`), mais cette demande n'est
+ * vers un restaurant (cookie `magyapro_restaurant`), mais cette demande n'est
  * honorée qu'après vérification qu'une adhésion existe réellement. Un
  * `restaurantId` reçu dans un corps de requête n'est jamais utilisé pour
  * choisir le tenant.
  */
-export const ACTIVE_RESTAURANT_COOKIE = 'magya_restaurant';
+export const ACTIVE_RESTAURANT_COOKIE = 'magyapro_restaurant';
 
 export type TenantContext = {
   user: SessionUser;

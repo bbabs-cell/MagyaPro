@@ -7,7 +7,7 @@ import { resolvePublicRestaurant } from '@/lib/site/resolve';
  *
  * Il est généré à la volée à partir des données du tenant : nom, couleurs et
  * icône de l'établissement. Un client qui installe le site obtient donc
- * l'application de *son* restaurant, pas celle de Magya.
+ * l'application de *son* restaurant, pas celle de Magyapro.
  */
 export async function GET(
   _request: Request,

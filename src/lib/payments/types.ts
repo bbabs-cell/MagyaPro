@@ -3,7 +3,7 @@ import type { PaymentStatus } from '@prisma/client';
 /**
  * Contrat des fournisseurs de paiement.
  *
- * Magya ne code aucun fournisseur en dur dans sa logique métier : la commande
+ * Magyapro ne code aucun fournisseur en dur dans sa logique métier : la commande
  * demande un paiement, un fournisseur le traite. Brancher Orange Money ou Wave
  * consistera à implémenter cette interface et à l'enregistrer — sans toucher
  * au tunnel de commande.

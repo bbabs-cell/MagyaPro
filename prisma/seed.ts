@@ -159,7 +159,7 @@ async function seedReference() {
   }
   console.info(`✓ ${TEMPLATES.length} templates`);
 
-  const email = process.env.SEED_SUPER_ADMIN_EMAIL ?? 'admin@magya.app';
+  const email = process.env.SEED_SUPER_ADMIN_EMAIL ?? 'admin@magyapro.app';
   const password = process.env.SEED_SUPER_ADMIN_PASSWORD;
 
   if (!password) {
@@ -182,7 +182,7 @@ async function seedReference() {
     await prisma.user.create({
       data: {
         email,
-        name: 'Administration Magya',
+        name: 'Administration Magyapro',
         passwordHash: await hashPassword(password),
         platformRole: 'SUPER_ADMIN',
         emailVerifiedAt: new Date(),
@@ -232,7 +232,7 @@ const DEMO_RESTAURANTS: Array<{
     slug: 'demo-la-terrasse',
     name: 'La Terrasse',
     description:
-      'Cuisine de saison et produits frais, servis dans un cadre lumineux. Restaurant de démonstration Magya.',
+      'Cuisine de saison et produits frais, servis dans un cadre lumineux. Restaurant de démonstration Magyapro.',
     templateKey: 'modern',
     primaryColor: '#e2483d',
     secondaryColor: '#12151a',
@@ -333,7 +333,7 @@ const DEMO_RESTAURANTS: Array<{
     slug: 'demo-chez-aminata',
     name: 'Chez Aminata',
     description:
-      'Spécialités ouest-africaines préparées à la commande, recettes de famille. Restaurant de démonstration Magya.',
+      'Spécialités ouest-africaines préparées à la commande, recettes de famille. Restaurant de démonstration Magyapro.',
     templateKey: 'african-premium',
     primaryColor: '#c2410c',
     secondaryColor: '#1c1917',
@@ -409,7 +409,7 @@ const DEMO_RESTAURANTS: Array<{
     slug: 'demo-burger-lab',
     name: 'Burger Lab',
     description:
-      'Burgers préparés minute, pain brioché maison, frites fraîches. Restaurant de démonstration Magya.',
+      'Burgers préparés minute, pain brioché maison, frites fraîches. Restaurant de démonstration Magyapro.',
     templateKey: 'fast-food',
     primaryColor: '#dc2626',
     secondaryColor: '#111827',
@@ -535,7 +535,7 @@ async function seedDemo() {
 
     const owner = await prisma.user.create({
       data: {
-        email: `${definition.slug}@demo.magya.app`,
+        email: `${definition.slug}@demo.magyapro.app`,
         name: `Propriétaire ${definition.name}`,
         passwordHash,
         emailVerifiedAt: new Date(),
@@ -706,7 +706,7 @@ async function seedDemo() {
             restaurantId: restaurant.id,
             name: customer.name,
             phone: customer.phone,
-            email: `${customer.phone.replace(/\D/g, '')}@demo.magya.app`,
+            email: `${customer.phone.replace(/\D/g, '')}@demo.magyapro.app`,
           },
         }),
       ),
@@ -870,7 +870,7 @@ async function main() {
     console.info('\nDonnées de démonstration\n');
     await seedDemo();
     console.info(
-      '\nComptes de démonstration : <slug>@demo.magya.app / Demo!2345',
+      '\nComptes de démonstration : <slug>@demo.magyapro.app / Demo!2345',
     );
   }
 

@@ -7,7 +7,7 @@ import { LoginForm } from './login-form';
 
 export const metadata: Metadata = {
   title: 'Connexion',
-  description: 'Connectez-vous à votre espace Magya.',
+  description: 'Connectez-vous à votre espace Magyapro.',
 };
 
 export default async function LoginPage() {

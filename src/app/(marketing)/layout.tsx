@@ -21,7 +21,7 @@ export default async function MarketingLayout({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
               M
             </span>
-            <span className="text-lg font-semibold tracking-tight">Magya</span>
+            <span className="text-lg font-semibold tracking-tight">Magyapro</span>
           </Link>
 
           <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
@@ -62,7 +62,7 @@ export default async function MarketingLayout({
         <div className="container-page py-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-semibold">Magya</p>
+              <p className="font-semibold">Magyapro</p>
               <p className="mt-1 text-sm text-ink-muted">
                 La présence en ligne des restaurants, sans complexité technique.
               </p>
@@ -75,7 +75,7 @@ export default async function MarketingLayout({
             </div>
           </div>
           <p className="mt-8 text-xs text-ink-faint">
-            © {new Date().getFullYear()} Magya. Tous droits réservés.
+            © {new Date().getFullYear()} Magyapro. Tous droits réservés.
           </p>
         </div>
       </footer>

@@ -48,7 +48,7 @@ export default async function LandingPage() {
               Créez votre restaurant en ligne simplement.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base text-ink-muted sm:text-lg">
-              Magya vous permet de créer rapidement un site professionnel pour
+              Magyapro vous permet de créer rapidement un site professionnel pour
               votre restaurant, présenter votre menu, recevoir des commandes et
               développer votre présence digitale.
             </p>
@@ -62,7 +62,7 @@ export default async function LandingPage() {
                 size="lg"
                 className="w-full sm:w-auto"
               >
-                Découvrir Magya
+                Découvrir Magyapro
               </LinkButton>
             </div>
             <p className="mt-4 text-xs text-ink-faint">
@@ -81,7 +81,7 @@ export default async function LandingPage() {
             </h2>
             <p className="mt-4 text-ink-muted">
               Vos clients cherchent votre menu, vos horaires et un moyen simple
-              de commander. Magya réunit tout cela sur une adresse qui vous
+              de commander. Magyapro réunit tout cela sur une adresse qui vous
               appartient, tenue à jour depuis votre téléphone.
             </p>
             <dl className="mt-8 space-y-5">
@@ -89,7 +89,7 @@ export default async function LandingPage() {
                 {
                   term: 'Aucune compétence technique',
                   detail:
-                    'Vous remplissez des formulaires, Magya construit le site. Pas de code, pas d\'hébergement à gérer.',
+                    'Vous remplissez des formulaires, Magyapro construit le site. Pas de code, pas d\'hébergement à gérer.',
                 },
                 {
                   term: 'Modifiable à tout moment',
@@ -231,7 +231,7 @@ export default async function LandingPage() {
         <section className="container-page py-16 sm:py-20">
           <div className="max-w-2xl">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Voir Magya en situation
+              Voir Magyapro en situation
             </h2>
             <p className="mt-3 text-ink-muted">
               Ces restaurants sont des exemples créés pour la démonstration. Ils
@@ -360,7 +360,7 @@ export default async function LandingPage() {
           {[
             {
               q: 'Faut-il des connaissances techniques ?',
-              a: "Non. Vous remplissez des formulaires depuis votre téléphone ou votre ordinateur, et Magya construit le site. Aucun hébergement ni nom de domaine à acheter pour démarrer.",
+              a: "Non. Vous remplissez des formulaires depuis votre téléphone ou votre ordinateur, et Magyapro construit le site. Aucun hébergement ni nom de domaine à acheter pour démarrer.",
             },
             {
               q: 'Combien de temps pour être en ligne ?',
@@ -368,7 +368,7 @@ export default async function LandingPage() {
             },
             {
               q: 'Puis-je utiliser mon propre nom de domaine ?',
-              a: "Oui, sur les plans qui incluent cette option. Vous ajoutez votre domaine, Magya vous indique l'enregistrement DNS à créer, puis vérifie la configuration.",
+              a: "Oui, sur les plans qui incluent cette option. Vous ajoutez votre domaine, Magyapro vous indique l'enregistrement DNS à créer, puis vérifie la configuration.",
             },
             {
               q: 'Comment mes clients paient-ils ?',

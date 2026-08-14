@@ -12,7 +12,7 @@
  * explicite s'affiche plutôt que l'erreur du navigateur.
  */
 
-const VERSION = 'magya-v1';
+const VERSION = 'magyapro-v1';
 const PAGE_CACHE = `${VERSION}-pages`;
 const ASSET_CACHE = `${VERSION}-assets`;
 

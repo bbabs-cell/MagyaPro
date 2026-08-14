@@ -1,6 +1,7 @@
 import { env } from '@/lib/env';
 import { ValidationError } from '@/lib/errors';
 import { localStorageDriver } from '@/lib/storage/local';
+import { s3StorageDriver } from '@/lib/storage/s3';
 import type { StorageDriver, StoredFile } from '@/lib/storage/types';
 
 export type { StorageDriver, StoredFile };
@@ -17,6 +18,7 @@ export type { StorageDriver, StoredFile };
 
 const drivers: Record<string, () => StorageDriver> = {
   local: () => localStorageDriver,
+  s3: () => s3StorageDriver,
 };
 
 let cached: StorageDriver | null = null;
