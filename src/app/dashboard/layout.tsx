@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { getTenantContext, listMemberships } from '@/lib/tenant';
-import { countUnreadNotifications } from '@/lib/notifications';
-import { countPendingAlerts } from '@/lib/alerts';
+import { countNewOrders, countPendingAlerts } from '@/lib/alerts';
 import { getEntitlements } from '@/lib/entitlements';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { DashboardShell } from '@/components/dashboard/shell';
@@ -31,7 +30,7 @@ export default async function DashboardLayout({
 
   const [memberships, unreadCount, alertCount, entitlements, announcements] = await Promise.all([
     listMemberships(),
-    countUnreadNotifications(context.restaurant.id),
+    countNewOrders(context.restaurant.id),
     countPendingAlerts(context.restaurant.id),
     getEntitlements(context.restaurant.id),
     getActiveAnnouncements(),
