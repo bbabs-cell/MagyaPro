@@ -72,6 +72,7 @@ export default async function SettingsPage() {
           orangeMoneyNumber: settings?.orangeMoneyNumber ?? null,
           waveNumber: settings?.waveNumber ?? null,
           notificationEmail: settings?.notificationEmail ?? null,
+          notificationSoundUrl: settings?.notificationSoundUrl ?? null,
         }}
         hours={hours.map((hour) => ({
           dayOfWeek: hour.dayOfWeek,

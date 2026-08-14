@@ -9,15 +9,17 @@ import { api } from '@/lib/client/api';
  * Centre d'alertes : détecte les nouvelles commandes et les fait apparaître
  * sans que le personnel ait à actualiser la page.
  *
- * Un simple bip généré par le navigateur (Web Audio API) : pas de fichier
- * audio à charger, ce qui fonctionne dès l'installation. Il sonne
- * immédiatement à l'arrivée d'une commande, puis se répète toutes les deux
- * minutes tant qu'un élément attend une action, et s'arrête dès que la file
- * est vide. `router.refresh()` fait réapparaître la nouvelle commande sur la
- * page actuellement affichée (ex. la liste des commandes) sans navigation.
+ * Un bip généré par le navigateur (Web Audio API) par défaut — pas de
+ * fichier audio à charger, ce qui fonctionne dès l'installation — ou le son
+ * personnalisé téléversé par le restaurant (`/dashboard/parametres`), s'il en
+ * existe un. Il sonne immédiatement à l'arrivée d'une commande, puis se
+ * répète toutes les deux minutes tant qu'un élément attend une action, et
+ * s'arrête dès que la file est vide. `router.refresh()` fait réapparaître la
+ * nouvelle commande sur la page actuellement affichée (ex. la liste des
+ * commandes) sans navigation.
  */
 
-const POLL_INTERVAL_MS = 15_000;
+const POLL_INTERVAL_MS = 5_000;
 const REMINDER_INTERVAL_MS = 120_000;
 
 function beep(): void {
@@ -42,10 +44,26 @@ function beep(): void {
   }
 }
 
+/** Joue le son personnalisé du restaurant, ou le bip par défaut à défaut. */
+function playAlertSound(customSoundUrl: string | null): void {
+  if (!customSoundUrl) {
+    beep();
+    return;
+  }
+  try {
+    const audio = new Audio(customSoundUrl);
+    audio.volume = 0.6;
+    void audio.play().catch(() => beep());
+  } catch {
+    beep();
+  }
+}
+
 export function AlertWatcher() {
   const [count, setCount] = useState(0);
   const reminderRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const knownOrderIds = useRef<Set<string> | null>(null);
+  const soundUrlRef = useRef<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,18 +71,21 @@ export function AlertWatcher() {
 
     async function poll() {
       try {
-        const data = await api.get<{ total: number; orders: Array<{ id: string }> }>(
-          '/api/alertes',
-        );
+        const data = await api.get<{
+          total: number;
+          orders: Array<{ id: string }>;
+          notificationSoundUrl: string | null;
+        }>('/api/alertes');
         if (cancelled) return;
 
+        soundUrlRef.current = data.notificationSoundUrl;
         const currentIds = new Set(data.orders.map((order) => order.id));
         // `null` uniquement au tout premier appel : l'état initial ne doit
         // pas être confondu avec des commandes fraîchement arrivées.
         if (knownOrderIds.current) {
           const hasNewOrder = data.orders.some((order) => !knownOrderIds.current!.has(order.id));
           if (hasNewOrder) {
-            beep();
+            playAlertSound(data.notificationSoundUrl);
             router.refresh();
           }
         }
@@ -89,7 +110,10 @@ export function AlertWatcher() {
       reminderRef.current = null;
     }
     if (count > 0) {
-      reminderRef.current = setInterval(beep, REMINDER_INTERVAL_MS);
+      reminderRef.current = setInterval(
+        () => playAlertSound(soundUrlRef.current),
+        REMINDER_INTERVAL_MS,
+      );
     }
     return () => {
       if (reminderRef.current) clearInterval(reminderRef.current);

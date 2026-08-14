@@ -11,32 +11,37 @@ import { requireTenant } from '@/lib/tenant';
 export const GET = route(async () => {
   const { restaurant } = await requireTenant('orders:view');
 
-  const [pendingOrders, tableCalls, pendingReservations, paymentProofs] = await Promise.all([
-    prisma.order.findMany({
-      where: { restaurantId: restaurant.id, status: 'NEW' },
-      orderBy: { placedAt: 'asc' },
-      select: { id: true, number: true, total: true, currency: true, placedAt: true },
-    }),
-    prisma.notification.findMany({
-      where: {
-        restaurantId: restaurant.id,
-        type: { in: ['TABLE_CALL', 'TABLE_BILL_REQUEST'] },
-        readAt: null,
-      },
-      orderBy: { createdAt: 'asc' },
-      select: { id: true, title: true, body: true, createdAt: true },
-    }),
-    prisma.reservation.findMany({
-      where: { restaurantId: restaurant.id, status: 'PENDING' },
-      orderBy: { reservedFor: 'asc' },
-      select: { id: true, customerName: true, partySize: true, reservedFor: true },
-    }),
-    prisma.payment.findMany({
-      where: { restaurantId: restaurant.id, status: 'PROCESSING', proofImageUrl: { not: null } },
-      orderBy: { proofSubmittedAt: 'asc' },
-      include: { order: { select: { id: true, number: true } } },
-    }),
-  ]);
+  const [settings, pendingOrders, tableCalls, pendingReservations, paymentProofs] =
+    await Promise.all([
+      prisma.restaurantSettings.findUnique({
+        where: { restaurantId: restaurant.id },
+        select: { notificationSoundUrl: true },
+      }),
+      prisma.order.findMany({
+        where: { restaurantId: restaurant.id, status: 'NEW' },
+        orderBy: { placedAt: 'asc' },
+        select: { id: true, number: true, total: true, currency: true, placedAt: true },
+      }),
+      prisma.notification.findMany({
+        where: {
+          restaurantId: restaurant.id,
+          type: { in: ['TABLE_CALL', 'TABLE_BILL_REQUEST'] },
+          readAt: null,
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, title: true, body: true, createdAt: true },
+      }),
+      prisma.reservation.findMany({
+        where: { restaurantId: restaurant.id, status: 'PENDING' },
+        orderBy: { reservedFor: 'asc' },
+        select: { id: true, customerName: true, partySize: true, reservedFor: true },
+      }),
+      prisma.payment.findMany({
+        where: { restaurantId: restaurant.id, status: 'PROCESSING', proofImageUrl: { not: null } },
+        orderBy: { proofSubmittedAt: 'asc' },
+        include: { order: { select: { id: true, number: true } } },
+      }),
+    ]);
 
   return ok({
     orders: pendingOrders,
@@ -51,6 +56,7 @@ export const GET = route(async () => {
       currency: payment.currency,
       proofImageUrl: payment.proofImageUrl,
     })),
+    notificationSoundUrl: settings?.notificationSoundUrl ?? null,
     total:
       pendingOrders.length + tableCalls.length + pendingReservations.length + paymentProofs.length,
   });

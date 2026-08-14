@@ -8,6 +8,7 @@ import { toMajor, toMinor } from '@/lib/money';
 import { DAY_NAMES } from '@/lib/site/hours';
 import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
+import { SoundUploadField } from '@/components/dashboard/sound-upload';
 
 /**
  * Réglages du restaurant, regroupés par sujet.
@@ -50,6 +51,7 @@ type Settings = {
   orangeMoneyNumber: string | null;
   waveNumber: string | null;
   notificationEmail: string | null;
+  notificationSoundUrl: string | null;
 };
 
 type Hour = { dayOfWeek: number; isClosed: boolean; opensAt: string; closesAt: string };
@@ -99,6 +101,7 @@ export function SettingsPanels({
   const [hours, setHours] = useState(initialHours);
   const [selectedProviders, setSelectedProviders] = useState(settings.paymentProviders);
   const [seoImageUrl, setSeoImageUrl] = useState(restaurant.seoImageUrl);
+  const [notificationSoundUrl, setNotificationSoundUrl] = useState(settings.notificationSoundUrl);
 
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -554,6 +557,8 @@ export function SettingsPanels({
                 className={inputClass}
               />
             </Field>
+
+            <SoundUploadField value={notificationSoundUrl} onChange={setNotificationSoundUrl} />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field

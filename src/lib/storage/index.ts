@@ -119,3 +119,62 @@ export async function uploadImage(params: {
   const key = `${restaurantId}/${folder}/${crypto.randomUUID()}.${EXTENSIONS[detected]}`;
   return storage().put(key, buffer, detected);
 }
+
+/** Formats acceptés pour un son de notification. */
+export const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'] as const;
+
+export const MAX_AUDIO_BYTES = 1 * 1024 * 1024; // 1 Mo — une notification, pas une piste musicale.
+
+const AUDIO_EXTENSIONS: Record<string, string> = {
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+  'audio/ogg': 'ogg',
+};
+
+/**
+ * Signatures de fichiers audio (magic numbers), même logique que pour les
+ * images : le `Content-Type` déclaré par le navigateur n'est pas fiable.
+ */
+function detectAudioType(bytes: Uint8Array): string | null {
+  if (bytes.length < 12) return null;
+
+  const ascii = (start: number, length: number) =>
+    String.fromCharCode(...bytes.slice(start, start + length));
+
+  // MP3 : en-tête ID3, ou synchronisation de trame FF Ex/Fx.
+  if (ascii(0, 3) === 'ID3') return 'audio/mpeg';
+  if (bytes[0] === 0xff && (bytes[1]! & 0xe0) === 0xe0) return 'audio/mpeg';
+  // WAV : RIFF....WAVE
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WAVE') return 'audio/wav';
+  // OGG : OggS
+  if (ascii(0, 4) === 'OggS') return 'audio/ogg';
+
+  return null;
+}
+
+/** Valide puis enregistre un son de notification téléversé. */
+export async function uploadNotificationSound(params: {
+  file: File;
+  restaurantId: string;
+}): Promise<StoredFile> {
+  const { file, restaurantId } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_AUDIO_BYTES) {
+    throw new ValidationError(
+      `Le son ne doit pas dépasser ${Math.round(MAX_AUDIO_BYTES / 1024)} Ko.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectAudioType(buffer);
+
+  if (!detected || !ALLOWED_AUDIO_TYPES.includes(detected as never)) {
+    throw new ValidationError('Format non pris en charge. Utilisez un fichier MP3, WAV ou OGG.');
+  }
+
+  const key = `${restaurantId}/sounds/${crypto.randomUUID()}.${AUDIO_EXTENSIONS[detected]}`;
+  return storage().put(key, buffer, detected);
+}

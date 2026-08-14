@@ -233,6 +233,9 @@ model RestaurantSettings {
   orangeMoneyNumber    String?
   waveNumber           String?
   notificationEmail    String?
+  /// Son personnalisé joué à l'arrivée d'une commande (remplace le bip par
+  /// défaut). Téléversé comme une image, mais dans le dossier `sounds`.
+  notificationSoundUrl String?
   /// Notes internes affichées au personnel dans le dashboard.
   staffNotes           String?
 
