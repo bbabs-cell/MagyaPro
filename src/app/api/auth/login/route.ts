@@ -22,7 +22,11 @@ export const POST = route(async (request) => {
   reset(`login:email:${input.email}`);
 
   await createSession(user.id);
-  void pruneExpiredSessions();
+  // Attendu explicitement : une promesse « fire-and-forget » non suivie par
+  // `waitUntil()` peut être coupée en cours de route par un runtime edge
+  // (Cloudflare Workers) avant sa fin — et sur ce point précis, aussi
+  // signalée comme une requête bloquée plutôt que silencieusement ignorée.
+  await pruneExpiredSessions();
 
   // La destination dépend de l'état du compte : un Super Admin arrive dans son
   // espace, un restaurateur dont l'onboarding est inachevé le reprend là où il

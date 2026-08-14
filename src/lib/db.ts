@@ -3,23 +3,24 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * Instance Prisma unique, via l'adaptateur `pg` plutôt que le moteur binaire
- * par défaut de Prisma.
+ * Instance Prisma, via l'adaptateur `pg` plutôt que le moteur binaire par
+ * défaut de Prisma.
  *
  * Nécessaire pour tourner sur Cloudflare Workers (runtime `nodejs_compat`,
- * pas de moteur Rust natif exécutable). Sur Workers, une connexion Postgres
- * brute (`pg` en TCP direct) se bloque au-delà d'une requête simple — c'est
- * un problème documenté par Cloudflare eux-mêmes, pas une erreur de
- * configuration. Le binding Hyperdrive (`HYPERDRIVE`) est leur solution :
- * il proxifie la connexion à l'edge de façon fiable pour ce runtime.
+ * pas de moteur Rust natif exécutable).
  *
- * Sur un serveur Node classique (Railway, etc.), `DATABASE_URL` est utilisée
- * directement, sans Hyperdrive — ce n'est utile que sur Workers.
- *
- * En développement, Next.js recharge les modules à chaque édition : sans ce
- * cache global, chaque rechargement ouvrirait un nouveau pool de connexions
- * jusqu'à saturer PostgreSQL.
+ * Sur Workers, réutiliser un même pool de connexions Postgres **entre deux
+ * requêtes HTTP distinctes** est intermittent : une connexion laissée par
+ * une requête précédente peut se retrouver dans un état bloqué pour la
+ * suivante — constaté empiriquement (succès et blocages alternés sur un même
+ * point d'accès, aucune erreur JS observable). La parade adoptée ici : une
+ * connexion neuve par requête sur Workers, mise en cache uniquement pour la
+ * durée de cette requête (`ExecutionContext`, fourni par
+ * `getCloudflareContext()`, est unique par requête). Sur Node (Railway...),
+ * un singleton global reste utilisé : c'est le comportement fiable et
+ * habituel d'un serveur persistant.
  */
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -27,8 +28,6 @@ const globalForPrisma = globalThis as unknown as {
 function connectionString(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
-  // Pas de DATABASE_URL en variable simple : on est sur Cloudflare Workers,
-  // où la connexion passe par le binding Hyperdrive (voir wrangler.jsonc).
   const hyperdrive = getCloudflareContext().env.HYPERDRIVE as
     | { connectionString: string }
     | undefined;
@@ -48,8 +47,40 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+/** `true` uniquement sur Workers : `DATABASE_URL` n'y existe jamais en variable simple. */
+function isCloudflareRuntime(): boolean {
+  return !process.env.DATABASE_URL;
 }
+
+const requestScopedClients = new WeakMap<object, PrismaClient>();
+
+function getRequestScopedClient(): PrismaClient {
+  const { ctx } = getCloudflareContext();
+  const cached = requestScopedClients.get(ctx as object);
+  if (cached) return cached;
+
+  const client = createPrismaClient();
+  requestScopedClients.set(ctx as object, client);
+  return client;
+}
+
+function getNodeSingletonClient(): PrismaClient {
+  const client = globalForPrisma.prisma ?? createPrismaClient();
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = client;
+  }
+  return client;
+}
+
+/**
+ * Proxy plutôt qu'une instance figée à l'import : sur Workers, chaque accès
+ * doit pouvoir résoudre le client de la requête *en cours*, qui change à
+ * chaque appel entrant — un export const classique capturerait celui de la
+ * toute première requête ayant chargé ce module.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = isCloudflareRuntime() ? getRequestScopedClient() : getNodeSingletonClient();
+    return Reflect.get(client as object, prop, receiver);
+  },
+});

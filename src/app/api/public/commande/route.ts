@@ -98,7 +98,10 @@ export const POST = route(async (request) => {
     returnUrl: `${env.appUrl}/r/${restaurant.slug}/commande/${order.id}`,
   });
 
-  void trackEvent({
+  // Attendu explicitement : une promesse « fire-and-forget » non suivie par
+  // `waitUntil()` peut être coupée en cours de route par un runtime edge
+  // (Cloudflare Workers) avant sa fin.
+  await trackEvent({
     restaurantId: restaurant.id,
     type: 'ORDER_PLACED',
     metadata: { orderId: order.id, total: order.total },
