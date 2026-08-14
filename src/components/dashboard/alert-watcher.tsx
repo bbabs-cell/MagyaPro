@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 
 /**
- * Rappel sonore du centre d'alertes.
+ * Centre d'alertes : détecte les nouvelles commandes et les fait apparaître
+ * sans que le personnel ait à actualiser la page.
  *
  * Un simple bip généré par le navigateur (Web Audio API) : pas de fichier
- * audio à charger, ce qui fonctionne dès l'installation. Il se répète toutes
- * les deux minutes tant qu'un élément attend une action, et s'arrête dès que
- * la file est vide.
+ * audio à charger, ce qui fonctionne dès l'installation. Il sonne
+ * immédiatement à l'arrivée d'une commande, puis se répète toutes les deux
+ * minutes tant qu'un élément attend une action, et s'arrête dès que la file
+ * est vide. `router.refresh()` fait réapparaître la nouvelle commande sur la
+ * page actuellement affichée (ex. la liste des commandes) sans navigation.
  */
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 15_000;
 const REMINDER_INTERVAL_MS = 120_000;
 
 function beep(): void {
@@ -41,14 +45,31 @@ function beep(): void {
 export function AlertWatcher() {
   const [count, setCount] = useState(0);
   const reminderRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const knownOrderIds = useRef<Set<string> | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
 
     async function poll() {
       try {
-        const data = await api.get<{ total: number }>('/api/alertes');
-        if (!cancelled) setCount(data.total);
+        const data = await api.get<{ total: number; orders: Array<{ id: string }> }>(
+          '/api/alertes',
+        );
+        if (cancelled) return;
+
+        const currentIds = new Set(data.orders.map((order) => order.id));
+        // `null` uniquement au tout premier appel : l'état initial ne doit
+        // pas être confondu avec des commandes fraîchement arrivées.
+        if (knownOrderIds.current) {
+          const hasNewOrder = data.orders.some((order) => !knownOrderIds.current!.has(order.id));
+          if (hasNewOrder) {
+            beep();
+            router.refresh();
+          }
+        }
+        knownOrderIds.current = currentIds;
+        setCount(data.total);
       } catch {
         // Une erreur ponctuelle ne doit pas déclencher de fausse alerte.
       }
@@ -60,7 +81,7 @@ export function AlertWatcher() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (reminderRef.current) {
