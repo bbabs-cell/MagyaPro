@@ -33,18 +33,28 @@ export function ReservationForm({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
+    setPending(true);
+    setError(null);
+    setFieldErrors({});
+
+    // `noValidate` laisse passer un formulaire dont la date a été vidée :
+    // sans ce contrôle, `new Date('').toISOString()` lèverait avant même
+    // d'entrer dans le bloc try/catch.
+    const reservedForDate = new Date(String(formData.get('reservedFor') ?? ''));
+    if (Number.isNaN(reservedForDate.getTime())) {
+      setFieldErrors({ reservedFor: 'Choisissez une date et une heure.' });
+      setPending(false);
+      return;
+    }
+
     const payload = {
       restaurantId,
       customerName: String(formData.get('customerName') ?? ''),
       customerPhone: String(formData.get('customerPhone') ?? ''),
       partySize: Number(formData.get('partySize') ?? 1),
-      reservedFor: new Date(String(formData.get('reservedFor') ?? '')).toISOString(),
+      reservedFor: reservedForDate.toISOString(),
       notes: String(formData.get('notes') ?? ''),
     };
-
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
 
     try {
       const result = await api.post<ReservationResult>('/api/public/reservations', payload);

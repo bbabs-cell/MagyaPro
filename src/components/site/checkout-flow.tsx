@@ -8,7 +8,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { Field, inputClass } from '@/components/ui';
 import { toCheckoutItems, useCart } from '@/components/site/cart-context';
-import { getTableToken } from '@/lib/site/table-session';
+import { clearTableToken, getTableToken } from '@/lib/site/table-session';
 
 /**
  * Tunnel de commande.
@@ -194,6 +194,13 @@ export function CheckoutFlow({
       // Le panier n'est vidé qu'après confirmation de la création : en cas
       // d'échec, le client retrouve sa commande intacte.
       clear();
+
+      // La session de table s'arrête avec la commande qui l'a utilisée :
+      // sans cela, un client qui repasserait sur le site plus tard (livraison
+      // depuis chez lui, par exemple) resterait coincé en mode « sur place ».
+      if (fulfillment === 'DINE_IN') {
+        clearTableToken(restaurantId);
+      }
 
       if (result.payment.redirectUrl) {
         window.location.href = result.payment.redirectUrl;

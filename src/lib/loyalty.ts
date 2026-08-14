@@ -51,26 +51,39 @@ export async function grantLoyaltyRewards(params: {
     const newTiers = tiers.filter((tier) => !grantedTierIds.has(tier.id));
 
     for (const tier of newTiers) {
-      const promotion = await prisma.promotion.create({
-        data: {
-          restaurantId: params.restaurantId,
-          code: generateLoyaltyCode(),
-          type: tier.rewardType,
-          value: tier.rewardValue,
-          maxRedemptions: 1,
-          isActive: true,
-        },
-      });
+      try {
+        // Le code promo et la récompense naissent ensemble : si deux
+        // commandes concurrentes franchissent le même palier pour le même
+        // client, la contrainte d'unicité sur (customerId, tierId) ne laisse
+        // passer que la première — la transaction annule alors aussi le code
+        // promo de la seconde, qui ne doit pas rester orphelin et utilisable.
+        await prisma.$transaction(async (tx) => {
+          const promotion = await tx.promotion.create({
+            data: {
+              restaurantId: params.restaurantId,
+              code: generateLoyaltyCode(),
+              type: tier.rewardType,
+              value: tier.rewardValue,
+              maxRedemptions: 1,
+              isActive: true,
+            },
+          });
 
-      await prisma.loyaltyReward.create({
-        data: {
-          restaurantId: params.restaurantId,
-          customerId: params.customerId,
-          tierId: tier.id,
-          promotionId: promotion.id,
-          orderId: params.orderId,
-        },
-      });
+          await tx.loyaltyReward.create({
+            data: {
+              restaurantId: params.restaurantId,
+              customerId: params.customerId,
+              tierId: tier.id,
+              promotionId: promotion.id,
+              orderId: params.orderId,
+            },
+          });
+        });
+      } catch (tierError) {
+        // Un palier en échec (concurrence, contrainte) ne doit pas empêcher
+        // l'attribution des autres paliers franchis par la même commande.
+        console.error(`[loyalty] Échec de l'attribution du palier ${tier.id} :`, tierError);
+      }
     }
   } catch (error) {
     console.error('[loyalty] Échec de l\'attribution de récompense :', error);

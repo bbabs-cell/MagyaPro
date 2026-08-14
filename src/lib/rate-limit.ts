@@ -39,6 +39,11 @@ export const RATE_LIMITS = {
   checkout: { limit: 12, windowSeconds: 600 },
   upload: { limit: 40, windowSeconds: 600 },
   write: { limit: 120, windowSeconds: 60 },
+  /// Confirmation de livraison : le code à six chiffres ne doit pas pouvoir
+  /// être deviné par essais successifs.
+  deliveryCode: { limit: 6, windowSeconds: 600 },
+  /// Appel serveur / demande d'addition depuis une table donnée.
+  tableCall: { limit: 10, windowSeconds: 300 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /**
