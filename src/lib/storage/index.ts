@@ -94,7 +94,15 @@ function detectImageType(bytes: Uint8Array): string | null {
 export async function uploadImage(params: {
   file: File;
   restaurantId: string;
-  folder: 'logos' | 'covers' | 'products' | 'categories' | 'seo' | 'payment-proofs' | 'chef';
+  folder:
+    | 'logos'
+    | 'covers'
+    | 'products'
+    | 'categories'
+    | 'seo'
+    | 'payment-proofs'
+    | 'chef'
+    | 'subscription-proofs';
 }): Promise<StoredFile> {
   const { file, restaurantId, folder } = params;
 

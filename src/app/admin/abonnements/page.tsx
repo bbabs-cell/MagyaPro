@@ -5,6 +5,9 @@ import type { SubscriptionStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
+import { getPlatformSettings } from '@/lib/platform-settings';
+import { PlatformPaymentSettings } from '@/components/admin/platform-payment-settings';
+import { SubscriptionPaymentReview } from '@/components/admin/subscription-payment-review';
 
 export const metadata: Metadata = { title: 'Abonnements' };
 export const dynamic = 'force-dynamic';
@@ -30,7 +33,7 @@ export default async function AdminSubscriptionsPage({
     ? (params.statut as SubscriptionStatus | 'ALL')
     : 'ALL';
 
-  const [subscriptions, payments] = await Promise.all([
+  const [subscriptions, payments, platformSettings, pendingPayments] = await Promise.all([
     prisma.subscription.findMany({
       where: status === 'ALL' ? {} : { status },
       orderBy: { currentPeriodEnd: 'asc' },
@@ -46,6 +49,15 @@ export default async function AdminSubscriptionsPage({
       where: { status: 'PAID' },
       _sum: { amount: true },
     }),
+    getPlatformSettings(),
+    prisma.subscriptionPayment.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        plan: { select: { name: true } },
+        restaurant: { select: { name: true } },
+      },
+    }),
   ]);
 
   const paidByRestaurant = new Map(
@@ -58,6 +70,48 @@ export default async function AdminSubscriptionsPage({
       <p className="mt-1 text-sm text-white/60">
         {subscriptions.length} abonnement{subscriptions.length > 1 ? 's' : ''} pour ce filtre.
       </p>
+
+      <section
+        aria-label="Encaissement des abonnements"
+        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+      >
+        <h2 className="text-sm font-medium">Numéros de réception (paiement manuel)</h2>
+        <p className="mt-1 text-xs text-white/50">
+          Les restaurateurs envoient le montant de leur abonnement à ces numéros, puis déposent une preuve à valider ci-dessous.
+        </p>
+        <div className="mt-3">
+          <PlatformPaymentSettings
+            waveNumber={platformSettings?.waveNumber ?? null}
+            orangeMoneyNumber={platformSettings?.orangeMoneyNumber ?? null}
+          />
+        </div>
+      </section>
+
+      {pendingPayments.length > 0 && (
+        <section aria-label="Paiements en attente" className="mt-6">
+          <h2 className="text-sm font-medium text-white/80">
+            {pendingPayments.length} paiement{pendingPayments.length > 1 ? 's' : ''} en attente de validation
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {pendingPayments.map((payment) => (
+              <SubscriptionPaymentReview
+                key={payment.id}
+                paymentId={payment.id}
+                restaurantName={payment.restaurant.name}
+                planName={payment.plan.name}
+                amountLabel={formatMoney(payment.amount, payment.currency)}
+                provider={payment.provider}
+                proofImageUrl={payment.proofImageUrl}
+                submittedLabel={
+                  payment.proofSubmittedAt
+                    ? payment.proofSubmittedAt.toLocaleDateString('fr-FR')
+                    : 'preuve non encore déposée'
+                }
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <nav aria-label="Filtrer par statut" className="mt-6 flex gap-2 overflow-x-auto pb-1">
         {STATUSES.map((entry) => (
@@ -142,8 +196,8 @@ export default async function AdminSubscriptionsPage({
 
       <p className="mt-4 text-xs text-white/40">
         La colonne « Encaissé » agrège les paiements de commandes marqués payés
-        chez le restaurant. Elle ne reflète pas le règlement de l&apos;abonnement,
-        qui n&apos;est pas encore automatisé.
+        chez le restaurant, pas le règlement de l&apos;abonnement (voir les
+        paiements en attente ci-dessus).
       </p>
     </>
   );

@@ -46,6 +46,9 @@ export const AUDIT_ACTIONS = {
   PLAN_UPDATED: 'plan.updated',
   PLAN_DELETED: 'plan.deleted',
   SUBSCRIPTION_CHANGED: 'subscription.changed',
+  SUBSCRIPTION_PAYMENT_REQUESTED: 'subscription_payment.requested',
+  SUBSCRIPTION_PAYMENT_APPROVED: 'subscription_payment.approved',
+  SUBSCRIPTION_PAYMENT_REJECTED: 'subscription_payment.rejected',
 
   TEAM_MEMBER_ADDED: 'team.member_added',
   TEAM_MEMBER_UPDATED: 'team.member_updated',

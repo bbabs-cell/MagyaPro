@@ -191,6 +191,7 @@ model Restaurant {
 
   settings        RestaurantSettings?
   subscription    Subscription?
+  subscriptionPayments SubscriptionPayment[]
   members         RestaurantUser[]
   openingHours    OpeningHour[]
   categories      Category[]
@@ -834,6 +835,7 @@ model Plan {
   updatedAt DateTime @updatedAt
 
   subscriptions Subscription[]
+  subscriptionPayments SubscriptionPayment[]
 
   @@map("plans")
 }
@@ -864,6 +866,62 @@ model Subscription {
 
   @@index([status])
   @@map("subscriptions")
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/**
+ * Demande de paiement d'abonnement — voie manuelle : le restaurateur envoie
+ * le montant sur le numéro Wave/Orange Money de la plateforme (configuré
+ * dans `PlatformSettings`), dépose une preuve, le Super Admin valide. Même
+ * principe que le paiement mobile manuel déjà utilisé pour les commandes
+ * (`src/lib/payments/providers/manual-mobile-money.ts`), appliqué ici à
+ * l'abonnement de la plateforme plutôt qu'à une commande d'un client.
+ */
+model SubscriptionPayment {
+  id                String                    @id @default(cuid())
+  restaurantId      String
+  planId            String
+  /// 'wave_manual' | 'orange_money_manual' — même vocabulaire que les
+  /// fournisseurs de paiement de commande, pour rester cohérent.
+  provider          String
+  amount            Int
+  currency          String                    @default("XOF")
+  status            SubscriptionPaymentStatus @default(PENDING)
+  proofImageUrl     String?
+  proofSubmittedAt  DateTime?
+  note              String?
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  plan       Plan       @relation(fields: [planId], references: [id])
+
+  @@index([restaurantId, status])
+  @@index([status])
+  @@map("subscription_payments")
+}
+
+/**
+ * Réglages globaux de la plateforme — ligne unique. Aujourd'hui limité aux
+ * numéros receveurs des paiements d'abonnement ; peut accueillir d'autres
+ * réglages de plateforme à l'avenir sans nouvelle table.
+ */
+model PlatformSettings {
+  id                String   @id @default(cuid())
+  waveNumber        String?
+  orangeMoneyNumber String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
 }
 
 // ---------------------------------------------------------------------------

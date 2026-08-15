@@ -4,8 +4,9 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { getEntitlements, FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
 import { formatMoney } from '@/lib/money';
-import { SubscriptionPanel } from '@/components/dashboard/subscription-panel';
+import { SubscriptionPaymentFlow } from '@/components/dashboard/subscription-payment-flow';
 import { Badge, Card, PageHeader } from '@/components/ui';
+import { getPlatformSettings } from '@/lib/platform-settings';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function SubscriptionPage() {
   const context = await requireTenant('subscription:view');
 
-  const [entitlements, plans, usage] = await Promise.all([
+  const [entitlements, plans, usage, platformSettings, pendingPayment] = await Promise.all([
     getEntitlements(context.restaurant.id),
     prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
     Promise.all([
@@ -29,7 +30,22 @@ export default async function SubscriptionPage() {
       prisma.category.count({ where: { restaurantId: context.restaurant.id } }),
       prisma.restaurantUser.count({ where: { restaurantId: context.restaurant.id } }),
     ]),
+    getPlatformSettings(),
+    prisma.subscriptionPayment.findFirst({
+      where: { restaurantId: context.restaurant.id, status: 'PENDING' },
+      include: { plan: { select: { name: true } } },
+    }),
   ]);
+
+  const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
+    ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
+    ...(platformSettings?.orangeMoneyNumber ? (['orange_money_manual'] as const) : []),
+  ];
+
+  const receivingNumberFor = (provider: string) =>
+    provider === 'wave_manual'
+      ? (platformSettings?.waveNumber ?? '')
+      : (platformSettings?.orangeMoneyNumber ?? '');
 
   const [products, categories, users] = usage;
   const limits = entitlements.limits;
@@ -135,14 +151,28 @@ export default async function SubscriptionPage() {
       </Card>
 
       <div className="mt-6">
-        <SubscriptionPanel
+        <SubscriptionPaymentFlow
           canManage={context.permissions.has('subscription:manage')}
           currentPlanKey={entitlements.planKey}
+          availableProviders={availableProviders}
+          pendingPayment={
+            pendingPayment
+              ? {
+                  id: pendingPayment.id,
+                  planName: pendingPayment.plan.name,
+                  amountLabel: formatMoney(pendingPayment.amount, pendingPayment.currency),
+                  provider: pendingPayment.provider as 'wave_manual' | 'orange_money_manual',
+                  receivingNumber: receivingNumberFor(pendingPayment.provider),
+                  proofImageUrl: pendingPayment.proofImageUrl,
+                }
+              : null
+          }
           plans={plans.map((plan) => ({
             key: plan.key,
             name: plan.name,
             description: plan.description,
             priceLabel: formatMoney(plan.price, plan.currency),
+            price: plan.price,
             interval: plan.interval,
             trialDays: plan.trialDays,
             features: plan.features.map(
@@ -157,9 +187,10 @@ export default async function SubscriptionPage() {
       </div>
 
       <p className="mt-6 text-xs text-ink-faint">
-        Le règlement des abonnements n&apos;est pas encore automatisé sur cette
-        instance : un changement de plan est enregistré immédiatement et fait
-        l&apos;objet d&apos;une facturation hors plateforme.
+        Les plans payants demandent un envoi Wave/Orange Money au numéro de la
+        plateforme puis une preuve de paiement : le nouveau plan s&apos;active
+        une fois la réception validée par Magyapro. Les plans gratuits
+        s&apos;appliquent immédiatement.
       </p>
     </>
   );
