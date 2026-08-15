@@ -2,10 +2,9 @@ import Link from 'next/link';
 
 import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
-import { formatMoney } from '@/lib/money';
-import { FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
-import { howItWorksImageUrl, templatePreviewUrl } from '@/lib/storage';
-import { Badge, LinkButton } from '@/components/ui';
+import { howItWorksImageUrl, platformLogoUrl, templatePreviewUrl } from '@/lib/storage';
+import { Logo } from '@/components/ui/logo';
+import { PlanGrid } from '@/components/marketing/plan-grid';
 
 /**
  * Landing page.
@@ -113,6 +112,8 @@ export default async function LandingPage() {
     }),
   ]);
 
+  const heroLogoUrl = platformLogoUrl();
+
   return (
     <>
       {/* ---------------------------------------------------------------- Hero */}
@@ -136,7 +137,12 @@ export default async function LandingPage() {
 
         <div className="container-page relative py-20 sm:py-28 lg:py-32">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/80 backdrop-blur">
+            <Logo
+              src={heroLogoUrl}
+              showText={false}
+              className="mx-auto h-14 w-14 drop-shadow-[0_0_24px_rgba(255,94,46,0.35)] sm:h-16 sm:w-16"
+            />
+            <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/80 backdrop-blur">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#ff5e2e]" />
               Plateforme pour restaurateurs
             </span>
@@ -450,89 +456,27 @@ export default async function LandingPage() {
       {/* ---------------------------------------------------------------- Tarifs */}
       <section id="tarifs" className="border-y border-surface-border bg-surface-sunken">
         <div className="container-page py-16 sm:py-24">
-          <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
-              Tarifs
-            </span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
-              Des tarifs lisibles
-            </h2>
-            <p className="mt-3 text-ink-muted">
-              Chaque plan démarre par une période d&apos;essai. Sans engagement.
-            </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+                Tarifs
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+                Des tarifs lisibles
+              </h2>
+              <p className="mt-3 text-ink-muted">
+                Chaque plan démarre par une période d&apos;essai. Sans engagement.
+              </p>
+            </div>
+            <Link
+              href="/tarifs"
+              className="text-sm font-medium text-brand underline-offset-4 hover:underline"
+            >
+              Voir tous les détails →
+            </Link>
           </div>
 
-          {plans.length === 0 ? (
-            <p className="mt-8 text-sm text-ink-muted">
-              Les offres sont en cours de préparation. Créez votre compte, nous
-              vous informerons dès leur ouverture.
-            </p>
-          ) : (
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {plans.map((plan, index) => {
-                const limits = (plan.limits ?? {}) as PlanLimits;
-                const highlighted = index === 1;
-                return (
-                  <div
-                    key={plan.id}
-                    className={
-                      highlighted
-                        ? 'relative rounded-2xl border-2 border-brand bg-surface p-7 shadow-2xl'
-                        : 'rounded-2xl border border-surface-border bg-surface p-7'
-                    }
-                  >
-                    {highlighted && (
-                      <span className="absolute -top-3 left-6">
-                        <Badge tone="brand">Le plus choisi</Badge>
-                      </span>
-                    )}
-                    <h3 className="font-semibold text-ink">{plan.name}</h3>
-                    {plan.description && (
-                      <p className="mt-1 text-sm text-ink-muted">{plan.description}</p>
-                    )}
-                    <p className="mt-5">
-                      <span className="text-3xl font-semibold tracking-tight">
-                        {formatMoney(plan.price, plan.currency)}
-                      </span>
-                      <span className="text-sm text-ink-muted">
-                        {plan.interval === 'MONTH' ? ' / mois' : ' / an'}
-                      </span>
-                    </p>
-                    {plan.trialDays > 0 && (
-                      <p className="mt-1 text-xs text-ink-faint">
-                        {plan.trialDays} jours d&apos;essai inclus
-                      </p>
-                    )}
-
-                    <ul className="mt-6 space-y-2 text-sm">
-                      {Object.entries(limits).map(([key, value]) => (
-                        <li key={key} className="flex gap-2 text-ink-muted">
-                          <span aria-hidden="true" className="text-ink">·</span>
-                          {value === -1
-                            ? `${LIMIT_LABELS[key as keyof PlanLimits]} : illimité`
-                            : `${LIMIT_LABELS[key as keyof PlanLimits]} : ${value}`}
-                        </li>
-                      ))}
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex gap-2 text-ink">
-                          <span aria-hidden="true" className="text-brand">✓</span>
-                          {FEATURE_LABELS[feature as Feature] ?? feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <LinkButton
-                      href="/inscription"
-                      variant={highlighted ? 'primary' : 'secondary'}
-                      className="mt-6 w-full"
-                    >
-                      Choisir {plan.name}
-                    </LinkButton>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <PlanGrid plans={plans} />
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
@@ -9,6 +9,9 @@ import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password-policy';
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planKey = searchParams.get('plan') || undefined;
+  const planName = searchParams.get('planNom');
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -27,6 +30,7 @@ export function RegisterForm() {
         email: String(formData.get('email') ?? ''),
         password: String(formData.get('password') ?? ''),
         restaurantName: String(formData.get('restaurantName') ?? ''),
+        planKey,
       });
 
       // `refresh()` recharge les composants serveur pour qu'ils voient la
@@ -46,6 +50,12 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+      {planName && (
+        <p className="flex items-center gap-2 rounded-xl bg-brand-soft px-4 py-2.5 text-sm font-medium text-brand">
+          Plan sélectionné : {planName}
+        </p>
+      )}
+
       {formError && (
         <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
           {formError}

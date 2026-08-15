@@ -41,6 +41,7 @@ export async function registerAccount(input: {
   email: string;
   password: string;
   restaurantName: string;
+  planKey?: string;
   ip?: string | null;
 }) {
   const strengthError = validatePasswordStrength(input.password);
@@ -59,13 +60,18 @@ export async function registerAccount(input: {
   const passwordHash = await hashPassword(input.password);
   const slug = await uniqueRestaurantSlug(input.restaurantName);
 
-  // Le plan d'essai est choisi en base, jamais codé en dur : s'il n'existe
+  // Le plan présélectionné (depuis la page tarifs) est retenu s'il est actif ;
+  // sinon on retombe sur le premier plan actif, jamais codé en dur. Sans
   // aucun plan, le restaurant est créé sans abonnement et reste utilisable en
   // lecture — l'administration pourra lui en attribuer un.
-  const trialPlan = await prisma.plan.findFirst({
-    where: { isActive: true },
-    orderBy: { position: 'asc' },
-  });
+  const trialPlan =
+    (input.planKey
+      ? await prisma.plan.findFirst({ where: { key: input.planKey, isActive: true } })
+      : null) ??
+    (await prisma.plan.findFirst({
+      where: { isActive: true },
+      orderBy: { position: 'asc' },
+    }));
 
   const result = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({

@@ -82,6 +82,9 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   restaurantName: nameSchema,
+  /// Plan présélectionné depuis la page tarifs — optionnel, retombe sur le
+  /// plan d'essai par défaut si absent ou invalide.
+  planKey: z.string().max(40).optional(),
 });
 
 export const loginSchema = z.object({

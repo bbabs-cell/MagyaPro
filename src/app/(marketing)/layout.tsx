@@ -25,11 +25,11 @@ export default async function MarketingLayout({
           </Link>
 
           <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
-            <a href="#fonctionnalites" className="hover:text-ink">Fonctionnalités</a>
-            <a href="#fonctionnement" className="hover:text-ink">Fonctionnement</a>
-            <a href="#templates" className="hover:text-ink">Templates</a>
-            <a href="#tarifs" className="hover:text-ink">Tarifs</a>
-            <a href="#faq" className="hover:text-ink">FAQ</a>
+            <Link href="/#fonctionnalites" className="hover:text-ink">Fonctionnalités</Link>
+            <Link href="/#fonctionnement" className="hover:text-ink">Fonctionnement</Link>
+            <Link href="/#templates" className="hover:text-ink">Templates</Link>
+            <Link href="/tarifs" className="hover:text-ink">Tarifs</Link>
+            <Link href="/#faq" className="hover:text-ink">FAQ</Link>
           </div>
 
           <div className="flex items-center gap-2">
@@ -76,9 +76,9 @@ export default async function MarketingLayout({
               </p>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
-              <a href="#fonctionnalites" className="hover:text-ink">Fonctionnalités</a>
-              <a href="#tarifs" className="hover:text-ink">Tarifs</a>
-              <a href="#faq" className="hover:text-ink">FAQ</a>
+              <Link href="/#fonctionnalites" className="hover:text-ink">Fonctionnalités</Link>
+              <Link href="/tarifs" className="hover:text-ink">Tarifs</Link>
+              <Link href="/#faq" className="hover:text-ink">FAQ</Link>
               <Link href="/connexion" className="hover:text-ink">Connexion</Link>
             </div>
           </div>

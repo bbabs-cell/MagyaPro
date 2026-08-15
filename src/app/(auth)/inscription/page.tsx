@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
@@ -21,7 +22,9 @@ export default async function RegisterPage() {
         Quelques informations suffisent pour démarrer.
       </p>
 
-      <RegisterForm />
+      <Suspense fallback={null}>
+        <RegisterForm />
+      </Suspense>
 
       <p className="mt-6 text-center text-sm text-ink-muted">
         Vous avez déjà un compte ?{' '}
