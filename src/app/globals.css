@@ -47,7 +47,7 @@
   }
 
   .card {
-    @apply rounded-2xl border border-surface-border bg-white;
+    @apply rounded-2xl border border-surface-border bg-white shadow-sm;
   }
 
   /* Rend un tableau lisible sur mobile en le transformant en liste de fiches.

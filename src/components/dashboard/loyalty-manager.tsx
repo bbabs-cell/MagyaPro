@@ -155,7 +155,7 @@ export function LoyaltyManager({
                 <label
                   key={value}
                   className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm ${
-                    rewardType === value ? 'border-ink bg-ink text-white' : 'border-surface-border'
+                    rewardType === value ? 'border-brand bg-brand text-white' : 'border-surface-border'
                   }`}
                 >
                   <input

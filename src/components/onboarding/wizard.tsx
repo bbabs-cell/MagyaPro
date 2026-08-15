@@ -281,7 +281,7 @@ export function OnboardingWizard({
                 className={cx(
                   'block rounded-full px-2 py-1 text-center text-[11px] font-medium transition-colors',
                   index < step && 'bg-emerald-100 text-emerald-800',
-                  index === step && 'bg-ink text-white',
+                  index === step && 'bg-brand text-white',
                   index > step && 'bg-white text-ink-faint',
                 )}
               >

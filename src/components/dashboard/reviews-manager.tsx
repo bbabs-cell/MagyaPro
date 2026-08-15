@@ -113,7 +113,7 @@ export function ReviewsManager({
             className={cx(
               'shrink-0 rounded-full border px-3.5 py-1.5 text-sm',
               filter === item.key
-                ? 'border-ink bg-ink text-white'
+                ? 'border-brand bg-brand text-white'
                 : 'border-surface-border text-ink-muted hover:bg-surface-sunken',
             )}
           >

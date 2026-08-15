@@ -28,8 +28,21 @@ export default async function AdminLayout({
   const logoUrl = platformLogoUrl();
 
   return (
-    <div className="min-h-screen bg-ink text-white">
-      <header className="border-b border-white/10">
+    <div className="relative min-h-screen overflow-x-hidden bg-navy text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+          backgroundSize: '26px 26px',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
+      />
+
+      <header className="relative border-b border-white/10 bg-black/10 backdrop-blur">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href="/admin" className="flex items-center gap-2">
             <Logo src={logoUrl} showText={false} className="h-8 w-8" />
@@ -53,7 +66,7 @@ export default async function AdminLayout({
         <AdminNav />
       </header>
 
-      <main id="contenu" className="container-page py-8">
+      <main id="contenu" className="relative container-page py-8">
         {children}
       </main>
     </div>

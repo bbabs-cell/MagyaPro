@@ -117,7 +117,7 @@ export default async function OrdersPage({
                 aria-current={filter === value ? 'true' : undefined}
                 className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   filter === value
-                    ? 'bg-ink text-white'
+                    ? 'bg-brand text-white'
                     : 'bg-white text-ink-muted hover:text-ink'
                 }`}
               >

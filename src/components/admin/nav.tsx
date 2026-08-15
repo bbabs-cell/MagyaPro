@@ -34,8 +34,10 @@ export function AdminNav() {
                 href={link.href}
                 aria-current={active ? 'page' : undefined}
                 className={cx(
-                  'block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors',
-                  active ? 'bg-white text-ink' : 'text-white/70 hover:bg-white/10 hover:text-white',
+                  'block whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                  active
+                    ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white',
                 )}
               >
                 {link.label}

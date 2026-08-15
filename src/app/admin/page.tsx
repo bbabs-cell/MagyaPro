@@ -236,9 +236,11 @@ function AdminStat({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
       <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-2 bg-gradient-to-r from-white to-[#ff9a4d] bg-clip-text text-2xl font-bold tracking-tight text-transparent">
+        {value}
+      </p>
       {hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}
     </div>
   );

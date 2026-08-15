@@ -23,7 +23,7 @@ const BUTTON_BASE =
   'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-surface hover:bg-ink/90',
+  primary: 'bg-brand text-white shadow-sm shadow-brand/30 hover:brightness-110',
   secondary:
     'border border-surface-border bg-surface text-ink hover:bg-surface-sunken',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
@@ -252,11 +252,11 @@ export function StatCard({
   tone?: BadgeTone;
 }) {
   return (
-    <div className="card p-4 sm:p-5">
+    <div className="card p-4 transition-shadow hover:shadow-md sm:p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">
+      <p className="mt-2 text-2xl font-bold tracking-tight text-ink">
         {value}
       </p>
       {hint && (

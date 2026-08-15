@@ -8,10 +8,13 @@ const config: Config = {
         // Public restaurant sites drive these from the tenant's own palette,
         // injected as CSS custom properties by the template renderer.
         brand: {
-          DEFAULT: 'var(--brand, #e2483d)',
-          soft: 'var(--brand-soft, #fdecea)',
+          DEFAULT: 'var(--brand, #ff5e2e)',
+          soft: 'var(--brand-soft, #fff1e6)',
           ink: 'var(--brand-ink, #ffffff)',
         },
+        // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
+        // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
+        navy: '#0b1730',
         // `ink`/`surface` restent des couleurs fixes pour l'admin et le
         // dashboard. Sur les sites publics des restaurants, `SiteChrome`
         // redéfinit ces variables CSS pour le mode sombre — c'est ce qui

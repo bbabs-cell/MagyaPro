@@ -156,7 +156,7 @@ export function DashboardShell({
                   className={cx(
                     'flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors',
                     isActive(item)
-                      ? 'bg-ink text-white'
+                      ? 'bg-brand text-white'
                       : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
                   )}
                 >
@@ -291,7 +291,9 @@ export function DashboardShell({
               >
                 <p className="text-xs text-ink-faint">Abonnement</p>
                 <p className="mt-0.5 flex items-center gap-2 text-sm">
-                  {subscription.planName}
+                  <span className={subscription.isActive ? 'font-medium text-brand' : undefined}>
+                    {subscription.planName}
+                  </span>
                   {!subscription.isActive && <Badge tone="danger">Inactif</Badge>}
                 </p>
               </Link>
