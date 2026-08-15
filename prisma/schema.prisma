@@ -432,6 +432,10 @@ enum OrderStatus {
   PREPARING
   READY
   OUT_FOR_DELIVERY
+  /// Remise au client confirmée par le livreur (code saisi), mais le paiement
+  /// espèces à la livraison n'est pas encore confirmé encaissé par le
+  /// restaurant : distinct de COMPLETED, qui ne s'atteint qu'après ce constat.
+  DELIVERED
   COMPLETED
   CANCELLED
 }

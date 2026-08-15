@@ -38,7 +38,7 @@ const CODE_VISIBLE_STATUSES: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY'];
 function stepsFor(fulfillmentType: FulfillmentType): OrderStatus[] {
   const base: OrderStatus[] = ['NEW', 'CONFIRMED', 'PREPARING', 'READY'];
   return fulfillmentType === 'DELIVERY'
-    ? [...base, 'OUT_FOR_DELIVERY', 'COMPLETED']
+    ? [...base, 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED']
     : [...base, 'COMPLETED'];
 }
 

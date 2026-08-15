@@ -12,14 +12,14 @@ export const dynamic = 'force-dynamic';
 
 const STATUS_FILTERS = [
   'ACTIVE', 'NEW', 'CONFIRMED', 'PREPARING', 'READY',
-  'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED', 'ALL',
+  'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'ALL',
 ] as const;
 
 type Filter = (typeof STATUS_FILTERS)[number];
 
 /** Statuts considérés « en cours » : le filtre par défaut du service. */
 const ACTIVE_STATUSES: OrderStatus[] = [
-  'NEW', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY',
+  'NEW', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED',
 ];
 
 export default async function OrdersPage({

@@ -328,7 +328,7 @@ export const checkoutSchema = z.object({
 export const orderStatusSchema = z.object({
   status: z.enum([
     'NEW', 'CONFIRMED', 'PREPARING', 'READY',
-    'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED',
+    'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED', 'CANCELLED',
   ]),
   note: optionalText(500),
 });

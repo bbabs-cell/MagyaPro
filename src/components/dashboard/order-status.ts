@@ -16,6 +16,7 @@ export const ORDER_STATUS_TONES: Record<
   PREPARING: 'warning',
   READY: 'info',
   OUT_FOR_DELIVERY: 'info',
+  DELIVERED: 'warning',
   COMPLETED: 'success',
   CANCELLED: 'danger',
 };

@@ -86,6 +86,7 @@ const STATUS_MESSAGES: Partial<Record<OrderStatus, string>> = {
   PREPARING: 'est en préparation',
   READY: 'est prête',
   OUT_FOR_DELIVERY: 'est en cours de livraison',
+  DELIVERED: 'a été livrée',
   COMPLETED: 'est terminée',
   CANCELLED: 'a été annulée',
 };

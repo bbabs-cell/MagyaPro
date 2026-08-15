@@ -14,7 +14,13 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   CONFIRMED: ['PREPARING', 'CANCELLED'],
   PREPARING: ['READY', 'CANCELLED'],
   READY: ['OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'],
-  OUT_FOR_DELIVERY: ['COMPLETED', 'CANCELLED'],
+  // Pas de passage direct à COMPLETED : le livreur confirme la remise (code),
+  // ce qui mène à DELIVERED, jamais COMPLETED — voir `confirmDelivery`.
+  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  // Le seul chemin vers COMPLETED depuis ici passe par la confirmation
+  // d'encaissement du restaurant (`confirmDeliveryPayment`), pas par un
+  // changement de statut générique.
+  DELIVERED: ['CANCELLED'],
   COMPLETED: [],
   CANCELLED: [],
 };
@@ -25,6 +31,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PREPARING: 'En préparation',
   READY: 'Prête',
   OUT_FOR_DELIVERY: 'En livraison',
+  DELIVERED: 'Livrée — paiement à confirmer',
   COMPLETED: 'Terminée',
   CANCELLED: 'Annulée',
 };

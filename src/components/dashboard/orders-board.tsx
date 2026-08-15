@@ -80,6 +80,24 @@ export function OrdersBoard({
     }
   }
 
+  async function confirmPayment(order: Order) {
+    setPendingId(order.id);
+    setError(null);
+
+    try {
+      await api.post(`/api/commandes/${order.id}/payer`);
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Le paiement n'a pas pu être confirmé. Réessayez.",
+      );
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   return (
     <>
       {error && (
@@ -165,7 +183,29 @@ export function OrdersBoard({
                   </td>
 
                   <td data-label="" className="py-3">
-                    {canUpdate && nextStatuses.length > 0 ? (
+                    {canUpdate && order.status === 'DELIVERED' ? (
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isPending}
+                          onClick={() => confirmPayment(order)}
+                        >
+                          Marquer payé et terminer
+                        </Button>
+                        {canCancel && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={isPending}
+                            onClick={() => changeStatus(order, 'CANCELLED')}
+                          >
+                            Annuler
+                          </Button>
+                        )}
+                      </div>
+                    ) : canUpdate && nextStatuses.length > 0 ? (
                       <div className="flex flex-wrap justify-end gap-1.5">
                         {nextStatuses.map((status) => (
                           <Button
@@ -184,7 +224,7 @@ export function OrdersBoard({
                       </div>
                     ) : (
                       <span className="block text-right text-xs text-ink-faint">
-                        {nextStatuses.length === 0 ? 'Terminée' : '—'}
+                        {nextStatuses.length === 0 ? ORDER_STATUS_LABELS[order.status] : '—'}
                       </span>
                     )}
                   </td>

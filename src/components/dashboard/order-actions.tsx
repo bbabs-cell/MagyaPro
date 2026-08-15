@@ -55,11 +55,60 @@ export function OrderActions({
     }
   }
 
+  async function confirmPayment() {
+    setPending(true);
+    setError(null);
+
+    try {
+      await api.post(`/api/commandes/${orderId}/payer`);
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Le paiement n'a pas pu être confirmé. Réessayez.",
+      );
+    } finally {
+      setPending(false);
+    }
+  }
+
   if (!canUpdate) {
     return (
       <p className="text-sm text-ink-muted">
         Vous n&apos;avez pas les droits pour modifier cette commande.
       </p>
+    );
+  }
+
+  if (status === 'DELIVERED') {
+    return (
+      <div className="space-y-3">
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+        <p className="text-sm text-ink-muted">
+          Le livreur a confirmé la remise au client. Terminez la commande une
+          fois l&apos;argent reçu.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" disabled={pending} onClick={confirmPayment}>
+            {pending ? 'Confirmation…' : 'Marquer payé et terminer'}
+          </Button>
+          {canCancel && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={pending}
+              onClick={() => apply('CANCELLED')}
+            >
+              Annuler la commande
+            </Button>
+          )}
+        </div>
+      </div>
     );
   }
 

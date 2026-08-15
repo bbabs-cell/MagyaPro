@@ -345,9 +345,13 @@ export async function claimDelivery(params: {
  *
  * Le code à six chiffres, connu du client, prouve que le livreur se trouve
  * bien face au bon destinataire — sans lui, n'importe quel livreur pourrait
- * clore n'importe quelle course. L'encaissement suit automatiquement : un
- * paiement encore en attente (espèces) passe à « payé », un paiement déjà
- * réglé en ligne ne change pas.
+ * clore n'importe quelle course.
+ *
+ * Un paiement déjà réglé en ligne clôt directement la commande : rien
+ * n'attend plus. Un paiement encore en attente (espèces à la livraison)
+ * s'arrête à `DELIVERED` — la remise est confirmée, mais pas l'encaissement,
+ * que le livreur n'a pas forcément versé au restaurant à cet instant précis.
+ * `confirmDeliveryPayment` termine la commande une fois cet argent reçu.
  */
 export async function confirmDelivery(params: {
   restaurantId: string;
@@ -374,14 +378,44 @@ export async function confirmDelivery(params: {
     });
   }
 
-  const updated = await updateOrderStatus({
+  const payment = await prisma.payment.findFirst({
+    where: { orderId: order.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  const alreadyPaid = payment?.status === 'PAID';
+
+  return updateOrderStatus({
     restaurantId: params.restaurantId,
     orderId: order.id,
-    status: 'COMPLETED',
+    status: alreadyPaid ? 'COMPLETED' : 'DELIVERED',
     userId: params.courierId,
     actorEmail: params.courierEmail,
     ip: params.ip,
   });
+}
+
+/**
+ * Confirmation d'encaissement par le restaurant, une fois le livreur revenu
+ * avec l'argent : seule action qui fait passer une commande `DELIVERED` à
+ * `COMPLETED`. Volontairement distincte de `updateOrderStatus` générique —
+ * elle encaisse le paiement dans le même geste, pour qu'une commande livrée
+ * ne se retrouve jamais « terminée » avec un paiement resté en attente.
+ */
+export async function confirmDeliveryPayment(params: {
+  restaurantId: string;
+  orderId: string;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+  ip?: string | null;
+}) {
+  const order = await prisma.order.findFirst({
+    where: { id: params.orderId, restaurantId: params.restaurantId },
+    select: { id: true, status: true },
+  });
+  if (!order) throw new NotFoundError('Commande introuvable.');
+  if (order.status !== 'DELIVERED') {
+    throw new ConflictError("Cette commande n'est pas en attente de confirmation de paiement.");
+  }
 
   const payment = await prisma.payment.findFirst({
     where: { orderId: order.id },
@@ -392,13 +426,19 @@ export async function confirmDelivery(params: {
       restaurantId: params.restaurantId,
       paymentId: payment.id,
       status: 'PAID',
-      actorUserId: params.courierId,
-      actorEmail: params.courierEmail,
+      actorUserId: params.actorUserId,
+      actorEmail: params.actorEmail,
     });
-    // `updated` a été capturé avant cet encaissement ; on renvoie l'état
-    // final pour que l'appelant ne voie jamais un `paymentStatus` périmé.
-    return { ...updated, paymentStatus: 'PAID' as const };
   }
 
-  return updated;
+  const updated = await updateOrderStatus({
+    restaurantId: params.restaurantId,
+    orderId: order.id,
+    status: 'COMPLETED',
+    userId: params.actorUserId,
+    actorEmail: params.actorEmail,
+    ip: params.ip,
+  });
+
+  return { ...updated, paymentStatus: 'PAID' as const };
 }
