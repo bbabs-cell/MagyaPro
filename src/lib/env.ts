@@ -50,11 +50,6 @@ export const env = {
   /// sur un runtime sans sockets TCP bruts (Cloudflare Workers).
   resendApiKey: process.env.RESEND_API_KEY,
 
-  /// Clé de l'API Embed de Google Maps (gratuite, illimitée) — sert la carte
-  /// intégrée du template « elegant ». Sans elle, la section retombe sur un
-  /// lien « Voir sur la carte » plutôt que d'échouer.
-  googleMapsEmbedKey: process.env.GOOGLE_MAPS_EMBED_KEY,
-
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,

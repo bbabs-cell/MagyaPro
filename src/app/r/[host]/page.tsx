@@ -5,7 +5,6 @@ import { prisma } from '@/lib/db';
 import { loadPublicMenu, resolvePublicRestaurant } from '@/lib/site/resolve';
 import { computeOpenState } from '@/lib/site/hours';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
-import { env } from '@/lib/env';
 import { templateRenderer } from '@/components/site/templates';
 import { ElegantHomePage } from '@/components/site/templates/elegant-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
@@ -15,20 +14,24 @@ import { localize, localizeNullable } from '@/lib/i18n/content';
 
 type Props = { params: Promise<{ host: string }> };
 
-/** URL de la carte Google Maps Embed, ou `null` si aucune coordonnée n'est connue. */
-function mapEmbedSrc(params: {
-  latitude: number | null;
-  longitude: number | null;
-  addressLine: string | null;
-  city: string | null;
-}): string | null {
-  if (!env.googleMapsEmbedKey) return null;
-  const query =
-    params.latitude !== null && params.longitude !== null
-      ? `${params.latitude},${params.longitude}`
-      : [params.addressLine, params.city].filter(Boolean).join(', ');
-  if (!query) return null;
-  return `https://www.google.com/maps/embed/v1/place?key=${env.googleMapsEmbedKey}&q=${encodeURIComponent(query)}`;
+/**
+ * URL de la carte OpenStreetMap intégrée (`iframe`), ou `null` sans
+ * coordonnées connues — l'embed OSM a besoin d'un point précis (une adresse
+ * texte ne suffit pas, contrairement au lien de secours ci-dessous).
+ * Gratuit et sans clé à configurer.
+ */
+function mapEmbedSrc(params: { latitude: number | null; longitude: number | null }): string | null {
+  if (params.latitude === null || params.longitude === null) return null;
+
+  const delta = 0.006;
+  const bbox = [
+    params.longitude - delta,
+    params.latitude - delta,
+    params.longitude + delta,
+    params.latitude + delta,
+  ].join(',');
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${params.latitude},${params.longitude}`;
 }
 
 function mapLinkUrl(params: {
