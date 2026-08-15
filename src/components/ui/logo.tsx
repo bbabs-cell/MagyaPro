@@ -1,7 +1,10 @@
+'use client';
+
+import { useState } from 'react';
+
 /**
- * Marque Magyapro : un « M » formé de fourchette, surmonté d'un dôme (cloche
- * à plat) en dégradé orange. Vectorielle pour rester nette à toute taille
- * (en-têtes, favicon, écrans HiDPI) sans dépendre d'un fichier image externe.
+ * Marque Magyapro vectorielle — repli si le logo réel n'a pas (encore) été
+ * envoyé par le Super Admin, ou si son URL échoue à charger.
  */
 export function LogoMark({ className = 'h-8 w-8' }: { className?: string }) {
   return (
@@ -30,17 +33,32 @@ export function LogoMark({ className = 'h-8 w-8' }: { className?: string }) {
 }
 
 export function Logo({
+  src,
   className = 'h-8 w-8',
   textClassName = 'text-lg',
   showText = true,
 }: {
+  /** URL du logo réel envoyé par le Super Admin ; `null`/absent → marque vectorielle. */
+  src?: string | null;
   className?: string;
   textClassName?: string;
   showText?: boolean;
 }) {
+  const [failed, setFailed] = useState(false);
+
   return (
     <span className="flex items-center gap-2">
-      <LogoMark className={className} />
+      {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
+        <img
+          src={src}
+          alt="Magyapro"
+          className={`${className} object-contain`}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <LogoMark className={className} />
+      )}
       {showText && (
         <span className={`font-semibold tracking-tight ${textClassName}`}>
           Magya<span className="text-[#ff5e2e]">pro</span>

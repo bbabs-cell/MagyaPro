@@ -1,17 +1,20 @@
 import Link from 'next/link';
 
 import { Logo } from '@/components/ui/logo';
+import { platformLogoUrl } from '@/lib/storage';
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const logoUrl = platformLogoUrl();
+
   return (
     <div className="flex min-h-screen flex-col bg-surface-sunken">
       <header className="container-page py-6">
         <Link href="/" className="inline-flex items-center gap-2">
-          <Logo />
+          <Logo src={logoUrl} />
         </Link>
       </header>
 

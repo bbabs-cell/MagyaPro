@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/session';
 import { LinkButton } from '@/components/ui';
 import { Logo, LogoMark } from '@/components/ui/logo';
+import { platformLogoUrl } from '@/lib/storage';
 
 export default async function MarketingLayout({
   children,
@@ -10,6 +11,7 @@ export default async function MarketingLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const logoUrl = platformLogoUrl();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -19,7 +21,7 @@ export default async function MarketingLayout({
           aria-label="Navigation principale"
         >
           <Link href="/" className="flex items-center gap-2">
-            <Logo />
+            <Logo src={logoUrl} />
           </Link>
 
           <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
@@ -61,7 +63,12 @@ export default async function MarketingLayout({
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="flex items-center gap-2">
-                <LogoMark className="h-6 w-6" />
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
+                  <img src={logoUrl} alt="" className="h-6 w-6 object-contain" />
+                ) : (
+                  <LogoMark className="h-6 w-6" />
+                )}
                 <p className="font-semibold">Magyapro</p>
               </span>
               <p className="mt-1 text-sm text-ink-muted">

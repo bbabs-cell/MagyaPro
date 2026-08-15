@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformMetrics } from '@/lib/analytics';
 import { formatMoney } from '@/lib/money';
+import { platformLogoUrl } from '@/lib/storage';
+import { PlatformLogoUpload } from '@/components/admin/platform-logo-upload';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -53,6 +55,19 @@ export default async function AdminDashboardPage() {
       <p className="mt-1 text-sm text-white/60">
         État de la plateforme, tous restaurants confondus.
       </p>
+
+      <section
+        aria-label="Marque"
+        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+      >
+        <h2 className="text-sm font-medium">Logo Magyapro</h2>
+        <p className="mt-1 text-xs text-white/50">
+          Utilisé partout où la marque apparaît (accueil, connexion, tableau de bord, administration).
+        </p>
+        <div className="mt-3">
+          <PlatformLogoUpload logoUrl={platformLogoUrl()} />
+        </div>
+      </section>
 
       <section
         aria-label="Indicateurs de la plateforme"

@@ -5,6 +5,7 @@ import { getTenantContext, listMemberships } from '@/lib/tenant';
 import { countNewOrders, countPendingAlerts } from '@/lib/alerts';
 import { getEntitlements } from '@/lib/entitlements';
 import { getActiveAnnouncements } from '@/lib/announcements';
+import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from '@/components/dashboard/shell';
 
 export default async function DashboardLayout({
@@ -38,6 +39,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell
+      platformLogoUrl={platformLogoUrl()}
       user={{ name: user.name, email: user.email, isSuperAdmin: user.platformRole === 'SUPER_ADMIN' }}
       restaurant={{
         id: context.restaurant.id,

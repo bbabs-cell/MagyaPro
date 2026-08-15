@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AdminNav } from '@/components/admin/nav';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
-import { LogoMark } from '@/components/ui/logo';
+import { Logo } from '@/components/ui/logo';
+import { platformLogoUrl } from '@/lib/storage';
 
 /**
  * Espace d'administration de la plateforme.
@@ -24,12 +25,14 @@ export default async function AdminLayout({
   if (!user) redirect('/connexion');
   if (user.platformRole !== 'SUPER_ADMIN') redirect('/dashboard');
 
+  const logoUrl = platformLogoUrl();
+
   return (
     <div className="min-h-screen bg-ink text-white">
       <header className="border-b border-white/10">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href="/admin" className="flex items-center gap-2">
-            <LogoMark className="h-8 w-8" />
+            <Logo src={logoUrl} showText={false} className="h-8 w-8" />
             <span className="font-semibold tracking-tight">
               Magyapro <span className="font-normal text-white/60">Administration</span>
             </span>

@@ -68,6 +68,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
 ];
 
 export function DashboardShell({
+  platformLogoUrl,
   user,
   restaurant,
   memberships,
@@ -79,6 +80,7 @@ export function DashboardShell({
   announcements,
   children,
 }: {
+  platformLogoUrl: string | null;
   user: { name: string; email: string; isSuperAdmin: boolean };
   restaurant: {
     id: string;
@@ -247,7 +249,7 @@ export function DashboardShell({
         <aside className="hidden w-64 shrink-0 border-r border-surface-border bg-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
           <div className="flex h-full flex-col p-4">
             <Link href="/dashboard" className="flex items-center gap-2 px-2 py-2">
-              <Logo />
+              <Logo src={platformLogoUrl} />
             </Link>
 
             <div className="mt-4 rounded-xl border border-surface-border p-3">
