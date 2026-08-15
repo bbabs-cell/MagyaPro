@@ -64,10 +64,13 @@ export default async function RestaurantHomePage({ params }: Props) {
           coverUrl: restaurant.coverUrl,
           logoUrl: restaurant.logoUrl,
           city: restaurant.city,
+          addressLine: restaurant.addressLine,
+          phone: restaurant.phone,
           primaryColor: restaurant.primaryColor,
           isOpenNow: openState.isOpen,
           openLabel: openState.label,
           menuHref: `${base}/menu`,
+          infosHref: `${base}/infos`,
           orderingEnabled,
         }}
       />

@@ -75,6 +75,11 @@ export function SiteChrome({
           '--brand': restaurant.primaryColor,
           '--brand-ink': '#ffffff',
           '--font-sans': FONT_STACKS[restaurant.fontFamily] ?? FONT_STACKS.Inter,
+          // Police des titres : distincte du choix de police du restaurant,
+          // pour que les templates qui misent sur un contraste serif/sans
+          // (`traditional`, `elegant`, `african-premium`) gardent cet effet
+          // quelle que soit la police de corps de texte choisie.
+          '--font-display': FONT_STACKS['Playfair Display'],
         } as React.CSSProperties
       }
     >

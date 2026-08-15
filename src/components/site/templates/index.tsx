@@ -21,10 +21,13 @@ export type HeroData = {
   coverUrl: string | null;
   logoUrl: string | null;
   city: string | null;
+  addressLine: string | null;
+  phone: string | null;
   primaryColor: string;
   isOpenNow: boolean;
   openLabel: string;
   menuHref: string;
+  infosHref: string;
   orderingEnabled: boolean;
 };
 
@@ -162,28 +165,118 @@ function HeroFastFood({ data }: { data: HeroData }) {
   );
 }
 
+/**
+ * Héros plein cadre, à la manière d'une carte de restaurant photographiée en
+ * salle : la photo porte l'ambiance, le texte reste minimal et lisible grâce
+ * à un dégradé plutôt qu'un voile uniforme (qui aplatirait l'image).
+ */
 function HeroTraditional({ data }: { data: HeroData }) {
   return (
-    <section className="border-b border-surface-border bg-surface-sunken">
-      <div className="container-page py-16 text-center sm:py-20">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-ink-muted">
-          {data.city ?? 'Notre maison'}
-        </p>
-        <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-          {data.name}
-        </h1>
-        <span
-          aria-hidden="true"
-          className="mx-auto mt-5 block h-px w-24"
-          style={{ backgroundColor: data.primaryColor }}
-        />
-        {data.description && (
-          <p className="mx-auto mt-5 max-w-xl text-ink-muted">{data.description}</p>
+    <section className="relative isolate overflow-hidden bg-[#1c1712]">
+      <div className="relative h-[78vh] min-h-[560px] w-full">
+        {data.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- image de tenant, hôte arbitraire
+          <img
+            src={data.coverUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ backgroundColor: data.primaryColor }}
+          />
         )}
-        <OpenStatus data={data} className="mt-6 justify-center" />
-        <HeroCta data={data} className="mt-7 justify-center" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10"
+        />
+
+        <div className="container-page relative flex h-full flex-col justify-end pb-14 text-white sm:pb-20">
+          {data.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- logo de tenant
+            <img
+              src={data.logoUrl}
+              alt=""
+              className="mb-6 h-14 w-14 rounded-full border-2 border-white/40 object-cover"
+            />
+          )}
+          <h1 className="max-w-3xl font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+            {data.name}
+          </h1>
+          {data.description && (
+            <p className="mt-5 max-w-xl text-lg text-white/85">{data.description}</p>
+          )}
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href={data.menuHref}
+              className="inline-flex h-12 items-center rounded-full bg-white px-7 font-medium text-ink transition-transform hover:scale-[1.03]"
+            >
+              {data.orderingEnabled ? 'Voir le menu et commander' : 'Voir le menu'}
+            </Link>
+            <Link
+              href={data.infosHref}
+              className="inline-flex h-12 items-center rounded-full border border-white/50 px-7 font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
+            >
+              Nous trouver
+            </Link>
+          </div>
+        </div>
       </div>
+
+      <TraditionalInfoStrip data={data} />
     </section>
+  );
+}
+
+/**
+ * Bandeau d'informations pratiques, ancré au bas du héros : horaires,
+ * adresse et téléphone d'un coup d'œil, sans avoir à chercher la page
+ * « Infos ». Repose sur `primaryColor` plutôt qu'une couleur fixe : le
+ * template doit fonctionner pour n'importe quelle identité de restaurant.
+ */
+type InfoStripItem = { label: string; live?: boolean; href?: string };
+
+function TraditionalInfoStrip({ data }: { data: HeroData }) {
+  const items: InfoStripItem[] = [{ label: data.openLabel, live: true }];
+
+  if (data.addressLine) {
+    items.push({ label: [data.addressLine, data.city].filter(Boolean).join(', ') });
+  }
+  if (data.phone) {
+    items.push({ label: data.phone, href: `tel:${data.phone}` });
+  }
+
+  return (
+    <div className="border-t border-white/10 bg-[#15110d]">
+      <div className="container-page flex flex-wrap items-center gap-x-8 gap-y-3 py-4 text-sm text-white/80">
+        {items.map((item, index) => {
+          const content = (
+            <span className="flex items-center gap-2">
+              {item.live && (
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'h-2 w-2 rounded-full',
+                    data.isOpenNow ? 'bg-emerald-400' : 'bg-red-400',
+                  )}
+                />
+              )}
+              {item.label}
+            </span>
+          );
+          return item.href ? (
+            <a key={index} href={item.href} className="transition-colors hover:text-white">
+              {content}
+            </a>
+          ) : (
+            <span key={index}>{content}</span>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -406,6 +499,119 @@ function MenuList({
   );
 }
 
+/**
+ * Pastilles de catégories (ancres vers chaque section) + cartes produit avec
+ * photo, description et prix en couleur de marque. Les pastilles n'ont
+ * d'intérêt qu'à partir de deux catégories — l'aperçu d'accueil n'en affiche
+ * généralement qu'une ou deux, la page menu complète en profite pleinement.
+ */
+function MenuTraditional({
+  categories,
+  currency,
+}: {
+  categories: MenuCategoryData[];
+  currency: string;
+}) {
+  return (
+    <div className="space-y-14">
+      {categories.length > 1 && (
+        <nav
+          aria-label="Catégories du menu"
+          className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-white/95 px-4 py-3 backdrop-blur"
+        >
+          {categories.map((category) => (
+            <a
+              key={category.id}
+              href={`#${category.id}`}
+              className="shrink-0 rounded-full border border-surface-border px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-ink hover:text-ink"
+            >
+              {category.name}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      {categories.map((category) => (
+        <section key={category.id} id={category.id} aria-labelledby={`cat-${category.id}`}>
+          <h2
+            id={`cat-${category.id}`}
+            className="font-display text-2xl font-semibold tracking-tight"
+          >
+            {category.name}
+          </h2>
+          {category.description && (
+            <p className="mt-1 text-sm text-ink-muted">{category.description}</p>
+          )}
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {category.products.map((product) => (
+              <TraditionalProductCard key={product.id} product={product} currency={currency} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function TraditionalProductCard({
+  product,
+  currency,
+}: {
+  product: MenuProduct;
+  currency: string;
+}) {
+  const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
+
+  return (
+    <Link
+      href={product.href}
+      aria-disabled={unavailable || undefined}
+      className={cx(
+        'group overflow-hidden rounded-2xl border border-surface-border transition-shadow hover:shadow-lg',
+        unavailable && 'opacity-60',
+      )}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+          <img
+            src={product.imageUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div aria-hidden="true" className="h-full w-full" />
+        )}
+        {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
+            {BADGE_LABELS[product.badge]}
+          </span>
+        )}
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-medium leading-snug">{product.name}</h3>
+          <span className="shrink-0 font-semibold" style={{ color: 'var(--brand)' }}>
+            {formatMoney(product.price, currency)}
+          </span>
+        </div>
+        {product.description && (
+          <p className="mt-1.5 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
+        )}
+        {product.compareAtPrice && (
+          <p className="mt-1 text-xs text-ink-faint line-through">
+            {formatMoney(product.compareAtPrice, currency)}
+          </p>
+        )}
+        {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
+      </div>
+    </Link>
+  );
+}
+
 /** Cartes larges avec grande image — mise en avant du visuel. */
 function MenuShowcase({
   categories,
@@ -479,7 +685,7 @@ const TEMPLATE_RENDERERS: Record<string, TemplateRenderer> = {
   modern: { Hero: HeroModern, Menu: MenuGrid },
   'african-premium': { Hero: HeroAfricanPremium, Menu: MenuGrid },
   'fast-food': { Hero: HeroFastFood, Menu: MenuShowcase },
-  traditional: { Hero: HeroTraditional, Menu: MenuList },
+  traditional: { Hero: HeroTraditional, Menu: MenuTraditional },
   elegant: { Hero: HeroElegant, Menu: MenuList },
 };
 
