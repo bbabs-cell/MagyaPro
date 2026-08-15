@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
+import { templatePreviewUrl } from '@/lib/storage';
 import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
 import { AppearanceForm } from '@/components/dashboard/appearance-form';
 import { PageHeader } from '@/components/ui';
@@ -50,6 +51,7 @@ export default async function AppearancePage() {
           suggested:
             TEMPLATES.find((definition) => definition.key === template.key)
               ?.suggestedColors ?? null,
+          previewImageUrl: templatePreviewUrl(template.key),
         }))}
       />
     </>

@@ -120,6 +120,49 @@ export async function uploadImage(params: {
   return storage().put(key, buffer, detected);
 }
 
+/**
+ * Vignette d'aperçu d'un template (plateforme, pas un tenant) : clé fixe par
+ * template plutôt qu'un nom aléatoire, pour que téléverser une nouvelle
+ * image écrase l'ancienne à la même URL — rien d'autre à mettre à jour.
+ */
+export async function uploadTemplatePreview(params: {
+  file: File;
+  templateKey: string;
+}): Promise<StoredFile> {
+  const { file, templateKey } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  // Extension fixe (.jpg) quel que soit le format réel : l'URL reste stable
+  // d'un envoi à l'autre. Le navigateur se fie au Content-Type stocké, pas au
+  // suffixe du nom de fichier, donc ceci n'affecte pas l'affichage.
+  const key = `templates/${templateKey}.jpg`;
+  return storage().put(key, buffer, detected);
+}
+
+/** URL publique d'une vignette de template, si le pilote de stockage la sert. */
+export function templatePreviewUrl(templateKey: string): string | null {
+  if (env.storageDriver !== 's3') return null;
+  const base = env.s3PublicBaseUrl;
+  return base ? `${base}/templates/${templateKey}.jpg` : null;
+}
+
 /** Formats acceptés pour un son de notification. */
 export const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'] as const;
 

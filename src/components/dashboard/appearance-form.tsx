@@ -23,6 +23,7 @@ type Template = {
   isPremium: boolean;
   locked: boolean;
   suggested: { primary: string; secondary: string } | null;
+  previewImageUrl: string | null;
 };
 
 /**
@@ -150,11 +151,20 @@ export function AppearanceForm({
                 template.locked && 'cursor-not-allowed opacity-60 hover:border-surface-border',
               )}
             >
-              <span
-                aria-hidden="true"
-                className="mb-3 block h-14 rounded-lg"
-                style={{ backgroundColor: template.suggested?.primary ?? '#12151a' }}
-              />
+              {template.previewImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
+                <img
+                  src={template.previewImageUrl}
+                  alt=""
+                  className="mb-3 h-28 w-full rounded-lg object-cover"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="mb-3 block h-14 rounded-lg"
+                  style={{ backgroundColor: template.suggested?.primary ?? '#12151a' }}
+                />
+              )}
               <span className="flex items-center gap-2 font-medium">
                 {template.name}
                 {template.isPremium && <Badge tone="brand">Premium</Badge>}

@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
+import { templatePreviewUrl } from '@/lib/storage';
 import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
+import { TemplatePreviewUpload } from '@/components/admin/template-preview-upload';
 
 export const metadata: Metadata = { title: 'Templates' };
 export const dynamic = 'force-dynamic';
@@ -42,17 +44,13 @@ export default async function AdminTemplatesPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((template) => {
-          const definition = TEMPLATES.find((entry) => entry.key === template.key);
           const count = usageByKey.get(template.key) ?? 0;
 
           return (
             <div key={template.id} className="rounded-2xl border border-white/10 p-4">
-              <span
-                aria-hidden="true"
-                className="mb-3 block h-16 rounded-lg"
-                style={{
-                  backgroundColor: definition?.suggestedColors.primary ?? '#333',
-                }}
+              <TemplatePreviewUpload
+                templateKey={template.key}
+                previewUrl={templatePreviewUrl(template.key)}
               />
               <h2 className="flex flex-wrap items-center gap-2 font-medium">
                 {template.name}

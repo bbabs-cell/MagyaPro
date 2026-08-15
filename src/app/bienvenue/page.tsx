@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getTenantContext } from '@/lib/tenant';
+import { templatePreviewUrl } from '@/lib/storage';
 import { TEMPLATES } from '@/lib/templates/registry';
 import { OnboardingWizard } from '@/components/onboarding/wizard';
 
@@ -79,6 +80,7 @@ export default async function OnboardingPage() {
             suggested:
               TEMPLATES.find((definition) => definition.key === template.key)
                 ?.suggestedColors ?? null,
+            previewImageUrl: templatePreviewUrl(template.key),
           }))}
         />
       </div>

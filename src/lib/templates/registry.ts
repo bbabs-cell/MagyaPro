@@ -19,8 +19,6 @@ export type TemplateDefinition = {
   suggestedFont: string;
   isPremium: boolean;
   position: number;
-  /** Aperçu statique (`public/templates/<key>.jpg`) ; à défaut, la couleur suggérée sert de vignette. */
-  previewImageUrl?: string;
 };
 
 export const TEMPLATES: TemplateDefinition[] = [
@@ -33,7 +31,6 @@ export const TEMPLATES: TemplateDefinition[] = [
     suggestedFont: 'Inter',
     isPremium: false,
     position: 0,
-    previewImageUrl: '/templates/modern.jpg',
   },
   {
     key: 'african-premium',
@@ -44,7 +41,6 @@ export const TEMPLATES: TemplateDefinition[] = [
     suggestedFont: 'Poppins',
     isPremium: false,
     position: 1,
-    previewImageUrl: '/templates/african-premium.jpg',
   },
   {
     key: 'fast-food',
@@ -55,7 +51,6 @@ export const TEMPLATES: TemplateDefinition[] = [
     suggestedFont: 'Space Grotesk',
     isPremium: false,
     position: 2,
-    previewImageUrl: '/templates/fast-food.jpg',
   },
   {
     key: 'traditional',
@@ -66,7 +61,6 @@ export const TEMPLATES: TemplateDefinition[] = [
     suggestedFont: 'Playfair Display',
     isPremium: false,
     position: 3,
-    previewImageUrl: '/templates/traditional.jpg',
   },
   {
     key: 'elegant',
@@ -77,7 +71,6 @@ export const TEMPLATES: TemplateDefinition[] = [
     suggestedFont: 'Playfair Display',
     isPremium: true,
     position: 4,
-    previewImageUrl: '/templates/elegant.jpg',
   },
 ];
 

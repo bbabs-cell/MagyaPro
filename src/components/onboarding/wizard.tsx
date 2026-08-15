@@ -74,6 +74,7 @@ export function OnboardingWizard({
     name: string;
     description: string | null;
     suggested: { primary: string; secondary: string } | null;
+    previewImageUrl: string | null;
   }>;
 }) {
   const router = useRouter();
@@ -591,13 +592,22 @@ export function OnboardingWizard({
                       : 'border-surface-border hover:border-ink',
                   )}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="mb-3 block h-16 rounded-lg"
-                    style={{
-                      backgroundColor: template.suggested?.primary ?? '#12151a',
-                    }}
-                  />
+                  {template.previewImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
+                    <img
+                      src={template.previewImageUrl}
+                      alt=""
+                      className="mb-3 h-28 w-full rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="mb-3 block h-16 rounded-lg"
+                      style={{
+                        backgroundColor: template.suggested?.primary ?? '#12151a',
+                      }}
+                    />
+                  )}
                   <span className="block font-medium">{template.name}</span>
                   {template.description && (
                     <span className="mt-1 block text-sm text-ink-muted">
