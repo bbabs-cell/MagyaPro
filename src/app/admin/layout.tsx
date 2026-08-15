@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AdminNav } from '@/components/admin/nav';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
+import { LogoMark } from '@/components/ui/logo';
 
 /**
  * Espace d'administration de la plateforme.
@@ -28,9 +29,7 @@ export default async function AdminLayout({
       <header className="border-b border-white/10">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sm font-bold text-ink">
-              M
-            </span>
+            <LogoMark className="h-8 w-8" />
             <span className="font-semibold tracking-tight">
               Magyapro <span className="font-normal text-white/60">Administration</span>
             </span>

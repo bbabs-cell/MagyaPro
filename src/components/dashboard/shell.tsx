@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
+import { Logo } from '@/components/ui/logo';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
@@ -246,10 +247,7 @@ export function DashboardShell({
         <aside className="hidden w-64 shrink-0 border-r border-surface-border bg-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
           <div className="flex h-full flex-col p-4">
             <Link href="/dashboard" className="flex items-center gap-2 px-2 py-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
-                M
-              </span>
-              <span className="font-semibold tracking-tight">Magyapro</span>
+              <Logo />
             </Link>
 
             <div className="mt-4 rounded-xl border border-surface-border p-3">

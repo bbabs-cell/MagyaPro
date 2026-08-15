@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { LinkButton } from '@/components/ui';
+import { Logo, LogoMark } from '@/components/ui/logo';
 
 export default async function MarketingLayout({
   children,
@@ -18,10 +19,7 @@ export default async function MarketingLayout({
           aria-label="Navigation principale"
         >
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
-              M
-            </span>
-            <span className="text-lg font-semibold tracking-tight">Magyapro</span>
+            <Logo />
           </Link>
 
           <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
@@ -62,7 +60,10 @@ export default async function MarketingLayout({
         <div className="container-page py-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-semibold">Magyapro</p>
+              <span className="flex items-center gap-2">
+                <LogoMark className="h-6 w-6" />
+                <p className="font-semibold">Magyapro</p>
+              </span>
               <p className="mt-1 text-sm text-ink-muted">
                 La présence en ligne des restaurants, sans complexité technique.
               </p>

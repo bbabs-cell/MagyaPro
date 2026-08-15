@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { Logo } from '@/components/ui/logo';
+
 export default function AuthLayout({
   children,
 }: {
@@ -9,10 +11,7 @@ export default function AuthLayout({
     <div className="flex min-h-screen flex-col bg-surface-sunken">
       <header className="container-page py-6">
         <Link href="/" className="inline-flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-sm font-bold text-white">
-            M
-          </span>
-          <span className="text-lg font-semibold tracking-tight">Magyapro</span>
+          <Logo />
         </Link>
       </header>
 

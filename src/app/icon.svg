@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <rect width="40" height="40" rx="10" fill="#0f2043" />
+  <path
+    d="M9 28.5V12.5L20 22.5L31 12.5V28.5"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M6.5 12.5C6.5 7.5 12.5 3.5 20 3.5C27.5 3.5 33.5 7.5 33.5 12.5C29.5 9.3 25 7.6 20 7.6C15 7.6 10.5 9.3 6.5 12.5Z"
+    fill="url(#magyapro-dome)"
+  />
+  <defs>
+    <linearGradient id="magyapro-dome" x1="6.5" y1="3.5" x2="33.5" y2="12.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff9a4d" />
+      <stop offset="1" stop-color="#ff5e2e" />
+    </linearGradient>
+  </defs>
+</svg>
