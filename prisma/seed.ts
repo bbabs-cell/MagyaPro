@@ -17,7 +17,7 @@
  */
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type PrismaPromise } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { randomBytes, scrypt as scryptCb } from 'node:crypto';
 import { promisify } from 'node:util';
 
@@ -817,23 +817,18 @@ async function seedDemo() {
       data: { orderCounter: counter },
     });
 
-    // Trafic mesuré, pour que le taux de conversion soit calculable.
-    const events: PrismaPromise<unknown>[] = [];
-    for (let i = 0; i < 180; i++) {
-      const occurredAt = daysAgo(random() * 45);
-      events.push(
-        prisma.analyticsEvent.create({
-          data: {
-            restaurantId: restaurant.id,
-            type: 'PAGE_VIEW',
-            path: random() > 0.5 ? '/' : '/menu',
-            visitorId: `demo-visitor-${Math.floor(random() * 120)}`,
-            occurredAt,
-          },
-        }),
-      );
-    }
-    await prisma.$transaction(events);
+    // Trafic mesuré, pour que le taux de conversion soit calculable. Un seul
+    // aller-retour réseau (`createMany`) plutôt que 180 `create()` dans une
+    // transaction : sur une connexion distante, la latence cumulée des
+    // requêtes individuelles dépassait le délai par défaut de la transaction.
+    const events = Array.from({ length: 180 }, () => ({
+      restaurantId: restaurant.id,
+      type: 'PAGE_VIEW' as const,
+      path: random() > 0.5 ? '/' : '/menu',
+      visitorId: `demo-visitor-${Math.floor(random() * 120)}`,
+      occurredAt: daysAgo(random() * 45),
+    }));
+    await prisma.analyticsEvent.createMany({ data: events });
 
     console.info(
       `✓ ${definition.name} — ${createdProducts.length} plats, ${counter} commandes`,
