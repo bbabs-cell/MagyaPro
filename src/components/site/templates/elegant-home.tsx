@@ -214,32 +214,57 @@ function ChefSection({
 }: {
   chef: { name: string; bio: string | null; photoUrl: string | null };
 }) {
+  const hasPhoto = Boolean(chef.photoUrl);
+
   return (
-    <section id="chef" aria-labelledby="chef-titre" className="border-t border-surface-border bg-surface-sunken">
-      <div className="container-page py-20 sm:py-28">
-        <div className="mx-auto grid max-w-3xl items-center gap-10 sm:grid-cols-[220px_1fr]">
-          {chef.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- photo de tenant
-            <img
-              src={chef.photoUrl}
-              alt=""
-              className="mx-auto aspect-square w-44 rounded-full object-cover sm:w-full"
-            />
-          ) : (
+    <section
+      id="chef"
+      aria-labelledby="chef-titre"
+      className={cx(
+        'relative isolate flex min-h-[70vh] items-center overflow-hidden border-t border-surface-border',
+        !hasPhoto && 'bg-surface-sunken',
+      )}
+    >
+      {hasPhoto && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- photo de tenant */}
+          <img
+            src={chef.photoUrl!}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"
+          />
+        </>
+      )}
+
+      <div className="container-page relative py-20 sm:py-28">
+        <div className={cx('mx-auto max-w-lg text-center', hasPhoto && 'text-white')}>
+          <h2
+            id="chef-titre"
+            className={cx(
+              'text-xs font-semibold uppercase tracking-[0.4em]',
+              hasPhoto ? 'text-white/70' : 'text-ink-faint',
+            )}
+          >
+            Le chef
+          </h2>
+          {!hasPhoto && (
             <span
               aria-hidden="true"
-              className="mx-auto flex aspect-square w-44 items-center justify-center rounded-full bg-white font-display text-5xl sm:w-full"
+              className="mx-auto mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-white font-display text-4xl"
             >
               {chef.name.charAt(0).toUpperCase()}
             </span>
           )}
-          <div className="text-center sm:text-left">
-            <h2 id="chef-titre" className={SECTION_LABEL_CLASS}>
-              Le chef
-            </h2>
-            <p className="mt-4 font-display text-3xl">{chef.name}</p>
-            {chef.bio && <p className="mt-4 leading-relaxed text-ink-muted">{chef.bio}</p>}
-          </div>
+          <p className="mt-4 font-display text-4xl">{chef.name}</p>
+          {chef.bio && (
+            <p className={cx('mx-auto mt-4 max-w-md leading-relaxed', !hasPhoto && 'text-ink-muted')}>
+              {chef.bio}
+            </p>
+          )}
         </div>
       </div>
     </section>
