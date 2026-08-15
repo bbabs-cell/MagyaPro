@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
 import { formatMoney } from '@/lib/money';
 import { FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
+import { templatePreviewUrl } from '@/lib/storage';
 import { Badge, LinkButton } from '@/components/ui';
 
 /**
@@ -205,12 +206,19 @@ export default async function LandingPage() {
               </p>
             </div>
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {templates.map((template) => (
+              {templates.map((template) => {
+                const previewUrl = templatePreviewUrl(template.key);
+                return (
                 <div key={template.id} className="card overflow-hidden">
-                  <div
-                    aria-hidden="true"
-                    className="h-32 bg-gradient-to-br from-ink/90 to-ink/60"
-                  />
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
+                    <img src={previewUrl} alt="" className="h-40 w-full object-cover" />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="h-32 bg-gradient-to-br from-ink/90 to-ink/60"
+                    />
+                  )}
                   <div className="p-5">
                     <h3 className="font-medium text-ink">{template.name}</h3>
                     {template.description && (
@@ -220,7 +228,8 @@ export default async function LandingPage() {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
