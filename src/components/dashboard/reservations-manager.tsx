@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -44,9 +44,12 @@ function defaultReservationInput(): string {
 export function ReservationsManager({
   reservations,
   canManage,
+  graceMinutes,
 }: {
   reservations: Reservation[];
   canManage: boolean;
+  /** Délai après l'heure de réservation avant de la signaler comme probable no-show. */
+  graceMinutes: number;
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
@@ -54,6 +57,14 @@ export function ReservationsManager({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Remonte le compte à rebours de retard minute par minute, sans dépendre
+  // d'une action de l'utilisateur pour se rafraîchir.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
@@ -131,6 +142,13 @@ export function ReservationsManager({
   }
 
   function ReservationRow({ reservation }: { reservation: Reservation }) {
+    const isPendingOrConfirmed =
+      reservation.status === 'PENDING' || reservation.status === 'CONFIRMED';
+    const lateMinutes = isPendingOrConfirmed
+      ? Math.floor((now - new Date(reservation.reservedFor).getTime()) / 60_000) - graceMinutes
+      : -1;
+    const isLate = lateMinutes > 0;
+
     return (
       <li className="flex flex-wrap items-start justify-between gap-3 py-3">
         <div className="min-w-0">
@@ -139,6 +157,11 @@ export function ReservationsManager({
             <Badge tone={STATUS_TONE[reservation.status]}>
               {STATUS_LABEL[reservation.status]}
             </Badge>
+            {isLate && (
+              <Badge tone="danger">
+                Retard {lateMinutes < 60 ? `${lateMinutes} min` : `${Math.floor(lateMinutes / 60)} h ${lateMinutes % 60}`}
+              </Badge>
+            )}
           </p>
           <p className="mt-0.5 text-sm text-ink-muted">
             {formatWhen(reservation.reservedFor)} · {reservation.partySize} personne

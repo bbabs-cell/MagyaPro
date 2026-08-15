@@ -243,6 +243,10 @@ model RestaurantSettings {
   notificationSoundUrl String?
   /// Notes internes affichées au personnel dans le dashboard.
   staffNotes           String?
+  /// Délai après l'heure de réservation avant qu'elle soit signalée comme
+  /// probable no-show dans le dashboard (le personnel décide alors de
+  /// l'annuler ou non — rien n'est automatique).
+  reservationGraceMinutes Int @default(60)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

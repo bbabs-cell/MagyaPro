@@ -12,12 +12,16 @@ export const dynamic = 'force-dynamic';
 export default async function ReservationsPage() {
   const context = await requireTenant('reservations:manage');
 
-  const [reservations, entitlements] = await Promise.all([
+  const [reservations, entitlements, settings] = await Promise.all([
     prisma.reservation.findMany({
       where: { restaurantId: context.restaurant.id },
       orderBy: { reservedFor: 'asc' },
     }),
     getEntitlements(context.restaurant.id),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: context.restaurant.id },
+      select: { reservationGraceMinutes: true },
+    }),
   ]);
 
   const enabled = hasFeature(entitlements, FEATURES.RESERVATIONS);
@@ -47,6 +51,7 @@ export default async function ReservationsPage() {
 
       <ReservationsManager
         canManage={enabled}
+        graceMinutes={settings?.reservationGraceMinutes ?? 60}
         reservations={reservations.map((reservation) => ({
           id: reservation.id,
           customerName: reservation.customerName,

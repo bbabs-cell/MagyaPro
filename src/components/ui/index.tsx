@@ -23,9 +23,9 @@ const BUTTON_BASE =
   'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-white hover:bg-ink/90',
+  primary: 'bg-ink text-surface hover:bg-ink/90',
   secondary:
-    'border border-surface-border bg-white text-ink hover:bg-surface-sunken',
+    'border border-surface-border bg-surface text-ink hover:bg-surface-sunken',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
   danger: 'bg-red-600 text-white hover:bg-red-700',
 };
@@ -79,7 +79,7 @@ export function LinkButton({
 // --- Formulaires -----------------------------------------------------------
 
 export const inputClass =
-  'w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-surface-sunken';
+  'w-full rounded-xl border border-surface-border bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-surface-sunken';
 
 export function Field({
   label,

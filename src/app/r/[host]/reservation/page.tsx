@@ -31,7 +31,7 @@ export default async function ReservationPage({ params }: Props) {
       <p className="mt-2 text-ink-muted">{dict.reservation.subtitle(restaurant.name)}</p>
 
       <div className="mt-8">
-        <ReservationForm restaurantId={restaurant.id} restaurantName={restaurant.name} />
+        <ReservationForm restaurantId={restaurant.id} restaurantName={restaurant.name} host={host} />
       </div>
     </div>
   );

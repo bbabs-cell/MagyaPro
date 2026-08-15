@@ -47,6 +47,7 @@ type Settings = {
   tableOrderingEnabled: boolean;
   minOrderAmount: number;
   prepTimeMinutes: number;
+  reservationGraceMinutes: number;
   paymentProviders: string[];
   orangeMoneyNumber: string | null;
   waveNumber: string | null;
@@ -176,6 +177,7 @@ export function SettingsPanels({
           restaurant.currency,
         ),
         prepTimeMinutes: Number(formData.get('prepTimeMinutes') ?? 30),
+        reservationGraceMinutes: Number(formData.get('reservationGraceMinutes') ?? 60),
         paymentProviders: selectedProviders,
         orangeMoneyNumber: String(formData.get('orangeMoneyNumber') ?? ''),
         waveNumber: String(formData.get('waveNumber') ?? ''),
@@ -538,6 +540,23 @@ export function SettingsPanels({
                   min="0"
                   max="600"
                   defaultValue={settings.prepTimeMinutes}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field
+                label="Délai avant signalement d'un retard (minutes)"
+                htmlFor="reservationGraceMinutes"
+                hint="Une réservation non honorée au-delà de ce délai est signalée dans Réservations."
+                error={fieldErrors.reservationGraceMinutes}
+              >
+                <input
+                  id="reservationGraceMinutes"
+                  name="reservationGraceMinutes"
+                  type="number"
+                  min="0"
+                  max="600"
+                  defaultValue={settings.reservationGraceMinutes}
                   className={inputClass}
                 />
               </Field>

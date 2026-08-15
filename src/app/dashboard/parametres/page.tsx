@@ -73,6 +73,7 @@ export default async function SettingsPage() {
           waveNumber: settings?.waveNumber ?? null,
           notificationEmail: settings?.notificationEmail ?? null,
           notificationSoundUrl: settings?.notificationSoundUrl ?? null,
+          reservationGraceMinutes: settings?.reservationGraceMinutes ?? 60,
         }}
         hours={hours.map((hour) => ({
           dayOfWeek: hour.dayOfWeek,

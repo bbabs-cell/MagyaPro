@@ -67,6 +67,7 @@ export const PATCH = route(async (request) => {
       orangeMoneyNumber: input.orangeMoneyNumber ?? null,
       waveNumber: input.waveNumber ?? null,
       notificationEmail: input.notificationEmail ?? null,
+      reservationGraceMinutes: input.reservationGraceMinutes,
     },
     update: {
       orderingEnabled: input.orderingEnabled,
@@ -79,6 +80,7 @@ export const PATCH = route(async (request) => {
       orangeMoneyNumber: input.orangeMoneyNumber ?? null,
       waveNumber: input.waveNumber ?? null,
       notificationEmail: input.notificationEmail ?? null,
+      reservationGraceMinutes: input.reservationGraceMinutes,
     },
   });
 

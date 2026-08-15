@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Field, inputClass } from '@/components/ui';
@@ -21,9 +22,11 @@ function defaultReservationInput(): string {
 export function ReservationForm({
   restaurantId,
   restaurantName,
+  host,
 }: {
   restaurantId: string;
   restaurantName: string;
+  host: string;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +91,12 @@ export function ReservationForm({
           {confirmation.confirmationCode}
         </p>
         <p className="mt-1 text-xs text-emerald-800">{dict.reservation.keepCode}</p>
+        <Link
+          href={`/r/${host}/reservation/${confirmation.id}`}
+          className="mt-4 inline-flex h-10 items-center rounded-xl border border-emerald-300 px-4 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
+        >
+          Suivre ma réservation
+        </Link>
       </div>
     );
   }

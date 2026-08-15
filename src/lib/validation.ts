@@ -162,6 +162,7 @@ export const restaurantSettingsSchema = z.object({
   orangeMoneyNumber: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
   waveNumber: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
   notificationEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
+  reservationGraceMinutes: z.number().int().min(0).max(600),
 });
 
 // --- Menu -------------------------------------------------------------------
