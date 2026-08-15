@@ -75,7 +75,7 @@ export function PaymentProofUpload({
               Votre précédente preuve a été refusée. Déposez-en une nouvelle.
             </p>
           )}
-          <label className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-ink px-5 text-sm font-medium text-white hover:bg-ink/90">
+          <label className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-ink px-5 text-sm font-medium text-surface hover:bg-ink/90">
             {uploading ? 'Envoi…' : 'Déposer la preuve (capture d’écran)'}
             <input
               type="file"

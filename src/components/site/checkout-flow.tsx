@@ -615,7 +615,7 @@ function FulfillmentButton({
       onClick={onClick}
       aria-pressed={active}
       className={`h-11 rounded-xl border px-5 text-sm font-medium transition-colors ${
-        active ? 'border-ink bg-ink text-white' : 'border-surface-border hover:border-ink'
+        active ? 'border-ink bg-ink text-surface' : 'border-surface-border hover:border-ink'
       }`}
     >
       {label}

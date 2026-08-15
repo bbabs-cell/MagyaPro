@@ -64,7 +64,7 @@ export function ElegantHomePage({ data }: { data: ElegantHomeData }) {
       {sections.length > 1 && (
         <nav
           aria-label="Sections de la page"
-          className="sticky top-16 z-10 flex justify-center gap-6 overflow-x-auto border-b border-surface-border bg-white/95 px-4 py-3 backdrop-blur"
+          className="sticky top-16 z-10 flex justify-center gap-6 overflow-x-auto border-b border-surface-border bg-surface/95 px-4 py-3 backdrop-blur"
         >
           {sections.map((section) => (
             <a
@@ -110,7 +110,7 @@ function ElegantHero({ data }: { data: HeroData }) {
     <section
       className={cx(
         'relative isolate flex min-h-[85vh] items-center overflow-hidden',
-        !hasPhoto && 'bg-white',
+        !hasPhoto && 'bg-surface',
       )}
     >
       {hasPhoto ? (
@@ -168,8 +168,8 @@ function ElegantHero({ data }: { data: HeroData }) {
               className={cx(
                 'inline-flex h-14 items-center rounded-none border px-10 text-sm font-medium uppercase tracking-widest transition-colors',
                 hasPhoto
-                  ? 'border-white text-white hover:bg-white hover:text-ink'
-                  : 'border-ink text-ink hover:bg-ink hover:text-white',
+                  ? 'border-white text-white hover:bg-white hover:text-black'
+                  : 'border-ink text-ink hover:bg-ink hover:text-surface',
               )}
             >
               {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
@@ -195,7 +195,7 @@ function ElegantHero({ data }: { data: HeroData }) {
 
 function StorySection({ story }: { story: string }) {
   return (
-    <section id="histoire" aria-labelledby="histoire-titre" className="border-t border-surface-border bg-white">
+    <section id="histoire" aria-labelledby="histoire-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <div className="mx-auto max-w-2xl text-center">
           <h2 id="histoire-titre" className={SECTION_LABEL_CLASS}>
@@ -255,7 +255,7 @@ function ChefSection({
           {!hasPhoto && (
             <span
               aria-hidden="true"
-              className="mx-auto mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-white font-display text-4xl"
+              className="mx-auto mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-surface font-display text-4xl"
             >
               {chef.name.charAt(0).toUpperCase()}
             </span>
@@ -282,7 +282,7 @@ function MenuSection({
   menuHref: string;
 }) {
   return (
-    <section id="carte" aria-labelledby="carte-titre" className="border-t border-surface-border bg-white">
+    <section id="carte" aria-labelledby="carte-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <h2 id="carte-titre" className={cx(SECTION_LABEL_CLASS, 'text-center')}>
           La carte
@@ -392,7 +392,7 @@ function ReviewsSection({
   averageRating: number | null;
 }) {
   return (
-    <section id="avis" aria-labelledby="avis-titre" className="border-t border-surface-border bg-white">
+    <section id="avis" aria-labelledby="avis-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <div className="text-center">
           <h2 id="avis-titre" className={SECTION_LABEL_CLASS}>

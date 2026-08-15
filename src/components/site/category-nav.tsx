@@ -15,7 +15,7 @@ export function CategoryNav({
   return (
     <nav
       aria-label="Catégories du menu"
-      className="sticky top-16 z-30 -mx-4 mt-5 border-b border-surface-border bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-3"
+      className="sticky top-16 z-30 -mx-4 mt-5 border-b border-surface-border bg-surface/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-3"
     >
       <ul className="flex gap-2 overflow-x-auto">
         {categories.map((category) => (

@@ -169,7 +169,7 @@ export function ProductOrderForm({
                 key={variant.id}
                 className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm transition-colors ${
                   variantId === variant.id
-                    ? 'border-ink bg-ink text-white'
+                    ? 'border-ink bg-ink text-surface'
                     : 'border-surface-border hover:border-ink'
                 }`}
               >

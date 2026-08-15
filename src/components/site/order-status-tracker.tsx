@@ -139,7 +139,7 @@ export function OrderStatusTracker({
                   aria-current={active ? 'step' : undefined}
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
                     done || active
-                      ? 'bg-ink text-white'
+                      ? 'bg-ink text-surface'
                       : 'bg-surface-sunken text-ink-faint'
                   }`}
                 >

@@ -22,7 +22,7 @@ export function LanguageSwitcher() {
         aria-label={dict.language.label}
         value={locale}
         onChange={(event) => change(event.target.value)}
-        className="rounded-lg border border-surface-border bg-white px-2 py-1 text-xs text-ink"
+        className="rounded-lg border border-surface-border bg-surface px-2 py-1 text-xs text-ink"
       >
         {LOCALES.map((code) => (
           <option key={code} value={code}>

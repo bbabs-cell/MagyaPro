@@ -70,7 +70,7 @@ const BADGE_LABELS: Record<string, string> = {
  */
 function HeroModern({ data }: { data: HeroData }) {
   return (
-    <section className="relative overflow-hidden bg-white">
+    <section className="relative overflow-hidden bg-surface">
       <div className="container-page grid gap-10 py-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12 lg:py-24">
         <div className="relative z-10">
           <div
@@ -124,7 +124,7 @@ function HeroModern({ data }: { data: HeroData }) {
               />
             )}
           </div>
-          <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-surface-border bg-white/90 px-4 py-3 text-sm shadow-lg backdrop-blur">
+          <div className="absolute -bottom-5 left-5 flex items-center gap-2 rounded-2xl border border-surface-border bg-surface/90 px-4 py-3 text-sm shadow-lg backdrop-blur">
             <span
               aria-hidden="true"
               className={cx('h-2 w-2 rounded-full', data.isOpenNow ? 'bg-emerald-500' : 'bg-red-500')}
@@ -314,7 +314,7 @@ function HeroTraditional({ data }: { data: HeroData }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href={data.menuHref}
-              className="inline-flex h-12 items-center rounded-full bg-white px-7 font-medium text-ink transition-transform hover:scale-[1.03]"
+              className="inline-flex h-12 items-center rounded-full bg-white px-7 font-medium text-black transition-transform hover:scale-[1.03]"
             >
               {data.orderingEnabled ? 'Voir le menu et commander' : 'Voir le menu'}
             </Link>
@@ -389,7 +389,7 @@ function TraditionalInfoStrip({ data }: { data: HeroData }) {
  */
 function HeroElegant({ data }: { data: HeroData }) {
   return (
-    <section className="relative overflow-hidden bg-white">
+    <section className="relative overflow-hidden bg-surface">
       <span
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[24rem] font-semibold leading-none text-surface-sunken sm:text-[32rem]"
@@ -414,7 +414,7 @@ function HeroElegant({ data }: { data: HeroData }) {
           <div className="mt-10 flex flex-col items-center gap-4">
             <Link
               href={data.menuHref}
-              className="inline-flex h-14 items-center rounded-none border border-ink px-10 text-sm font-medium uppercase tracking-widest text-ink transition-colors hover:bg-ink hover:text-white"
+              className="inline-flex h-14 items-center rounded-none border border-ink px-10 text-sm font-medium uppercase tracking-widest text-ink transition-colors hover:bg-ink hover:text-surface"
             >
               {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
             </Link>
@@ -513,7 +513,7 @@ function BentoProductCard({
           className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
         />
         {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink">
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black">
             {BADGE_LABELS[product.badge]}
           </span>
         )}
@@ -532,7 +532,7 @@ function BentoProductCard({
 
       <QuickAddButton
         product={product}
-        className="absolute right-2 top-2 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink shadow-sm transition-colors hover:bg-white"
+        className="absolute right-2 top-2 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black shadow-sm transition-colors hover:bg-white"
       />
     </div>
   );
@@ -684,7 +684,7 @@ function MenuTraditional({
       {categories.length > 1 && (
         <nav
           aria-label="Catégories du menu"
-          className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-white/95 px-4 py-3 backdrop-blur"
+          className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-surface/95 px-4 py-3 backdrop-blur"
         >
           {categories.map((category) => (
             <a
@@ -751,7 +751,7 @@ function TraditionalProductCard({
             <div aria-hidden="true" className="h-full w-full" />
           )}
           {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
+            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-black shadow-sm">
               {BADGE_LABELS[product.badge]}
             </span>
           )}
@@ -803,7 +803,7 @@ function MenuFastFood({
         <section key={category.id} id={category.id} aria-labelledby={`cat-${category.id}`}>
           <h2
             id={`cat-${category.id}`}
-            className="inline-block -rotate-1 rounded-xl bg-ink px-4 py-1.5 text-lg font-black uppercase tracking-tight text-white"
+            className="inline-block -rotate-1 rounded-xl bg-ink px-4 py-1.5 text-lg font-black uppercase tracking-tight text-surface"
           >
             {category.name}
           </h2>
@@ -830,7 +830,7 @@ function FastFoodProductCard({
   return (
     <div
       className={cx(
-        'group relative overflow-hidden rounded-3xl border-2 border-ink bg-white transition-transform hover:-translate-y-1',
+        'group relative overflow-hidden rounded-3xl border-2 border-ink bg-surface transition-transform hover:-translate-y-1',
         unavailable && 'opacity-60',
       )}
     >
@@ -846,11 +846,11 @@ function FastFoodProductCard({
             />
           ) : null}
           {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-            <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-ink px-2.5 py-1 text-xs font-bold uppercase text-white">
+            <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-black px-2.5 py-1 text-xs font-bold uppercase text-white">
               {BADGE_LABELS[product.badge]}
             </span>
           )}
-          <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-ink bg-white px-3 py-1 text-xs font-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
+          <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
             {formatMoney(product.price, currency)}
           </span>
         </div>
@@ -866,7 +866,7 @@ function FastFoodProductCard({
       <div className="px-4 pb-4">
         <QuickAddButton
           product={product}
-          className="flex h-9 w-full items-center justify-center rounded-full bg-ink text-xs font-black uppercase tracking-wide text-white transition-transform hover:-translate-y-0.5"
+          className="flex h-9 w-full items-center justify-center rounded-full bg-ink text-xs font-black uppercase tracking-wide text-surface transition-transform hover:-translate-y-0.5"
         />
       </div>
     </div>

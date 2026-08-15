@@ -12,15 +12,19 @@ const config: Config = {
           soft: 'var(--brand-soft, #fdecea)',
           ink: 'var(--brand-ink, #ffffff)',
         },
+        // `ink`/`surface` restent des couleurs fixes pour l'admin et le
+        // dashboard. Sur les sites publics des restaurants, `SiteChrome`
+        // redéfinit ces variables CSS pour le mode sombre — c'est ce qui
+        // permet à chaque template d'en profiter sans y toucher.
         ink: {
-          DEFAULT: '#12151a',
-          muted: '#5c6672',
-          faint: '#8b95a2',
+          DEFAULT: 'var(--ink, #12151a)',
+          muted: 'var(--ink-muted, #5c6672)',
+          faint: 'var(--ink-faint, #8b95a2)',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          sunken: '#f6f7f9',
-          border: '#e4e8ed',
+          DEFAULT: 'var(--surface, #ffffff)',
+          sunken: 'var(--surface-sunken, #f6f7f9)',
+          border: 'var(--surface-border, #e4e8ed)',
         },
       },
       fontFamily: {

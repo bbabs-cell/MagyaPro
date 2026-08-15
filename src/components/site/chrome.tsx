@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { useCart } from '@/components/site/cart-context';
 import { useI18n } from '@/components/site/i18n-provider';
@@ -25,6 +26,23 @@ const FONT_STACKS: Record<string, string> = {
   'Space Grotesk': "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
   'Playfair Display': "'Playfair Display', ui-serif, Georgia, serif",
 };
+
+/**
+ * `ink` et `surface` sont normalement des couleurs fixes (voir
+ * `tailwind.config.ts`) : les redéfinir ici en variables CSS, uniquement sur
+ * les sites publics, fait basculer tous les templates en mode sombre d'un
+ * coup — aucun n'a besoin de connaître l'existence de ce thème.
+ */
+const DARK_THEME_VARS = {
+  '--surface': '#131417',
+  '--surface-sunken': '#1c1e22',
+  '--surface-border': '#2c2f34',
+  '--ink': '#f2f3f5',
+  '--ink-muted': '#a7adb6',
+  '--ink-faint': '#767c86',
+} as const;
+
+const THEME_STORAGE_KEY = 'magyapro:theme';
 
 export function SiteChrome({
   restaurant,
@@ -52,6 +70,40 @@ export function SiteChrome({
   const pathname = usePathname();
   const { locale, dict } = useI18n();
 
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Lu après le premier rendu, jamais pendant : le HTML servi par le serveur
+  // ne connaît pas la préférence du navigateur, donc un premier rendu client
+  // qui en tiendrait compte ne correspondrait pas au HTML reçu (avertissement
+  // d'hydratation React).
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored === 'dark' || stored === 'light') {
+        setTheme(stored);
+        return;
+      }
+    } catch {
+      // Stockage indisponible (navigation privée) : on retombe sur la
+      // préférence système ci-dessous.
+    }
+    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+    }
+  }, []);
+
+  function toggleTheme() {
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark';
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, next);
+      } catch {
+        // Le thème reste actif pour la session en cours même sans stockage.
+      }
+      return next;
+    });
+  }
+
   // Les liens doivent rester valides que la page soit servie depuis un
   // sous-domaine (chemin `/menu`) ou depuis `/r/<slug>/menu` en aperçu.
   const base = pathname.startsWith(`/r/${host}`) ? `/r/${host}` : '';
@@ -68,7 +120,7 @@ export function SiteChrome({
   return (
     <div
       dir={dirFor(locale)}
-      className="flex min-h-screen flex-col bg-white"
+      className="flex min-h-screen flex-col bg-surface text-ink"
       data-template={templateKey}
       style={
         {
@@ -80,16 +132,17 @@ export function SiteChrome({
           // (`traditional`, `elegant`, `african-premium`) gardent cet effet
           // quelle que soit la police de corps de texte choisie.
           '--font-display': FONT_STACKS['Playfair Display'],
+          ...(theme === 'dark' ? DARK_THEME_VARS : {}),
         } as React.CSSProperties
       }
     >
       {restaurant.isDemo && (
-        <p className="bg-ink px-4 py-2 text-center text-xs text-white">
+        <p className="bg-ink px-4 py-2 text-center text-xs text-surface">
           Restaurant de démonstration — les commandes passées ici sont fictives.
         </p>
       )}
 
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/95 backdrop-blur">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href={base || '/'} className="flex min-w-0 items-center gap-2.5">
             {restaurant.logoUrl ? (
@@ -133,6 +186,7 @@ export function SiteChrome({
           </nav>
 
           <div className="flex shrink-0 items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <LanguageSwitcher />
             {restaurant.orderingEnabled && (
               <Link
@@ -199,5 +253,32 @@ export function SiteChrome({
         </div>
       </footer>
     </div>
+  );
+}
+
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: 'light' | 'dark';
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border text-ink-muted transition-colors hover:text-ink"
+    >
+      {theme === 'dark' ? (
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="h-4 w-4">
+          <path d="M10 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 13a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0v-1a1 1 0 0 1 1-1ZM3 9a1 1 0 0 1 0 2H2a1 1 0 1 1 0-2h1Zm15 0a1 1 0 0 1 0 2h-1a1 1 0 1 1 0-2h1ZM5.05 4.636a1 1 0 0 1 1.415 0l.707.707a1 1 0 1 1-1.415 1.415l-.707-.707a1 1 0 0 1 0-1.415Zm9.193 9.193a1 1 0 0 1 1.415 0l.707.707a1 1 0 1 1-1.415 1.415l-.707-.707a1 1 0 0 1 0-1.415ZM14.95 4.636a1 1 0 0 1 0 1.415l-.707.707A1 1 0 1 1 12.828 5.34l.707-.707a1 1 0 0 1 1.415 0ZM5.757 13.828a1 1 0 0 1 0 1.415l-.707.707A1 1 0 1 1 3.636 14.535l.707-.707a1 1 0 0 1 1.415 0ZM10 6a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="h-4 w-4">
+          <path d="M17.293 13.293a8 8 0 0 1-10.586-10.586 8.001 8.001 0 1 0 10.586 10.586Z" />
+        </svg>
+      )}
+    </button>
   );
 }

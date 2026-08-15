@@ -79,7 +79,7 @@ export function TableLanding({
       {orderingEnabled ? (
         <Link
           href={`/r/${host}/menu`}
-          className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-white hover:bg-ink/90 sm:w-auto"
+          className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-surface hover:bg-ink/90 sm:w-auto"
         >
           {dict.table.seeMenuFor(tableLabel)}
         </Link>

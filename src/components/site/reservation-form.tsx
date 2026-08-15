@@ -147,7 +147,7 @@ export function ReservationForm({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-white hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-ink px-6 font-medium text-surface hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         {pending ? dict.reservation.sending : dict.reservation.submit}
       </button>
