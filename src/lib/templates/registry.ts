@@ -19,6 +19,8 @@ export type TemplateDefinition = {
   suggestedFont: string;
   isPremium: boolean;
   position: number;
+  /** Aperçu statique (`public/templates/<key>.jpg`) ; à défaut, la couleur suggérée sert de vignette. */
+  previewImageUrl?: string;
 };
 
 export const TEMPLATES: TemplateDefinition[] = [
@@ -26,51 +28,56 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'modern',
     name: 'Moderne',
     description:
-      'Épuré et lumineux, une grande photo de couverture et un menu en grille. Convient à la plupart des établissements.',
+      'Bento éditorial : volets asymétriques, halo de couleur en fond et menu en tuiles avec le produit vedette en grand.',
     suggestedColors: { primary: '#e2483d', secondary: '#12151a' },
     suggestedFont: 'Inter',
     isPremium: false,
     position: 0,
+    previewImageUrl: '/templates/modern.jpg',
   },
   {
     key: 'african-premium',
     name: 'Africain premium',
     description:
-      'Teintes chaudes et typographie affirmée, pour une cuisine africaine mise en valeur.',
+      'Éditorial doré : fond sombre texturé, cadre photo décalé et carte numérotée façon restaurant gastronomique.',
     suggestedColors: { primary: '#c2410c', secondary: '#1c1917' },
     suggestedFont: 'Poppins',
     isPremium: false,
     position: 1,
+    previewImageUrl: '/templates/african-premium.jpg',
   },
   {
     key: 'fast-food',
     name: 'Fast-food',
     description:
-      'Direct et efficace : gros visuels, prix visibles, commande en deux gestes.',
+      'Néo-brutaliste et énergique : blocs de couleur pleine teinte, ombres décalées façon autocollant, prix en pastille.',
     suggestedColors: { primary: '#dc2626', secondary: '#111827' },
     suggestedFont: 'Space Grotesk',
     isPremium: false,
     position: 2,
+    previewImageUrl: '/templates/fast-food.jpg',
   },
   {
     key: 'traditional',
     name: 'Traditionnel',
     description:
-      'Une carte sobre en une colonne, dans l\'esprit d\'un menu imprimé.',
+      'Héros plein cadre avec bandeau d\'infos pratiques, et carte organisée par pastilles de catégories.',
     suggestedColors: { primary: '#7c2d12', secondary: '#1c1917' },
     suggestedFont: 'Playfair Display',
     isPremium: false,
     position: 3,
+    previewImageUrl: '/templates/traditional.jpg',
   },
   {
     key: 'elegant',
     name: 'Élégant',
     description:
-      'Beaucoup d\'espace, typographie fine et contrastes doux, pour une table gastronomique.',
+      'Minimalisme haute couture : initiale en filigrane géant, carte en une colonne, sans image, d\'un grand calme.',
     suggestedColors: { primary: '#0f766e', secondary: '#0c0a09' },
     suggestedFont: 'Playfair Display',
     isPremium: true,
     position: 4,
+    previewImageUrl: '/templates/elegant.jpg',
   },
 ];
 
