@@ -62,6 +62,7 @@ export const POST = route(async (request) => {
       cancelledAt: null,
       currentPeriodEnd: expiresIn(trialDays > 0 ? trialDays : periodDays, 'days'),
       expiryAlertSentAt: null,
+      graceEndsAt: null,
     },
     include: { plan: true },
   });

@@ -64,6 +64,8 @@ export type Entitlements = {
   isActive: boolean;
   currentPeriodEnd: Date | null;
   trialEndsAt: Date | null;
+  /** Fin du délai de grâce de 3 jours, si l'abonnement est `PAST_DUE`. */
+  graceEndsAt: Date | null;
 };
 
 /**
@@ -79,6 +81,7 @@ const NO_PLAN: Entitlements = {
   isActive: false,
   currentPeriodEnd: null,
   trialEndsAt: null,
+  graceEndsAt: null,
 };
 
 export async function getEntitlements(
@@ -109,6 +112,7 @@ export async function getEntitlements(
     isActive,
     currentPeriodEnd: subscription.currentPeriodEnd,
     trialEndsAt: subscription.trialEndsAt,
+    graceEndsAt: subscription.graceEndsAt,
   };
 }
 

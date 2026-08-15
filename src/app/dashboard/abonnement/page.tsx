@@ -86,20 +86,36 @@ export default async function SubscriptionPage() {
             </p>
           </div>
 
-          {entitlements.currentPeriodEnd && (
+          {entitlements.status === 'PAST_DUE' && entitlements.graceEndsAt ? (
             <div className="text-right">
               <p className="text-xs uppercase tracking-wide text-ink-faint">
-                {entitlements.status === 'TRIALING' ? "Fin d'essai" : 'Période en cours'}
+                Délai de grâce avant repli automatique
               </p>
               <p className="mt-1 text-sm">
-                {entitlements.currentPeriodEnd.toLocaleDateString('fr-FR', {
+                {entitlements.graceEndsAt.toLocaleDateString('fr-FR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
                 })}
               </p>
-              <PlanCountdown currentPeriodEnd={entitlements.currentPeriodEnd.toISOString()} />
+              <PlanCountdown currentPeriodEnd={entitlements.graceEndsAt.toISOString()} />
             </div>
+          ) : (
+            entitlements.currentPeriodEnd && (
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-ink-faint">
+                  {entitlements.status === 'TRIALING' ? "Fin d'essai" : 'Période en cours'}
+                </p>
+                <p className="mt-1 text-sm">
+                  {entitlements.currentPeriodEnd.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
+                <PlanCountdown currentPeriodEnd={entitlements.currentPeriodEnd.toISOString()} />
+              </div>
+            )
           )}
         </div>
 

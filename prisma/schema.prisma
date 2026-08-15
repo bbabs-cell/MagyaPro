@@ -861,6 +861,11 @@ model Subscription {
   /// la renvoyer chaque jour. Remise à zéro à chaque renouvellement, pour
   /// qu'une prochaine échéance déclenche à nouveau l'alerte.
   expiryAlertSentAt DateTime?
+  /// Fin du délai de grâce de 3 jours accordé après l'expiration d'une
+  /// période, pendant lequel le restaurant peut encore renouveler avant de
+  /// basculer automatiquement sur le plan le plus bas. `null` en dehors de
+  /// ce délai.
+  graceEndsAt       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

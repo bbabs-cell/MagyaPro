@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money';
 import { StatusPill } from '@/app/admin/page';
 import { RestaurantAdminActions } from '@/components/admin/restaurant-actions';
 import { SubscriptionManager } from '@/components/admin/subscription-manager';
+import { DemoRestaurantEditor } from '@/components/admin/demo-restaurant-editor';
 
 export const metadata: Metadata = { title: 'Fiche restaurant' };
 export const dynamic = 'force-dynamic';
@@ -53,6 +54,15 @@ export default async function AdminRestaurantDetailPage({
     }),
   ]);
 
+  // Utile seulement pour l'édition directe des restaurants de démonstration.
+  const templates = restaurant.isDemo
+    ? await prisma.template.findMany({
+        where: { isActive: true },
+        orderBy: { position: 'asc' },
+        select: { key: true, name: true },
+      })
+    : [];
+
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -92,6 +102,25 @@ export default async function AdminRestaurantDetailPage({
         <Metric label="Plats" value={String(restaurant._count.products)} />
         <Metric label="Clients" value={String(restaurant._count.customers)} />
       </section>
+
+      {restaurant.isDemo && (
+        <section aria-labelledby="demo-edit" className="mt-8">
+          <h2 id="demo-edit" className="text-sm font-medium">
+            Modifier cette vitrine de démonstration
+          </h2>
+          <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <DemoRestaurantEditor
+              restaurantId={restaurant.id}
+              name={restaurant.name}
+              description={restaurant.description}
+              primaryColor={restaurant.primaryColor}
+              secondaryColor={restaurant.secondaryColor}
+              templateKey={restaurant.templateKey}
+              templates={templates}
+            />
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="actions">
