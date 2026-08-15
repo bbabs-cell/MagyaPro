@@ -84,3 +84,23 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Bandeau défilant en continu (template « street-food ») — la liste est
+   dupliquée dans le balisage, cette animation ne fait que glisser la moitié
+   gauche vers la gauche pour donner l'illusion d'un défilement infini. */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee-scroll 22s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}

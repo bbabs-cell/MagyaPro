@@ -72,6 +72,16 @@ export const TEMPLATES: TemplateDefinition[] = [
     isPremium: true,
     position: 4,
   },
+  {
+    key: 'street-food',
+    name: 'Street Food',
+    description:
+      'Page unique énergique : bandeau défilant, badges flottants, carte filtrable et offre en compte à rebours.',
+    suggestedColors: { primary: '#e8281a', secondary: '#f6a623' },
+    suggestedFont: 'Poppins',
+    isPremium: true,
+    position: 5,
+  },
 ];
 
 export const PREMIUM_TEMPLATE_KEYS = new Set(

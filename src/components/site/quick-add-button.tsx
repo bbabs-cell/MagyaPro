@@ -18,9 +18,11 @@ import type { MenuProduct } from '@/components/site/templates';
 export function QuickAddButton({
   product,
   className,
+  style,
 }: {
   product: MenuProduct;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const { addLine } = useCart();
   const [added, setAdded] = useState(false);
@@ -39,6 +41,7 @@ export function QuickAddButton({
         onClick={(event) => event.stopPropagation()}
         aria-label={`Choisir les options de ${product.name}`}
         className={className}
+        style={style}
       >
         + Ajouter
       </Link>
@@ -66,6 +69,7 @@ export function QuickAddButton({
       }}
       aria-label={`Ajouter ${product.name} au panier`}
       className={cx(className, unavailable && 'pointer-events-none opacity-50')}
+      style={style}
     >
       {added ? 'Ajouté ✓' : '+ Ajouter'}
     </button>

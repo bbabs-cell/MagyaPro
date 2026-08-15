@@ -889,6 +889,10 @@ const TEMPLATE_RENDERERS: Record<string, TemplateRenderer> = {
   'fast-food': { Hero: HeroFastFood, Menu: MenuFastFood },
   traditional: { Hero: HeroTraditional, Menu: MenuTraditional },
   elegant: { Hero: HeroElegant, Menu: MenuElegant },
+  // La page d'accueil de « street-food » est une page unique dédiée
+  // (`street-food-home.tsx`, comme « elegant ») ; ce couple ne sert que pour
+  // sa page `/menu` complète, dans le même registre visuel que « fast-food ».
+  'street-food': { Hero: HeroFastFood, Menu: MenuFastFood },
 };
 
 /** Un template inconnu retombe sur le template par défaut plutôt que d'échouer. */

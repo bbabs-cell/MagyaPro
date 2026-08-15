@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { prisma } from '@/lib/db';
+import { formatMoney } from '@/lib/money';
 import { loadPublicMenu, resolvePublicRestaurant } from '@/lib/site/resolve';
 import { computeOpenState } from '@/lib/site/hours';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { templateRenderer } from '@/components/site/templates';
 import { ElegantHomePage } from '@/components/site/templates/elegant-home';
+import { MarqueeStrip, StreetFoodHomePage } from '@/components/site/templates/street-food-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -105,11 +107,13 @@ export default async function RestaurantHomePage({ params }: Props) {
     orderingEnabled,
   };
 
-  // « elegant » est une page unique qui défile (histoire, chef, galerie,
-  // avis, localisation) plutôt que la structure héros + aperçu des autres
-  // templates : c'est ce qui le distingue vraiment, pas seulement sa palette.
-  if (restaurant.templateKey === 'elegant') {
-    const [entitlements, galleryImages, reviews] = await Promise.all([
+  // « elegant » et « street-food » sont des pages uniques qui défilent
+  // (histoire, chef, galerie, avis, localisation) plutôt que la structure
+  // héros + aperçu des autres templates : c'est ce qui les distingue
+  // vraiment, pas seulement leur palette.
+  if (restaurant.templateKey === 'elegant' || restaurant.templateKey === 'street-food') {
+    const now = new Date();
+    const [entitlements, galleryImages, reviews, activePromotion] = await Promise.all([
       getEntitlements(restaurant.id),
       prisma.galleryImage.findMany({
         where: { restaurantId: restaurant.id },
@@ -122,6 +126,16 @@ export default async function RestaurantHomePage({ params }: Props) {
         take: 20,
         select: { id: true, customerName: true, rating: true, comment: true },
       }),
+      prisma.promotion.findFirst({
+        where: {
+          restaurantId: restaurant.id,
+          isActive: true,
+          endsAt: { gt: now },
+          OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+        },
+        orderBy: { endsAt: 'asc' },
+        select: { code: true, type: true, value: true, endsAt: true },
+      }),
     ]);
 
     const reviewsEnabled = hasFeature(entitlements, FEATURES.REVIEWS);
@@ -130,44 +144,66 @@ export default async function RestaurantHomePage({ params }: Props) {
         ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
         : null;
 
+    const commonData = {
+      hero: heroData,
+      story: restaurant.description,
+      chef: restaurant.chefName
+        ? { name: restaurant.chefName, bio: restaurant.chefBio, photoUrl: restaurant.chefPhoto }
+        : null,
+      menuCategories: preview,
+      menuHref: `${base}/menu`,
+      currency: restaurant.currency,
+      gallery: galleryImages,
+      reviewsEnabled,
+      reviews,
+      averageRating,
+      openingHours: restaurant.openingHours,
+      today: new Date().getDay(),
+      location: {
+        addressLine: restaurant.addressLine,
+        city: restaurant.city,
+        country: restaurant.country,
+        phone: restaurant.phone,
+        whatsappNumber: restaurant.whatsappNumber,
+        email: restaurant.email,
+        mapEmbedSrc: mapEmbedSrc(restaurant),
+        mapLinkUrl: mapLinkUrl(restaurant),
+      },
+    };
+
     return (
       <>
         <PageViewTracker restaurantId={restaurant.id} path="/" />
         <StructuredData restaurant={restaurant} openState={openState} />
 
-        <ElegantHomePage
-          data={{
-            hero: heroData,
-            story: restaurant.description,
-            chef: restaurant.chefName
-              ? { name: restaurant.chefName, bio: restaurant.chefBio, photoUrl: restaurant.chefPhoto }
-              : null,
-            menuCategories: preview,
-            menuHref: `${base}/menu`,
-            currency: restaurant.currency,
-            gallery: galleryImages,
-            reviewsEnabled,
-            reviews,
-            averageRating,
-            openingHours: restaurant.openingHours,
-            today: new Date().getDay(),
-            location: {
-              addressLine: restaurant.addressLine,
-              city: restaurant.city,
-              country: restaurant.country,
-              phone: restaurant.phone,
-              whatsappNumber: restaurant.whatsappNumber,
-              email: restaurant.email,
-              mapEmbedSrc: mapEmbedSrc(restaurant),
-              mapLinkUrl: mapLinkUrl(restaurant),
-            },
-          }}
-        />
+        {restaurant.templateKey === 'elegant' ? (
+          <ElegantHomePage data={commonData} />
+        ) : (
+          <StreetFoodHomePage
+            data={{
+              ...commonData,
+              offer: activePromotion
+                ? {
+                    code: activePromotion.code,
+                    label:
+                      activePromotion.type === 'PERCENT'
+                        ? `${activePromotion.value}% de réduction`
+                        : `${formatMoney(activePromotion.value, restaurant.currency)} de réduction`,
+                    endsAt: activePromotion.endsAt!.toISOString(),
+                  }
+                : null,
+            }}
+          />
+        )}
       </>
     );
   }
 
   const { Hero, Menu } = templateRenderer(restaurant.templateKey);
+  // Le bandeau défilant est un élément partagé entre plusieurs identités
+  // (introduit avec « street-food ») — sauf « elegant », dont le calme
+  // délibéré ne s'accorde pas avec un défilement continu.
+  const showMarquee = restaurant.templateKey !== 'elegant' && categories.length > 0;
 
   return (
     <>
@@ -175,6 +211,7 @@ export default async function RestaurantHomePage({ params }: Props) {
       <StructuredData restaurant={restaurant} openState={openState} />
 
       <Hero data={heroData} />
+      {showMarquee && <MarqueeStrip items={categories.map((category) => category.name)} />}
 
       <div className="container-page py-14 sm:py-16">
         {preview.length === 0 ? (
