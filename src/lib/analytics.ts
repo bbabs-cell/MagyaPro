@@ -47,6 +47,14 @@ function previousRange(from: Date, to: Date): { from: Date; to: Date } {
 /** Les commandes annulées ne comptent ni en revenu ni en volume. */
 const COUNTED_ORDERS = { status: { not: 'CANCELLED' as const } };
 
+/**
+ * Exclut les restaurants de démonstration des statistiques plateforme : ce
+ * sont des vitrines créées pour l'onboarding, pas une activité réelle — les
+ * compter fausserait le chiffre d'affaires et les volumes vus par le Super
+ * Admin.
+ */
+const NOT_DEMO_RESTAURANT = { isDemo: false };
+
 export type DashboardMetrics = {
   revenue: number;
   ordersCount: number;
@@ -288,14 +296,23 @@ export async function getPlatformMetrics() {
     subscriptions,
     newRestaurants,
   ] = await Promise.all([
-    prisma.restaurant.count(),
-    prisma.restaurant.count({ where: { status: 'ACTIVE' } }),
-    prisma.restaurant.count({ where: { status: 'SUSPENDED' } }),
+    prisma.restaurant.count({ where: NOT_DEMO_RESTAURANT }),
+    prisma.restaurant.count({ where: { status: 'ACTIVE', ...NOT_DEMO_RESTAURANT } }),
+    prisma.restaurant.count({ where: { status: 'SUSPENDED', ...NOT_DEMO_RESTAURANT } }),
     prisma.user.count(),
-    prisma.order.count({ where: COUNTED_ORDERS }),
-    prisma.order.aggregate({ where: COUNTED_ORDERS, _sum: { total: true } }),
-    prisma.subscription.groupBy({ by: ['status'], _count: true }),
-    prisma.restaurant.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.order.count({ where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT } }),
+    prisma.order.aggregate({
+      where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT },
+      _sum: { total: true },
+    }),
+    prisma.subscription.groupBy({
+      by: ['status'],
+      where: { restaurant: NOT_DEMO_RESTAURANT },
+      _count: true,
+    }),
+    prisma.restaurant.count({
+      where: { createdAt: { gte: thirtyDaysAgo }, ...NOT_DEMO_RESTAURANT },
+    }),
   ]);
 
   return {
@@ -353,24 +370,32 @@ export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytic
   const [activeSubscriptions, restaurants, orders, activeAtPeriodStart, cancelledLast30] =
     await Promise.all([
       prisma.subscription.findMany({
-        where: { status: 'ACTIVE' },
+        where: { status: 'ACTIVE', restaurant: NOT_DEMO_RESTAURANT },
         select: {
           plan: { select: { id: true, name: true, price: true, currency: true, interval: true } },
         },
       }),
       prisma.restaurant.findMany({
-        where: { createdAt: { gte: monthsAgo } },
+        where: { createdAt: { gte: monthsAgo }, ...NOT_DEMO_RESTAURANT },
         select: { createdAt: true },
       }),
       prisma.order.findMany({
-        where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo } },
+        where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo }, restaurant: NOT_DEMO_RESTAURANT },
         select: { placedAt: true, total: true },
       }),
       prisma.subscription.count({
-        where: { createdAt: { lt: thirtyDaysAgo }, status: { not: 'CANCELLED' } },
+        where: {
+          createdAt: { lt: thirtyDaysAgo },
+          status: { not: 'CANCELLED' },
+          restaurant: NOT_DEMO_RESTAURANT,
+        },
       }),
       prisma.subscription.count({
-        where: { status: 'CANCELLED', cancelledAt: { gte: thirtyDaysAgo } },
+        where: {
+          status: 'CANCELLED',
+          cancelledAt: { gte: thirtyDaysAgo },
+          restaurant: NOT_DEMO_RESTAURANT,
+        },
       }),
     ]);
 

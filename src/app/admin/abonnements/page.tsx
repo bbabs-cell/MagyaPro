@@ -43,10 +43,11 @@ export default async function AdminSubscriptionsPage({
       },
     }),
     // Encaissements des restaurants — utile pour juger l'activité réelle
-    // derrière un abonnement.
+    // derrière un abonnement. Les restaurants de démonstration en sont
+    // exclus : ce ne sont pas de vrais encaissements.
     prisma.payment.groupBy({
       by: ['restaurantId'],
-      where: { status: 'PAID' },
+      where: { status: 'PAID', restaurant: { isDemo: false } },
       _sum: { amount: true },
     }),
     getPlatformSettings(),
