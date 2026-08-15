@@ -17,6 +17,85 @@ import { Badge, LinkButton } from '@/components/ui';
 
 export const revalidate = 300;
 
+const ICON_PROPS = {
+  width: 22,
+  height: 22,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true as const,
+};
+
+/** Icônes de la grille de fonctionnalités — traits simples, cohérents avec le reste de la marque. */
+const FEATURE_ICONS: Record<string, React.ReactElement> = {
+  menu: (
+    <svg {...ICON_PROPS}>
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </svg>
+  ),
+  orders: (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8h12l-1 11H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  delivery: (
+    <svg {...ICON_PROPS}>
+      <path d="M3 7h11v8H3z" />
+      <path d="M14 10h4l3 3v2h-7z" />
+      <circle cx="7" cy="17.5" r="1.6" />
+      <circle cx="17.5" cy="17.5" r="1.6" />
+    </svg>
+  ),
+  customers: (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
+    </svg>
+  ),
+  stats: (
+    <svg {...ICON_PROPS}>
+      <path d="M4 20V10" />
+      <path d="M12 20V4" />
+      <path d="M20 20v-7" />
+    </svg>
+  ),
+  promo: (
+    <svg {...ICON_PROPS}>
+      <path d="M20 12 12.5 19.5a2 2 0 0 1-2.8 0L4 13.8a2 2 0 0 1 0-2.8L11.5 3.5H18a2 2 0 0 1 2 2V12Z" />
+      <circle cx="15" cy="8" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  payments: (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M7 15h4" />
+    </svg>
+  ),
+  speed: (
+    <svg {...ICON_PROPS}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+    </svg>
+  ),
+  team: (
+    <svg {...ICON_PROPS}>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
+      <path d="M14.5 20a4.5 4.5 0 0 1 7-3.6" />
+    </svg>
+  ),
+};
+
 export default async function LandingPage() {
   const [plans, templates, demos] = await Promise.all([
     prisma.plan.findMany({
@@ -37,36 +116,57 @@ export default async function LandingPage() {
   return (
     <>
       {/* ---------------------------------------------------------------- Hero */}
-      <section className="relative overflow-hidden border-b border-surface-border">
+      <section className="relative overflow-hidden border-b border-surface-border bg-[#0b1730]">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_0%,#fdecea_0%,transparent_70%)]"
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+            backgroundSize: '26px 26px',
+          }}
         />
-        <div className="container-page relative py-16 sm:py-24 lg:py-28">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full bg-[#2f5bd8] opacity-40 blur-[110px]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 top-10 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-30 blur-[110px]"
+        />
+
+        <div className="container-page relative py-20 sm:py-28 lg:py-32">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge tone="brand">Plateforme pour restaurateurs</Badge>
-            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">
-              Créez votre restaurant en ligne simplement.
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/80 backdrop-blur">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#ff5e2e]" />
+              Plateforme pour restaurateurs
+            </span>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Créez votre restaurant{' '}
+              <span className="bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] bg-clip-text text-transparent">
+                en ligne
+              </span>{' '}
+              simplement.
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base text-ink-muted sm:text-lg">
+            <p className="mx-auto mt-6 max-w-2xl text-base text-white/70 sm:text-lg">
               Magyapro vous permet de créer rapidement un site professionnel pour
               votre restaurant, présenter votre menu, recevoir des commandes et
               développer votre présence digitale.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <LinkButton href="/inscription" size="lg" className="w-full sm:w-auto">
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/inscription"
+                className="inline-flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] px-8 text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(255,94,46,0.6)] transition-transform hover:scale-[1.03] sm:w-auto"
+              >
                 Commencer gratuitement
-              </LinkButton>
-              <LinkButton
+              </Link>
+              <Link
                 href="#fonctionnement"
-                variant="secondary"
-                size="lg"
-                className="w-full sm:w-auto"
+                className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/20 px-8 text-sm font-medium text-white transition-colors hover:bg-white/10 sm:w-auto"
               >
                 Découvrir Magyapro
-              </LinkButton>
+              </Link>
             </div>
-            <p className="mt-4 text-xs text-ink-faint">
+            <p className="mt-5 text-xs text-white/50">
               Sans carte bancaire · Votre site en ligne en quelques minutes
             </p>
           </div>
@@ -117,33 +217,57 @@ export default async function LandingPage() {
             </dl>
           </div>
 
-          <div className="rounded-2xl border border-surface-border bg-surface-sunken p-6 sm:p-8">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-              Votre adresse
-            </p>
-            <p className="mt-2 break-all font-mono text-lg text-ink">
-              chez-fatou.<span className="text-brand">{env.rootDomain.split(':')[0]}</span>
-            </p>
-            <p className="mt-3 text-sm text-ink-muted">
-              Chaque restaurant reçoit sa propre adresse dès la création. Vous
-              pourrez y associer votre nom de domaine si vous en possédez un.
-            </p>
+          <div className="overflow-hidden rounded-2xl border border-surface-border bg-[#0b1730] shadow-xl">
+            <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
+              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
+              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
+              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
+            </div>
+            <div className="p-6 sm:p-8">
+              <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+                Votre adresse
+              </p>
+              <p className="mt-2 break-all font-mono text-lg text-white">
+                chez-fatou.
+                <span className="bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] bg-clip-text text-transparent">
+                  {env.rootDomain.split(':')[0]}
+                </span>
+              </p>
+              <p className="mt-3 text-sm text-white/60">
+                Chaque restaurant reçoit sa propre adresse dès la création. Vous
+                pourrez y associer votre nom de domaine si vous en possédez un.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* --------------------------------------------------------- Fonctionnement */}
-      <section id="fonctionnement" className="border-y border-surface-border bg-surface-sunken">
-        <div className="container-page py-16 sm:py-20">
+      {/* Bande sombre à part entière : cette section a sa propre identité
+          visuelle plutôt que de se fondre dans le rythme clair/gris des
+          sections voisines — elle mérite d'être remarquée en un coup d'œil. */}
+      <section id="fonctionnement" className="relative overflow-hidden bg-[#0b1730]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.05]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+            backgroundSize: '26px 26px',
+          }}
+        />
+        <div className="container-page relative py-16 sm:py-24">
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#ff9a4d]">
+              Le parcours
+            </span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-4xl">
               Comment ça fonctionne
             </h2>
-            <p className="mt-3 text-ink-muted">
+            <p className="mt-3 text-white/60">
               Quatre étapes, guidées de bout en bout.
             </p>
           </div>
-          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { step: 1 as const, title: 'Créez votre compte', detail: 'Nom, email, mot de passe. Rien de plus.' },
               { step: 2 as const, title: 'Décrivez votre restaurant', detail: 'Logo, adresse, horaires, réseaux sociaux.' },
@@ -152,25 +276,32 @@ export default async function LandingPage() {
             ].map((item) => {
               const imageUrl = howItWorksImageUrl(item.step);
               return (
-                <li key={item.step} className="card overflow-hidden p-0">
-                  <div className="relative h-36 w-full">
+                <li
+                  key={item.step}
+                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
+                >
+                  <div className="relative h-40 w-full">
                     {imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
-                      <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     ) : (
-                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-ink/90 to-ink/60" />
+                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#2f5bd8]/60 to-[#ff5e2e]/40" />
                     )}
                     <div
                       aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
                     />
-                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-semibold text-ink">
+                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-sm font-bold text-white shadow-lg">
                       {item.step}
                     </span>
                   </div>
                   <div className="p-5">
-                    <h3 className="font-medium text-ink">{item.title}</h3>
-                    <p className="mt-1 text-sm text-ink-muted">{item.detail}</p>
+                    <h3 className="font-semibold text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm text-white/55">{item.detail}</p>
                   </div>
                 </li>
               );
@@ -180,29 +311,38 @@ export default async function LandingPage() {
       </section>
 
       {/* -------------------------------------------------------- Fonctionnalités */}
-      <section id="fonctionnalites" className="container-page py-16 sm:py-20">
+      <section id="fonctionnalites" className="container-page py-16 sm:py-24">
         <div className="max-w-2xl">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+            Fonctionnalités
+          </span>
+          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
             Tout ce qu&apos;il faut pour vendre en ligne
           </h2>
           <p className="mt-3 text-ink-muted">
             Pensé pour la réalité d&apos;un service : rapide sur mobile, lisible en cuisine.
           </p>
         </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { title: 'Menu digital', detail: 'Catégories, plats, photos, variantes et suppléments. Marquez un plat épuisé en un geste.' },
-            { title: 'Commandes en ligne', detail: 'Panier, livraison ou retrait, suivi du statut de la réception à la remise.' },
-            { title: 'Zones de livraison', detail: 'Des tarifs par zone, un minimum de commande, la livraison offerte au-delà d\'un montant.' },
-            { title: 'Fichier client', detail: 'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.' },
-            { title: 'Statistiques', detail: 'Chiffre d\'affaires, panier moyen, plats populaires, périodes d\'activité.' },
-            { title: 'Codes promo', detail: 'Remise en pourcentage ou en montant, avec dates de validité et limite d\'utilisation.' },
-            { title: 'Paiements', detail: 'Paiement à la livraison et sur place dès aujourd\'hui, mobile money à mesure des intégrations.' },
-            { title: 'Site optimisé', detail: 'Rapide sur connexion mobile, référencé, installable comme une application.' },
-            { title: 'Plusieurs comptes', detail: 'Donnez un accès limité à votre équipe : le service voit les commandes, pas vos revenus.' },
+            { title: 'Menu digital', detail: 'Catégories, plats, photos, variantes et suppléments. Marquez un plat épuisé en un geste.', icon: FEATURE_ICONS.menu },
+            { title: 'Commandes en ligne', detail: 'Panier, livraison ou retrait, suivi du statut de la réception à la remise.', icon: FEATURE_ICONS.orders },
+            { title: 'Zones de livraison', detail: 'Des tarifs par zone, un minimum de commande, la livraison offerte au-delà d\'un montant.', icon: FEATURE_ICONS.delivery },
+            { title: 'Fichier client', detail: 'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.', icon: FEATURE_ICONS.customers },
+            { title: 'Statistiques', detail: 'Chiffre d\'affaires, panier moyen, plats populaires, périodes d\'activité.', icon: FEATURE_ICONS.stats },
+            { title: 'Codes promo', detail: 'Remise en pourcentage ou en montant, avec dates de validité et limite d\'utilisation.', icon: FEATURE_ICONS.promo },
+            { title: 'Paiements', detail: 'Paiement à la livraison et sur place dès aujourd\'hui, mobile money à mesure des intégrations.', icon: FEATURE_ICONS.payments },
+            { title: 'Site optimisé', detail: 'Rapide sur connexion mobile, référencé, installable comme une application.', icon: FEATURE_ICONS.speed },
+            { title: 'Plusieurs comptes', detail: 'Donnez un accès limité à votre équipe : le service voit les commandes, pas vos revenus.', icon: FEATURE_ICONS.team },
           ].map((feature) => (
-            <div key={feature.title} className="card p-5">
-              <h3 className="font-medium text-ink">{feature.title}</h3>
+            <div
+              key={feature.title}
+              className="group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                {feature.icon}
+              </span>
+              <h3 className="mt-4 font-semibold text-ink">{feature.title}</h3>
               <p className="mt-1.5 text-sm text-ink-muted">{feature.detail}</p>
             </div>
           ))}
@@ -212,9 +352,12 @@ export default async function LandingPage() {
       {/* ------------------------------------------------------------- Templates */}
       {templates.length > 0 && (
         <section id="templates" className="border-y border-surface-border bg-surface-sunken">
-          <div className="container-page py-16 sm:py-20">
+          <div className="container-page py-16 sm:py-24">
             <div className="max-w-2xl">
-              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+                Templates
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
                 Des templates pour chaque style de maison
               </h2>
               <p className="mt-3 text-ink-muted">
@@ -222,22 +365,31 @@ export default async function LandingPage() {
                 vos commandes restent intacts.
               </p>
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {templates.map((template) => {
                 const previewUrl = templatePreviewUrl(template.key);
                 return (
-                <div key={template.id} className="card overflow-hidden">
-                  {previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
-                    <img src={previewUrl} alt="" className="h-40 w-full object-cover" />
-                  ) : (
-                    <div
-                      aria-hidden="true"
-                      className="h-32 bg-gradient-to-br from-ink/90 to-ink/60"
-                    />
-                  )}
+                <div
+                  key={template.id}
+                  className="group overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    {previewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
+                      <img
+                        src={previewUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        className="h-full w-full bg-gradient-to-br from-[#0b1730] to-[#2f5bd8]"
+                      />
+                    )}
+                  </div>
                   <div className="p-5">
-                    <h3 className="font-medium text-ink">{template.name}</h3>
+                    <h3 className="font-semibold text-ink">{template.name}</h3>
                     {template.description && (
                       <p className="mt-1.5 text-sm text-ink-muted">
                         {template.description}
@@ -254,9 +406,12 @@ export default async function LandingPage() {
 
       {/* --------------------------------------------------------- Démonstrations */}
       {demos.length > 0 && (
-        <section className="container-page py-16 sm:py-20">
+        <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+              Exemples
+            </span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
               Voir Magyapro en situation
             </h2>
             <p className="mt-3 text-ink-muted">
@@ -264,26 +419,27 @@ export default async function LandingPage() {
               fonctionnent exactement comme le vôtre fonctionnera.
             </p>
           </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {demos.map((demo) => (
               <Link
                 key={demo.slug}
                 href={`/r/${demo.slug}`}
-                className="card p-5 transition-colors hover:border-ink"
+                className="group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
               >
                 <span
                   aria-hidden="true"
-                  className="inline-block h-8 w-8 rounded-lg"
+                  className="inline-block h-10 w-10 rounded-xl shadow-sm"
                   style={{ backgroundColor: demo.primaryColor }}
                 />
-                <h3 className="mt-3 font-medium text-ink">{demo.name}</h3>
+                <h3 className="mt-4 font-semibold text-ink">{demo.name}</h3>
                 {demo.description && (
                   <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
                     {demo.description}
                   </p>
                 )}
-                <p className="mt-3 text-sm font-medium text-brand">
-                  Voir le site →
+                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-brand">
+                  Voir le site
+                  <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
                 </p>
               </Link>
             ))}
@@ -293,9 +449,12 @@ export default async function LandingPage() {
 
       {/* ---------------------------------------------------------------- Tarifs */}
       <section id="tarifs" className="border-y border-surface-border bg-surface-sunken">
-        <div className="container-page py-16 sm:py-20">
+        <div className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+              Tarifs
+            </span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
               Des tarifs lisibles
             </h2>
             <p className="mt-3 text-ink-muted">
@@ -309,7 +468,7 @@ export default async function LandingPage() {
               vous informerons dès leur ouverture.
             </p>
           ) : (
-            <div className="mt-10 grid gap-5 md:grid-cols-3">
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
               {plans.map((plan, index) => {
                 const limits = (plan.limits ?? {}) as PlanLimits;
                 const highlighted = index === 1;
@@ -318,8 +477,8 @@ export default async function LandingPage() {
                     key={plan.id}
                     className={
                       highlighted
-                        ? 'card relative border-ink p-6 shadow-sm'
-                        : 'card p-6'
+                        ? 'relative rounded-2xl border-2 border-brand bg-surface p-7 shadow-2xl'
+                        : 'rounded-2xl border border-surface-border bg-surface p-7'
                     }
                   >
                     {highlighted && (
@@ -378,11 +537,14 @@ export default async function LandingPage() {
       </section>
 
       {/* ------------------------------------------------------------------- FAQ */}
-      <section id="faq" className="container-page py-16 sm:py-20">
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+      <section id="faq" className="container-page py-16 sm:py-24">
+        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+          Questions
+        </span>
+        <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
           Questions fréquentes
         </h2>
-        <div className="mt-8 max-w-3xl divide-y divide-surface-border border-y border-surface-border">
+        <div className="mt-10 max-w-3xl divide-y divide-surface-border border-y border-surface-border">
           {[
             {
               q: 'Faut-il des connaissances techniques ?',
@@ -426,19 +588,23 @@ export default async function LandingPage() {
       </section>
 
       {/* -------------------------------------------------------------- CTA final */}
-      <section className="border-t border-surface-border bg-ink">
-        <div className="container-page py-16 text-center sm:py-20">
-          <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+      <section className="relative overflow-hidden border-t border-surface-border bg-[#0b1730]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-[#ff5e2e] opacity-20 blur-[110px]"
+        />
+        <div className="container-page relative py-20 text-center sm:py-28">
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
             Votre restaurant en ligne dès aujourd&apos;hui.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-white/70">
             Créez votre compte, composez votre menu, publiez. Vous pourrez tout
             modifier ensuite.
           </p>
-          <div className="mt-8">
+          <div className="mt-9">
             <Link
               href="/inscription"
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 font-medium text-ink transition-colors hover:bg-white/90"
+              className="inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] px-9 text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(255,94,46,0.6)] transition-transform hover:scale-[1.03]"
             >
               Commencer gratuitement
             </Link>
