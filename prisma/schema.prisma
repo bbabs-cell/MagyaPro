@@ -151,6 +151,11 @@ model Restaurant {
   fontFamily     String  @default("Inter")
   templateKey    String  @default("modern")
 
+  // Mise en avant éditoriale (utilisée par le template « elegant »)
+  chefName  String?
+  chefBio   String?
+  chefPhoto String?
+
   // Coordonnées
   phone       String?
   email       String?

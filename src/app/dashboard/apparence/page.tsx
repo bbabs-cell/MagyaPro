@@ -41,6 +41,9 @@ export default async function AppearancePage() {
           logoUrl: context.restaurant.logoUrl,
           coverUrl: context.restaurant.coverUrl,
           faviconUrl: context.restaurant.faviconUrl,
+          chefName: context.restaurant.chefName,
+          chefBio: context.restaurant.chefBio,
+          chefPhoto: context.restaurant.chefPhoto,
         }}
         templates={templates.map((template) => ({
           key: template.key,

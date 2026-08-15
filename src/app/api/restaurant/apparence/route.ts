@@ -45,6 +45,9 @@ export const PATCH = route(async (request) => {
       logoUrl: input.logoUrl ?? null,
       coverUrl: input.coverUrl ?? null,
       faviconUrl: input.faviconUrl ?? null,
+      chefName: input.chefName ?? null,
+      chefBio: input.chefBio ?? null,
+      chefPhoto: input.chefPhoto ?? null,
     },
   });
 

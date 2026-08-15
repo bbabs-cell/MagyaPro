@@ -6,7 +6,7 @@ import { ValidationError } from '@/lib/errors';
 import { uploadImage } from '@/lib/storage';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 
-const folderSchema = z.enum(['logos', 'covers', 'products', 'categories', 'seo']);
+const folderSchema = z.enum(['logos', 'covers', 'products', 'categories', 'seo', 'chef']);
 
 /**
  * Téléversement d'image.

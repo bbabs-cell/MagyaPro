@@ -122,6 +122,10 @@ export const restaurantAppearanceSchema = z.object({
   logoUrl: urlSchema.nullable().optional(),
   coverUrl: urlSchema.nullable().optional(),
   faviconUrl: urlSchema.nullable().optional(),
+  /// Mise en avant du chef — utilisée par le template « elegant ».
+  chefName: optionalText(120),
+  chefBio: optionalText(600),
+  chefPhoto: urlSchema.nullable().optional(),
 });
 
 export const restaurantSeoSchema = z.object({

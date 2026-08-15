@@ -46,6 +46,9 @@ export function AppearanceForm({
     logoUrl: string | null;
     coverUrl: string | null;
     faviconUrl: string | null;
+    chefName: string | null;
+    chefBio: string | null;
+    chefPhoto: string | null;
   };
   templates: Template[];
 }) {
@@ -57,6 +60,9 @@ export function AppearanceForm({
   const [logoUrl, setLogoUrl] = useState(restaurant.logoUrl);
   const [coverUrl, setCoverUrl] = useState(restaurant.coverUrl);
   const [faviconUrl, setFaviconUrl] = useState(restaurant.faviconUrl);
+  const [chefName, setChefName] = useState(restaurant.chefName ?? '');
+  const [chefBio, setChefBio] = useState(restaurant.chefBio ?? '');
+  const [chefPhoto, setChefPhoto] = useState(restaurant.chefPhoto);
 
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -94,6 +100,9 @@ export function AppearanceForm({
         logoUrl,
         coverUrl,
         faviconUrl,
+        chefName,
+        chefBio,
+        chefPhoto,
       });
       setSaved(true);
       router.refresh();
@@ -183,6 +192,48 @@ export function AppearanceForm({
           ))}
         </div>
       </Card>
+
+      {templateKey === 'elegant' && (
+        <Card className="p-4 sm:p-5">
+          <h2 className="text-sm font-medium">Le chef</h2>
+          <p className="mt-1 text-xs text-ink-muted">
+            Affiché dans une section dédiée du template Élégant. Laissez le nom
+            vide pour ne pas afficher cette section.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            <ImageUploadField
+              label="Photo du chef"
+              folder="chef"
+              value={chefPhoto}
+              onChange={(url) => setChefPhoto(url)}
+            />
+            <Field label="Nom du chef" htmlFor="chefName" error={fieldErrors.chefName}>
+              <input
+                id="chefName"
+                value={chefName}
+                onChange={(event) => setChefName(event.target.value)}
+                className={inputClass}
+                placeholder="Chef Aïcha Traoré"
+              />
+            </Field>
+            <Field
+              label="Présentation"
+              htmlFor="chefBio"
+              hint="Quelques phrases : parcours, spécialité, philosophie de cuisine."
+              error={fieldErrors.chefBio}
+            >
+              <textarea
+                id="chefBio"
+                value={chefBio}
+                onChange={(event) => setChefBio(event.target.value)}
+                rows={4}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-4 sm:p-5">
         <h2 className="text-sm font-medium">Couleurs et typographie</h2>

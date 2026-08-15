@@ -1,15 +1,49 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { prisma } from '@/lib/db';
 import { loadPublicMenu, resolvePublicRestaurant } from '@/lib/site/resolve';
 import { computeOpenState } from '@/lib/site/hours';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
+import { env } from '@/lib/env';
 import { templateRenderer } from '@/components/site/templates';
+import { ElegantHomePage } from '@/components/site/templates/elegant-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
 import { localize, localizeNullable } from '@/lib/i18n/content';
 
 type Props = { params: Promise<{ host: string }> };
+
+/** URL de la carte Google Maps Embed, ou `null` si aucune coordonnée n'est connue. */
+function mapEmbedSrc(params: {
+  latitude: number | null;
+  longitude: number | null;
+  addressLine: string | null;
+  city: string | null;
+}): string | null {
+  if (!env.googleMapsEmbedKey) return null;
+  const query =
+    params.latitude !== null && params.longitude !== null
+      ? `${params.latitude},${params.longitude}`
+      : [params.addressLine, params.city].filter(Boolean).join(', ');
+  if (!query) return null;
+  return `https://www.google.com/maps/embed/v1/place?key=${env.googleMapsEmbedKey}&q=${encodeURIComponent(query)}`;
+}
+
+function mapLinkUrl(params: {
+  latitude: number | null;
+  longitude: number | null;
+  addressLine: string | null;
+  city: string | null;
+  country: string | null;
+}): string | null {
+  if (params.latitude !== null && params.longitude !== null) {
+    return `https://www.openstreetmap.org/?mlat=${params.latitude}&mlon=${params.longitude}#map=17/${params.latitude}/${params.longitude}`;
+  }
+  const query = [params.addressLine, params.city, params.country].filter(Boolean).join(', ');
+  return query ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}` : null;
+}
 
 export default async function RestaurantHomePage({ params }: Props) {
   const { host } = await params;
@@ -18,7 +52,6 @@ export default async function RestaurantHomePage({ params }: Props) {
 
   const categories = await loadPublicMenu(restaurant.id);
   const openState = computeOpenState(restaurant.openingHours, restaurant.timezone);
-  const { Hero, Menu } = templateRenderer(restaurant.templateKey);
 
   const base = `/r/${host}`;
   const orderingEnabled = restaurant.settings?.orderingEnabled ?? true;
@@ -52,28 +85,92 @@ export default async function RestaurantHomePage({ params }: Props) {
     })),
   }));
 
+  const heroData = {
+    name: restaurant.name,
+    description: restaurant.description,
+    coverUrl: restaurant.coverUrl,
+    logoUrl: restaurant.logoUrl,
+    city: restaurant.city,
+    addressLine: restaurant.addressLine,
+    phone: restaurant.phone,
+    primaryColor: restaurant.primaryColor,
+    isOpenNow: openState.isOpen,
+    openLabel: openState.label,
+    menuHref: `${base}/menu`,
+    infosHref: `${base}/infos`,
+    orderingEnabled,
+  };
+
+  // « elegant » est une page unique qui défile (histoire, chef, galerie,
+  // avis, localisation) plutôt que la structure héros + aperçu des autres
+  // templates : c'est ce qui le distingue vraiment, pas seulement sa palette.
+  if (restaurant.templateKey === 'elegant') {
+    const [entitlements, galleryImages, reviews] = await Promise.all([
+      getEntitlements(restaurant.id),
+      prisma.galleryImage.findMany({
+        where: { restaurantId: restaurant.id },
+        orderBy: { position: 'asc' },
+        select: { id: true, imageUrl: true, caption: true },
+      }),
+      prisma.review.findMany({
+        where: { restaurantId: restaurant.id, status: 'APPROVED' },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, customerName: true, rating: true, comment: true },
+      }),
+    ]);
+
+    const reviewsEnabled = hasFeature(entitlements, FEATURES.REVIEWS);
+    const averageRating =
+      reviews.length > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+        : null;
+
+    return (
+      <>
+        <PageViewTracker restaurantId={restaurant.id} path="/" />
+        <StructuredData restaurant={restaurant} openState={openState} />
+
+        <ElegantHomePage
+          data={{
+            hero: heroData,
+            story: restaurant.description,
+            chef: restaurant.chefName
+              ? { name: restaurant.chefName, bio: restaurant.chefBio, photoUrl: restaurant.chefPhoto }
+              : null,
+            menuCategories: preview,
+            menuHref: `${base}/menu`,
+            currency: restaurant.currency,
+            gallery: galleryImages,
+            reviewsEnabled,
+            reviews,
+            averageRating,
+            openingHours: restaurant.openingHours,
+            today: new Date().getDay(),
+            location: {
+              addressLine: restaurant.addressLine,
+              city: restaurant.city,
+              country: restaurant.country,
+              phone: restaurant.phone,
+              whatsappNumber: restaurant.whatsappNumber,
+              email: restaurant.email,
+              mapEmbedSrc: mapEmbedSrc(restaurant),
+              mapLinkUrl: mapLinkUrl(restaurant),
+            },
+          }}
+        />
+      </>
+    );
+  }
+
+  const { Hero, Menu } = templateRenderer(restaurant.templateKey);
+
   return (
     <>
       <PageViewTracker restaurantId={restaurant.id} path="/" />
       <StructuredData restaurant={restaurant} openState={openState} />
 
-      <Hero
-        data={{
-          name: restaurant.name,
-          description: restaurant.description,
-          coverUrl: restaurant.coverUrl,
-          logoUrl: restaurant.logoUrl,
-          city: restaurant.city,
-          addressLine: restaurant.addressLine,
-          phone: restaurant.phone,
-          primaryColor: restaurant.primaryColor,
-          isOpenNow: openState.isOpen,
-          openLabel: openState.label,
-          menuHref: `${base}/menu`,
-          infosHref: `${base}/infos`,
-          orderingEnabled,
-        }}
-      />
+      <Hero data={heroData} />
 
       <div className="container-page py-14 sm:py-16">
         {preview.length === 0 ? (

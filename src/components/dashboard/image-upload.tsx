@@ -20,7 +20,7 @@ export function ImageUploadField({
   onChange,
 }: {
   label: string;
-  folder: 'logos' | 'covers' | 'products' | 'categories' | 'seo';
+  folder: 'logos' | 'covers' | 'products' | 'categories' | 'seo' | 'chef';
   value: string | null;
   hint?: string;
   onChange: (url: string | null) => void | Promise<void>;
