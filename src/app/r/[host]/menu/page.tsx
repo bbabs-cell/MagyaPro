@@ -48,6 +48,7 @@ export default async function MenuPage({ params }: Props) {
       isAvailable: product.isAvailable,
       badge: product.badge,
       href: `${base}/plat/${product.slug}`,
+      hasOptions: product.variants.length > 0 || product.optionGroups.length > 0,
     })),
   }));
 

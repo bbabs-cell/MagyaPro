@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
 import { DEFAULT_TEMPLATE_KEY } from '@/lib/templates/registry';
+import { QuickAddButton } from '@/components/site/quick-add-button';
 
 /**
  * Rendus de templates.
@@ -42,6 +43,8 @@ export type MenuProduct = {
   isAvailable: boolean;
   badge: string;
   href: string;
+  /** Variantes ou options à choisir : l'ajout rapide devient un lien vers la fiche. */
+  hasOptions: boolean;
 };
 
 export type MenuCategoryData = {
@@ -488,45 +491,50 @@ function BentoProductCard({
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
   return (
-    <Link
-      href={product.href}
-      aria-disabled={unavailable || undefined}
+    <div
       className={cx(
         'group relative overflow-hidden rounded-2xl bg-surface-sunken',
         featured && 'col-span-2 row-span-2',
         unavailable && 'opacity-60',
       )}
     >
-      {product.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-        <img
-          src={product.imageUrl}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      <Link href={product.href} aria-disabled={unavailable || undefined} className="absolute inset-0">
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+          <img
+            src={product.imageUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : null}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
         />
-      ) : null}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
-      />
-      {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink">
-          {BADGE_LABELS[product.badge]}
-        </span>
-      )}
-      <div className="absolute inset-x-0 bottom-0 p-3 text-white">
-        <h3 className={cx('font-semibold leading-snug', featured ? 'text-lg' : 'text-sm')}>
-          {product.name}
-        </h3>
-        {featured && product.description && (
-          <p className="mt-1 line-clamp-2 text-sm text-white/80">{product.description}</p>
+        {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink">
+            {BADGE_LABELS[product.badge]}
+          </span>
         )}
-        <p className={cx('mt-1 font-bold', featured ? 'text-base' : 'text-sm')}>
-          {formatMoney(product.price, currency)}
-        </p>
-      </div>
-    </Link>
+        <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+          <h3 className={cx('font-semibold leading-snug', featured ? 'text-lg' : 'text-sm')}>
+            {product.name}
+          </h3>
+          {featured && product.description && (
+            <p className="mt-1 line-clamp-2 text-sm text-white/80">{product.description}</p>
+          )}
+          <p className={cx('mt-1 font-bold', featured ? 'text-base' : 'text-sm')}>
+            {formatMoney(product.price, currency)}
+          </p>
+        </div>
+      </Link>
+
+      <QuickAddButton
+        product={product}
+        className="absolute right-2 top-2 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink shadow-sm transition-colors hover:bg-white"
+      />
+    </div>
   );
 }
 
@@ -553,11 +561,11 @@ function MenuNumbered({
           </h2>
           <ul className="mt-5 space-y-5">
             {category.products.map((product, index) => (
-              <li key={product.id}>
-                <Link
-                  href={product.href}
-                  className={cx('group flex items-start gap-4', !product.isAvailable && 'opacity-60')}
-                >
+              <li
+                key={product.id}
+                className={cx('flex items-start gap-4', !product.isAvailable && 'opacity-60')}
+              >
+                <Link href={product.href} className="group flex min-w-0 flex-1 items-start gap-4">
                   <span className="mt-1 font-display text-sm text-ink-faint">
                     {String(index + 1).padStart(2, '0')}
                   </span>
@@ -568,15 +576,19 @@ function MenuNumbered({
                         aria-hidden="true"
                         className="mb-1 h-px flex-1 border-t border-dotted border-surface-border"
                       />
-                      <span className="shrink-0 font-semibold">
-                        {formatMoney(product.price, currency)}
-                      </span>
                     </div>
                     {product.description && (
                       <p className="mt-1 text-sm text-ink-muted">{product.description}</p>
                     )}
                   </div>
                 </Link>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="font-semibold">{formatMoney(product.price, currency)}</span>
+                  <QuickAddButton
+                    product={product}
+                    className="text-xs font-medium uppercase tracking-wide text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -611,26 +623,41 @@ function MenuElegant({
           </h2>
           <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-left">
             {category.products.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                href={product.href}
-                className={cx(
-                  'flex items-baseline justify-between gap-6 py-4',
-                  !product.isAvailable && 'opacity-50',
-                )}
+                className={cx('flex items-center gap-4 py-4', !product.isAvailable && 'opacity-50')}
               >
-                <span>
-                  <span className="font-display text-lg">{product.name}</span>
-                  {product.description && (
-                    <span className="mt-1 block text-sm italic text-ink-muted">
-                      {product.description}
-                    </span>
+                <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-4">
+                  {product.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+                    <img
+                      src={product.imageUrl}
+                      alt=""
+                      loading="lazy"
+                      className="h-16 w-16 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span aria-hidden="true" className="h-16 w-16 shrink-0 rounded-full bg-surface-sunken" />
                   )}
-                </span>
-                <span className="shrink-0 text-sm tracking-wide text-ink-muted">
-                  {formatMoney(product.price, currency)}
-                </span>
-              </Link>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-display text-lg">{product.name}</span>
+                    {product.description && (
+                      <span className="mt-1 block text-sm italic text-ink-muted">
+                        {product.description}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="text-sm tracking-wide text-ink-muted">
+                    {formatMoney(product.price, currency)}
+                  </span>
+                  <QuickAddButton
+                    product={product}
+                    className="text-xs uppercase tracking-widest text-ink-faint hover:text-ink"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </section>
@@ -704,51 +731,58 @@ function TraditionalProductCard({
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
   return (
-    <Link
-      href={product.href}
-      aria-disabled={unavailable || undefined}
+    <div
       className={cx(
         'group overflow-hidden rounded-2xl border border-surface-border transition-shadow hover:shadow-lg',
         unavailable && 'opacity-60',
       )}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-          <img
-            src={product.imageUrl}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div aria-hidden="true" className="h-full w-full" />
-        )}
-        {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
-            {BADGE_LABELS[product.badge]}
-          </span>
-        )}
-      </div>
+      <Link href={product.href} aria-disabled={unavailable || undefined}>
+        <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+            <img
+              src={product.imageUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div aria-hidden="true" className="h-full w-full" />
+          )}
+          {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
+              {BADGE_LABELS[product.badge]}
+            </span>
+          )}
+        </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="p-4 pb-0">
           <h3 className="font-medium leading-snug">{product.name}</h3>
-          <span className="shrink-0 font-semibold" style={{ color: 'var(--brand)' }}>
+          {product.description && (
+            <p className="mt-1.5 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
+          )}
+        </div>
+      </Link>
+
+      <div className="flex items-center justify-between gap-3 p-4 pt-3">
+        <div>
+          <span className="font-semibold" style={{ color: 'var(--brand)' }}>
             {formatMoney(product.price, currency)}
           </span>
+          {product.compareAtPrice && (
+            <span className="ml-2 text-xs text-ink-faint line-through">
+              {formatMoney(product.compareAtPrice, currency)}
+            </span>
+          )}
+          {unavailable && <span className="ml-2 text-xs text-ink-faint">Indisponible</span>}
         </div>
-        {product.description && (
-          <p className="mt-1.5 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
-        )}
-        {product.compareAtPrice && (
-          <p className="mt-1 text-xs text-ink-faint line-through">
-            {formatMoney(product.compareAtPrice, currency)}
-          </p>
-        )}
-        {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
+        <QuickAddButton
+          product={product}
+          className="shrink-0 rounded-full border border-surface-border px-3 py-1.5 text-xs font-medium transition-colors hover:border-ink"
+        />
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -794,41 +828,48 @@ function FastFoodProductCard({
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
   return (
-    <Link
-      href={product.href}
-      aria-disabled={unavailable || undefined}
+    <div
       className={cx(
         'group relative overflow-hidden rounded-3xl border-2 border-ink bg-white transition-transform hover:-translate-y-1',
         unavailable && 'opacity-60',
       )}
     >
-      <div className="relative aspect-square overflow-hidden bg-surface-sunken">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-          <img
-            src={product.imageUrl}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : null}
-        {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
-          <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-ink px-2.5 py-1 text-xs font-bold uppercase text-white">
-            {BADGE_LABELS[product.badge]}
+      <Link href={product.href} aria-disabled={unavailable || undefined}>
+        <div className="relative aspect-square overflow-hidden bg-surface-sunken">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+            <img
+              src={product.imageUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : null}
+          {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+            <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-ink px-2.5 py-1 text-xs font-bold uppercase text-white">
+              {BADGE_LABELS[product.badge]}
+            </span>
+          )}
+          <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-ink bg-white px-3 py-1 text-xs font-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
+            {formatMoney(product.price, currency)}
           </span>
-        )}
-        <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-ink bg-white px-3 py-1 text-xs font-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
-          {formatMoney(product.price, currency)}
-        </span>
+        </div>
+        <div className="p-4 pb-3 pt-6">
+          <h3 className="font-black uppercase leading-snug">{product.name}</h3>
+          {product.description && (
+            <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
+          )}
+          {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
+        </div>
+      </Link>
+
+      <div className="px-4 pb-4">
+        <QuickAddButton
+          product={product}
+          className="flex h-9 w-full items-center justify-center rounded-full bg-ink text-xs font-black uppercase tracking-wide text-white transition-transform hover:-translate-y-0.5"
+        />
       </div>
-      <div className="p-4 pt-6">
-        <h3 className="font-black uppercase leading-snug">{product.name}</h3>
-        {product.description && (
-          <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
-        )}
-        {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
-      </div>
-    </Link>
+    </div>
   );
 }
 

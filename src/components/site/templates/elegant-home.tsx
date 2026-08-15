@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
 import { DAY_NAMES } from '@/lib/site/hours';
+import { QuickAddButton } from '@/components/site/quick-add-button';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
 
 /**
@@ -296,26 +297,44 @@ function MenuSection({
                 <h3 className="text-center font-display text-2xl">{category.name}</h3>
                 <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-left">
                   {category.products.map((product) => (
-                    <Link
+                    <div
                       key={product.id}
-                      href={product.href}
-                      className={cx(
-                        'flex items-baseline justify-between gap-6 py-4',
-                        !product.isAvailable && 'opacity-50',
-                      )}
+                      className={cx('flex items-center gap-4 py-4', !product.isAvailable && 'opacity-50')}
                     >
-                      <span>
-                        <span className="font-display text-lg">{product.name}</span>
-                        {product.description && (
-                          <span className="mt-1 block text-sm italic text-ink-muted">
-                            {product.description}
-                          </span>
+                      <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-4">
+                        {product.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+                          <img
+                            src={product.imageUrl}
+                            alt=""
+                            loading="lazy"
+                            className="h-16 w-16 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className="h-16 w-16 shrink-0 rounded-full bg-surface-sunken"
+                          />
                         )}
-                      </span>
-                      <span className="shrink-0 text-sm tracking-wide text-ink-muted">
-                        {formatMoney(product.price, currency)}
-                      </span>
-                    </Link>
+                        <span className="min-w-0 flex-1">
+                          <span className="font-display text-lg">{product.name}</span>
+                          {product.description && (
+                            <span className="mt-1 block text-sm italic text-ink-muted">
+                              {product.description}
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                      <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <span className="text-sm tracking-wide text-ink-muted">
+                          {formatMoney(product.price, currency)}
+                        </span>
+                        <QuickAddButton
+                          product={product}
+                          className="text-xs uppercase tracking-widest text-ink-faint hover:text-ink"
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
