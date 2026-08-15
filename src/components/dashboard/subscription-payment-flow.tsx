@@ -116,7 +116,14 @@ export function SubscriptionPaymentFlow({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await uploadFile(`/api/abonnement/paiement/${activePayment.id}/preuve`, formData);
+      const result = await uploadFile<{ payment: { proofImageUrl: string | null } }>(
+        `/api/abonnement/paiement/${activePayment.id}/preuve`,
+        formData,
+      );
+      // Mis à jour directement depuis la réponse : `activePayment` est un état
+      // local initialisé une seule fois depuis les props serveur, `router.refresh()`
+      // seul ne le ferait pas réapparaître sans preuve — d'où le bouton qui restait.
+      setActivePayment({ ...activePayment, proofImageUrl: result.payment.proofImageUrl });
       setMessage("Preuve envoyée. Votre paiement sera validé sous peu.");
       router.refresh();
     } catch (err) {
@@ -145,6 +152,8 @@ export function SubscriptionPaymentFlow({
 
         {activePayment.proofImageUrl ? (
           <p className="mt-3 text-sm text-emerald-700">Preuve déposée, en attente de validation.</p>
+        ) : uploading ? (
+          <p className="mt-4 text-sm text-ink-muted">Envoi de la preuve…</p>
         ) : (
           <div className="mt-4">
             <input
@@ -162,7 +171,7 @@ export function SubscriptionPaymentFlow({
               htmlFor="subscription-proof-upload"
               className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-brand px-4 text-sm font-medium text-white"
             >
-              {uploading ? 'Envoi…' : 'Déposer ma preuve de paiement'}
+              Déposer ma preuve de paiement
             </label>
           </div>
         )}
