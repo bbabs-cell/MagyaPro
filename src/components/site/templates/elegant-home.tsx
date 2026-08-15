@@ -103,37 +103,82 @@ export function ElegantHomePage({ data }: { data: ElegantHomeData }) {
 }
 
 function ElegantHero({ data }: { data: HeroData }) {
-  return (
-    <section className="relative overflow-hidden bg-white">
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[24rem] font-semibold leading-none text-surface-sunken sm:text-[32rem]"
-      >
-        {data.name.charAt(0).toUpperCase()}
-      </span>
+  const hasPhoto = Boolean(data.coverUrl);
 
-      <div className="container-page relative py-24 sm:py-32">
-        <div className="mx-auto max-w-xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-ink-faint">
+  return (
+    <section
+      className={cx(
+        'relative isolate flex min-h-[85vh] items-center overflow-hidden',
+        !hasPhoto && 'bg-white',
+      )}
+    >
+      {hasPhoto ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
+          <img
+            src={data.coverUrl!}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/70"
+          />
+        </>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[24rem] font-semibold leading-none text-surface-sunken sm:text-[32rem]"
+        >
+          {data.name.charAt(0).toUpperCase()}
+        </span>
+      )}
+
+      <div className="container-page relative py-28 sm:py-40">
+        <div className={cx('mx-auto max-w-xl text-center', hasPhoto && 'text-white')}>
+          <p
+            className={cx(
+              'text-xs font-semibold uppercase tracking-[0.4em]',
+              hasPhoto ? 'text-white/70' : 'text-ink-faint',
+            )}
+          >
             {data.city ?? 'Restaurant'}
           </p>
           <h1 className="mt-6 font-display text-6xl font-normal tracking-tight sm:text-7xl">
             {data.name}
           </h1>
-          <span aria-hidden="true" className="mx-auto mt-8 block h-px w-16 bg-ink/20" />
+          <span
+            aria-hidden="true"
+            className={cx('mx-auto mt-8 block h-px w-16', hasPhoto ? 'bg-white/30' : 'bg-ink/20')}
+          />
           {data.description && (
-            <p className="mx-auto mt-8 max-w-md text-lg leading-relaxed text-ink-muted">
+            <p
+              className={cx(
+                'mx-auto mt-8 max-w-md text-lg leading-relaxed',
+                hasPhoto ? 'text-white/85' : 'text-ink-muted',
+              )}
+            >
               {data.description}
             </p>
           )}
           <div className="mt-10 flex flex-col items-center gap-4">
             <Link
               href={data.menuHref}
-              className="inline-flex h-14 items-center rounded-none border border-ink px-10 text-sm font-medium uppercase tracking-widest text-ink transition-colors hover:bg-ink hover:text-white"
+              className={cx(
+                'inline-flex h-14 items-center rounded-none border px-10 text-sm font-medium uppercase tracking-widest transition-colors',
+                hasPhoto
+                  ? 'border-white text-white hover:bg-white hover:text-ink'
+                  : 'border-ink text-ink hover:bg-ink hover:text-white',
+              )}
             >
               {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
             </Link>
-            <p className="flex items-center gap-2 text-xs text-ink-faint">
+            <p
+              className={cx(
+                'flex items-center gap-2 text-xs',
+                hasPhoto ? 'text-white/70' : 'text-ink-faint',
+              )}
+            >
               <span
                 aria-hidden="true"
                 className={cx('h-1.5 w-1.5 rounded-full', data.isOpenNow ? 'bg-emerald-500' : 'bg-red-500')}
@@ -142,13 +187,6 @@ function ElegantHero({ data }: { data: HeroData }) {
             </p>
           </div>
         </div>
-
-        {data.coverUrl && (
-          <div className="relative mt-16 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
-            <img src={data.coverUrl} alt="" className="aspect-[21/9] w-full object-cover" />
-          </div>
-        )}
       </div>
     </section>
   );
