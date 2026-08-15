@@ -17,7 +17,7 @@
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cf:build": "prisma generate && opennextjs-cloudflare build",
+    "cf:build": "prisma generate && opennextjs-cloudflare build && node scripts/patch-cron-handler.mjs",
     "cf:preview": "npm run cf:build && opennextjs-cloudflare preview",
     "cf:deploy": "npm run cf:build && opennextjs-cloudflare deploy",
     "cf:typegen": "wrangler types"

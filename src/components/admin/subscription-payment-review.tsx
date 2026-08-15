@@ -16,6 +16,7 @@ export function SubscriptionPaymentReview({
   planName,
   amountLabel,
   provider,
+  country,
   proofImageUrl,
   submittedLabel,
 }: {
@@ -24,6 +25,7 @@ export function SubscriptionPaymentReview({
   planName: string;
   amountLabel: string;
   provider: string;
+  country: string | null;
   proofImageUrl: string | null;
   submittedLabel: string;
 }) {
@@ -64,6 +66,7 @@ export function SubscriptionPaymentReview({
           <p className="font-medium">{restaurantName}</p>
           <p className="mt-0.5 text-sm text-white/60">
             {planName} · {amountLabel} · {PROVIDER_LABELS[provider] ?? provider}
+            {country && <> · {country}</>}
           </p>
           <p className="mt-0.5 text-xs text-white/40">Déposé {submittedLabel}</p>
         </div>

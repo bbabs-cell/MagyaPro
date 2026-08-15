@@ -3,6 +3,9 @@ import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getPlatformSettings } from '@/lib/platform-settings';
 import { expiresIn } from '@/lib/auth/tokens';
+import { createNotification } from '@/lib/notifications';
+import { sendMail } from '@/lib/mail';
+import { formatMoney } from '@/lib/money';
 
 /**
  * Paiement manuel de l'abonnement plateforme.
@@ -25,6 +28,7 @@ export async function createSubscriptionPaymentRequest(params: {
   restaurantId: string;
   planKey: string;
   provider: 'wave_manual' | 'orange_money_manual';
+  country: string;
 }) {
   const plan = await prisma.plan.findFirst({
     where: { key: params.planKey, isActive: true },
@@ -57,6 +61,7 @@ export async function createSubscriptionPaymentRequest(params: {
       restaurantId: params.restaurantId,
       planId: plan.id,
       provider: params.provider,
+      country: params.country,
       amount: plan.price,
       currency: plan.currency,
     },
@@ -67,7 +72,7 @@ export async function createSubscriptionPaymentRequest(params: {
     restaurantId: params.restaurantId,
     targetType: 'subscription_payment',
     targetId: payment.id,
-    metadata: { planKey: plan.key, amount: plan.price, provider: params.provider },
+    metadata: { planKey: plan.key, amount: plan.price, provider: params.provider, country: params.country },
   });
 
   return { payment, plan, receivingNumber };
@@ -132,6 +137,9 @@ export async function approveSubscriptionPayment(params: {
         status: 'ACTIVE',
         cancelledAt: null,
         currentPeriodEnd: expiresIn(periodDays, 'days'),
+        // La nouvelle période repousse l'échéance : l'alerte des 5 jours
+        // devra pouvoir se redéclencher pour cette nouvelle date.
+        expiryAlertSentAt: null,
       },
     }),
   ]);
@@ -183,4 +191,72 @@ export async function rejectSubscriptionPayment(params: {
   });
 
   return updated;
+}
+
+/**
+ * Alerte les restaurateurs dont l'abonnement expire dans 5 jours ou moins —
+ * notification en dashboard + email. `expiryAlertSentAt` évite de la
+ * renvoyer chaque jour ; elle est remise à zéro à chaque renouvellement
+ * (voir `approveSubscriptionPayment`) pour que la prochaine échéance
+ * redéclenche l'alerte.
+ */
+export async function sendExpiringSubscriptionAlerts(): Promise<{ notified: number }> {
+  const now = new Date();
+  const threshold = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+  const subscriptions = await prisma.subscription.findMany({
+    where: {
+      status: { in: ['ACTIVE', 'TRIALING'] },
+      currentPeriodEnd: { gt: now, lte: threshold },
+      expiryAlertSentAt: null,
+    },
+    include: {
+      plan: { select: { name: true, price: true, currency: true } },
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          settings: { select: { notificationEmail: true } },
+        },
+      },
+    },
+  });
+
+  for (const subscription of subscriptions) {
+    const daysLeft = Math.max(
+      1,
+      Math.ceil((subscription.currentPeriodEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)),
+    );
+    const dateLabel = subscription.currentPeriodEnd.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    await createNotification({
+      restaurantId: subscription.restaurant.id,
+      type: 'SUBSCRIPTION_TRIAL_ENDING',
+      title: 'Abonnement bientôt à renouveler',
+      body: `Votre abonnement « ${subscription.plan.name} » expire le ${dateLabel} (dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}). Renouvelez-le depuis votre tableau de bord pour éviter toute interruption.`,
+      href: '/dashboard/abonnement',
+      metadata: { subscriptionId: subscription.id, daysLeft },
+    });
+
+    const recipient = subscription.restaurant.settings?.notificationEmail ?? subscription.restaurant.email;
+    if (recipient) {
+      await sendMail({
+        to: recipient,
+        subject: `Votre abonnement Magyapro expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.restaurant.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre site reste actif sans interruption.\n\nL'équipe Magyapro`,
+      });
+    }
+
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { expiryAlertSentAt: now },
+    });
+  }
+
+  return { notified: subscriptions.length };
 }

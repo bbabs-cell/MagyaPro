@@ -26,6 +26,12 @@ export const POST = route(async (request) => {
   if (!plan || !plan.isActive) {
     throw new NotFoundError("Ce plan n'est pas disponible.");
   }
+  // Un plan payant passe par la demande de paiement (`/api/abonnement/paiement`),
+  // validée par le Super Admin — cette route ne change instantanément que les
+  // plans gratuits.
+  if (plan.price > 0) {
+    throw new ValidationError('Ce plan est payant : passez par la demande de paiement.');
+  }
 
   const existing = await prisma.subscription.findUnique({
     where: { restaurantId: context.restaurant.id },
@@ -55,6 +61,7 @@ export const POST = route(async (request) => {
       status: trialDays > 0 ? 'TRIALING' : 'ACTIVE',
       cancelledAt: null,
       currentPeriodEnd: expiresIn(trialDays > 0 ? trialDays : periodDays, 'days'),
+      expiryAlertSentAt: null,
     },
     include: { plan: true },
   });

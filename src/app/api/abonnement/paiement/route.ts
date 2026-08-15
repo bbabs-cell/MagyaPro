@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money';
 const schema = z.object({
   planKey: z.string().min(1).max(40),
   provider: z.enum(['wave_manual', 'orange_money_manual']),
+  country: z.string().min(1, 'Le pays est requis.').max(60),
 });
 
 /**
@@ -23,6 +24,7 @@ export const POST = route(async (request) => {
     restaurantId: context.restaurant.id,
     planKey: input.planKey,
     provider: input.provider,
+    country: input.country,
   });
 
   return ok(

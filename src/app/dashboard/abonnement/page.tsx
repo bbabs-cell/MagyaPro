@@ -5,6 +5,7 @@ import { requireTenant } from '@/lib/tenant';
 import { getEntitlements, FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
 import { formatMoney } from '@/lib/money';
 import { SubscriptionPaymentFlow } from '@/components/dashboard/subscription-payment-flow';
+import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
 import { getPlatformSettings } from '@/lib/platform-settings';
 
@@ -97,6 +98,7 @@ export default async function SubscriptionPage() {
                   year: 'numeric',
                 })}
               </p>
+              <PlanCountdown currentPeriodEnd={entitlements.currentPeriodEnd.toISOString()} />
             </div>
           )}
         </div>

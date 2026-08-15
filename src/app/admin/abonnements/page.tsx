@@ -102,6 +102,7 @@ export default async function AdminSubscriptionsPage({
                 planName={payment.plan.name}
                 amountLabel={formatMoney(payment.amount, payment.currency)}
                 provider={payment.provider}
+                country={payment.country}
                 proofImageUrl={payment.proofImageUrl}
                 submittedLabel={
                   payment.proofSubmittedAt

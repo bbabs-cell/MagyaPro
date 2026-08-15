@@ -21,5 +21,11 @@
   ],
   "observability": {
     "enabled": true
+  },
+  // Déclenche quotidiennement /api/cron/verifier-abonnements (via le
+  // handler `scheduled` ajouté au build par scripts/patch-cron-handler.mjs)
+  // pour alerter les restaurateurs dont l'abonnement expire dans 5 jours.
+  "triggers": {
+    "crons": ["0 8 * * *"]
   }
 }

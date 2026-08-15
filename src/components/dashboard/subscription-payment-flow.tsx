@@ -32,6 +32,19 @@ const PROVIDER_LABELS: Record<'wave_manual' | 'orange_money_manual', string> = {
   orange_money_manual: 'Orange Money',
 };
 
+/** Pays desservis par Wave/Orange Money dans la zone — « Autre » couvre le reste. */
+const COUNTRIES = [
+  'Sénégal',
+  "Côte d'Ivoire",
+  'Mali',
+  'Bénin',
+  'Burkina Faso',
+  'Guinée',
+  'Togo',
+  'Niger',
+  'Autre',
+];
+
 /**
  * Changement de plan avec paiement manuel : les plans payants demandent un
  * envoi Wave/Orange Money au numéro de la plateforme puis une preuve, plutôt
@@ -58,6 +71,7 @@ export function SubscriptionPaymentFlow({
   const [provider, setProvider] = useState<'wave_manual' | 'orange_money_manual' | null>(
     availableProviders[0] ?? null,
   );
+  const [country, setCountry] = useState('');
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +96,7 @@ export function SubscriptionPaymentFlow({
   }
 
   async function requestPayment(plan: Plan) {
-    if (!provider) return;
+    if (!provider || !country) return;
     setCreating(true);
     setError(null);
     try {
@@ -91,7 +105,7 @@ export function SubscriptionPaymentFlow({
         amountLabel: string;
         planName: string;
         receivingNumber: string;
-      }>('/api/abonnement/paiement', { planKey: plan.key, provider });
+      }>('/api/abonnement/paiement', { planKey: plan.key, provider, country });
 
       setActivePayment({
         id: result.paymentId,
@@ -282,10 +296,33 @@ export function SubscriptionPaymentFlow({
                       </button>
                     ))}
                   </div>
+
+                  <div>
+                    <label
+                      htmlFor={`country-${plan.key}`}
+                      className="block text-xs font-medium uppercase tracking-wide text-ink-faint"
+                    >
+                      Pays d&apos;où vous effectuez le transfert
+                    </label>
+                    <select
+                      id={`country-${plan.key}`}
+                      value={country}
+                      onChange={(event) => setCountry(event.target.value)}
+                      className="mt-1.5 w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm"
+                    >
+                      <option value="">Choisir un pays…</option>
+                      {COUNTRIES.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      disabled={creating || !provider}
+                      disabled={creating || !provider || !country}
                       onClick={() => requestPayment(plan)}
                     >
                       {creating ? 'Création…' : 'Obtenir les instructions'}

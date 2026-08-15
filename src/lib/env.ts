@@ -50,6 +50,10 @@ export const env = {
   /// sur un runtime sans sockets TCP bruts (Cloudflare Workers).
   resendApiKey: process.env.RESEND_API_KEY,
 
+  /// Secret partagé avec le déclencheur cron Cloudflare (`scheduled` dans le
+  /// worker) : sans lui, `/api/cron/*` refuse toute requête.
+  cronSecret: process.env.CRON_SECRET,
+
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,

@@ -857,6 +857,10 @@ model Subscription {
   currentPeriodEnd DateTime
   trialEndsAt      DateTime?
   cancelledAt      DateTime?
+  /// Horodatage de l'alerte « expire dans 5 jours » déjà envoyée — évite de
+  /// la renvoyer chaque jour. Remise à zéro à chaque renouvellement, pour
+  /// qu'une prochaine échéance déclenche à nouveau l'alerte.
+  expiryAlertSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -889,6 +893,9 @@ model SubscriptionPayment {
   /// 'wave_manual' | 'orange_money_manual' — même vocabulaire que les
   /// fournisseurs de paiement de commande, pour rester cohérent.
   provider          String
+  /// Pays depuis lequel le transfert est effectué — déclaré par le
+  /// restaurateur avant paiement, utile pour rapprocher la preuve reçue.
+  country           String?
   amount            Int
   currency          String                    @default("XOF")
   status            SubscriptionPaymentStatus @default(PENDING)
