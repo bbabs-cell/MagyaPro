@@ -5,8 +5,16 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformMetrics } from '@/lib/analytics';
 import { formatMoney } from '@/lib/money';
-import { platformLogoUrl } from '@/lib/storage';
+import { howItWorksImageUrl, platformLogoUrl } from '@/lib/storage';
 import { PlatformLogoUpload } from '@/components/admin/platform-logo-upload';
+import { HowItWorksUpload } from '@/components/admin/how-it-works-upload';
+
+const HOW_IT_WORKS_STEPS: Array<{ step: 1 | 2 | 3 | 4; title: string }> = [
+  { step: 1, title: 'Créez votre compte' },
+  { step: 2, title: 'Décrivez votre restaurant' },
+  { step: 3, title: 'Composez votre menu' },
+  { step: 4, title: 'Publiez' },
+];
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -66,6 +74,21 @@ export default async function AdminDashboardPage() {
         </p>
         <div className="mt-3">
           <PlatformLogoUpload logoUrl={platformLogoUrl()} />
+        </div>
+      </section>
+
+      <section
+        aria-label="Images « Comment ça fonctionne »"
+        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+      >
+        <h2 className="text-sm font-medium">Images « Comment ça fonctionne »</h2>
+        <p className="mt-1 text-xs text-white/50">
+          Illustrent les 4 étapes sur la page d&apos;accueil, avec un dégradé vertical automatique.
+        </p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_IT_WORKS_STEPS.map(({ step, title }) => (
+            <HowItWorksUpload key={step} step={step} title={title} imageUrl={howItWorksImageUrl(step)} />
+          ))}
         </div>
       </section>
 

@@ -200,6 +200,45 @@ export function platformLogoUrl(): string | null {
   return base ? `${base}/platform/logo.png` : null;
 }
 
+/**
+ * Illustrations de la section « Comment ça fonctionne » de la page d'accueil
+ * (4 étapes) — même logique de clé fixe par étape que le logo de plateforme.
+ */
+export async function uploadHowItWorksImage(params: {
+  file: File;
+  step: 1 | 2 | 3 | 4;
+}): Promise<StoredFile> {
+  const { file, step } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  const key = `platform/how-it-works-${step}.jpg`;
+  return storage().put(key, buffer, detected);
+}
+
+/** URL publique de l'illustration d'une étape « Comment ça fonctionne ». */
+export function howItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
+  if (env.storageDriver !== 's3') return null;
+  const base = env.s3PublicBaseUrl;
+  return base ? `${base}/platform/how-it-works-${step}.jpg` : null;
+}
+
 /** Formats acceptés pour un son de notification. */
 export const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'] as const;
 

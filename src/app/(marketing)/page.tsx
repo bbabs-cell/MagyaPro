@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
 import { formatMoney } from '@/lib/money';
 import { FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
-import { templatePreviewUrl } from '@/lib/storage';
+import { howItWorksImageUrl, templatePreviewUrl } from '@/lib/storage';
 import { Badge, LinkButton } from '@/components/ui';
 
 /**
@@ -145,19 +145,36 @@ export default async function LandingPage() {
           </div>
           <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { step: '1', title: 'Créez votre compte', detail: 'Nom, email, mot de passe. Rien de plus.' },
-              { step: '2', title: 'Décrivez votre restaurant', detail: 'Logo, adresse, horaires, réseaux sociaux.' },
-              { step: '3', title: 'Composez votre menu', detail: 'Catégories, plats, photos, prix et options.' },
-              { step: '4', title: 'Publiez', detail: 'Votre site est en ligne et prêt à recevoir des commandes.' },
-            ].map((item) => (
-              <li key={item.step} className="card p-5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink text-sm font-semibold text-white">
-                  {item.step}
-                </span>
-                <h3 className="mt-4 font-medium text-ink">{item.title}</h3>
-                <p className="mt-1 text-sm text-ink-muted">{item.detail}</p>
-              </li>
-            ))}
+              { step: 1 as const, title: 'Créez votre compte', detail: 'Nom, email, mot de passe. Rien de plus.' },
+              { step: 2 as const, title: 'Décrivez votre restaurant', detail: 'Logo, adresse, horaires, réseaux sociaux.' },
+              { step: 3 as const, title: 'Composez votre menu', detail: 'Catégories, plats, photos, prix et options.' },
+              { step: 4 as const, title: 'Publiez', detail: 'Votre site est en ligne et prêt à recevoir des commandes.' },
+            ].map((item) => {
+              const imageUrl = howItWorksImageUrl(item.step);
+              return (
+                <li key={item.step} className="card overflow-hidden p-0">
+                  <div className="relative h-36 w-full">
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
+                      <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-ink/90 to-ink/60" />
+                    )}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"
+                    />
+                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-semibold text-ink">
+                      {item.step}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-medium text-ink">{item.title}</h3>
+                    <p className="mt-1 text-sm text-ink-muted">{item.detail}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
