@@ -1,10 +1,7 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { getCurrentUser } from '@/lib/auth/session';
-import { AdminNav } from '@/components/admin/nav';
-import { AdminLogoutButton } from '@/components/admin/logout-button';
-import { Logo } from '@/components/ui/logo';
+import { AdminSidebar } from '@/components/admin/sidebar';
 import { platformLogoUrl } from '@/lib/storage';
 
 /**
@@ -42,33 +39,13 @@ export default async function AdminLayout({
         className="pointer-events-none fixed -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
       />
 
-      <header className="relative border-b border-white/10 bg-black/10 backdrop-blur">
-        <div className="container-page flex h-16 items-center justify-between gap-4">
-          <Link href="/admin" className="flex items-center gap-2">
-            <Logo src={logoUrl} showText={false} className="h-8 w-8" />
-            <span className="font-semibold tracking-tight">
-              Magyapro <span className="font-normal text-white/60">Administration</span>
-            </span>
-          </Link>
+      <div className="relative lg:flex">
+        <AdminSidebar logoUrl={logoUrl} userEmail={user.email} />
 
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-white/60 sm:inline">{user.email}</span>
-            <Link
-              href="/dashboard"
-              className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
-            >
-              Mon restaurant
-            </Link>
-            <AdminLogoutButton />
-          </div>
-        </div>
-
-        <AdminNav />
-      </header>
-
-      <main id="contenu" className="relative container-page py-8">
-        {children}
-      </main>
+        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

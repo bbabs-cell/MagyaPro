@@ -17,6 +17,72 @@ const SUBSCRIPTION_LABELS: Record<string, string> = {
   EXPIRED: 'Expirés',
 };
 
+const ICON_PROPS = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true as const,
+};
+
+const STAT_ICONS = {
+  restaurants: (
+    <svg {...ICON_PROPS}>
+      <path d="M4 10 5.5 4h13L20 10" />
+      <path d="M4 10v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9" />
+      <path d="M4 10a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 5 0" />
+    </svg>
+  ),
+  active: (
+    <svg {...ICON_PROPS}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  ),
+  users: (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
+    </svg>
+  ),
+  new: (
+    <svg {...ICON_PROPS}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  orders: (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8h12l-1 11H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  volume: (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 15.5c.5 1 1.5 1.5 3 1.5s3-1 3-2.2-1-1.8-3-2.3-3-1.1-3-2.3 1.5-2.2 3-2.2 2.5.5 3 1.5" />
+      <path d="M12 6.5v11" />
+    </svg>
+  ),
+  active_subs: (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M7 15h4" />
+    </svg>
+  ),
+  expired_subs: (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  ),
+};
+
 export default async function AdminDashboardPage() {
   await requireSuperAdmin();
 
@@ -58,26 +124,33 @@ export default async function AdminDashboardPage() {
         aria-label="Indicateurs de la plateforme"
         className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <AdminStat label="Restaurants" value={String(metrics.restaurants)} />
+        <AdminStat label="Restaurants" value={String(metrics.restaurants)} icon={STAT_ICONS.restaurants} />
         <AdminStat
           label="Actifs"
           value={String(metrics.activeRestaurants)}
+          icon={STAT_ICONS.active}
+          tone="success"
           hint={`${metrics.suspendedRestaurants} suspendu${metrics.suspendedRestaurants > 1 ? 's' : ''}`}
         />
-        <AdminStat label="Utilisateurs" value={String(metrics.users)} />
+        <AdminStat label="Utilisateurs" value={String(metrics.users)} icon={STAT_ICONS.users} tone="info" />
         <AdminStat
           label="Nouveaux (30 j)"
           value={String(metrics.newRestaurants)}
+          icon={STAT_ICONS.new}
           hint="Restaurants créés"
         />
-        <AdminStat label="Commandes" value={String(metrics.orders)} />
+        <AdminStat label="Commandes" value={String(metrics.orders)} icon={STAT_ICONS.orders} />
         <AdminStat
           label="Volume traité"
           value={formatMoney(metrics.grossVolume, 'XOF')}
+          icon={STAT_ICONS.volume}
+          tone="success"
           hint="Toutes commandes, hors annulées"
         />
         <AdminStat
           label="Abonnements actifs"
+          icon={STAT_ICONS.active_subs}
+          tone="success"
           value={String(
             (metrics.subscriptionsByStatus.ACTIVE ?? 0) +
               (metrics.subscriptionsByStatus.TRIALING ?? 0),
@@ -85,6 +158,8 @@ export default async function AdminDashboardPage() {
         />
         <AdminStat
           label="Abonnements expirés"
+          icon={STAT_ICONS.expired_subs}
+          tone="danger"
           value={String(
             (metrics.subscriptionsByStatus.EXPIRED ?? 0) +
               (metrics.subscriptionsByStatus.CANCELLED ?? 0),
@@ -188,18 +263,38 @@ export default async function AdminDashboardPage() {
   );
 }
 
+const STAT_ACCENT: Record<'brand' | 'success' | 'warning' | 'danger' | 'info', string> = {
+  brand: 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e]',
+  success: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
+  info: 'bg-sky-500',
+};
+
 function AdminStat({
   label,
   value,
   hint,
+  icon,
+  tone = 'brand',
 }: {
   label: string;
   value: string;
   hint?: string;
+  icon?: React.ReactElement;
+  tone?: 'brand' | 'success' | 'warning' | 'danger' | 'info';
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
-      <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+      <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${STAT_ACCENT[tone]}`} />
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
+        {icon && (
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white ${STAT_ACCENT[tone]}`}>
+            {icon}
+          </span>
+        )}
+      </div>
       <p className="mt-2 bg-gradient-to-r from-white to-[#ff9a4d] bg-clip-text text-2xl font-bold tracking-tight text-transparent">
         {value}
       </p>
