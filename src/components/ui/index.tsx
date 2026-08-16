@@ -240,22 +240,50 @@ export function Badge({
   );
 }
 
+const STAT_ACCENT: Record<BadgeTone, string> = {
+  neutral: 'bg-ink-faint',
+  success: 'bg-emerald-500',
+  warning: 'bg-amber-500',
+  danger: 'bg-red-500',
+  info: 'bg-sky-500',
+  brand: 'bg-brand',
+};
+
 export function StatCard({
   label,
   value,
   hint,
   tone,
+  icon,
 }: {
   label: string;
   value: string;
   hint?: string;
   tone?: BadgeTone;
+  /** Icône décorative affichée dans un badge coloré (tone de l'accent). */
+  icon?: ReactNode;
 }) {
   return (
-    <div className="card p-4 transition-shadow hover:shadow-md sm:p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-        {label}
-      </p>
+    <div className="card relative overflow-hidden p-4 transition-shadow hover:shadow-md sm:p-5">
+      <span
+        aria-hidden="true"
+        className={cx('absolute inset-x-0 top-0 h-1', STAT_ACCENT[tone ?? 'brand'])}
+      />
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+          {label}
+        </p>
+        {icon && (
+          <span
+            className={cx(
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white',
+              STAT_ACCENT[tone ?? 'brand'],
+            )}
+          >
+            {icon}
+          </span>
+        )}
+      </div>
       <p className="mt-2 text-2xl font-bold tracking-tight text-ink">
         {value}
       </p>

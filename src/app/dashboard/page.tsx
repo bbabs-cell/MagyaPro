@@ -21,6 +21,48 @@ import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 export const metadata: Metadata = { title: 'Vue d\'ensemble' };
 export const dynamic = 'force-dynamic';
 
+const ICON_PROPS = {
+  width: 16,
+  height: 16,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true as const,
+};
+
+const STAT_ICONS = {
+  revenue: (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 15.5c.5 1 1.5 1.5 3 1.5s3-1 3-2.2-1-1.8-3-2.3-3-1.1-3-2.3 1.5-2.2 3-2.2 2.5.5 3 1.5" />
+      <path d="M12 6.5v11" />
+    </svg>
+  ),
+  orders: (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8h12l-1 11H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  basket: (
+    <svg {...ICON_PROPS}>
+      <path d="M3 9h18l-1.5 10.5a2 2 0 0 1-2 1.5H6.5a2 2 0 0 1-2-1.5L3 9Z" />
+      <path d="M8 9V6a4 4 0 0 1 8 0v3" />
+    </svg>
+  ),
+  customers: (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
+    </svg>
+  ),
+};
+
 export default async function DashboardPage() {
   const { restaurant } = await requireTenant('restaurant:view');
   const currency = restaurant.currency;
@@ -113,6 +155,7 @@ export default async function DashboardPage() {
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}
+          icon={STAT_ICONS.revenue}
           hint={
             metrics.revenueChange === null
               ? 'Pas de période précédente à comparer'
@@ -129,6 +172,7 @@ export default async function DashboardPage() {
         <StatCard
           label="Commandes"
           value={String(metrics.ordersCount)}
+          icon={STAT_ICONS.orders}
           hint={
             metrics.ordersChange === null
               ? 'Pas de période précédente à comparer'
@@ -149,11 +193,15 @@ export default async function DashboardPage() {
               ? '—'
               : formatMoney(metrics.averageBasket, currency)
           }
+          icon={STAT_ICONS.basket}
+          tone="info"
           hint={metrics.averageBasket === null ? 'Aucune commande sur la période' : undefined}
         />
         <StatCard
           label="Nouveaux clients"
           value={String(metrics.newCustomers)}
+          icon={STAT_ICONS.customers}
+          tone="warning"
           hint="Sur les 30 derniers jours"
         />
       </section>

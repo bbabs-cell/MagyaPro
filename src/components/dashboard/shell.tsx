@@ -27,6 +27,166 @@ type NavItem = {
   exact?: boolean;
 };
 
+const ICON_PROPS = {
+  width: 18,
+  height: 18,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true as const,
+};
+
+/** Icônes de la navigation — un trait simple par rubrique, cohérent avec les autres icônes de la plateforme. */
+const NAV_ICONS: Record<string, React.ReactElement> = {
+  '/dashboard': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="3" width="8" height="8" rx="1.5" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" />
+    </svg>
+  ),
+  '/dashboard/alertes': (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 12 6 8Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  ),
+  '/dashboard/commandes': (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8h12l-1 11H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  '/dashboard/cuisine': (
+    <svg {...ICON_PROPS}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
+    </svg>
+  ),
+  '/dashboard/livraisons': (
+    <svg {...ICON_PROPS}>
+      <path d="M3 7h11v8H3z" />
+      <path d="M14 10h4l3 3v2h-7z" />
+      <circle cx="7" cy="17.5" r="1.6" />
+      <circle cx="17.5" cy="17.5" r="1.6" />
+    </svg>
+  ),
+  '/dashboard/reservations': (
+    <svg {...ICON_PROPS}>
+      <rect x="3.5" y="4.5" width="17" height="16" rx="2" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3v3M16 3v3" />
+    </svg>
+  ),
+  '/dashboard/clients': (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
+    </svg>
+  ),
+  '/dashboard/statistiques': (
+    <svg {...ICON_PROPS}>
+      <path d="M4 20V10" />
+      <path d="M12 20V4" />
+      <path d="M20 20v-7" />
+    </svg>
+  ),
+  '/dashboard/finances': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <circle cx="16" cy="14.5" r="1.6" />
+    </svg>
+  ),
+  '/dashboard/menu': (
+    <svg {...ICON_PROPS}>
+      <path d="M5 3v18M5 3c3 0 3 4 0 4M19 3v18" />
+    </svg>
+  ),
+  '/dashboard/photos': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="14" rx="2" />
+      <circle cx="12" cy="13" r="3.2" />
+      <path d="M8 6l1.5-2h5L16 6" />
+    </svg>
+  ),
+  '/dashboard/galerie': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="4" width="18" height="14" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="M3 16l5-5 4 4 3-3 6 6" />
+    </svg>
+  ),
+  '/dashboard/salle': (
+    <svg {...ICON_PROPS}>
+      <rect x="4" y="9" width="16" height="7" rx="1.5" />
+      <path d="M4 16v3M20 16v3M4 9V6M20 9V6" />
+    </svg>
+  ),
+  '/dashboard/apparence': (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="8.2" cy="13" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="15.8" cy="13" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  '/dashboard/livraison': (
+    <svg {...ICON_PROPS}>
+      <path d="M3 12a9 9 0 1 1 3 6.7" />
+      <path d="M3 12v5h5" />
+    </svg>
+  ),
+  '/dashboard/promotions': (
+    <svg {...ICON_PROPS}>
+      <path d="M20 12 12.5 19.5a2 2 0 0 1-2.8 0L4 13.8a2 2 0 0 1 0-2.8L11.5 3.5H18a2 2 0 0 1 2 2V12Z" />
+      <circle cx="15" cy="8" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  '/dashboard/fidelite': (
+    <svg {...ICON_PROPS}>
+      <path d="M12 20s-7-4.35-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 5c-2.5 4.65-9.5 9-9.5 9Z" />
+    </svg>
+  ),
+  '/dashboard/avis': (
+    <svg {...ICON_PROPS}>
+      <path d="M12 3.5l2.5 5.5 6 .7-4.5 4 1.3 6-5.3-3.1-5.3 3.1 1.3-6-4.5-4 6-.7Z" />
+    </svg>
+  ),
+  '/dashboard/parametres': (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    </svg>
+  ),
+  '/dashboard/equipe': (
+    <svg {...ICON_PROPS}>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
+      <path d="M14.5 20a4.5 4.5 0 0 1 7-3.6" />
+    </svg>
+  ),
+  '/dashboard/journal': (
+    <svg {...ICON_PROPS}>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M9 8h6M9 12h6M9 16h4" />
+    </svg>
+  ),
+  '/dashboard/abonnement': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M7 15h4" />
+    </svg>
+  ),
+};
+
 const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: 'Pilotage',
@@ -143,7 +303,7 @@ export function DashboardShell({
     <nav className="space-y-6" aria-label="Navigation du tableau de bord">
       {sections.map((section) => (
         <div key={section.title}>
-          <p className="px-3 text-xs font-medium uppercase tracking-wide text-ink-faint">
+          <p className="px-3 text-xs font-medium uppercase tracking-wide text-white/35">
             {section.title}
           </p>
           <ul className="mt-2 space-y-0.5">
@@ -154,20 +314,21 @@ export function DashboardShell({
                   onClick={() => setMenuOpen(false)}
                   aria-current={isActive(item) ? 'page' : undefined}
                   className={cx(
-                    'flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                     isActive(item)
-                      ? 'bg-brand text-white'
-                      : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
+                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white',
                   )}
                 >
-                  {item.label}
+                  <span className="shrink-0">{NAV_ICONS[item.href]}</span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {item.href === '/dashboard/commandes' && unreadCount > 0 && (
-                    <span className="ml-2 rounded-full bg-brand px-2 py-0.5 text-xs font-medium text-white">
+                    <span className="ml-auto shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
                       {unreadCount}
                     </span>
                   )}
                   {item.href === '/dashboard/alertes' && alertCount > 0 && (
-                    <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+                    <span className="ml-auto shrink-0 rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
                       {alertCount}
                     </span>
                   )}
@@ -232,12 +393,12 @@ export function DashboardShell({
           </Link>
         </div>
         {menuOpen && (
-          <div id="menu-mobile" className="border-t border-surface-border bg-white p-4">
+          <div id="menu-mobile" className="border-t border-white/10 bg-navy p-4 text-white">
             {navigation}
             <button
               type="button"
               onClick={handleLogout}
-              className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-ink-muted hover:bg-surface-sunken"
+              className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
             >
               Se déconnecter
             </button>
@@ -246,15 +407,19 @@ export function DashboardShell({
       </header>
 
       <div className="lg:flex">
-        <aside className="hidden w-64 shrink-0 border-r border-surface-border bg-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
-          <div className="flex h-full flex-col p-4">
+        <aside className="hidden w-64 shrink-0 bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed hidden h-64 w-64 -translate-x-8 -translate-y-16 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
+          />
+          <div className="relative flex h-full flex-col p-4">
             <Link href="/dashboard" className="flex items-center gap-2 px-2 py-2">
               <Logo src={platformLogoUrl} />
             </Link>
 
-            <div className="mt-4 rounded-xl border border-surface-border p-3">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
               <p className="truncate text-sm font-medium">{restaurant.name}</p>
-              <p className="mt-0.5 truncate text-xs text-ink-faint">
+              <p className="mt-0.5 truncate text-xs text-white/40">
                 {restaurant.slug}
               </p>
 
@@ -264,10 +429,10 @@ export function DashboardShell({
                   aria-label="Changer de restaurant"
                   value={restaurant.id}
                   onChange={(event) => switchRestaurant(event.target.value)}
-                  className="mt-2 w-full rounded-lg border border-surface-border px-2 py-1.5 text-xs"
+                  className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-2 py-1.5 text-xs text-white"
                 >
                   {memberships.map((membership) => (
-                    <option key={membership.id} value={membership.id}>
+                    <option key={membership.id} value={membership.id} className="text-ink">
                       {membership.name}
                     </option>
                   ))}
@@ -276,7 +441,7 @@ export function DashboardShell({
 
               <Link
                 href={`/r/${restaurant.slug}`}
-                className="mt-2 block text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
+                className="mt-2 block text-xs text-white/50 underline underline-offset-4 hover:text-white"
               >
                 Voir le site public
               </Link>
@@ -284,14 +449,14 @@ export function DashboardShell({
 
             <div className="mt-6 flex-1">{navigation}</div>
 
-            <div className="mt-6 border-t border-surface-border pt-4">
+            <div className="mt-6 border-t border-white/10 pt-4">
               <Link
                 href="/dashboard/abonnement"
-                className="block rounded-lg px-3 py-2 hover:bg-surface-sunken"
+                className="block rounded-lg px-3 py-2 hover:bg-white/5"
               >
-                <p className="text-xs text-ink-faint">Abonnement</p>
+                <p className="text-xs text-white/40">Abonnement</p>
                 <p className="mt-0.5 flex items-center gap-2 text-sm">
-                  <span className={subscription.isActive ? 'font-medium text-brand' : undefined}>
+                  <span className={subscription.isActive ? 'font-medium text-[#ff9a4d]' : undefined}>
                     {subscription.planName}
                   </span>
                   {!subscription.isActive && <Badge tone="danger">Inactif</Badge>}
@@ -301,21 +466,26 @@ export function DashboardShell({
               {user.isSuperAdmin && (
                 <Link
                   href="/admin"
-                  className="mt-1 block rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-surface-sunken"
+                  className="mt-1 block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                 >
                   Administration Magyapro
                 </Link>
               )}
 
-              <div className="mt-2 rounded-lg px-3 py-2">
-                <p className="truncate text-sm font-medium">{user.name}</p>
-                <p className="truncate text-xs text-ink-faint">{user.email}</p>
+              <div className="mt-2 flex items-center gap-2.5 rounded-lg px-3 py-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff9a4d] to-[#ff5e2e] text-xs font-bold text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{user.name}</span>
+                  <span className="block truncate text-xs text-white/40">{user.email}</span>
+                </span>
               </div>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full rounded-lg px-3 py-2 text-left text-sm text-ink-muted hover:bg-surface-sunken"
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
               >
                 Se déconnecter
               </button>
