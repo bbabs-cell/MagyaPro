@@ -82,8 +82,16 @@
 [data-admin-theme='light'] {
   color-scheme: light;
 }
-[data-admin-theme='light'] .bg-navy {
+/* `bg-navy` et `text-white` (racine) : ces deux classes sont posées sur le
+   MÊME élément que `data-admin-theme` (voir `admin/theme-root.tsx`), donc le
+   sélecteur descendant seul ne les atteint pas — il faut aussi la forme
+   composée sans combinateur. */
+[data-admin-theme='light'] .bg-navy,
+[data-admin-theme='light'].bg-navy {
   background-color: #f4f5f7;
+}
+[data-admin-theme='light'].text-white {
+  color: #12151a;
 }
 [data-admin-theme='light'] .bg-black\/20 {
   background-color: rgba(255, 255, 255, 0.75);
