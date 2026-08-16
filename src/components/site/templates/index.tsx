@@ -540,7 +540,8 @@ function BentoProductCard({
 
 /**
  * Liste numérotée à la manière d'une carte de restaurant gastronomique :
- * chiffre en filigrane, filet pointillé entre le nom et le prix.
+ * chiffre en filigrane, filet pointillé entre le nom et le prix, vignette
+ * photo quand le plat en a une (sans photo, la mise en page reste intacte).
  */
 function MenuNumbered({
   categories,
@@ -569,6 +570,17 @@ function MenuNumbered({
                   <span className="mt-1 font-display text-sm text-ink-faint">
                     {String(index + 1).padStart(2, '0')}
                   </span>
+                  {product.imageUrl && (
+                    <span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-sunken">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
+                      <img
+                        src={product.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </span>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <h3 className="font-display text-lg font-medium">{product.name}</h3>
