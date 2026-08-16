@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 
-export function LoginForm() {
+export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | null }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +25,7 @@ export function LoginForm() {
       const result = await api.post<{ redirectTo: string }>('/api/auth/login', {
         email: String(formData.get('email') ?? ''),
         password: String(formData.get('password') ?? ''),
+        turnstileToken: turnstileToken ?? undefined,
       });
       router.replace(result.redirectTo);
       router.refresh();
@@ -76,7 +79,16 @@ export function LoginForm() {
         </Link>
       </div>
 
-      <Button type="submit" disabled={pending} className="w-full" size="lg">
+      {turnstileSiteKey && (
+        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} />
+      )}
+
+      <Button
+        type="submit"
+        disabled={pending || (Boolean(turnstileSiteKey) && !turnstileToken)}
+        className="w-full"
+        size="lg"
+      >
         {pending ? 'Connexion…' : 'Se connecter'}
       </Button>
     </form>

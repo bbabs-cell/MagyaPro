@@ -6,12 +6,14 @@ import { registerAccount } from '@/lib/auth/service';
 import { createSession, clientIp } from '@/lib/auth/session';
 import { setActiveRestaurant } from '@/lib/tenant';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
   hit(`register:${ip}`, RATE_LIMITS.register);
 
-  const input = parseOrThrow(registerSchema, await readJson(request));
+  const { turnstileToken, ...input } = parseOrThrow(registerSchema, await readJson(request));
+  await verifyTurnstile(turnstileToken, ip);
   const { user, restaurant } = await registerAccount({ ...input, ip });
 
   // L'utilisateur est connecté immédiatement : lui demander de se reconnecter

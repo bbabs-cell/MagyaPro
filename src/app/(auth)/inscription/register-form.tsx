@@ -6,8 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
 import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password-policy';
+import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 
-export function RegisterForm() {
+export function RegisterForm({ turnstileSiteKey }: { turnstileSiteKey: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planKey = searchParams.get('plan') || undefined;
@@ -15,6 +16,7 @@ export function RegisterForm() {
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,6 +33,7 @@ export function RegisterForm() {
         password: String(formData.get('password') ?? ''),
         restaurantName: String(formData.get('restaurantName') ?? ''),
         planKey,
+        turnstileToken: turnstileToken ?? undefined,
       });
 
       // `refresh()` recharge les composants serveur pour qu'ils voient la
@@ -121,7 +124,16 @@ export function RegisterForm() {
         />
       </Field>
 
-      <Button type="submit" disabled={pending} className="w-full" size="lg">
+      {turnstileSiteKey && (
+        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} />
+      )}
+
+      <Button
+        type="submit"
+        disabled={pending || (Boolean(turnstileSiteKey) && !turnstileToken)}
+        className="w-full"
+        size="lg"
+      >
         {pending ? 'Création en cours…' : 'Créer mon compte'}
       </Button>
     </form>

@@ -85,11 +85,15 @@ export const registerSchema = z.object({
   /// Plan présélectionné depuis la page tarifs — optionnel, retombe sur le
   /// plan d'essai par défaut si absent ou invalide.
   planKey: z.string().max(40).optional(),
+  /// Jeton Cloudflare Turnstile — absent si la fonctionnalité n'est pas
+  /// configurée (voir `verifyTurnstile`).
+  turnstileToken: z.string().max(4000).optional(),
 });
 
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Mot de passe requis.').max(200),
+  turnstileToken: z.string().max(4000).optional(),
 });
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });

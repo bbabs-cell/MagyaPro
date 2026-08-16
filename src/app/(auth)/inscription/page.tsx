@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { env } from '@/lib/env';
 import { RegisterForm } from './register-form';
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default async function RegisterPage() {
       </p>
 
       <Suspense fallback={null}>
-        <RegisterForm />
+        <RegisterForm turnstileSiteKey={env.turnstileSiteKey ?? null} />
       </Suspense>
 
       <p className="mt-6 text-center text-sm text-ink-muted">

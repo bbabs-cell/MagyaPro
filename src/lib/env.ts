@@ -54,6 +54,15 @@ export const env = {
   /// worker) : sans lui, `/api/cron/*` refuse toute requête.
   cronSecret: process.env.CRON_SECRET,
 
+  /// Cloudflare Turnstile (anti-robot sur inscription/connexion). La clé de
+  /// site est publique par nature (visible dans le HTML du widget) : elle
+  /// n'a pas besoin du préfixe `NEXT_PUBLIC_` puisqu'elle transite par une
+  /// prop passée depuis un composant serveur, jamais inlinée au build.
+  /// Fonctionnalité désactivée si absente, pour ne pas bloquer le
+  /// développement local sans ces clés.
+  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY,
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
+
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,

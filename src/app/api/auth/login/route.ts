@@ -6,15 +6,17 @@ import { authenticate } from '@/lib/auth/service';
 import { clientIp, createSession, pruneExpiredSessions } from '@/lib/auth/session';
 import { RATE_LIMITS, hit, reset } from '@/lib/rate-limit';
 import { prisma } from '@/lib/db';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
-  const input = parseOrThrow(loginSchema, await readJson(request));
+  const { turnstileToken, ...input } = parseOrThrow(loginSchema, await readJson(request));
 
   // Deux compteurs : par IP contre le balayage de comptes, par email contre le
   // bourrage ciblé d'un compte depuis plusieurs adresses.
   hit(`login:ip:${ip}`, RATE_LIMITS.login);
   hit(`login:email:${input.email}`, RATE_LIMITS.login);
+  await verifyTurnstile(turnstileToken, ip);
 
   const user = await authenticate({ ...input, ip });
 

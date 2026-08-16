@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
+import { env } from '@/lib/env';
 import { LoginForm } from './login-form';
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default async function LoginPage() {
         Accédez à votre tableau de bord.
       </p>
 
-      <LoginForm />
+      <LoginForm turnstileSiteKey={env.turnstileSiteKey ?? null} />
 
       <p className="mt-6 text-center text-sm text-ink-muted">
         Pas encore de compte ?{' '}
