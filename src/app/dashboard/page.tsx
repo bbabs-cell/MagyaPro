@@ -92,7 +92,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Bonjour, ${restaurant.name}`}
+        title={`👋 Bonjour, ${restaurant.name}`}
         description="Votre activité des 30 derniers jours."
         action={
           <LinkButton href="/dashboard/commandes" variant="secondary" size="sm">
@@ -209,7 +209,10 @@ export default async function DashboardPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <section aria-label="Évolution du chiffre d'affaires" className="lg:col-span-2">
           <Card className="p-4 sm:p-5">
-            <h2 className="text-sm font-medium text-ink">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                {STAT_ICONS.revenue}
+              </span>
               Chiffre d&apos;affaires sur 30 jours
             </h2>
             {hasActivity ? (
@@ -226,22 +229,27 @@ export default async function DashboardPage() {
 
         <section aria-label="Plats les plus commandés">
           <Card className="p-4 sm:p-5">
-            <h2 className="text-sm font-medium text-ink">Plats les plus commandés</h2>
+            <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                {STAT_ICONS.basket}
+              </span>
+              Plats les plus commandés
+            </h2>
             {popular.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">
                 Aucune vente sur la période.
               </p>
             ) : (
-              <ol className="mt-4 space-y-3">
+              <ol className="mt-4 space-y-1">
                 {popular.map((product, index) => (
-                  <li key={product.name} className="flex items-baseline gap-3">
-                    <span className="text-xs font-medium text-ink-faint">
+                  <li key={product.name} className="flex items-center gap-3 rounded-xl px-1 py-1.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold text-ink-muted">
                       {index + 1}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm">
                       {product.name}
                     </span>
-                    <span className="shrink-0 text-sm font-medium">
+                    <span className="shrink-0 rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-medium text-ink">
                       {product.quantity}
                     </span>
                   </li>
@@ -255,7 +263,12 @@ export default async function DashboardPage() {
       <section aria-label="Commandes récentes" className="mt-6">
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-ink">Activité récente</h2>
+            <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                {STAT_ICONS.orders}
+              </span>
+              Activité récente
+            </h2>
             <Link
               href="/dashboard/commandes"
               className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
@@ -282,20 +295,25 @@ export default async function DashboardPage() {
                 <li key={order.id}>
                   <Link
                     href={`/dashboard/commandes/${order.id}`}
-                    className="flex items-center justify-between gap-3 py-3 hover:bg-surface-sunken"
+                    className="flex items-center justify-between gap-3 rounded-xl px-1 py-3 hover:bg-surface-sunken"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        n°{order.number} · {order.customerName}
-                      </p>
-                      <p className="mt-0.5 text-xs text-ink-faint">
-                        {order.placedAt.toLocaleString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#ff9a4d] text-xs font-bold text-white">
+                        {order.customerName.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          n°{order.number} · {order.customerName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-ink-faint">
+                          {order.placedAt.toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <Badge tone={ORDER_STATUS_TONES[order.status]}>
