@@ -82,6 +82,16 @@ export const TEMPLATES: TemplateDefinition[] = [
     isPremium: true,
     position: 5,
   },
+  {
+    key: 'prestige',
+    name: 'Prestige',
+    description:
+      'Haute gastronomie : page unique fond noir et accent doré, grandes photos pleine largeur.',
+    suggestedColors: { primary: '#cda45e', secondary: '#0c0b09' },
+    suggestedFont: 'Playfair Display',
+    isPremium: true,
+    position: 6,
+  },
 ];
 
 export const PREMIUM_TEMPLATE_KEYS = new Set(

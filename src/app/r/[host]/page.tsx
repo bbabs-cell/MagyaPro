@@ -9,6 +9,7 @@ import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { templateRenderer } from '@/components/site/templates';
 import { ElegantHomePage } from '@/components/site/templates/elegant-home';
 import { MarqueeStrip, StreetFoodHomePage } from '@/components/site/templates/street-food-home';
+import { PrestigeHomePage } from '@/components/site/templates/prestige-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -107,11 +108,12 @@ export default async function RestaurantHomePage({ params }: Props) {
     orderingEnabled,
   };
 
-  // « elegant » et « street-food » sont des pages uniques qui défilent
-  // (histoire, chef, galerie, avis, localisation) plutôt que la structure
-  // héros + aperçu des autres templates : c'est ce qui les distingue
-  // vraiment, pas seulement leur palette.
-  if (restaurant.templateKey === 'elegant' || restaurant.templateKey === 'street-food') {
+  // « elegant », « street-food » et « prestige » sont des pages uniques qui
+  // défilent (histoire, chef, galerie, avis, localisation) plutôt que la
+  // structure héros + aperçu des autres templates : c'est ce qui les
+  // distingue vraiment, pas seulement leur palette.
+  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige']);
+  if (ONE_PAGE_TEMPLATES.has(restaurant.templateKey)) {
     const now = new Date();
     const [entitlements, galleryImages, reviews, activePromotion] = await Promise.all([
       getEntitlements(restaurant.id),
@@ -178,6 +180,8 @@ export default async function RestaurantHomePage({ params }: Props) {
 
         {restaurant.templateKey === 'elegant' ? (
           <ElegantHomePage data={commonData} />
+        ) : restaurant.templateKey === 'prestige' ? (
+          <PrestigeHomePage data={commonData} />
         ) : (
           <StreetFoodHomePage
             data={{

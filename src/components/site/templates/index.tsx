@@ -893,6 +893,9 @@ const TEMPLATE_RENDERERS: Record<string, TemplateRenderer> = {
   // (`street-food-home.tsx`, comme « elegant ») ; ce couple ne sert que pour
   // sa page `/menu` complète, dans le même registre visuel que « fast-food ».
   'street-food': { Hero: HeroFastFood, Menu: MenuFastFood },
+  // Même principe pour « prestige » (`prestige-home.tsx`) : sa page `/menu`
+  // complète reprend le registre visuel de « elegant », le plus proche.
+  prestige: { Hero: HeroElegant, Menu: MenuElegant },
 };
 
 /** Un template inconnu retombe sur le template par défaut plutôt que d'échouer. */
