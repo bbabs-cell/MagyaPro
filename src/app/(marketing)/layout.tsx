@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { LinkButton } from '@/components/ui';
 import { Logo, LogoMark } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
+import { CookieConsent } from '@/components/site/cookie-consent';
 
 export default async function MarketingLayout({
   children,
@@ -82,11 +83,20 @@ export default async function MarketingLayout({
               <Link href="/connexion" className="hover:text-ink">Connexion</Link>
             </div>
           </div>
-          <p className="mt-8 text-xs text-ink-faint">
-            © {new Date().getFullYear()} Magyapro. Tous droits réservés.
-          </p>
+          <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-ink-faint">
+              © {new Date().getFullYear()} Magyapro. Tous droits réservés.
+            </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
+              <Link href="/mentions-legales" className="hover:text-ink-muted">Mentions légales</Link>
+              <Link href="/conditions-generales" className="hover:text-ink-muted">CGU</Link>
+              <Link href="/confidentialite" className="hover:text-ink-muted">Confidentialité</Link>
+            </div>
+          </div>
         </div>
       </footer>
+
+      <CookieConsent />
     </div>
   );
 }

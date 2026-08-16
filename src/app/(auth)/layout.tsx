@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
+import { CookieConsent } from '@/components/site/cookie-consent';
 
 export default function AuthLayout({
   children,
@@ -24,6 +25,8 @@ export default function AuthLayout({
       >
         <div className="w-full max-w-md">{children}</div>
       </main>
+
+      <CookieConsent />
     </div>
   );
 }

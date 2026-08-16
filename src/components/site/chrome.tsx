@@ -10,6 +10,7 @@ import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { dirFor } from '@/lib/i18n/locales';
 import { cx } from '@/components/ui';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { CookieConsent } from '@/components/site/cookie-consent';
 
 /**
  * Enveloppe commune à tous les templates : identité visuelle du restaurant,
@@ -253,6 +254,8 @@ export function SiteChrome({
           </p>
         </div>
       </footer>
+
+      <CookieConsent />
     </div>
   );
 }
