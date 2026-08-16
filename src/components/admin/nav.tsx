@@ -14,6 +14,7 @@ const LINKS = [
   { href: '/admin/analytics', label: 'Analytics' },
   { href: '/admin/annonces', label: 'Annonces' },
   { href: '/admin/templates', label: 'Templates' },
+  { href: '/admin/images', label: 'Images' },
   { href: '/admin/journal', label: 'Journal' },
 ];
 
