@@ -4,6 +4,7 @@ import { cx } from '@/components/ui';
 import { DAY_NAMES } from '@/lib/site/hours';
 import { OfferCountdown } from '@/components/site/templates/offer-countdown';
 import { StreetFoodMenuFilter } from '@/components/site/templates/street-food-menu-filter';
+import { GalleryLightbox } from '@/components/site/templates/gallery-lightbox';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
 
 /**
@@ -71,6 +72,8 @@ export function StreetFoodHomePage({ data }: { data: StreetFoodHomeData }) {
         today={data.today}
         isOpenNow={data.hero.isOpenNow}
         openLabel={data.hero.openLabel}
+        menuHref={data.menuHref}
+        orderingEnabled={data.hero.orderingEnabled}
       />
     </>
   );
@@ -305,24 +308,7 @@ function GallerySection({
           </span>
           <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">Galerie</h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {images.map((image) => (
-            <figure key={image.id} className="group relative overflow-hidden rounded-2xl">
-              {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
-              <img
-                src={image.imageUrl}
-                alt={image.caption ?? ''}
-                loading="lazy"
-                className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-              {image.caption && (
-                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  {image.caption}
-                </figcaption>
-              )}
-            </figure>
-          ))}
-        </div>
+        <GalleryLightbox images={images} />
       </div>
     </section>
   );
@@ -374,16 +360,20 @@ function LocationSection({
   today,
   isOpenNow,
   openLabel,
+  menuHref,
+  orderingEnabled,
 }: {
   location: StreetFoodHomeData['location'];
   openingHours: StreetFoodHomeData['openingHours'];
   today: number;
   isOpenNow: boolean;
   openLabel: string;
+  menuHref: string;
+  orderingEnabled: boolean;
 }) {
   return (
     <section className="bg-[#141110] text-white">
-      <div className="container-page grid gap-10 py-16 sm:py-20 lg:grid-cols-2">
+      <div className="container-page grid gap-10 py-16 sm:py-20 lg:grid-cols-[1fr_auto_1fr]">
         <div>
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-white/50">Horaires &amp; Localisation</span>
 
@@ -435,6 +425,21 @@ function LocationSection({
               </a>
             )}
           </div>
+        </div>
+
+        <div
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl p-8 text-center"
+          style={{ backgroundColor: 'var(--brand)' }}
+        >
+          <span aria-hidden="true" className="text-3xl">🛵</span>
+          <h3 className="font-display text-xl font-black uppercase">Commander en ligne</h3>
+          <p className="text-sm text-white/85">Livré chaud, prêt en quelques minutes.</p>
+          <Link
+            href={menuHref}
+            className="mt-2 inline-flex h-11 items-center rounded-full bg-black px-6 text-sm font-black uppercase tracking-wide text-white"
+          >
+            {orderingEnabled ? 'Commander' : 'Voir le menu'}
+          </Link>
         </div>
 
         <div className="relative min-h-[320px] overflow-hidden rounded-2xl border-2 border-white/15">
