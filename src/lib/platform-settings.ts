@@ -11,6 +11,9 @@ export async function getPlatformSettings() {
 export async function updatePlatformSettings(input: {
   waveNumber?: string | null;
   orangeMoneyNumber?: string | null;
+  promoDiscountPercent?: number | null;
+  promoEndsAt?: Date | null;
+  promoLabel?: string | null;
 }) {
   const existing = await prisma.platformSettings.findFirst({ select: { id: true } });
 
@@ -22,4 +25,21 @@ export async function updatePlatformSettings(input: {
   }
 
   return prisma.platformSettings.create({ data: input });
+}
+
+/**
+ * Offre de lancement active, ou `null` si aucune n'est configurée ou que sa
+ * date de fin est dépassée — un seul endroit à consulter pour l'affichage du
+ * bandeau comme pour le calcul de la remise.
+ */
+export async function getActivePromo() {
+  const settings = await getPlatformSettings();
+  if (!settings?.promoDiscountPercent || !settings.promoEndsAt) return null;
+  if (settings.promoEndsAt.getTime() <= Date.now()) return null;
+
+  return {
+    discountPercent: settings.promoDiscountPercent,
+    endsAt: settings.promoEndsAt,
+    label: settings.promoLabel,
+  };
 }

@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
 import { howItWorksImageUrl, platformLogoUrl, templatePreviewUrl } from '@/lib/storage';
+import { getActivePromo } from '@/lib/platform-settings';
 import { Logo } from '@/components/ui/logo';
 import { PlanGrid } from '@/components/marketing/plan-grid';
+import { PromoBanner } from '@/components/marketing/promo-banner';
 
 /**
  * Landing page.
@@ -96,7 +98,7 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
 };
 
 export default async function LandingPage() {
-  const [plans, templates, demos] = await Promise.all([
+  const [plans, templates, demos, promo] = await Promise.all([
     prisma.plan.findMany({
       where: { isActive: true },
       orderBy: { position: 'asc' },
@@ -110,6 +112,7 @@ export default async function LandingPage() {
       select: { name: true, slug: true, description: true, primaryColor: true },
       take: 3,
     }),
+    getActivePromo(),
   ]);
 
   const heroLogoUrl = platformLogoUrl();
@@ -171,10 +174,27 @@ export default async function LandingPage() {
               >
                 Découvrir Magyapro
               </Link>
+              {demos.length > 0 && (
+                <Link
+                  href={`/r/${demos[0]!.slug}`}
+                  className="inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-sm font-medium text-white/70 underline underline-offset-4 transition-colors hover:text-white sm:w-auto"
+                >
+                  Voir une démo
+                </Link>
+              )}
             </div>
             <p className="mt-5 text-xs text-white/50">
-              Sans carte bancaire · Votre site en ligne en quelques minutes
+              Sans carte bancaire · Sans engagement · Votre site en ligne en quelques minutes
             </p>
+            {promo && (
+              <div className="mt-5">
+                <PromoBanner
+                  discountPercent={promo.discountPercent}
+                  endsAt={promo.endsAt}
+                  label={promo.label}
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -475,6 +495,16 @@ export default async function LandingPage() {
               Voir tous les détails →
             </Link>
           </div>
+
+          {promo && (
+            <div className="mt-6">
+              <PromoBanner
+                discountPercent={promo.discountPercent}
+                endsAt={promo.endsAt}
+                label={promo.label}
+              />
+            </div>
+          )}
 
           <PlanGrid plans={plans} />
         </div>

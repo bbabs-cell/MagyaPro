@@ -7,7 +7,8 @@ import { formatMoney } from '@/lib/money';
 import { SubscriptionPaymentFlow } from '@/components/dashboard/subscription-payment-flow';
 import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
-import { getPlatformSettings } from '@/lib/platform-settings';
+import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
+import { PromoBanner } from '@/components/marketing/promo-banner';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
@@ -23,20 +24,26 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function SubscriptionPage() {
   const context = await requireTenant('subscription:view');
 
-  const [entitlements, plans, usage, platformSettings, pendingPayment] = await Promise.all([
-    getEntitlements(context.restaurant.id),
-    prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
-    Promise.all([
-      prisma.product.count({ where: { restaurantId: context.restaurant.id } }),
-      prisma.category.count({ where: { restaurantId: context.restaurant.id } }),
-      prisma.restaurantUser.count({ where: { restaurantId: context.restaurant.id } }),
-    ]),
-    getPlatformSettings(),
-    prisma.subscriptionPayment.findFirst({
-      where: { restaurantId: context.restaurant.id, status: 'PENDING' },
-      include: { plan: { select: { name: true } } },
-    }),
-  ]);
+  const [entitlements, plans, usage, platformSettings, pendingPayment, promo, alreadyPaid] =
+    await Promise.all([
+      getEntitlements(context.restaurant.id),
+      prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
+      Promise.all([
+        prisma.product.count({ where: { restaurantId: context.restaurant.id } }),
+        prisma.category.count({ where: { restaurantId: context.restaurant.id } }),
+        prisma.restaurantUser.count({ where: { restaurantId: context.restaurant.id } }),
+      ]),
+      getPlatformSettings(),
+      prisma.subscriptionPayment.findFirst({
+        where: { restaurantId: context.restaurant.id, status: 'PENDING' },
+        include: { plan: { select: { name: true } } },
+      }),
+      getActivePromo(),
+      prisma.subscriptionPayment.findFirst({
+        where: { restaurantId: context.restaurant.id, status: 'APPROVED' },
+        select: { id: true },
+      }),
+    ]);
 
   const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
     ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
@@ -167,6 +174,16 @@ export default async function SubscriptionPage() {
           </div>
         )}
       </Card>
+
+      {promo && !alreadyPaid && (
+        <div className="mt-6">
+          <PromoBanner
+            discountPercent={promo.discountPercent}
+            endsAt={promo.endsAt}
+            label={promo.label}
+          />
+        </div>
+      )}
 
       <div className="mt-6">
         <SubscriptionPaymentFlow

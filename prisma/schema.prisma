@@ -931,6 +931,14 @@ model PlatformSettings {
   waveNumber        String?
   orangeMoneyNumber String?
 
+  /// Offre de lancement : remise en pourcentage appliquée automatiquement au
+  /// premier paiement d'abonnement d'un restaurant, tant que `promoEndsAt`
+  /// n'est pas dépassée. `null` = pas d'offre en cours.
+  promoDiscountPercent Int?
+  promoEndsAt          DateTime?
+  /// Texte affiché sur le bandeau d'offre (ex. « -20% le premier mois »).
+  promoLabel           String?
+
   updatedAt DateTime @updatedAt
 
   @@map("platform_settings")

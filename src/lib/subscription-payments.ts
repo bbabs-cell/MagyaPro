@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
-import { getPlatformSettings } from '@/lib/platform-settings';
+import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { expiresIn } from '@/lib/auth/tokens';
 import { createNotification } from '@/lib/notifications';
 import { sendMail } from '@/lib/mail';
@@ -56,13 +56,28 @@ export async function createSubscriptionPaymentRequest(params: {
     );
   }
 
+  // Offre de lancement : uniquement sur le tout premier paiement du
+  // restaurant, tant que l'offre est en cours — un abonné qui renouvelle ne
+  // doit pas la recevoir indéfiniment.
+  let amount = plan.price;
+  const promo = await getActivePromo();
+  if (promo) {
+    const alreadyPaid = await prisma.subscriptionPayment.findFirst({
+      where: { restaurantId: params.restaurantId, status: 'APPROVED' },
+      select: { id: true },
+    });
+    if (!alreadyPaid) {
+      amount = Math.round((plan.price * (100 - promo.discountPercent)) / 100);
+    }
+  }
+
   const payment = await prisma.subscriptionPayment.create({
     data: {
       restaurantId: params.restaurantId,
       planId: plan.id,
       provider: params.provider,
       country: params.country,
-      amount: plan.price,
+      amount,
       currency: plan.currency,
     },
   });
@@ -72,7 +87,7 @@ export async function createSubscriptionPaymentRequest(params: {
     restaurantId: params.restaurantId,
     targetType: 'subscription_payment',
     targetId: payment.id,
-    metadata: { planKey: plan.key, amount: plan.price, provider: params.provider, country: params.country },
+    metadata: { planKey: plan.key, amount, provider: params.provider, country: params.country },
   });
 
   return { payment, plan, receivingNumber };

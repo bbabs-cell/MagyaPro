@@ -84,6 +84,9 @@ export default async function AdminSubscriptionsPage({
           <PlatformPaymentSettings
             waveNumber={platformSettings?.waveNumber ?? null}
             orangeMoneyNumber={platformSettings?.orangeMoneyNumber ?? null}
+            promoDiscountPercent={platformSettings?.promoDiscountPercent ?? null}
+            promoEndsAt={platformSettings?.promoEndsAt ?? null}
+            promoLabel={platformSettings?.promoLabel ?? null}
           />
         </div>
       </section>

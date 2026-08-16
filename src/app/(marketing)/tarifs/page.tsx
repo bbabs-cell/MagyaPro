@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
+import { getActivePromo } from '@/lib/platform-settings';
 import { PlanGrid } from '@/components/marketing/plan-grid';
+import { PromoBanner } from '@/components/marketing/promo-banner';
 
 export const metadata: Metadata = {
   title: 'Tarifs',
@@ -11,10 +13,13 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function TarifsPage() {
-  const plans = await prisma.plan.findMany({
-    where: { isActive: true },
-    orderBy: { position: 'asc' },
-  });
+  const [plans, promo] = await Promise.all([
+    prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { position: 'asc' },
+    }),
+    getActivePromo(),
+  ]);
 
   return (
     <>
@@ -47,6 +52,15 @@ export default async function TarifsPage() {
       </section>
 
       <section className="container-page py-16 sm:py-20">
+        {promo && (
+          <div className="mb-8 flex justify-center">
+            <PromoBanner
+              discountPercent={promo.discountPercent}
+              endsAt={promo.endsAt}
+              label={promo.label}
+            />
+          </div>
+        )}
         <PlanGrid plans={plans} />
       </section>
 
