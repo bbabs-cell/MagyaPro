@@ -54,12 +54,21 @@ export default async function OrderDetailPage({
           timeStyle: 'short',
         })}
         action={
-          <Link
-            href="/dashboard/commandes"
-            className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm hover:bg-surface-sunken"
-          >
-            Retour
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/recu/commande/${order.id}`}
+              target="_blank"
+              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm hover:bg-surface-sunken"
+            >
+              Reçu
+            </Link>
+            <Link
+              href="/dashboard/commandes"
+              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm hover:bg-surface-sunken"
+            >
+              Retour
+            </Link>
+          </div>
         }
       />
 

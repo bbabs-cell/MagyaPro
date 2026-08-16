@@ -24,7 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function SubscriptionPage() {
   const context = await requireTenant('subscription:view');
 
-  const [entitlements, plans, usage, platformSettings, pendingPayment, promo, alreadyPaid] =
+  const [entitlements, plans, usage, platformSettings, pendingPayment, promo, paidPayments] =
     await Promise.all([
       getEntitlements(context.restaurant.id),
       prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
@@ -39,11 +39,14 @@ export default async function SubscriptionPage() {
         include: { plan: { select: { name: true } } },
       }),
       getActivePromo(),
-      prisma.subscriptionPayment.findFirst({
+      prisma.subscriptionPayment.findMany({
         where: { restaurantId: context.restaurant.id, status: 'APPROVED' },
-        select: { id: true },
+        orderBy: { reviewedAt: 'desc' },
+        take: 12,
+        include: { plan: { select: { name: true } } },
       }),
     ]);
+    const alreadyPaid = paidPayments.length > 0;
 
   const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
     ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
@@ -227,6 +230,36 @@ export default async function SubscriptionPage() {
         une fois la réception validée par Magyapro. Les plans gratuits
         s&apos;appliquent immédiatement.
       </p>
+
+      {paidPayments.length > 0 && (
+        <Card className="mt-6 p-5">
+          <h2 className="text-sm font-medium">Historique des paiements</h2>
+          <ul className="mt-3 divide-y divide-surface-border">
+            {paidPayments.map((payment) => (
+              <li key={payment.id} className="flex items-center justify-between gap-4 py-2.5 text-sm">
+                <div>
+                  <p>{payment.plan.name}</p>
+                  <p className="text-xs text-ink-faint">
+                    {(payment.reviewedAt ?? payment.createdAt).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}{' '}
+                    · {formatMoney(payment.amount, payment.currency)}
+                  </p>
+                </div>
+                <a
+                  href={`/recu/abonnement/${payment.id}`}
+                  target="_blank"
+                  className="shrink-0 text-xs font-medium text-brand underline underline-offset-4"
+                >
+                  Reçu
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </>
   );
 }
