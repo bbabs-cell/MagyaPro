@@ -56,7 +56,7 @@ export default async function OrderDetailPage({
         action={
           <Link
             href="/dashboard/commandes"
-            className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-white px-3 text-sm hover:bg-surface-sunken"
+            className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm hover:bg-surface-sunken"
           >
             Retour
           </Link>

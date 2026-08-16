@@ -174,7 +174,7 @@ export function RevenueChart({
             <caption className="sr-only">
               Chiffre d&apos;affaires et nombre de commandes par jour
             </caption>
-            <thead className="sticky top-0 bg-white">
+            <thead className="sticky top-0 bg-surface">
               <tr className="text-ink-faint">
                 <th scope="col" className="py-1 font-medium">Date</th>
                 <th scope="col" className="py-1 text-right font-medium">Commandes</th>

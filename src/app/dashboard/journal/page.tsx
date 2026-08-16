@@ -62,7 +62,7 @@ export default async function JournalPage({
           <div className="flex flex-wrap gap-2">
             <a
               href={`/api/journal/export${actionFilter ? `?action=${actionFilter}` : ''}`}
-              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-white px-3 text-sm hover:bg-surface-sunken"
+              className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm hover:bg-surface-sunken"
             >
               Exporter (CSV)
             </a>
@@ -76,7 +76,7 @@ export default async function JournalPage({
           href="/dashboard/journal"
           aria-current={actionFilter === '' ? 'true' : undefined}
           className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-            actionFilter === '' ? 'bg-brand text-white' : 'bg-white text-ink-muted hover:text-ink'
+            actionFilter === '' ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
           }`}
         >
           Tout
@@ -87,7 +87,7 @@ export default async function JournalPage({
             href={`/dashboard/journal?action=${prefix}`}
             aria-current={actionFilter === prefix ? 'true' : undefined}
             className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-              actionFilter === prefix ? 'bg-brand text-white' : 'bg-white text-ink-muted hover:text-ink'
+              actionFilter === prefix ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
             {prefix}
@@ -142,7 +142,7 @@ export default async function JournalPage({
             {page > 1 && (
               <Link
                 href={`/dashboard/journal?action=${actionFilter}&page=${page - 1}`}
-                className="rounded-xl border border-surface-border bg-white px-4 py-2 hover:bg-surface-sunken"
+                className="rounded-xl border border-surface-border bg-surface px-4 py-2 hover:bg-surface-sunken"
               >
                 Précédent
               </Link>
@@ -150,7 +150,7 @@ export default async function JournalPage({
             {page * pageSize < total && (
               <Link
                 href={`/dashboard/journal?action=${actionFilter}&page=${page + 1}`}
-                className="rounded-xl border border-surface-border bg-white px-4 py-2 hover:bg-surface-sunken"
+                className="rounded-xl border border-surface-border bg-surface px-4 py-2 hover:bg-surface-sunken"
               >
                 Suivant
               </Link>

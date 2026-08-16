@@ -82,7 +82,7 @@ export function HourlyActivityChart({
         <div className="mt-2 max-h-48 overflow-auto">
           <table className="w-full text-left text-xs">
             <caption className="sr-only">Commandes par heure</caption>
-            <thead className="sticky top-0 bg-white">
+            <thead className="sticky top-0 bg-surface">
               <tr className="text-ink-faint">
                 <th scope="col" className="py-1 font-medium">Heure</th>
                 <th scope="col" className="py-1 text-right font-medium">Commandes</th>

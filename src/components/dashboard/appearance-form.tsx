@@ -343,7 +343,7 @@ export function AppearanceForm({
           href={`/r/${restaurant.slug}`}
           target="_blank"
           rel="noopener"
-          className="inline-flex h-12 items-center rounded-xl border border-surface-border bg-white px-5 text-sm font-medium hover:bg-surface-sunken"
+          className="inline-flex h-12 items-center rounded-xl border border-surface-border bg-surface px-5 text-sm font-medium hover:bg-surface-sunken"
         >
           Prévisualiser le site
         </Link>

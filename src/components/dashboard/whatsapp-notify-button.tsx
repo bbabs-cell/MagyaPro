@@ -43,7 +43,7 @@ export function WhatsAppNotifyButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-white px-3 text-sm font-medium hover:bg-surface-sunken"
+      className="inline-flex h-9 items-center rounded-xl border border-surface-border bg-surface px-3 text-sm font-medium hover:bg-surface-sunken"
     >
       Prévenir par WhatsApp
     </a>

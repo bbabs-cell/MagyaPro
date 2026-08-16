@@ -66,11 +66,11 @@ export default async function CustomersPage({
           name="q"
           defaultValue={query}
           placeholder="Nom, téléphone ou email"
-          className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-sm"
+          className="w-full rounded-xl border border-surface-border bg-surface px-3.5 py-2.5 text-sm"
         />
         <button
           type="submit"
-          className="h-11 shrink-0 rounded-xl border border-surface-border bg-white px-4 text-sm font-medium hover:bg-surface-sunken"
+          className="h-11 shrink-0 rounded-xl border border-surface-border bg-surface px-4 text-sm font-medium hover:bg-surface-sunken"
         >
           Rechercher
         </button>
