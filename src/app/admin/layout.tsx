@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { getCurrentUser } from '@/lib/auth/session';
-import { AdminSidebar } from '@/components/admin/sidebar';
+import { AdminThemeRoot } from '@/components/admin/theme-root';
 import { platformLogoUrl } from '@/lib/storage';
 
 /**
@@ -25,27 +25,8 @@ export default async function AdminLayout({
   const logoUrl = platformLogoUrl();
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-navy text-white">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-          backgroundSize: '26px 26px',
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
-      />
-
-      <div className="relative lg:flex">
-        <AdminSidebar logoUrl={logoUrl} userEmail={user.email} />
-
-        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
-        </main>
-      </div>
-    </div>
+    <AdminThemeRoot logoUrl={logoUrl} userEmail={user.email}>
+      {children}
+    </AdminThemeRoot>
   );
 }

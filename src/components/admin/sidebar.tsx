@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
 
 const ICON_PROPS = {
@@ -134,9 +135,13 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
 export function AdminSidebar({
   logoUrl,
   userEmail,
+  theme,
+  onToggleTheme,
 }: {
   logoUrl: string | null;
   userEmail: string;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -188,7 +193,11 @@ export function AdminSidebar({
             <Logo src={logoUrl} showText={false} className="h-7 w-7" />
             <span className="text-sm font-semibold">Administration</span>
           </Link>
-          <div className="w-10" />
+          <ThemeToggle
+            theme={theme}
+            onToggle={onToggleTheme}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+          />
         </div>
         {menuOpen && (
           <div id="admin-menu-mobile" className="border-t border-white/10 p-4">
@@ -208,9 +217,16 @@ export function AdminSidebar({
 
       <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
         <div className="flex h-full flex-col p-4">
-          <Link href="/admin" className="flex items-center gap-2 px-2 py-2">
-            <Logo src={logoUrl} className="h-8 w-8" />
-          </Link>
+          <div className="flex items-center justify-between gap-2 px-2 py-2">
+            <Link href="/admin" className="flex items-center gap-2">
+              <Logo src={logoUrl} className="h-8 w-8" />
+            </Link>
+            <ThemeToggle
+              theme={theme}
+              onToggle={onToggleTheme}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+            />
+          </div>
 
           <p className="mt-4 truncate px-2 text-xs text-white/40">{userEmail}</p>
 

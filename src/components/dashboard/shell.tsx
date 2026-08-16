@@ -1,15 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
+
+/**
+ * Mêmes variables que le site public (`chrome.tsx`) : `ink`/`surface` sont
+ * normalement fixes, les redéfinir bascule tout le contenu du tableau de
+ * bord (cartes, textes) en mode sombre sans que ces composants aient besoin
+ * de connaître ce thème. La barre latérale reste `bg-navy`, déjà sombre par
+ * défaut dans les deux thèmes.
+ */
+const DARK_THEME_VARS = {
+  '--surface': '#131417',
+  '--surface-sunken': '#1c1e22',
+  '--surface-border': '#2c2f34',
+  '--ink': '#f2f3f5',
+  '--ink-muted': '#a7adb6',
+  '--ink-faint': '#767c86',
+} as const;
+
+const DASHBOARD_THEME_STORAGE_KEY = 'magyapro:dashboard-theme';
 
 /**
  * Ossature du dashboard restaurant.
@@ -266,6 +285,37 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Lu après le premier rendu, jamais pendant : le HTML servi par le serveur
+  // ignore la préférence du navigateur, donc en tenir compte dès le premier
+  // rendu client produirait un avertissement d'hydratation React.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(DASHBOARD_THEME_STORAGE_KEY);
+      if (stored === 'dark' || stored === 'light') {
+        setTheme(stored);
+        return;
+      }
+    } catch {
+      // Stockage indisponible (navigation privée) : repli sur le système.
+    }
+    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+    }
+  }, []);
+
+  function toggleTheme() {
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark';
+      try {
+        window.localStorage.setItem(DASHBOARD_THEME_STORAGE_KEY, next);
+      } catch {
+        // Le thème reste actif pour la session en cours même sans stockage.
+      }
+      return next;
+    });
+  }
 
   const allowed = new Set(permissions);
 
@@ -342,7 +392,10 @@ export function DashboardShell({
   );
 
   return (
-    <div className="min-h-screen bg-surface-sunken">
+    <div
+      className="min-h-screen bg-surface-sunken"
+      style={theme === 'dark' ? (DARK_THEME_VARS as React.CSSProperties) : undefined}
+    >
       {allowed.has('orders:view') && <AlertWatcher />}
 
       {/* Bandeau d'accès support : impossible à manquer, pour que
@@ -370,7 +423,7 @@ export function DashboardShell({
 
       <AnnouncementBanner announcements={announcements} />
 
-      <header className="sticky top-0 z-30 border-b border-surface-border bg-white lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button
             type="button"
@@ -385,12 +438,15 @@ export function DashboardShell({
             <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
           </button>
           <span className="truncate px-3 font-medium">{restaurant.name}</span>
-          <Link
-            href={`/r/${restaurant.slug}`}
-            className="text-sm text-ink-muted underline underline-offset-4"
-          >
-            Site
-          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <Link
+              href={`/r/${restaurant.slug}`}
+              className="text-sm text-ink-muted underline underline-offset-4"
+            >
+              Site
+            </Link>
+          </div>
         </div>
         {menuOpen && (
           <div id="menu-mobile" className="border-t border-white/10 bg-navy p-4 text-white">
@@ -476,10 +532,15 @@ export function DashboardShell({
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff9a4d] to-[#ff5e2e] text-xs font-bold text-white">
                   {user.name.charAt(0).toUpperCase()}
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{user.name}</span>
                   <span className="block truncate text-xs text-white/40">{user.email}</span>
                 </span>
+                <ThemeToggle
+                  theme={theme}
+                  onToggle={toggleTheme}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+                />
               </div>
 
               <button
