@@ -43,6 +43,9 @@ export default async function OrderConfirmationPage({ params }: Props) {
       cancelReason: true,
       statusUpdatedAt: true,
       deliveryCode: true,
+      courierLat: true,
+      courierLng: true,
+      courierLocationUpdatedAt: true,
       customerName: true,
       deliveryAddress: true,
       subtotal: true,
@@ -153,6 +156,12 @@ export default async function OrderConfirmationPage({ params }: Props) {
             cancelReason: order.cancelReason,
             statusUpdatedAt: order.statusUpdatedAt.toISOString(),
             deliveryCode: order.fulfillmentType === 'DELIVERY' ? order.deliveryCode : null,
+            courierLat: order.status === 'OUT_FOR_DELIVERY' ? order.courierLat : null,
+            courierLng: order.status === 'OUT_FOR_DELIVERY' ? order.courierLng : null,
+            courierLocationUpdatedAt:
+              order.status === 'OUT_FOR_DELIVERY'
+                ? (order.courierLocationUpdatedAt?.toISOString() ?? null)
+                : null,
           }}
         />
       </div>

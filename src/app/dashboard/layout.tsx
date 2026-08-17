@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { getTenantContext, listMemberships } from '@/lib/tenant';
@@ -7,6 +8,11 @@ import { getEntitlements } from '@/lib/entitlements';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from '@/components/dashboard/shell';
+
+export const metadata: Metadata = {
+  manifest: '/dashboard/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'Magyapro', statusBarStyle: 'default' },
+};
 
 export default async function DashboardLayout({
   children,

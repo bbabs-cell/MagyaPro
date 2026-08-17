@@ -29,6 +29,9 @@ export const GET = route(async (_request, { params }: Params) => {
       cancelReason: true,
       statusUpdatedAt: true,
       deliveryCode: true,
+      courierLat: true,
+      courierLng: true,
+      courierLocationUpdatedAt: true,
       events: {
         orderBy: { createdAt: 'asc' },
         select: { toStatus: true, note: true, createdAt: true },
@@ -47,6 +50,12 @@ export const GET = route(async (_request, { params }: Params) => {
     // Utile au client une fois la commande prête à partir : c'est le code
     // qu'il donnera au livreur pour confirmer la remise.
     deliveryCode: order.fulfillmentType === 'DELIVERY' ? order.deliveryCode : null,
+    // Uniquement pendant la livraison : une position figée après remise ne
+    // servirait qu'à confondre le client.
+    courierLat: order.status === 'OUT_FOR_DELIVERY' ? order.courierLat : null,
+    courierLng: order.status === 'OUT_FOR_DELIVERY' ? order.courierLng : null,
+    courierLocationUpdatedAt:
+      order.status === 'OUT_FOR_DELIVERY' ? order.courierLocationUpdatedAt : null,
     events: order.events,
   });
 });

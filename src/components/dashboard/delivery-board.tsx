@@ -21,6 +21,9 @@ type DeliveryOrder = {
 };
 
 const POLL_INTERVAL_MS = 15_000;
+/** Espacement minimum entre deux envois de position : `watchPosition` peut
+ * déclencher bien plus souvent que nécessaire (à chaque petit mouvement). */
+const POSITION_SEND_INTERVAL_MS = 20_000;
 
 function mapsUrl(order: DeliveryOrder): string {
   if (order.deliveryLat !== null && order.deliveryLng !== null) {
@@ -41,7 +44,46 @@ export function DeliveryBoard({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [codeInputs, setCodeInputs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [sharingLocation, setSharingLocation] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSentAtRef = useRef(0);
+
+  // Partage de position : actif tant qu'au moins une livraison est en
+  // cours. `watchPosition` reste ouvert en continu (plus réactif qu'un
+  // sondage), mais l'envoi au serveur est espacé pour ne pas multiplier les
+  // requêtes à chaque micro-déplacement.
+  useEffect(() => {
+    if (mine.length === 0 || !('geolocation' in navigator)) {
+      setSharingLocation(false);
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setSharingLocation(true);
+        setLocationDenied(false);
+        const now = Date.now();
+        if (now - lastSentAtRef.current < POSITION_SEND_INTERVAL_MS) return;
+        lastSentAtRef.current = now;
+        api
+          .post('/api/livraisons/position', {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+          .catch(() => {
+            // Une position manquée n'est pas grave : la suivante suffira.
+          });
+      },
+      () => {
+        setSharingLocation(false);
+        setLocationDenied(true);
+      },
+      { enableHighAccuracy: true, maximumAge: 15_000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [mine.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +145,22 @@ export function DeliveryBoard({
       )}
 
       <section>
-        <h2 className="mb-3 text-sm font-medium">Mes livraisons en cours</h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium">Mes livraisons en cours</h2>
+          {mine.length > 0 && (
+            <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+              <span
+                aria-hidden="true"
+                className={`h-1.5 w-1.5 rounded-full ${sharingLocation ? 'bg-emerald-500' : 'bg-ink-faint'}`}
+              />
+              {sharingLocation
+                ? 'Position partagée'
+                : locationDenied
+                  ? 'Position refusée'
+                  : 'Position…'}
+            </span>
+          )}
+        </div>
         {mine.length === 0 ? (
           <p className="rounded-xl border border-dashed border-surface-border p-4 text-center text-sm text-ink-faint">
             Aucune livraison en cours

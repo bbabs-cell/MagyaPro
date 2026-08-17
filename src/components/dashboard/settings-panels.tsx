@@ -53,6 +53,11 @@ type Settings = {
   waveNumber: string | null;
   notificationEmail: string | null;
   notificationSoundUrl: string | null;
+  taxEnabled: boolean;
+  taxRate: number | null;
+  taxLabel: string;
+  googleAnalyticsId: string | null;
+  metaPixelId: string | null;
 };
 
 type Hour = { dayOfWeek: number; isClosed: boolean; opensAt: string; closesAt: string };
@@ -72,6 +77,7 @@ const TABS = [
   { key: 'commandes', label: 'Commandes' },
   { key: 'seo', label: 'Référencement' },
   { key: 'domaines', label: 'Domaines' },
+  { key: 'avance', label: 'Avancé' },
   { key: 'publication', label: 'Publication' },
   { key: 'sauvegarde', label: 'Sauvegarde' },
 ] as const;
@@ -103,6 +109,7 @@ export function SettingsPanels({
   const [selectedProviders, setSelectedProviders] = useState(settings.paymentProviders);
   const [seoImageUrl, setSeoImageUrl] = useState(restaurant.seoImageUrl);
   const [notificationSoundUrl, setNotificationSoundUrl] = useState(settings.notificationSoundUrl);
+  const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
 
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -197,6 +204,22 @@ export function SettingsPanels({
         seoImageUrl,
       });
     }, 'Référencement enregistré.');
+  }
+
+  function saveAdvanced(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const rate = String(formData.get('taxRate') ?? '').trim();
+
+    void submit(async () => {
+      await api.patch('/api/restaurant/avance', {
+        taxEnabled,
+        taxRate: rate ? Number(rate) : null,
+        taxLabel: String(formData.get('taxLabel') ?? 'TVA'),
+        googleAnalyticsId: String(formData.get('googleAnalyticsId') ?? ''),
+        metaPixelId: String(formData.get('metaPixelId') ?? ''),
+      });
+    }, 'Réglages avancés enregistrés.');
   }
 
   function togglePublication(published: boolean) {
@@ -725,6 +748,107 @@ export function SettingsPanels({
           cnameTarget={cnameTarget}
           allowed={customDomainAllowed}
         />
+      )}
+
+      {/* ------------------------------------------------------------ Avancé */}
+      {tab === 'avance' && (
+        <Card className="p-4 sm:p-5">
+          <form onSubmit={saveAdvanced} className="space-y-6" noValidate>
+            <div>
+              <h2 className="text-sm font-medium">TVA</h2>
+              <p className="mt-1 text-xs text-ink-muted">
+                Les prix affichés à vos clients restent inchangés : le taux
+                sert uniquement à faire apparaître la ventilation sur vos
+                reçus, pour votre comptabilité.
+              </p>
+
+              <label className="mt-3 flex items-center gap-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={taxEnabled}
+                  onChange={(event) => setTaxEnabled(event.target.checked)}
+                  className="h-4 w-4 accent-ink"
+                />
+                Activer la TVA sur mes reçus
+              </label>
+
+              {taxEnabled && (
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Taux (%)"
+                    htmlFor="taxRate"
+                    error={fieldErrors.taxRate}
+                  >
+                    <input
+                      id="taxRate"
+                      name="taxRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      defaultValue={settings.taxRate ?? ''}
+                      className={inputClass}
+                      placeholder="18"
+                    />
+                  </Field>
+                  <Field label="Libellé" htmlFor="taxLabel" error={fieldErrors.taxLabel}>
+                    <input
+                      id="taxLabel"
+                      name="taxLabel"
+                      defaultValue={settings.taxLabel}
+                      className={inputClass}
+                      placeholder="TVA"
+                    />
+                  </Field>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-surface-border pt-5">
+              <h2 className="text-sm font-medium">Suivi des visiteurs</h2>
+              <p className="mt-1 text-xs text-ink-muted">
+                Vos propres identifiants Google Analytics / Meta Pixel, pour
+                suivre les visites de votre site — Magyapro ne collecte rien
+                pour vous.
+              </p>
+
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Identifiant Google Analytics (GA4)"
+                  htmlFor="googleAnalyticsId"
+                  hint="Commence par « G- »."
+                  error={fieldErrors.googleAnalyticsId}
+                >
+                  <input
+                    id="googleAnalyticsId"
+                    name="googleAnalyticsId"
+                    defaultValue={settings.googleAnalyticsId ?? ''}
+                    className={inputClass}
+                    placeholder="G-XXXXXXXXXX"
+                  />
+                </Field>
+                <Field
+                  label="Identifiant Meta Pixel"
+                  htmlFor="metaPixelId"
+                  hint="Suite de chiffres, depuis Meta Ads Manager."
+                  error={fieldErrors.metaPixelId}
+                >
+                  <input
+                    id="metaPixelId"
+                    name="metaPixelId"
+                    defaultValue={settings.metaPixelId ?? ''}
+                    className={inputClass}
+                    placeholder="123456789012345"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={pending}>
+              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </form>
+        </Card>
       )}
 
       {/* -------------------------------------------------------- Publication */}

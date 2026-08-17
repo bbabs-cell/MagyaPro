@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import type { Metadata } from 'next';
 
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
@@ -114,6 +115,37 @@ export default async function PublicSiteLayout({ params, children }: Props) {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link rel="stylesheet" href={googleFontsHref(restaurant.fontFamily)} />
+
+      {/* Suivi propre au restaurant — ses identifiants, jamais ceux de
+          Magyapro. Absent tant qu'il n'en a configuré aucun. */}
+      {restaurant.settings?.googleAnalyticsId && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${restaurant.settings.googleAnalyticsId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga4-init" strategy="afterInteractive">
+            {`window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${restaurant.settings.googleAnalyticsId}');`}
+          </Script>
+        </>
+      )}
+      {restaurant.settings?.metaPixelId && (
+        <Script id="meta-pixel-init" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${restaurant.settings.metaPixelId}');
+            fbq('track', 'PageView');`}
+        </Script>
+      )}
 
       <CartProvider restaurantId={restaurant.id} currency={restaurant.currency}>
         <SiteChrome

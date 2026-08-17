@@ -81,6 +81,7 @@ export const DICTIONARY = {
       lastUpdate: 'Dernière mise à jour',
       leaveReview: 'Laisser un avis',
       cancelled: 'Commande annulée',
+      courierPosition: 'Position du livreur',
     },
     reservation: {
       title: 'Réserver une table',
@@ -255,6 +256,7 @@ export const DICTIONARY = {
       lastUpdate: 'Last update',
       leaveReview: 'Leave a review',
       cancelled: 'Order cancelled',
+      courierPosition: 'Courier position',
     },
     reservation: {
       title: 'Reserve a table',
@@ -429,6 +431,7 @@ export const DICTIONARY = {
       lastUpdate: 'آخر تحديث',
       leaveReview: 'أضف تقييماً',
       cancelled: 'تم إلغاء الطلب',
+      courierPosition: 'موقع عامل التوصيل',
     },
     reservation: {
       title: 'حجز طاولة',

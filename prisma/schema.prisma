@@ -249,6 +249,21 @@ model RestaurantSettings {
   /// l'annuler ou non — rien n'est automatique).
   reservationGraceMinutes Int @default(60)
 
+  /// TVA optionnelle : les prix affichés au client restent TTC (rien ne
+  /// change dans le tunnel de commande) — le taux sert uniquement à faire
+  /// apparaître la ventilation sur les reçus, pour la comptabilité du
+  /// restaurateur.
+  taxEnabled Boolean @default(false)
+  /// Pourcentage (ex. 18 pour 18%).
+  taxRate    Float?
+  taxLabel   String  @default("TVA")
+
+  /// Identifiants fournis par le restaurateur pour suivre ses propres
+  /// visiteurs — jamais un identifiant Magyapro : chaque restaurant a le
+  /// sien, ou aucun.
+  googleAnalyticsId String?
+  metaPixelId       String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -498,6 +513,12 @@ model Order {
   /// Code à six chiffres communiqué au client, vérifié par le livreur à la
   /// remise pour confirmer qu'il livre la bonne commande à la bonne personne.
   deliveryCode   String?
+  /// Position GPS du livreur, mise à jour depuis son téléphone tant que la
+  /// livraison est `OUT_FOR_DELIVERY`. `null` en dehors de cette fenêtre —
+  /// jamais conservée après la remise.
+  courierLat                Float?
+  courierLng                Float?
+  courierLocationUpdatedAt  DateTime?
 
   placedAt        DateTime  @default(now())
   statusUpdatedAt DateTime  @default(now())

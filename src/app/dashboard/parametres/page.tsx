@@ -74,6 +74,11 @@ export default async function SettingsPage() {
           notificationEmail: settings?.notificationEmail ?? null,
           notificationSoundUrl: settings?.notificationSoundUrl ?? null,
           reservationGraceMinutes: settings?.reservationGraceMinutes ?? 60,
+          taxEnabled: settings?.taxEnabled ?? false,
+          taxRate: settings?.taxRate ?? null,
+          taxLabel: settings?.taxLabel ?? 'TVA',
+          googleAnalyticsId: settings?.googleAnalyticsId ?? null,
+          metaPixelId: settings?.metaPixelId ?? null,
         }}
         hours={hours.map((hour) => ({
           dayOfWeek: hour.dayOfWeek,

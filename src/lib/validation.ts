@@ -172,6 +172,15 @@ export const restaurantSettingsSchema = z.object({
   reservationGraceMinutes: z.number().int().min(0).max(600),
 });
 
+export const restaurantAdvancedSchema = z.object({
+  taxEnabled: z.boolean(),
+  /// Pourcentage. `null` tant que la TVA n'est pas activée.
+  taxRate: z.number().min(0).max(100).nullable(),
+  taxLabel: cleanString(20).default('TVA'),
+  googleAnalyticsId: optionalText(30),
+  metaPixelId: optionalText(30),
+});
+
 // --- Menu -------------------------------------------------------------------
 
 export const categorySchema = z.object({

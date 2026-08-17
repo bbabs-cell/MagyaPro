@@ -18,14 +18,27 @@ export default async function OrderReceiptPage({
   if (!context || !context.permissions.has('orders:view')) notFound();
   const { id } = await params;
 
-  const order = await prisma.order.findFirst({
-    where: { id, restaurantId: context.restaurant.id },
-    include: { items: true },
-  });
+  const [order, settings] = await Promise.all([
+    prisma.order.findFirst({
+      where: { id, restaurantId: context.restaurant.id },
+      include: { items: true },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: context.restaurant.id },
+      select: { taxEnabled: true, taxRate: true, taxLabel: true },
+    }),
+  ]);
   if (!order) notFound();
 
   const restaurant = context.restaurant;
   const currency = order.currency;
+
+  // Les prix restent TTC : le taux ne sert qu'à isoler la part de TVA déjà
+  // comprise dans le total, pour la comptabilité du restaurateur.
+  const taxIncluded =
+    settings?.taxEnabled && settings.taxRate
+      ? order.total - order.total / (1 + settings.taxRate / 100)
+      : null;
 
   return (
     <div>
@@ -105,6 +118,12 @@ export default async function OrderReceiptPage({
           <span>Total</span>
           <span>{formatMoney(order.total, currency)}</span>
         </div>
+        {taxIncluded !== null && (
+          <div className="flex justify-between text-xs text-ink-faint">
+            <span>dont {settings!.taxLabel} ({settings!.taxRate}%)</span>
+            <span>{formatMoney(Math.round(taxIncluded), currency)}</span>
+          </div>
+        )}
       </div>
 
       <p className="mt-10 text-center text-xs text-ink-faint">

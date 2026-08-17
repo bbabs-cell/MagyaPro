@@ -30,7 +30,17 @@ type OrderSnapshot = {
   cancelReason: string | null;
   statusUpdatedAt: string;
   deliveryCode: string | null;
+  courierLat: number | null;
+  courierLng: number | null;
+  courierLocationUpdatedAt: string | null;
 };
+
+/** Même principe que la carte du restaurant (`app/r/[host]/page.tsx`) : un embed OpenStreetMap, gratuit et sans clé. */
+function courierMapSrc(lat: number, lng: number): string {
+  const delta = 0.006;
+  const bbox = [lng - delta, lat - delta, lng + delta, lat + delta].join(',');
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+}
 
 const CODE_VISIBLE_STATUSES: OrderStatus[] = ['READY', 'OUT_FOR_DELIVERY'];
 
@@ -177,6 +187,22 @@ export function OrderStatusTracker({
           </p>
         </div>
       )}
+
+      {snapshot.status === 'OUT_FOR_DELIVERY' &&
+        snapshot.courierLat !== null &&
+        snapshot.courierLng !== null && (
+          <div className="mt-3">
+            <p className="text-xs text-ink-muted">{dict.tracker.courierPosition}</p>
+            <div className="mt-1.5 overflow-hidden rounded-xl border border-surface-border">
+              <iframe
+                title={dict.tracker.courierPosition}
+                src={courierMapSrc(snapshot.courierLat, snapshot.courierLng)}
+                className="h-48 w-full"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        )}
 
       <p className="mt-1 text-xs text-ink-faint">
         {dict.tracker.lastUpdate} :{' '}
