@@ -3,6 +3,8 @@ import { ZodError, type z, type ZodTypeAny } from 'zod';
 import { Prisma } from '@prisma/client';
 
 import { AppError, RateLimitError, ValidationError } from '@/lib/errors';
+import { env } from '@/lib/env';
+import { reportToSentry } from '@/lib/error-tracking';
 
 /**
  * Enveloppe unique des réponses d'API.
@@ -85,7 +87,7 @@ export async function readJson(request: Request): Promise<unknown> {
  * jamais dans la réponse, car il contiendrait requêtes SQL, chemins de
  * fichiers et structure interne.
  */
-export function toErrorResponse(error: unknown): NextResponse<ApiFailure> {
+export async function toErrorResponse(error: unknown): Promise<NextResponse<ApiFailure>> {
   if (error instanceof AppError) {
     const response = fail(error.message, error.status, error.code, error.fieldErrors);
     if (error instanceof RateLimitError) {
@@ -119,6 +121,10 @@ export function toErrorResponse(error: unknown): NextResponse<ApiFailure> {
   }
 
   console.error('[api] Erreur non gérée :', error);
+  // Attendu explicitement : sur un runtime edge (Cloudflare Workers), une
+  // promesse non suivie peut être coupée avant sa fin dès la réponse
+  // envoyée — voir la même remarque dans `session.ts` (pruneExpiredSessions).
+  await reportToSentry(env.sentryDsn, error);
   return fail(
     "Une erreur inattendue s'est produite. Réessayez dans un instant.",
     500,
@@ -137,7 +143,7 @@ export function route<Args extends unknown[]>(
     try {
       return await handler(request, ...args);
     } catch (error) {
-      return toErrorResponse(error);
+      return await toErrorResponse(error);
     }
   };
 }

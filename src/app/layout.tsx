@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 
 import { env } from '@/lib/env';
 import { platformLogoUrl } from '@/lib/storage';
+import { ErrorListener } from '@/components/error-listener';
 import './globals.css';
 
 /**
@@ -44,12 +45,25 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
+        {env.sentryDsn && (
+          // Le DSN Sentry n'est pas un secret (voir `env.ts`), mais il n'est
+          // pas non plus disponible au moment du build sur ce déploiement
+          // (le `.env` est volontairement absent lors de `cf:deploy`) : il
+          // est donc posé ici, rendu côté serveur à chaque requête, plutôt
+          // qu'inliné via `NEXT_PUBLIC_`.
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__SENTRY_DSN__=${JSON.stringify(env.sentryDsn)};`,
+            }}
+          />
+        )}
         <a
           href="#contenu"
           className="sr-only-focusable absolute left-4 top-4 z-50 rounded-lg bg-ink px-4 py-2 text-sm text-white"
         >
           Aller au contenu principal
         </a>
+        <ErrorListener />
         {children}
       </body>
     </html>

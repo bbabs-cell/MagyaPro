@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 
+import { reportToSentry } from '@/lib/error-tracking';
+
 /**
  * Écran d'erreur applicatif.
  *
@@ -20,6 +22,9 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('[app] Erreur de rendu :', error);
+    reportToSentry(window.__SENTRY_DSN__, error, {
+      tags: { boundary: 'app-error', digest: error.digest ?? '' },
+    });
   }, [error]);
 
   return (

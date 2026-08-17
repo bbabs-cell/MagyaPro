@@ -63,6 +63,12 @@ export const env = {
   turnstileSiteKey: process.env.TURNSTILE_SITE_KEY,
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
 
+  /// Suivi d'erreurs Sentry. La clé publique d'un DSN Sentry est prévue pour
+  /// être exposée côté navigateur (c'est ainsi que fonctionne son SDK
+  /// officiel) : aucun risque à la transmettre au client, contrairement à la
+  /// clé secrète Turnstile.
+  sentryDsn: process.env.SENTRY_DSN,
+
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,
