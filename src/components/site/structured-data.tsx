@@ -78,14 +78,18 @@ export function StructuredData({
     }));
   }
 
+  // `JSON.stringify` n'échappe ni « < » ni « > » : un nom ou une description
+  // de restaurant contenant `</script>` refermerait cette balise et
+  // permettrait d'injecter du script arbitraire, exécuté pour chaque
+  // visiteur du site. `<` neutralise ce risque sans changer la valeur
+  // JSON-LD lue par les moteurs de recherche.
+  const json = JSON.stringify(data).replace(/</g, '\\u003c');
+
   return (
     <>
       <script
         type="application/ld+json"
-        // Le contenu est un objet construit ici puis sérialisé par JSON.stringify,
-        // qui échappe les caractères problématiques. Aucune chaîne brute
-        // provenant du restaurateur n'est concaténée dans le script.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        dangerouslySetInnerHTML={{ __html: json }}
       />
       <span className="sr-only">{openState.label}</span>
     </>

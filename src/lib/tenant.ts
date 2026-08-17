@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import type { MembershipRole, Restaurant } from '@prisma/client';
 
 import { prisma } from '@/lib/db';
+import { env } from '@/lib/env';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from '@/lib/errors';
 import { effectivePermissions, type Permission } from '@/lib/rbac';
 import { getCurrentUser, SUPPORT_COOKIE, type SessionUser } from '@/lib/auth/session';
@@ -192,6 +193,7 @@ export async function setActiveRestaurant(restaurantId: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(ACTIVE_RESTAURANT_COOKIE, restaurantId, {
     httpOnly: true,
+    secure: env.isProduction,
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 365,

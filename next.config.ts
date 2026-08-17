@@ -23,6 +23,17 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Complète (sans le remplacer) le réglage HSTS de la zone Cloudflare :
+          // l'en-tête applicatif garantit la protection même si ce réglage
+          // venait à changer côté Cloudflare. Pas de `includeSubDomains` : la
+          // plateforme héberge un sous-domaine par restaurant (et des
+          // domaines personnalisés), verrouiller tout le groupe d'un coup
+          // pour un an n'est pas une décision à prendre sans validation
+          // explicite de la couverture HTTPS de chacun.
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000',
+          },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(self)',
