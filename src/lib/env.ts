@@ -69,6 +69,15 @@ export const env = {
   /// clé secrète Turnstile.
   sentryDsn: process.env.SENTRY_DSN,
 
+  /// SMS transactionnels (confirmation/statut de commande, alerte
+  /// d'abonnement) via Africa's Talking. Fonctionnalité désactivée si
+  /// absent — comme Turnstile, un manque de clés ne bloque rien.
+  africastalkingApiKey: process.env.AFRICASTALKING_API_KEY,
+  africastalkingUsername: process.env.AFRICASTALKING_USERNAME,
+  /// Nom d'expéditeur affiché au destinataire — optionnel, dépend d'un
+  /// enregistrement préalable auprès d'Africa's Talking selon le pays.
+  africastalkingSenderId: process.env.AFRICASTALKING_SENDER_ID,
+
   storageHost: process.env.NEXT_PUBLIC_STORAGE_HOST,
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,

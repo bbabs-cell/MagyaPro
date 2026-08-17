@@ -5,6 +5,7 @@ import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { expiresIn } from '@/lib/auth/tokens';
 import { createNotification } from '@/lib/notifications';
 import { sendMail } from '@/lib/mail';
+import { sendSms } from '@/lib/sms';
 import { formatMoney } from '@/lib/money';
 
 /**
@@ -234,6 +235,7 @@ export async function sendExpiringSubscriptionAlerts(): Promise<{ notified: numb
           id: true,
           name: true,
           email: true,
+          phone: true,
           settings: { select: { notificationEmail: true } },
         },
       },
@@ -267,6 +269,13 @@ export async function sendExpiringSubscriptionAlerts(): Promise<{ notified: numb
         subject: `Votre abonnement Magyapro expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
         text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.restaurant.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre site reste actif sans interruption.\n\nL'équipe Magyapro`,
       });
+    }
+
+    if (subscription.restaurant.phone) {
+      await sendSms(
+        subscription.restaurant.phone,
+        `Magyapro : votre abonnement « ${subscription.plan.name} » expire le ${dateLabel} (dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}). Renouvelez-le depuis votre tableau de bord.`,
+      );
     }
 
     await prisma.subscription.update({

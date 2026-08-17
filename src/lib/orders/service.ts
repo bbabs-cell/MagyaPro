@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
 import { priceOrder, type CartInput } from '@/lib/orders/pricing';
 import { notifyNewOrder, notifyOrderStatusChanged } from '@/lib/notifications';
+import { smsOrderConfirmation, smsOrderStatusChanged } from '@/lib/customer-notifications';
 import { applyPaymentStatus } from '@/lib/payments/service';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
@@ -66,7 +67,7 @@ export async function createOrder(input: CreateOrderInput) {
     const restaurant = await tx.restaurant.update({
       where: { id: input.restaurantId },
       data: { orderCounter: { increment: 1 } },
-      select: { orderCounter: true },
+      select: { orderCounter: true, name: true },
     });
 
     // 3. Fiche client, identifiée par le téléphone au sein du restaurant.
@@ -161,14 +162,21 @@ export async function createOrder(input: CreateOrderInput) {
       });
     }
 
-    return { order: created, customerTotalSpent: customer.totalSpent };
+    return { order: created, customerTotalSpent: customer.totalSpent, restaurantName: restaurant.name };
   });
 
-  const { order, customerTotalSpent } = result;
+  const { order, customerTotalSpent, restaurantName } = result;
 
   // Effets de bord hors transaction : leur échec ne doit pas annuler une
   // commande déjà payée par le client.
   await notifyNewOrder(order.restaurantId, order.id, order.number, order.total, order.currency);
+  await smsOrderConfirmation({
+    customerPhone: order.customerPhone,
+    restaurantName,
+    orderNumber: order.number,
+    total: order.total,
+    currency: order.currency,
+  });
   await recordAudit({
     action: AUDIT_ACTIONS.ORDER_CREATED,
     restaurantId: order.restaurantId,
@@ -209,7 +217,13 @@ export async function updateOrderStatus(params: {
 }) {
   const order = await prisma.order.findFirst({
     where: { id: params.orderId, restaurantId: params.restaurantId },
-    select: { id: true, status: true, number: true },
+    select: {
+      id: true,
+      status: true,
+      number: true,
+      customerPhone: true,
+      restaurant: { select: { name: true } },
+    },
   });
   if (!order) throw new NotFoundError('Commande introuvable.');
 
@@ -266,6 +280,12 @@ export async function updateOrderStatus(params: {
     updated.number,
     params.status,
   );
+  await smsOrderStatusChanged({
+    customerPhone: order.customerPhone,
+    restaurantName: order.restaurant.name,
+    orderNumber: updated.number,
+    status: params.status,
+  });
 
   await recordAudit({
     action:
@@ -320,13 +340,22 @@ export async function claimDelivery(params: {
     throw new ConflictError("Cette commande n'est pas encore prête à livrer.");
   }
 
-  const order = await prisma.order.findUniqueOrThrow({ where: { id: params.orderId } });
+  const order = await prisma.order.findUniqueOrThrow({
+    where: { id: params.orderId },
+    include: { restaurant: { select: { name: true } } },
+  });
 
   await prisma.orderStatusEvent.create({
     data: { orderId: order.id, fromStatus: 'READY', toStatus: 'OUT_FOR_DELIVERY', byUserId: params.courierId },
   });
 
   await notifyOrderStatusChanged(order.restaurantId, order.id, order.number, 'OUT_FOR_DELIVERY');
+  await smsOrderStatusChanged({
+    customerPhone: order.customerPhone,
+    restaurantName: order.restaurant.name,
+    orderNumber: order.number,
+    status: 'OUT_FOR_DELIVERY',
+  });
   await recordAudit({
     action: AUDIT_ACTIONS.ORDER_STATUS_CHANGED,
     actorUserId: params.courierId,
