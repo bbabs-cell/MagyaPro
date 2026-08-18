@@ -223,7 +223,28 @@ function HeroAfricanPremium({ data }: { data: HeroData }) {
  */
 function HeroFastFood({ data }: { data: HeroData }) {
   return (
-    <section className="relative overflow-hidden text-white" style={{ backgroundColor: data.primaryColor }}>
+    <section
+      className="relative overflow-hidden text-white"
+      style={data.coverUrl ? undefined : { backgroundColor: data.primaryColor }}
+    >
+      {data.coverUrl && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant, hôte arbitraire */}
+          <img
+            src={data.coverUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {/* Teinte de la couleur du restaurant plutôt qu'un voile noir
+              générique : l'identité « bloc de couleur pleine teinte » du
+              template survit même quand une photo remplace le fond. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ backgroundColor: data.primaryColor, opacity: 0.72 }}
+          />
+        </>
+      )}
       <div aria-hidden="true" className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-black/10 blur-2xl" />
       <div aria-hidden="true" className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
 
