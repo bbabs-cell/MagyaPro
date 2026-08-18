@@ -212,31 +212,32 @@ function MenuSection({
                     <div
                       key={product.id}
                       className={cx(
-                        'flex items-center gap-4 border-t py-4 first:border-t-0',
+                        'flex items-center gap-5 border-t py-5 first:border-t-0',
                         !product.isAvailable && 'opacity-50',
                       )}
                       style={{ borderColor: 'rgba(205,164,94,0.15)' }}
                     >
-                      <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-4">
+                      <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-5">
                         {product.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element -- image de tenant
                           <img
                             src={product.imageUrl}
                             alt=""
                             loading="lazy"
-                            className="h-16 w-16 shrink-0 rounded-full object-cover"
+                            className="h-24 w-24 shrink-0 rounded-full object-cover"
+                            style={{ boxShadow: '0 0 0 1px rgba(205,164,94,0.35)' }}
                           />
                         ) : (
                           <span
                             aria-hidden="true"
-                            className="h-16 w-16 shrink-0 rounded-full"
+                            className="h-24 w-24 shrink-0 rounded-full"
                             style={{ backgroundColor: SURFACE }}
                           />
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="font-display text-lg">{product.name}</span>
+                          <span className="font-display text-xl">{product.name}</span>
                           {product.description && (
-                            <span className="mt-1 block text-sm italic text-white/60">
+                            <span className="mt-1.5 block text-sm italic text-white/60">
                               {product.description}
                             </span>
                           )}

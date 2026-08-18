@@ -299,27 +299,27 @@ function MenuSection({
                   {category.products.map((product) => (
                     <div
                       key={product.id}
-                      className={cx('flex items-center gap-4 py-4', !product.isAvailable && 'opacity-50')}
+                      className={cx('flex items-center gap-5 py-5', !product.isAvailable && 'opacity-50')}
                     >
-                      <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-4">
+                      <Link href={product.href} className="flex min-w-0 flex-1 items-center gap-5">
                         {product.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element -- image de tenant
                           <img
                             src={product.imageUrl}
                             alt=""
                             loading="lazy"
-                            className="h-16 w-16 shrink-0 rounded-full object-cover"
+                            className="h-24 w-24 shrink-0 rounded-full object-cover ring-1 ring-surface-border"
                           />
                         ) : (
                           <span
                             aria-hidden="true"
-                            className="h-16 w-16 shrink-0 rounded-full bg-surface-sunken"
+                            className="h-24 w-24 shrink-0 rounded-full bg-surface-sunken"
                           />
                         )}
                         <span className="min-w-0 flex-1">
-                          <span className="font-display text-lg">{product.name}</span>
+                          <span className="font-display text-xl">{product.name}</span>
                           {product.description && (
-                            <span className="mt-1 block text-sm italic text-ink-muted">
+                            <span className="mt-1.5 block text-sm italic text-ink-muted">
                               {product.description}
                             </span>
                           )}
