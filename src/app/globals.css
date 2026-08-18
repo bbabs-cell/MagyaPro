@@ -198,6 +198,47 @@
   border-width: 0;
 }
 
+/* Pages de connexion/inscription : entrée douce de la carte, dérive lente
+   des halos décoratifs du panneau de marque. Purement cosmétique — jamais
+   requis pour comprendre ou utiliser la page, donc désactivé sans regret
+   quand le système demande de réduire les animations. */
+@keyframes auth-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.auth-panel {
+  animation: auth-panel-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes auth-blob-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -18px) scale(1.08);
+  }
+}
+.auth-blob {
+  animation: auth-blob-drift 16s ease-in-out infinite;
+}
+.auth-blob-delay {
+  animation-delay: -8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-panel,
+  .auth-blob {
+    animation: none;
+  }
+}
+
 /* Bandeau défilant en continu (template « street-food ») — la liste est
    dupliquée dans le balisage, cette animation ne fait que glisser la moitié
    gauche vers la gauche pour donner l'illusion d'un défilement infini. */
