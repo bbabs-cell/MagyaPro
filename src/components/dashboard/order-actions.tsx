@@ -94,8 +94,8 @@ export function OrderActions({
           fois l&apos;argent reçu.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" disabled={pending} onClick={confirmPayment}>
-            {pending ? 'Confirmation…' : 'Marquer payé et terminer'}
+          <Button type="button" loading={pending} onClick={confirmPayment}>
+            Marquer payé et terminer
           </Button>
           {canCancel && (
             <Button
@@ -149,10 +149,10 @@ export function OrderActions({
               type="button"
               variant="danger"
               size="sm"
-              disabled={pending}
+              loading={pending}
               onClick={() => apply('CANCELLED', reason || undefined)}
             >
-              {pending ? 'Annulation…' : "Confirmer l'annulation"}
+              Confirmer l&apos;annulation
             </Button>
             <Button
               type="button"
