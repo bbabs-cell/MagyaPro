@@ -576,7 +576,7 @@ export function CheckoutFlow({
               type="button"
               onClick={() => setStep('details')}
               disabled={!quote || belowMinimum || quoting}
-              className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {dict.cartPage.continue}
             </button>
@@ -585,8 +585,15 @@ export function CheckoutFlow({
               type="submit"
               form="checkout-form"
               disabled={submitting || !quote || belowMinimum || providers.length === 0}
-              className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              aria-busy={submitting || undefined}
+              className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
+              {submitting && (
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+                />
+              )}
               {submitting ? dict.cartPage.sending : dict.cartPage.placeOrder}
             </button>
           )}
