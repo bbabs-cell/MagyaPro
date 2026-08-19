@@ -159,58 +159,66 @@ export default async function DashboardPage() {
       </div>
 
       <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Chiffre d'affaires"
-          value={formatMoney(metrics.revenue, currency)}
-          icon={STAT_ICONS.revenue}
-          hint={
-            metrics.revenueChange === null
-              ? 'Pas de période précédente à comparer'
-              : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} % vs 30 j précédents`
-          }
-          tone={
-            metrics.revenueChange === null
-              ? undefined
-              : metrics.revenueChange >= 0
-                ? 'success'
-                : 'danger'
-          }
-        />
-        <StatCard
-          label="Commandes"
-          value={String(metrics.ordersCount)}
-          icon={STAT_ICONS.orders}
-          hint={
-            metrics.ordersChange === null
-              ? 'Pas de période précédente à comparer'
-              : `${metrics.ordersChange > 0 ? '+' : ''}${metrics.ordersChange} % vs 30 j précédents`
-          }
-          tone={
-            metrics.ordersChange === null
-              ? undefined
-              : metrics.ordersChange >= 0
-                ? 'success'
-                : 'danger'
-          }
-        />
-        <StatCard
-          label="Panier moyen"
-          value={
-            metrics.averageBasket === null
-              ? '—'
-              : formatMoney(metrics.averageBasket, currency)
-          }
-          icon={STAT_ICONS.basket}
-          tone="info"
-          hint={metrics.averageBasket === null ? 'Aucune commande sur la période' : undefined}
-        />
-        <StatCard
-          label="Nouveaux clients"
-          value={String(metrics.newCustomers)}
-          icon={STAT_ICONS.customers}
-          tone="warning"
-          hint="Sur les 30 derniers jours"
-        />
+        <div className="fade-in-up" style={{ animationDelay: '0ms' }}>
+          <StatCard
+            label="Chiffre d'affaires"
+            value={formatMoney(metrics.revenue, currency)}
+            icon={STAT_ICONS.revenue}
+            hint={
+              metrics.revenueChange === null
+                ? 'Pas de période précédente à comparer'
+                : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} % vs 30 j précédents`
+            }
+            tone={
+              metrics.revenueChange === null
+                ? undefined
+                : metrics.revenueChange >= 0
+                  ? 'success'
+                  : 'danger'
+            }
+          />
+        </div>
+        <div className="fade-in-up" style={{ animationDelay: '60ms' }}>
+          <StatCard
+            label="Commandes"
+            value={String(metrics.ordersCount)}
+            icon={STAT_ICONS.orders}
+            hint={
+              metrics.ordersChange === null
+                ? 'Pas de période précédente à comparer'
+                : `${metrics.ordersChange > 0 ? '+' : ''}${metrics.ordersChange} % vs 30 j précédents`
+            }
+            tone={
+              metrics.ordersChange === null
+                ? undefined
+                : metrics.ordersChange >= 0
+                  ? 'success'
+                  : 'danger'
+            }
+          />
+        </div>
+        <div className="fade-in-up" style={{ animationDelay: '120ms' }}>
+          <StatCard
+            label="Panier moyen"
+            value={
+              metrics.averageBasket === null
+                ? '—'
+                : formatMoney(metrics.averageBasket, currency)
+            }
+            icon={STAT_ICONS.basket}
+            tone="info"
+            hint={metrics.averageBasket === null ? 'Aucune commande sur la période' : undefined}
+          />
+        </div>
+        <div className="fade-in-up" style={{ animationDelay: '180ms' }}>
+          <StatCard
+            label="Nouveaux clients"
+            value={String(metrics.newCustomers)}
+            icon={STAT_ICONS.customers}
+            tone="warning"
+            hint="Sur les 30 derniers jours"
+          />
+        </div>
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">

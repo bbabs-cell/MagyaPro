@@ -98,7 +98,7 @@ export function LinkButton({
 // --- Formulaires -----------------------------------------------------------
 
 export const inputClass =
-  'w-full rounded-xl border border-surface-border bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-surface-sunken';
+  'w-full rounded-xl border border-surface-border bg-surface px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-faint transition-colors focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-ink-faint';
 
 export function Field({
   label,
