@@ -14,7 +14,12 @@ import type { PaymentStatus } from '@prisma/client';
  * `${t}${corps brut}` avec `WAVE_WEBHOOK_SECRET`. Le corps est lu en texte
  * brut, jamais reformaté par un parseur JSON, car le moindre écart
  * d'espacement invaliderait la signature.
+ *
+ * L'horodatage est aussi vérifié comme récent (± 5 minutes) : une requête
+ * signée capturée sur le réseau ne peut donc pas être rejouée indéfiniment,
+ * seulement pendant sa courte fenêtre de validité.
  */
+const MAX_SIGNATURE_AGE_SECONDS = 300;
 
 const WAVE_PAYMENT_STATUS: Record<string, PaymentStatus> = {
   succeeded: 'PAID',
@@ -31,6 +36,11 @@ function verifySignature(header: string | null, rawBody: string, secret: string)
   const timestamp = parts.t;
   const signature = parts.v1;
   if (!timestamp || !signature) return false;
+
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds)) return false;
+  const ageSeconds = Math.abs(Date.now() / 1000 - timestampSeconds);
+  if (ageSeconds > MAX_SIGNATURE_AGE_SECONDS) return false;
 
   const expected = createHmac('sha256', secret).update(`${timestamp}${rawBody}`).digest('hex');
 

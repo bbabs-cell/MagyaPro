@@ -9,7 +9,7 @@
  * « Motdepasse1! », qui n'est pas plus solide.
  */
 
-export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 200;
 
 export function validatePasswordStrength(password: string): string | null {
