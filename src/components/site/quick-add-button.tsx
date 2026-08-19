@@ -68,7 +68,12 @@ export function QuickAddButton({
         setAdded(true);
       }}
       aria-label={`Ajouter ${product.name} au panier`}
-      className={cx(className, unavailable && 'pointer-events-none opacity-50')}
+      className={cx(
+        className,
+        'transition-transform active:scale-90',
+        added && 'cart-add-pop',
+        unavailable && 'pointer-events-none opacity-50',
+      )}
       style={style}
     >
       {added ? 'Ajouté ✓' : '+ Ajouter'}
