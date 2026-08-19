@@ -8,6 +8,7 @@ import { getEntitlements } from '@/lib/entitlements';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from '@/components/dashboard/shell';
+import { ToastProvider } from '@/components/ui/toast';
 
 export const metadata: Metadata = {
   manifest: '/dashboard/manifest.webmanifest',
@@ -44,34 +45,36 @@ export default async function DashboardLayout({
   ]);
 
   return (
-    <DashboardShell
-      platformLogoUrl={platformLogoUrl()}
-      role={context.role}
-      user={{ name: user.name, email: user.email, isSuperAdmin: user.platformRole === 'SUPER_ADMIN' }}
-      restaurant={{
-        id: context.restaurant.id,
-        name: context.restaurant.name,
-        slug: context.restaurant.slug,
-        logoUrl: context.restaurant.logoUrl,
-        status: context.restaurant.status,
-      }}
-      memberships={memberships.map((m) => ({
-        id: m.restaurant.id,
-        name: m.restaurant.name,
-        slug: m.restaurant.slug,
-      }))}
-      permissions={[...context.permissions]}
-      unreadCount={unreadCount}
-      alertCount={alertCount}
-      subscription={{
-        planName: entitlements.planName,
-        status: entitlements.status,
-        isActive: entitlements.isActive,
-      }}
-      isSupportAccess={context.isSupportAccess}
-      announcements={announcements}
-    >
-      {children}
-    </DashboardShell>
+    <ToastProvider>
+      <DashboardShell
+        platformLogoUrl={platformLogoUrl()}
+        role={context.role}
+        user={{ name: user.name, email: user.email, isSuperAdmin: user.platformRole === 'SUPER_ADMIN' }}
+        restaurant={{
+          id: context.restaurant.id,
+          name: context.restaurant.name,
+          slug: context.restaurant.slug,
+          logoUrl: context.restaurant.logoUrl,
+          status: context.restaurant.status,
+        }}
+        memberships={memberships.map((m) => ({
+          id: m.restaurant.id,
+          name: m.restaurant.name,
+          slug: m.restaurant.slug,
+        }))}
+        permissions={[...context.permissions]}
+        unreadCount={unreadCount}
+        alertCount={alertCount}
+        subscription={{
+          planName: entitlements.planName,
+          status: entitlements.status,
+          isActive: entitlements.isActive,
+        }}
+        isSupportAccess={context.isSupportAccess}
+        announcements={announcements}
+      >
+        {children}
+      </DashboardShell>
+    </ToastProvider>
   );
 }

@@ -20,7 +20,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[background-color,color,transform,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-brand text-white shadow-sm shadow-brand/30 hover:brightness-110',
@@ -48,12 +48,31 @@ export function Button({
   variant = 'primary',
   size = 'md',
   className,
+  loading = false,
+  disabled,
+  children,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  loading?: boolean;
 }) {
-  return <button className={buttonClass(variant, size, className)} {...props} />;
+  return (
+    <button
+      className={buttonClass(variant, size, cx('active:scale-[0.98]', className))}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading && (
+        <span
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+      )}
+      {children}
+    </button>
+  );
 }
 
 export function LinkButton({
@@ -130,12 +149,25 @@ export function Field({
 
 export function Card({
   className,
+  hover = false,
   children,
 }: {
   className?: string;
+  /** Légère élévation au survol — réservé aux cartes cliquables (liens, cartes de sélection). */
+  hover?: boolean;
   children: ReactNode;
 }) {
-  return <div className={cx('card', className)}>{children}</div>;
+  return (
+    <div
+      className={cx(
+        'card',
+        hover && 'transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function PageHeader({
