@@ -59,6 +59,7 @@ export default async function TeamPage() {
         rolePermissions={{
           ADMIN: permissionsForRole('ADMIN'),
           EMPLOYEE: permissionsForRole('EMPLOYEE'),
+          COURIER: permissionsForRole('COURIER'),
         }}
         members={members.map((member) => ({
           id: member.id,

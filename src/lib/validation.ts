@@ -433,7 +433,7 @@ export const deliveryConfirmationSchema = z.object({
 export const teamMemberSchema = z.object({
   email: emailSchema,
   name: nameSchema,
-  role: z.enum(['ADMIN', 'EMPLOYEE']),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'COURIER']),
   extraPermissions: z
     .array(z.enum(PERMISSIONS as unknown as [string, ...string[]]))
     .max(PERMISSIONS.length)

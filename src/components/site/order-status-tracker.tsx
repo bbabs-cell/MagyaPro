@@ -135,8 +135,12 @@ export function OrderStatusTracker({
       </div>
 
       {/* Frise de progression. `aria-current` porte l'étape active pour les
-          lecteurs d'écran ; la couleur seule n'est jamais le seul signal. */}
-      <ol className="mt-5 flex items-center" aria-label="Étapes de la commande">
+          lecteurs d'écran ; la couleur seule n'est jamais le seul signal.
+          Sept étapes avec libellé ne tiennent pas sur un écran de téléphone
+          sans rétrécir au point de devenir illisibles : la frise défile
+          plutôt que de forcer toute la page à déborder horizontalement. */}
+      <div className="-mx-1 mt-5 overflow-x-auto px-1">
+      <ol className="flex w-max min-w-full items-center" aria-label="Étapes de la commande">
         {steps.map((step, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
@@ -173,6 +177,7 @@ export function OrderStatusTracker({
           );
         })}
       </ol>
+      </div>
 
       <p className="mt-5 text-sm text-ink-muted">
         {dict.tracker.payment} :{' '}

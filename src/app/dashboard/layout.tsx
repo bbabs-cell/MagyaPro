@@ -46,6 +46,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       platformLogoUrl={platformLogoUrl()}
+      role={context.role}
       user={{ name: user.name, email: user.email, isSuperAdmin: user.platformRole === 'SUPER_ADMIN' }}
       restaurant={{
         id: context.restaurant.id,

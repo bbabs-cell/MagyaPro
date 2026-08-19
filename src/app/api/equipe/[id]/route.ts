@@ -10,7 +10,7 @@ import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 type Params = { params: Promise<{ id: string }> };
 
 const updateSchema = z.object({
-  role: z.enum(['ADMIN', 'EMPLOYEE']),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'COURIER']),
   extraPermissions: z
     .array(z.enum(PERMISSIONS as unknown as [string, ...string[]]))
     .max(PERMISSIONS.length)

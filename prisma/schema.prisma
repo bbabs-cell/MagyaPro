@@ -102,6 +102,11 @@ enum MembershipRole {
   OWNER
   ADMIN
   EMPLOYEE
+  /// Accès restreint à la seule section livraisons — voir `COURIER_PERMISSIONS`
+  /// dans `src/lib/rbac.ts`. Le tableau de bord d'un livreur n'affiche même
+  /// pas la barre latérale complète : inutile de lui montrer des rubriques
+  /// auxquelles il n'a de toute façon pas accès.
+  COURIER
 }
 
 model RestaurantUser {

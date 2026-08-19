@@ -1,8 +1,9 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
-import { requireTenant } from '@/lib/tenant';
+import { requireTenant, getTenantContext } from '@/lib/tenant';
 import { formatMoney } from '@/lib/money';
 import { getDashboardMetrics, getPopularProducts, getRevenueSeries } from '@/lib/analytics';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
@@ -64,6 +65,12 @@ const STAT_ICONS = {
 };
 
 export default async function DashboardPage() {
+  // Un livreur n'a pas `restaurant:view` : le renvoyer vers son propre
+  // espace plutôt que de le laisser heurter un refus de permission sur la
+  // vue d'ensemble, qui ne le concerne pas.
+  const preContext = await getTenantContext();
+  if (preContext?.role === 'COURIER') redirect('/dashboard/livraisons');
+
   const { restaurant } = await requireTenant('restaurant:view');
   const currency = restaurant.currency;
 

@@ -52,6 +52,11 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number];
 
+/// Un livreur n'a besoin que d'une seule chose : voir et prendre en charge
+/// des livraisons. Pas même `orders:view` — il ne consulte jamais le détail
+/// d'une commande, seulement la fiche de livraison de `/dashboard/livraisons`.
+const COURIER_PERMISSIONS: Permission[] = ['deliveries:drive'];
+
 const EMPLOYEE_PERMISSIONS: Permission[] = [
   'restaurant:view',
   'menu:view',
@@ -91,6 +96,7 @@ const ROLE_PERMISSIONS: Record<MembershipRole, Permission[]> = {
   EMPLOYEE: EMPLOYEE_PERMISSIONS,
   ADMIN: ADMIN_PERMISSIONS,
   OWNER: OWNER_PERMISSIONS,
+  COURIER: COURIER_PERMISSIONS,
 };
 
 export function permissionsForRole(role: MembershipRole): Permission[] {
@@ -122,6 +128,7 @@ export const ROLE_LABELS: Record<MembershipRole, string> = {
   OWNER: 'Propriétaire',
   ADMIN: 'Administrateur',
   EMPLOYEE: 'Employé',
+  COURIER: 'Livreur',
 };
 
 export const PERMISSION_LABELS: Record<Permission, string> = {

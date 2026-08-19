@@ -9,7 +9,7 @@ import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
 
 type Member = {
   id: string;
-  role: 'OWNER' | 'ADMIN' | 'EMPLOYEE';
+  role: 'OWNER' | 'ADMIN' | 'EMPLOYEE' | 'COURIER';
   extraPermissions: string[];
   userId: string;
   name: string;
@@ -36,12 +36,12 @@ export function TeamManager({
   currentUserId: string;
   maxUsers?: number;
   permissions: Array<{ value: string; label: string }>;
-  rolePermissions: Record<'ADMIN' | 'EMPLOYEE', string[]>;
+  rolePermissions: Record<'ADMIN' | 'EMPLOYEE' | 'COURIER', string[]>;
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
-  const [role, setRole] = useState<'ADMIN' | 'EMPLOYEE'>('EMPLOYEE');
+  const [role, setRole] = useState<'ADMIN' | 'EMPLOYEE' | 'COURIER'>('EMPLOYEE');
   const [extras, setExtras] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +165,7 @@ export function TeamManager({
           <fieldset>
             <legend className="text-sm font-medium">Rôle</legend>
             <div className="mt-2 space-y-1.5">
-              {(['ADMIN', 'EMPLOYEE'] as const).map((value) => (
+              {(['ADMIN', 'EMPLOYEE', 'COURIER'] as const).map((value) => (
                 <label
                   key={value}
                   className="flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border px-4 py-3 text-sm hover:border-ink"
@@ -184,9 +184,12 @@ export function TeamManager({
                   <span>
                     <span className="block font-medium">{ROLE_LABELS[value]}</span>
                     <span className="block text-ink-muted">
-                      {value === 'ADMIN'
-                        ? 'Gère le restaurant, le menu, les commandes et les réglages.'
-                        : 'Consulte le menu et traite les commandes du service.'}
+                      {value === 'ADMIN' &&
+                        'Gère le restaurant, le menu, les commandes et les réglages.'}
+                      {value === 'EMPLOYEE' &&
+                        'Consulte le menu et traite les commandes du service.'}
+                      {value === 'COURIER' &&
+                        "Espace dédié, limité aux livraisons — n'accède à rien d'autre."}
                     </span>
                   </span>
                 </label>

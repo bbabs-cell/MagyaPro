@@ -256,6 +256,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
 
 export function DashboardShell({
   platformLogoUrl,
+  role,
   user,
   restaurant,
   memberships,
@@ -268,6 +269,8 @@ export function DashboardShell({
   children,
 }: {
   platformLogoUrl: string | null;
+  /** `null` en accès support (Super Admin) : traité comme un membre normal. */
+  role: 'OWNER' | 'ADMIN' | 'EMPLOYEE' | 'COURIER' | null;
   user: { name: string; email: string; isSuperAdmin: boolean };
   restaurant: {
     id: string;
@@ -344,6 +347,45 @@ export function DashboardShell({
     await api.post('/api/auth/logout');
     router.replace('/');
     router.refresh();
+  }
+
+  // Un livreur n'a qu'une seule permission (`deliveries:drive`) : lui montrer
+  // la barre latérale complète n'aurait de sens que pour afficher des
+  // rubriques auxquelles il ne peut pas accéder. Un espace à part, réduit à
+  // l'essentiel, plutôt que la même coquille avec presque tout grisé.
+  if (role === 'COURIER') {
+    return (
+      <div
+        className="min-h-screen bg-surface-sunken"
+        style={theme === 'dark' ? (DARK_THEME_VARS as React.CSSProperties) : undefined}
+      >
+        <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">
+          <div className="container-page flex h-16 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Logo src={platformLogoUrl} showText={false} className="h-8 w-8 shrink-0" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{restaurant.name}</p>
+                <p className="truncate text-xs text-ink-faint">Espace livreur — {user.name}</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <ThemeToggle theme={theme} onToggle={toggleTheme} />
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex h-9 items-center rounded-lg border border-surface-border px-3 text-sm hover:bg-surface-sunken"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main id="contenu" className="p-4 sm:p-6">
+          <div className="mx-auto max-w-2xl">{children}</div>
+        </main>
+      </div>
+    );
   }
 
   async function handleEndSupport() {
