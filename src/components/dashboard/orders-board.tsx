@@ -188,7 +188,7 @@ export function OrdersBoard({
                         <Button
                           type="button"
                           size="sm"
-                          disabled={isPending}
+                          loading={isPending}
                           onClick={() => confirmPayment(order)}
                         >
                           Marquer payé et terminer
