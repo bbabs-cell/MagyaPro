@@ -139,7 +139,7 @@ export default async function LandingPage() {
         />
 
         <div className="container-page relative py-20 sm:py-28 lg:py-32">
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="fade-in-up mx-auto max-w-3xl text-center">
             <Logo
               src={heroLogoUrl}
               showText={false}
