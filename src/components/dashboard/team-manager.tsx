@@ -235,8 +235,8 @@ export function TeamManager({
           </fieldset>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
             <Button
               type="button"

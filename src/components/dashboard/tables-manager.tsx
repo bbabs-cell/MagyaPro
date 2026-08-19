@@ -116,8 +116,8 @@ export function TablesManager({
                 <input id="label" name="label" required className={inputClass} placeholder="Table 4" />
               </Field>
             </div>
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Création…' : 'Créer'}
+            <Button type="submit" loading={pending}>
+              Créer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
               Annuler

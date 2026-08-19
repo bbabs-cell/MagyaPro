@@ -263,8 +263,8 @@ export function ReservationsManager({
               <input id="notes" name="notes" className={inputClass} placeholder="Anniversaire, allergie…" />
             </Field>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={pending}>
-                {pending ? 'Enregistrement…' : 'Enregistrer'}
+              <Button type="submit" loading={pending}>
+                Enregistrer
               </Button>
               <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
                 Annuler

@@ -208,8 +208,8 @@ export function LoyaltyManager({
           </label>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
               Annuler

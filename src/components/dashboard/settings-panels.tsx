@@ -403,8 +403,8 @@ export function SettingsPanels({
               </Field>
             </fieldset>
 
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
           </form>
         </Card>
@@ -678,8 +678,8 @@ export function SettingsPanels({
               </div>
             </fieldset>
 
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
           </form>
         </Card>
@@ -734,8 +734,8 @@ export function SettingsPanels({
               onChange={setSeoImageUrl}
             />
 
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
           </form>
         </Card>
@@ -844,8 +844,8 @@ export function SettingsPanels({
               </div>
             </div>
 
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button type="submit" loading={pending}>
+              Enregistrer
             </Button>
           </form>
         </Card>
@@ -1092,8 +1092,8 @@ function DomainsPanel({
             placeholder="www.mon-restaurant.com"
             className={cx(inputClass, 'flex-1 min-w-52')}
           />
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Ajout…' : 'Ajouter'}
+          <Button type="submit" loading={pending}>
+            Ajouter
           </Button>
         </form>
       ) : (
