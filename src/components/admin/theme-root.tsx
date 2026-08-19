@@ -59,15 +59,19 @@ export function AdminThemeRoot({
         <>
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed inset-0 opacity-[0.05]"
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
             style={{
               backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
               backgroundSize: '26px 26px',
             }}
           />
+          {/* `absolute`, jamais `fixed` : un élément fixe avec un décalage
+              négatif échappe au `overflow-x-hidden` du conteneur (il n'est
+              pas positionné par rapport à lui) et provoque un débordement
+              horizontal fantôme, surtout visible sur Chrome Android. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
+            className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
           />
         </>
       )}
