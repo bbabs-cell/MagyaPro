@@ -13,19 +13,19 @@ import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
 
 /**
- * Mêmes variables que le site public (`chrome.tsx`) : `ink`/`surface` sont
- * normalement fixes, les redéfinir bascule tout le contenu du tableau de
- * bord (cartes, textes) en mode sombre sans que ces composants aient besoin
- * de connaître ce thème. La barre latérale reste `bg-navy`, déjà sombre par
- * défaut dans les deux thèmes.
+ * Mêmes variables que le site public (`chrome.tsx`) : le thème dark premium
+ * est la valeur par défaut de `ink`/`surface` (voir `tailwind.config.ts`),
+ * appliquée sans override. Le thème clair, optionnel, redéfinit ces
+ * variables ici — un ivoire teinté, jamais du blanc pur. La barre latérale
+ * reste `bg-navy`, déjà sombre par défaut dans les deux thèmes.
  */
-const DARK_THEME_VARS = {
-  '--surface': '#131417',
-  '--surface-sunken': '#1c1e22',
-  '--surface-border': '#2c2f34',
-  '--ink': '#f2f3f5',
-  '--ink-muted': '#a7adb6',
-  '--ink-faint': '#767c86',
+const LIGHT_THEME_VARS = {
+  '--surface': '#faf8f4',
+  '--surface-sunken': '#f1ede4',
+  '--surface-border': '#e3ddd0',
+  '--ink': '#221f1a',
+  '--ink-muted': '#6b6459',
+  '--ink-faint': '#948c7e',
 } as const;
 
 const DASHBOARD_THEME_STORAGE_KEY = 'magyapro:dashboard-theme';
@@ -296,23 +296,19 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  // Le HTML servi par le serveur est déjà en thème sombre (valeurs par
+  // défaut de `tailwind.config.ts`) : l'état initial correspond à ce rendu,
+  // pas de préférence système à deviner ni d'avertissement d'hydratation.
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  // Lu après le premier rendu, jamais pendant : le HTML servi par le serveur
-  // ignore la préférence du navigateur, donc en tenir compte dès le premier
-  // rendu client produirait un avertissement d'hydratation React.
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(DASHBOARD_THEME_STORAGE_KEY);
       if (stored === 'dark' || stored === 'light') {
         setTheme(stored);
-        return;
       }
     } catch {
-      // Stockage indisponible (navigation privée) : repli sur le système.
-    }
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
+      // Stockage indisponible (navigation privée) : le thème par défaut reste actif.
     }
   }, []);
 
@@ -357,7 +353,7 @@ export function DashboardShell({
     return (
       <div
         className="min-h-screen bg-surface-sunken"
-        style={theme === 'dark' ? (DARK_THEME_VARS as React.CSSProperties) : undefined}
+        style={theme === 'light' ? (LIGHT_THEME_VARS as React.CSSProperties) : undefined}
       >
         <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">
           <div className="container-page flex h-16 items-center justify-between gap-3">
@@ -444,7 +440,7 @@ export function DashboardShell({
   return (
     <div
       className="min-h-screen bg-surface-sunken"
-      style={theme === 'dark' ? (DARK_THEME_VARS as React.CSSProperties) : undefined}
+      style={theme === 'light' ? (LIGHT_THEME_VARS as React.CSSProperties) : undefined}
     >
       {allowed.has('orders:view') && <AlertWatcher />}
 

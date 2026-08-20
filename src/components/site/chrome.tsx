@@ -30,18 +30,18 @@ const FONT_STACKS: Record<string, string> = {
 };
 
 /**
- * `ink` et `surface` sont normalement des couleurs fixes (voir
- * `tailwind.config.ts`) : les redéfinir ici en variables CSS, uniquement sur
- * les sites publics, fait basculer tous les templates en mode sombre d'un
- * coup — aucun n'a besoin de connaître l'existence de ce thème.
+ * Le thème dark premium (bleu nuit) est la valeur par défaut de `ink` et
+ * `surface` (voir `tailwind.config.ts`) : aucun override n'est nécessaire
+ * pour l'afficher. Le thème clair, optionnel, redéfinit ces variables CSS ici
+ * — jamais en blanc pur, un ivoire légèrement teinté pour rester premium.
  */
-const DARK_THEME_VARS = {
-  '--surface': '#131417',
-  '--surface-sunken': '#1c1e22',
-  '--surface-border': '#2c2f34',
-  '--ink': '#f2f3f5',
-  '--ink-muted': '#a7adb6',
-  '--ink-faint': '#767c86',
+const LIGHT_THEME_VARS = {
+  '--surface': '#faf8f4',
+  '--surface-sunken': '#f1ede4',
+  '--surface-border': '#e3ddd0',
+  '--ink': '#221f1a',
+  '--ink-muted': '#6b6459',
+  '--ink-faint': '#948c7e',
 } as const;
 
 const THEME_STORAGE_KEY = 'magyapro:theme';
@@ -72,25 +72,19 @@ export function SiteChrome({
   const pathname = usePathname();
   const { locale, dict } = useI18n();
 
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  // Le HTML servi par le serveur est déjà en thème sombre (valeurs par
+  // défaut de `tailwind.config.ts`) : l'état initial correspond à ce rendu,
+  // pas de préférence système à deviner ni d'avertissement d'hydratation.
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  // Lu après le premier rendu, jamais pendant : le HTML servi par le serveur
-  // ne connaît pas la préférence du navigateur, donc un premier rendu client
-  // qui en tiendrait compte ne correspondrait pas au HTML reçu (avertissement
-  // d'hydratation React).
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === 'dark' || stored === 'light') {
         setTheme(stored);
-        return;
       }
     } catch {
-      // Stockage indisponible (navigation privée) : on retombe sur la
-      // préférence système ci-dessous.
-    }
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark');
+      // Stockage indisponible (navigation privée) : le thème par défaut reste actif.
     }
   }, []);
 
@@ -134,7 +128,7 @@ export function SiteChrome({
           // (`traditional`, `elegant`, `african-premium`) gardent cet effet
           // quelle que soit la police de corps de texte choisie.
           '--font-display': FONT_STACKS['Playfair Display'],
-          ...(theme === 'dark' ? DARK_THEME_VARS : {}),
+          ...(theme === 'light' ? LIGHT_THEME_VARS : {}),
         } as React.CSSProperties
       }
     >
