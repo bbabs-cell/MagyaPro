@@ -509,10 +509,15 @@ export function DashboardShell({
       </header>
 
       <div className="lg:flex">
-        <aside className="hidden w-64 shrink-0 bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+          {/* `absolute`, jamais `fixed` : un élément fixe avec un décalage
+              négatif échappe au clip de l'ascendant et son flou (100px) peut
+              alors déborder sur le contenu principal, à droite de la barre
+              latérale, en le rendant flou/pâle — c'est le même défaut que
+              celui déjà corrigé dans `admin/theme-root.tsx`. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed hidden h-64 w-64 -translate-x-8 -translate-y-16 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
+            className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
           />
           <div className="relative flex h-full flex-col p-4">
             <Link href="/dashboard" className="flex items-center gap-2 px-2 py-2">
