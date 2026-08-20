@@ -16,7 +16,7 @@ export default async function MarketingLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-white/85 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/85 backdrop-blur">
         <nav
           className="container-page flex h-16 items-center justify-between"
           aria-label="Navigation principale"
