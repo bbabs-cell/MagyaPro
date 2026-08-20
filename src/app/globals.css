@@ -88,7 +88,9 @@
    composée sans combinateur. */
 [data-admin-theme='light'] .bg-navy,
 [data-admin-theme='light'].bg-navy {
-  background-color: #f4f5f7;
+  /* Même ivoire que le thème clair du reste du produit (voir
+     `chrome.tsx`/`shell.tsx`) — jamais de gris neutre ni de blanc pur. */
+  background-color: #faf8f4;
 }
 [data-admin-theme='light'].text-white {
   color: #12151a;
@@ -116,7 +118,10 @@
    rendrait ce texte illisible sur son propre fond. Un léger contour les
    distingue du fond de page, lui aussi clair. */
 [data-admin-theme='light'] .bg-white {
-  background-color: #ffffff;
+  /* Légèrement teinté plutôt que blanc pur, par cohérence avec le reste du
+     thème clair — la différence avec le fond ivoire environnant reste le
+     contour, pas un blanc franc. */
+  background-color: #fdfbf7;
   box-shadow: inset 0 0 0 1px rgba(18, 21, 26, 0.12);
 }
 [data-admin-theme='light'] .hover\:bg-white\/5:hover {
@@ -126,7 +131,7 @@
   background-color: rgba(18, 21, 26, 0.08);
 }
 [data-admin-theme='light'] .hover\:bg-white\/90:hover {
-  background-color: #eceef1;
+  background-color: #f1ede4;
 }
 [data-admin-theme='light'] .border-white\/10 {
   border-color: rgba(18, 21, 26, 0.1);
