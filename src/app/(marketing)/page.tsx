@@ -363,7 +363,7 @@ export default async function LandingPage() {
           ].map((feature) => (
             <div
               key={feature.title}
-              className="group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
+              className="hover-glow group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:border-transparent"
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
                 {feature.icon}
@@ -397,7 +397,7 @@ export default async function LandingPage() {
                 return (
                 <div
                   key={template.id}
-                  className="group overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+                  className="hover-glow group overflow-hidden rounded-2xl border border-surface-border bg-surface shadow-sm transition-all hover:-translate-y-1"
                 >
                   <div className="relative h-44 overflow-hidden">
                     {previewUrl ? (
@@ -450,7 +450,7 @@ export default async function LandingPage() {
               <Link
                 key={demo.slug}
                 href={`/r/${demo.slug}`}
-                className="group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
+                className="hover-glow group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1"
               >
                 <span
                   aria-hidden="true"
