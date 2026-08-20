@@ -766,7 +766,7 @@ function TraditionalProductCard({
   return (
     <div
       className={cx(
-        'group overflow-hidden rounded-2xl border border-surface-border transition-shadow hover:shadow-lg',
+        'hover-glow-brand group overflow-hidden rounded-2xl border border-surface-border',
         unavailable && 'opacity-60',
       )}
     >

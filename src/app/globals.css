@@ -320,6 +320,16 @@
     0 12px 32px -16px rgba(255, 94, 46, 0.25),
     0 6px 16px -8px rgba(0, 0, 0, 0.45);
 }
+/* Variante pilotée par la couleur du restaurant (`--brand`) — cartes de
+   plat des sites publics, dont l'identité change avec chaque tenant. */
+.hover-glow-brand {
+  transition: box-shadow 0.2s ease;
+}
+.hover-glow-brand:hover {
+  box-shadow:
+    0 14px 34px -16px color-mix(in srgb, var(--brand, #ff5e2e) 35%, transparent),
+    0 6px 16px -8px rgba(0, 0, 0, 0.45);
+}
 
 /* Bandeau défilant en continu (template « street-food ») — la liste est
    dupliquée dans le balisage, cette animation ne fait que glisser la moitié
