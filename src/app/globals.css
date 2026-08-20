@@ -28,6 +28,16 @@
     @apply outline-none ring-2 ring-offset-2 ring-brand;
   }
 
+  /* Le texte tronqué (`.truncate`, ellipsis) dans un conteneur flexible peut
+     s'afficher flou dans Chrome/Blink : la largeur calculée par le flex tombe
+     parfois sur une valeur non entière de pixels, et la limite de coupure du
+     texte ne s'aligne plus sur la grille de pixels de l'écran. Promouvoir
+     l'élément dans sa propre couche de composition force cet alignement et
+     corrige le flou, sans effet visuel par ailleurs. */
+  .truncate {
+    transform: translateZ(0);
+  }
+
   /* Respecte le réglage système de réduction des animations. */
   @media (prefers-reduced-motion: reduce) {
     *,
