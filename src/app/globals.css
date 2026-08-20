@@ -311,6 +311,15 @@
     0 22px 60px -24px rgba(255, 94, 46, 0.35),
     0 10px 28px -12px rgba(0, 0, 0, 0.55);
 }
+/* Même principe, plus discret — cartes de contenu du tableau de bord. */
+.hover-glow-sm {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.hover-glow-sm:hover {
+  box-shadow:
+    0 12px 32px -16px rgba(255, 94, 46, 0.25),
+    0 6px 16px -8px rgba(0, 0, 0, 0.45);
+}
 
 /* Bandeau défilant en continu (template « street-food ») — la liste est
    dupliquée dans le balisage, cette animation ne fait que glisser la moitié

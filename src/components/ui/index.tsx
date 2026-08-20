@@ -161,7 +161,7 @@ export function Card({
     <div
       className={cx(
         'card',
-        hover && 'transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        hover && 'hover-glow-sm hover:-translate-y-0.5',
         className,
       )}
     >
@@ -296,7 +296,7 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="card relative overflow-hidden p-4 transition-shadow hover:shadow-md sm:p-5">
+    <div className="hover-glow-sm card relative overflow-hidden p-4 sm:p-5">
       <span
         aria-hidden="true"
         className={cx('absolute inset-x-0 top-0 h-1', STAT_ACCENT[tone ?? 'brand'])}
