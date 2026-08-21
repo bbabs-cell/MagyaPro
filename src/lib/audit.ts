@@ -96,6 +96,9 @@ export const AUDIT_ACTIONS = {
   CASH_SESSION_OPENED: 'cash_session.opened',
   CASH_SESSION_CLOSED: 'cash_session.closed',
   CASH_MOVEMENT_RECORDED: 'cash_movement.recorded',
+  STORE_TEAM_MEMBER_ADDED: 'store_team_member.added',
+  STORE_TEAM_MEMBER_UPDATED: 'store_team_member.updated',
+  STORE_TEAM_MEMBER_REMOVED: 'store_team_member.removed',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

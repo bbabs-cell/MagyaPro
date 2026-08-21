@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
 import { PERMISSIONS } from '@/lib/rbac';
+import { STORE_PERMISSIONS } from '@/lib/boutique/rbac';
 
 /**
  * Schémas de validation partagés.
@@ -597,6 +598,18 @@ export const storeCreditPaymentSchema = z.object({
   amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
   note: optionalText(200),
 });
+
+export const storeTeamMemberSchema = z.object({
+  email: emailSchema,
+  name: nameSchema,
+  role: z.enum(['ADMIN', 'MANAGER', 'CASHIER', 'SALESPERSON', 'STOCK_MANAGER', 'ACCOUNTANT']),
+  extraPermissions: z
+    .array(z.enum(STORE_PERMISSIONS as unknown as [string, ...string[]]))
+    .max(STORE_PERMISSIONS.length)
+    .default([]),
+});
+
+export const storeTeamMemberUpdateSchema = storeTeamMemberSchema.omit({ email: true, name: true });
 
 /**
  * Vente (caisse/POS). Les prix ne sont **jamais** pris depuis la requête —

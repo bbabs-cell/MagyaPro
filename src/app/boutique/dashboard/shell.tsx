@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/boutique/dashboard/produits', label: 'Produits', exact: false },
   { href: '/boutique/dashboard/achats', label: 'Achats', exact: false },
   { href: '/boutique/dashboard/clients', label: 'Clients', exact: false },
+  { href: '/boutique/dashboard/equipe', label: 'Équipe', exact: false },
 ];
 
 /**
