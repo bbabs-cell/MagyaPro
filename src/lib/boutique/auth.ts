@@ -84,6 +84,12 @@ export async function registerStoreAccount(input: {
       data: { storeId: store.id, name: 'Boutique principale', isDefault: true },
     });
 
+    // Idem pour la caisse : sans elle, impossible d'ouvrir une session de
+    // caisse le jour où le commerçant en a besoin.
+    await tx.cashRegister.create({
+      data: { storeId: store.id, name: 'Caisse principale' },
+    });
+
     // Le sous-domaine est un domaine à part entière, vérifié d'office : il
     // nous appartient, il n'y a rien à prouver côté DNS.
     await tx.storeDomain.create({

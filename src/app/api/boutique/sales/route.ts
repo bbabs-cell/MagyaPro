@@ -84,6 +84,14 @@ export const POST = route(async (request) => {
   const discount = Math.min(input.discount, subtotal);
   const total = subtotal - discount;
 
+  // Rattache la vente à la session de caisse en cours, si une est ouverte —
+  // c'est ce qui permet à la fermeture de caisse de retrouver les ventes en
+  // espèces de la journée. Une vente reste possible sans session ouverte.
+  const openSession = await prisma.cashSession.findFirst({
+    where: { storeId: context.store.id, status: 'OPEN' },
+    select: { id: true },
+  });
+
   if (input.isCredit && customer) {
     const projectedBalance = customer.creditBalance + total;
     if (customer.creditLimit > 0 && projectedBalance > customer.creditLimit) {
@@ -106,6 +114,7 @@ export const POST = route(async (request) => {
         number: store.saleCounter,
         userId: context.user.id,
         customerId: customer?.id ?? null,
+        cashSessionId: openSession?.id ?? null,
         subtotal,
         discount,
         total,

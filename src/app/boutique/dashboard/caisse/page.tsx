@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
+import { CashSessionBar } from '@/components/boutique/cash-session-bar';
 
 export const metadata: Metadata = { title: 'Caisse' };
 export const dynamic = 'force-dynamic';
@@ -43,9 +44,20 @@ export default async function BoutiqueCaissePage() {
     stock: variant.inventory?.[0]?.quantity ?? 0,
   }));
 
+  const session = await prisma.cashSession.findFirst({
+    where: { storeId: context.store.id, status: 'OPEN' },
+    include: {
+      cashRegister: { select: { name: true } },
+      movements: { select: { type: true, amount: true } },
+      sales: { select: { payments: { select: { method: true, amount: true } } } },
+    },
+  });
+
   return (
     <>
       <PageHeader title="Caisse" description="Enregistrez une vente." />
+
+      <CashSessionBar session={session} currency={context.store.currency} />
 
       {products.length === 0 ? (
         <EmptyState

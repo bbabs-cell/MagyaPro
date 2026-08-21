@@ -570,6 +570,20 @@ export const storePurchaseOrderSchema = z.object({
   note: optionalText(500),
 });
 
+export const openCashSessionSchema = z.object({
+  openingBalance: amountSchema,
+});
+
+export const closeCashSessionSchema = z.object({
+  countedBalance: amountSchema,
+});
+
+export const cashMovementSchema = z.object({
+  type: z.enum(['DEPOSIT', 'WITHDRAWAL']),
+  amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
+  reason: optionalText(200),
+});
+
 export const storeCustomerSchema = z.object({
   name: nameSchema,
   phone: phoneSchema,

@@ -93,6 +93,9 @@ export const AUDIT_ACTIONS = {
   STORE_CUSTOMER_CREATED: 'store_customer.created',
   STORE_CUSTOMER_UPDATED: 'store_customer.updated',
   STORE_CREDIT_PAYMENT_RECORDED: 'store_credit_payment.recorded',
+  CASH_SESSION_OPENED: 'cash_session.opened',
+  CASH_SESSION_CLOSED: 'cash_session.closed',
+  CASH_MOVEMENT_RECORDED: 'cash_movement.recorded',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
