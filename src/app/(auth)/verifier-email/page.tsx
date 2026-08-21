@@ -2,13 +2,18 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { verifyEmail } from '@/lib/auth/service';
+import { getCurrentUser } from '@/lib/auth/session';
+import { ResendVerificationButton } from './resend-button';
 
 export const metadata: Metadata = { title: 'Vérification de l\'email' };
 
 /**
- * La vérification est effectuée au chargement de la page : l'utilisateur
- * arrive depuis son email, il n'a aucune raison d'avoir à cliquer sur un
- * bouton supplémentaire.
+ * Deux façons d'arriver ici :
+ * - avec un `token` : l'utilisateur vient de cliquer sur le lien reçu par
+ *   email, la vérification s'effectue au chargement de la page ;
+ * - sans `token` : le tableau de bord a renvoyé ici un compte dont l'email
+ *   n'est pas encore confirmé. Rien à vérifier, juste rappeler la marche à
+ *   suivre et permettre de renvoyer l'email si besoin.
  */
 export default async function VerifyEmailPage({
   searchParams,
@@ -17,18 +22,43 @@ export default async function VerifyEmailPage({
 }) {
   const { token } = await searchParams;
 
-  let error: string | null = null;
   if (!token) {
-    error = 'Ce lien de vérification est incomplet.';
-  } else {
-    try {
-      await verifyEmail(token);
-    } catch (err) {
-      error =
-        err instanceof Error
-          ? err.message
-          : 'Ce lien de vérification est invalide ou a expiré.';
-    }
+    const user = await getCurrentUser();
+    return (
+      <div className="card p-6 text-center sm:p-8">
+        <div
+          aria-hidden="true"
+          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-xl text-brand"
+        >
+          ✉️
+        </div>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight">
+          Confirmez votre adresse email
+        </h1>
+        <p className="mt-2 text-sm text-ink-muted">
+          {user
+            ? `Un email a été envoyé à ${user.email}. Ouvrez-le et cliquez sur le lien pour accéder à votre tableau de bord.`
+            : 'Ouvrez l\'email que nous vous avons envoyé et cliquez sur le lien de confirmation.'}
+        </p>
+        {user && <ResendVerificationButton />}
+        <Link
+          href="/connexion"
+          className="mt-6 block text-sm text-ink-muted underline underline-offset-4 hover:text-ink"
+        >
+          Se connecter avec un autre compte
+        </Link>
+      </div>
+    );
+  }
+
+  let error: string | null = null;
+  try {
+    await verifyEmail(token);
+  } catch (err) {
+    error =
+      err instanceof Error
+        ? err.message
+        : 'Ce lien de vérification est invalide ou a expiré.';
   }
 
   return (

@@ -239,6 +239,26 @@ async function issueVerificationToken(
 }
 
 /**
+ * Renvoie l'email de vérification à un compte déjà authentifié qui n'a pas
+ * encore confirmé son adresse. Contrairement à `requestPasswordReset`,
+ * l'appelant connaît déjà l'utilisateur via sa session : pas besoin de
+ * dissimuler si le compte existe.
+ */
+export async function resendVerificationEmail(user: {
+  id: string;
+  email: string;
+  name: string;
+}): Promise<void> {
+  const token = await issueVerificationToken(
+    user.id,
+    'EMAIL_VERIFICATION',
+    EMAIL_VERIFICATION_TTL_HOURS,
+    'hours',
+  );
+  await sendVerificationEmail(user.email, user.name, token);
+}
+
+/**
  * Demande de réinitialisation.
  *
  * Ne signale jamais si l'adresse est connue — la route appelante répond

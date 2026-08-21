@@ -6,7 +6,12 @@ import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from '@/lib/errors';
 import { effectivePermissions, type Permission } from '@/lib/rbac';
-import { getCurrentUser, SUPPORT_COOKIE, type SessionUser } from '@/lib/auth/session';
+import {
+  getCurrentUser,
+  requiresEmailVerification,
+  SUPPORT_COOKIE,
+  type SessionUser,
+} from '@/lib/auth/session';
 
 /**
  * Résolution du tenant.
@@ -141,6 +146,15 @@ export async function requireTenant(
 ): Promise<TenantContext> {
   const user = await getCurrentUser();
   if (!user) throw new UnauthorizedError();
+
+  // Défense en profondeur : la page du tableau de bord redirige déjà les
+  // comptes non vérifiés vers `/verifier-email`, mais un appel direct à
+  // l'API (sans passer par cette page) doit être bloqué tout autant.
+  if (requiresEmailVerification(user)) {
+    throw new ForbiddenError(
+      'Vérifiez votre adresse email avant de continuer.',
+    );
+  }
 
   const context = await getTenantContext();
   if (!context) {

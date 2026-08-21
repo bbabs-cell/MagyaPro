@@ -23,7 +23,25 @@ export type SessionUser = {
   platformRole: PlatformRole;
   status: UserStatus;
   emailVerifiedAt: Date | null;
+  createdAt: Date;
 };
+
+/**
+ * La vérification d'email est devenue obligatoire à partir de cette date :
+ * les comptes créés avant continuent d'accéder au tableau de bord sans
+ * interruption (la vérification n'était pas requise au moment de leur
+ * inscription), seuls les nouveaux comptes sont bloqués tant qu'ils n'ont
+ * pas confirmé leur adresse.
+ */
+const EMAIL_VERIFICATION_ENFORCED_FROM = new Date('2026-08-21T00:00:00Z');
+
+export function requiresEmailVerification(user: SessionUser): boolean {
+  return (
+    user.platformRole !== 'SUPER_ADMIN' &&
+    !user.emailVerifiedAt &&
+    user.createdAt >= EMAIL_VERIFICATION_ENFORCED_FROM
+  );
+}
 
 function cookieOptions(expires: Date) {
   return {
@@ -108,6 +126,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
           platformRole: true,
           status: true,
           emailVerifiedAt: true,
+          createdAt: true,
         },
       },
     },

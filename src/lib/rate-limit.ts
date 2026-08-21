@@ -36,6 +36,7 @@ export const RATE_LIMITS = {
   login: { limit: 8, windowSeconds: 300 },
   register: { limit: 5, windowSeconds: 3600 },
   passwordReset: { limit: 5, windowSeconds: 3600 },
+  emailVerificationResend: { limit: 3, windowSeconds: 900 },
   checkout: { limit: 12, windowSeconds: 600 },
   upload: { limit: 40, windowSeconds: 600 },
   write: { limit: 120, windowSeconds: 60 },

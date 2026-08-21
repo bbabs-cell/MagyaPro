@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { getCurrentUser } from '@/lib/auth/session';
+import { getCurrentUser, requiresEmailVerification } from '@/lib/auth/session';
 import { getTenantContext, listMemberships } from '@/lib/tenant';
 import { countNewOrders, countPendingAlerts } from '@/lib/alerts';
 import { getEntitlements } from '@/lib/entitlements';
@@ -22,6 +22,12 @@ export default async function DashboardLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect('/connexion');
+
+  // Un compte créé après l'introduction de la vérification obligatoire ne
+  // peut pas utiliser le tableau de bord tant qu'il n'a pas confirmé son
+  // adresse — sans quoi n'importe qui pourrait s'inscrire avec l'email de
+  // quelqu'un d'autre.
+  if (requiresEmailVerification(user)) redirect('/verifier-email');
 
   const context = await getTenantContext();
 

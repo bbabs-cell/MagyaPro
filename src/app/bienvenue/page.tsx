@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth/session';
+import { getCurrentUser, requiresEmailVerification } from '@/lib/auth/session';
 import { getTenantContext } from '@/lib/tenant';
 import { templatePreviewUrl } from '@/lib/storage';
 import { TEMPLATES } from '@/lib/templates/registry';
@@ -14,6 +14,11 @@ export const dynamic = 'force-dynamic';
 export default async function OnboardingPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/connexion');
+
+  // Un compte fraîchement inscrit passe par ici avant même le tableau de
+  // bord : la vérification d'email doit être confirmée avant de commencer
+  // la configuration du restaurant, pas seulement avant d'y accéder ensuite.
+  if (requiresEmailVerification(user)) redirect('/verifier-email');
 
   const context = await getTenantContext();
   if (!context) redirect('/dashboard');
