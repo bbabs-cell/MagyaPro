@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
-import { Card, PageHeader, StatCard } from '@/components/ui';
+import { Card, LinkButton, PageHeader, StatCard } from '@/components/ui';
 
 export const metadata: Metadata = { title: "Vue d'ensemble" };
 export const dynamic = 'force-dynamic';
@@ -28,6 +28,11 @@ export default async function BoutiqueDashboardPage() {
       <PageHeader
         title={`Bonjour, ${context.store.name}`}
         description={`Connecté en tant que ${STORE_ROLE_LABELS[context.role]}.`}
+        action={
+          <LinkButton href="/boutique/dashboard/produits" variant="secondary" size="sm">
+            Voir les produits
+          </LinkButton>
+        }
       />
 
       <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-3">
@@ -39,10 +44,9 @@ export default async function BoutiqueDashboardPage() {
       <Card className="mt-6 p-5">
         <h2 className="font-semibold text-ink">Bientôt disponible</h2>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Le catalogue produits, la caisse (POS), le suivi de stock et les
-          ventes arrivent dans les prochaines mises à jour. Votre compte et
-          votre boutique « {context.store.name} » sont déjà prêts à les
-          recevoir.
+          Le catalogue produits et le suivi de stock sont maintenant
+          disponibles. La caisse (POS), les ventes, les achats et les
+          fournisseurs arrivent dans les prochaines mises à jour.
         </p>
       </Card>
     </>

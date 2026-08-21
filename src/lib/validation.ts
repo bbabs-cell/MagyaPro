@@ -70,7 +70,7 @@ export const urlSchema = z
     { message: 'L\'URL doit commencer par http:// ou https://.' },
   );
 
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   cleanString(max)
     .optional()
     .or(z.literal('').transform(() => undefined));
@@ -504,4 +504,38 @@ export const domainSchema = z.object({
 
 export const onboardingStepSchema = z.object({
   step: z.number().int().min(0).max(10),
+});
+
+// --- MagyaPro Boutique --------------------------------------------------
+
+export const storeCategorySchema = z.object({
+  name: nameSchema,
+  parentId: z.string().min(1).nullable().optional(),
+});
+
+export const storeBrandSchema = z.object({
+  name: nameSchema,
+  logoUrl: urlSchema.nullable().optional(),
+});
+
+/**
+ * Création d'un produit — combine la fiche produit et sa première variante
+ * (voir `StoreProductVariant` dans le schéma : un produit sans variante
+ * déclarée reçoit une variante par défaut, gérée ici plutôt qu'en base).
+ */
+export const storeProductSchema = z.object({
+  name: nameSchema,
+  description: optionalText(1000),
+  categoryId: z.string().min(1).nullable().optional(),
+  brandId: z.string().min(1).nullable().optional(),
+  supplierId: z.string().min(1).nullable().optional(),
+  imageUrl: urlSchema.nullable().optional(),
+  status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']).default('DRAFT'),
+  minStockAlert: z.number().int().min(0).max(1_000_000).default(0),
+  sku: optionalText(60),
+  barcode: optionalText(60),
+  cost: amountSchema,
+  price: amountSchema,
+  /** Quantité en stock à la création — mouvement `INITIAL`, jamais silencieux. */
+  initialStock: z.number().int().min(0).max(1_000_000).default(0),
 });

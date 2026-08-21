@@ -118,6 +118,15 @@ export async function toErrorResponse(error: unknown): Promise<NextResponse<ApiF
     if (error.code === 'P2025') {
       return fail('Ressource introuvable.', 404, 'NOT_FOUND');
     }
+    // P2003 : contrainte de clé étrangère — la ressource est encore
+    // référencée ailleurs (ex. un produit déjà vendu au moins une fois).
+    if (error.code === 'P2003') {
+      return fail(
+        'Impossible : cet élément est encore utilisé ailleurs.',
+        409,
+        'CONFLICT',
+      );
+    }
   }
 
   console.error('[api] Erreur non gérée :', error);

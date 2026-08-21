@@ -73,6 +73,16 @@ export const AUDIT_ACTIONS = {
   STORE_SUSPENDED: 'store.suspended',
   STORE_REACTIVATED: 'store.reactivated',
   STORE_DELETED: 'store.deleted',
+
+  STORE_CATEGORY_CREATED: 'store_category.created',
+  STORE_CATEGORY_UPDATED: 'store_category.updated',
+  STORE_CATEGORY_DELETED: 'store_category.deleted',
+  STORE_BRAND_CREATED: 'store_brand.created',
+  STORE_BRAND_UPDATED: 'store_brand.updated',
+  STORE_BRAND_DELETED: 'store_brand.deleted',
+  STORE_PRODUCT_CREATED: 'store_product.created',
+  STORE_PRODUCT_UPDATED: 'store_product.updated',
+  STORE_PRODUCT_DELETED: 'store_product.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

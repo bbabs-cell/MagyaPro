@@ -1,14 +1,21 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
+import { cx } from '@/components/ui';
+
+const NAV_ITEMS = [
+  { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
+  { href: '/boutique/dashboard/produits', label: 'Produits', exact: false },
+];
 
 /**
- * Ossature minimale du tableau de bord MagyaPro Boutique — première version,
- * sans barre latérale : une seule page (vue d'ensemble) existe pour
- * l'instant. La navigation par rubriques (produits, stock, ventes...)
- * s'ajoutera au même rythme que les fonctionnalités correspondantes.
+ * Ossature minimale du tableau de bord MagyaPro Boutique — navigation
+ * horizontale simple tant que le nombre de rubriques reste faible ; une
+ * vraie barre latérale (comme celle de Restaurant) prendra le relais quand
+ * stock, ventes, achats, etc. rejoindront la liste.
  */
 export function DashboardShell({
   storeName,
@@ -22,6 +29,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   async function handleLogout() {
     await api.post('/api/auth/logout');
@@ -51,6 +59,24 @@ export function DashboardShell({
             </button>
           </div>
         </div>
+        <nav aria-label="Navigation du tableau de bord" className="container-page flex gap-1 overflow-x-auto pb-2">
+          {NAV_ITEMS.map((item) => {
+            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={cx(
+                  'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
+                  active ? 'bg-ink text-surface' : 'text-ink-muted hover:text-ink',
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
       </header>
 
       <main className="container-page py-8">{children}</main>

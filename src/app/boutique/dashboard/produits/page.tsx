@@ -1,0 +1,68 @@
+import type { Metadata } from 'next';
+
+import { prisma } from '@/lib/db';
+import { requireStore } from '@/lib/boutique/store-tenant';
+import { PageHeader } from '@/components/ui';
+import { ProductManager } from '@/components/boutique/product-manager';
+
+export const metadata: Metadata = { title: 'Produits' };
+export const dynamic = 'force-dynamic';
+
+export default async function BoutiqueProductsPage() {
+  const context = await requireStore('products:view');
+
+  const [categories, brands, products] = await Promise.all([
+    prisma.storeCategory.findMany({
+      where: { storeId: context.store.id },
+      orderBy: { position: 'asc' },
+      select: { id: true, name: true, _count: { select: { products: true } } },
+    }),
+    prisma.brand.findMany({
+      where: { storeId: context.store.id },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, _count: { select: { products: true } } },
+    }),
+    prisma.storeProduct.findMany({
+      where: { storeId: context.store.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: { select: { id: true, name: true } },
+        brand: { select: { id: true, name: true } },
+        variants: {
+          select: {
+            id: true,
+            sku: true,
+            barcode: true,
+            cost: true,
+            price: true,
+            inventory: { select: { quantity: true, warehouseId: true } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return (
+    <>
+      <PageHeader
+        title="Produits"
+        description="Votre catalogue et le suivi de votre stock."
+      />
+      <ProductManager
+        initialCategories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          productCount: c._count.products,
+        }))}
+        initialBrands={brands.map((b) => ({
+          id: b.id,
+          name: b.name,
+          productCount: b._count.products,
+        }))}
+        initialProducts={products}
+        currency={context.store.currency}
+        canManage={context.permissions.has('products:manage')}
+      />
+    </>
+  );
+}
