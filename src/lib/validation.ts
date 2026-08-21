@@ -90,6 +90,17 @@ export const registerSchema = z.object({
   turnstileToken: z.string().max(4000).optional(),
 });
 
+/// Inscription MagyaPro Boutique — mêmes règles de validation que
+/// `registerSchema`, seul le nom du tenant change de champ.
+export const registerStoreSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  storeName: nameSchema,
+  planKey: z.string().max(40).optional(),
+  turnstileToken: z.string().max(4000).optional(),
+});
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Mot de passe requis.').max(200),
