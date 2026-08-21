@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/boutique/dashboard/caisse', label: 'Caisse', exact: false },
   { href: '/boutique/dashboard/ventes', label: 'Ventes', exact: false },
   { href: '/boutique/dashboard/produits', label: 'Produits', exact: false },
+  { href: '/boutique/dashboard/achats', label: 'Achats', exact: false },
 ];
 
 /**

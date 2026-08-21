@@ -540,6 +540,36 @@ export const storeProductSchema = z.object({
   initialStock: z.number().int().min(0).max(1_000_000).default(0),
 });
 
+export const storeSupplierSchema = z.object({
+  name: nameSchema,
+  contactName: optionalText(120),
+  phone: optionalText(30),
+  email: emailSchema.optional().or(z.literal('').transform(() => undefined)),
+  address: optionalText(200),
+  paymentTerms: optionalText(200),
+});
+
+/**
+ * Commande d'achat — première version : réception complète uniquement (pas
+ * de réception partielle), un seul entrepôt (celui par défaut). Les coûts
+ * saisis ici deviennent le nouveau coût d'achat des variantes concernées à
+ * la réception, pour que la marge affichée reste à jour.
+ */
+export const storePurchaseOrderSchema = z.object({
+  supplierId: z.string().min(1),
+  items: z
+    .array(
+      z.object({
+        productVariantId: z.string().min(1),
+        quantity: z.number().int().min(1).max(100_000),
+        unitCost: amountSchema,
+      }),
+    )
+    .min(1, 'Ajoutez au moins un produit.')
+    .max(200),
+  note: optionalText(500),
+});
+
 /**
  * Vente (caisse/POS). Les prix ne sont **jamais** pris depuis la requête —
  * seuls `productVariantId` et `quantity` sont lus ici ; le serveur
