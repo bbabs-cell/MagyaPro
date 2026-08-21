@@ -23,3 +23,4 @@ public/uploads/*
 coverage/
 .DS_Store
 *.log
+.env.bak
