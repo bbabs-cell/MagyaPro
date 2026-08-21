@@ -27,12 +27,25 @@ export default function BoutiqueLandingPage() {
           achats, clients et finances, dans une seule application. En cours de
           construction.
         </p>
-        <Link
-          href="https://magyapro.com"
-          className="mt-8 inline-flex h-12 items-center justify-center rounded-full border border-[#f3ece1]/20 px-8 text-sm font-medium text-[#f3ece1] transition-colors hover:bg-[#f3ece1]/10"
-        >
-          Découvrir MagyaPro Restaurant, déjà disponible
-        </Link>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/boutique/inscription"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-8 text-sm font-semibold text-[#1c1712] sm:w-auto"
+          >
+            Créer mon compte (accès anticipé)
+          </Link>
+          <Link
+            href="https://magyapro.com"
+            className="inline-flex h-12 w-full items-center justify-center rounded-full border border-[#f3ece1]/20 px-8 text-sm font-medium text-[#f3ece1] transition-colors hover:bg-[#f3ece1]/10 sm:w-auto"
+          >
+            Découvrir MagyaPro Restaurant, déjà disponible
+          </Link>
+        </div>
+        <p className="mt-4 text-xs text-[#f3ece1]/45">
+          En accès anticipé : votre compte et le nom de votre boutique sont
+          réservés dès maintenant. La caisse, le stock et les ventes arrivent
+          dans les prochaines mises à jour.
+        </p>
       </div>
 
       <div className="mx-auto mt-16 grid max-w-4xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
