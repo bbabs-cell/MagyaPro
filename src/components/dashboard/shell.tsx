@@ -18,6 +18,16 @@ import type { Permission } from '@/lib/rbac';
  * appliquée sans override. Le thème clair, optionnel, redéfinit ces
  * variables ici — un ivoire teinté, jamais du blanc pur. La barre latérale
  * reste `bg-navy`, déjà sombre par défaut dans les deux thèmes.
+ *
+ * IMPORTANT : la div qui porte ce `style` doit AUSSI porter la classe
+ * `text-ink` elle-même (pas seulement ses enfants). `color` est une
+ * propriété héritée : `<body>` la fixe une fois pour toutes avec la valeur
+ * par défaut de `--ink` (jamais avec l'override posé plus bas dans l'arbre),
+ * et tout descendant sans sa propre classe `text-ink` hérite de cette
+ * valeur figée — invisible en thème clair. Redéclarer `text-ink` ici force
+ * une réévaluation de `var(--ink, …)` à cet endroit précis, où l'override
+ * est bien en vigueur, et c'est cette valeur-là qui se transmet ensuite
+ * normalement aux descendants.
  */
 const LIGHT_THEME_VARS = {
   '--surface': '#faf8f4',
@@ -352,7 +362,7 @@ export function DashboardShell({
   if (role === 'COURIER') {
     return (
       <div
-        className="min-h-screen bg-surface-sunken"
+        className="min-h-screen bg-surface-sunken text-ink"
         style={theme === 'light' ? (LIGHT_THEME_VARS as React.CSSProperties) : undefined}
       >
         <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">

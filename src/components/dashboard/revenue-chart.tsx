@@ -89,17 +89,17 @@ export function RevenueChart({
                 x2={VIEW_WIDTH - PADDING.right}
                 y1={y}
                 y2={y}
-                stroke="#e4e8ed"
+                stroke="var(--surface-border)"
                 strokeWidth="1"
               />
             );
           })}
 
-          <path d={geometry.area} fill="#12151a" fillOpacity="0.06" />
+          <path d={geometry.area} fill="var(--ink)" fillOpacity="0.06" />
           <path
             d={geometry.line}
             fill="none"
-            stroke="#12151a"
+            stroke="var(--ink)"
             strokeWidth="2"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -112,7 +112,7 @@ export function RevenueChart({
                 x2={activeCoord.x}
                 y1={PADDING.top}
                 y2={geometry.baseline}
-                stroke="#8b95a2"
+                stroke="var(--ink-faint)"
                 strokeWidth="1"
                 strokeDasharray="3 3"
               />
@@ -121,8 +121,8 @@ export function RevenueChart({
                 cx={activeCoord.x}
                 cy={activeCoord.y}
                 r="5"
-                fill="#12151a"
-                stroke="#ffffff"
+                fill="var(--ink)"
+                stroke="var(--surface)"
                 strokeWidth="2"
               />
             </>
