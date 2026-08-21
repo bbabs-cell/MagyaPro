@@ -1,44 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
-
-/**
- * Mêmes variables que le site public (`chrome.tsx`) : le thème dark premium
- * est la valeur par défaut de `ink`/`surface` (voir `tailwind.config.ts`),
- * appliquée sans override. Le thème clair, optionnel, redéfinit ces
- * variables ici — un ivoire teinté, jamais du blanc pur. La barre latérale
- * reste `bg-navy`, déjà sombre par défaut dans les deux thèmes.
- *
- * IMPORTANT : la div qui porte ce `style` doit AUSSI porter la classe
- * `text-ink` elle-même (pas seulement ses enfants). `color` est une
- * propriété héritée : `<body>` la fixe une fois pour toutes avec la valeur
- * par défaut de `--ink` (jamais avec l'override posé plus bas dans l'arbre),
- * et tout descendant sans sa propre classe `text-ink` hérite de cette
- * valeur figée — invisible en thème clair. Redéclarer `text-ink` ici force
- * une réévaluation de `var(--ink, …)` à cet endroit précis, où l'override
- * est bien en vigueur, et c'est cette valeur-là qui se transmet ensuite
- * normalement aux descendants.
- */
-const LIGHT_THEME_VARS = {
-  '--surface': '#faf8f4',
-  '--surface-sunken': '#f1ede4',
-  '--surface-border': '#e3ddd0',
-  '--ink': '#221f1a',
-  '--ink-muted': '#6b6459',
-  '--ink-faint': '#948c7e',
-} as const;
-
-const DASHBOARD_THEME_STORAGE_KEY = 'magyapro:dashboard-theme';
 
 /**
  * Ossature du dashboard restaurant.
@@ -306,33 +277,6 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  // Le HTML servi par le serveur est déjà en thème sombre (valeurs par
-  // défaut de `tailwind.config.ts`) : l'état initial correspond à ce rendu,
-  // pas de préférence système à deviner ni d'avertissement d'hydratation.
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(DASHBOARD_THEME_STORAGE_KEY);
-      if (stored === 'dark' || stored === 'light') {
-        setTheme(stored);
-      }
-    } catch {
-      // Stockage indisponible (navigation privée) : le thème par défaut reste actif.
-    }
-  }, []);
-
-  function toggleTheme() {
-    setTheme((current) => {
-      const next = current === 'dark' ? 'light' : 'dark';
-      try {
-        window.localStorage.setItem(DASHBOARD_THEME_STORAGE_KEY, next);
-      } catch {
-        // Le thème reste actif pour la session en cours même sans stockage.
-      }
-      return next;
-    });
-  }
 
   const allowed = new Set(permissions);
 
@@ -361,10 +305,7 @@ export function DashboardShell({
   // l'essentiel, plutôt que la même coquille avec presque tout grisé.
   if (role === 'COURIER') {
     return (
-      <div
-        className="min-h-screen bg-surface-sunken text-ink"
-        style={theme === 'light' ? (LIGHT_THEME_VARS as React.CSSProperties) : undefined}
-      >
+      <div className="min-h-screen bg-surface-sunken text-ink">
         <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">
           <div className="container-page flex h-16 items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -375,7 +316,6 @@ export function DashboardShell({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <ThemeToggle theme={theme} onToggle={toggleTheme} />
               <button
                 type="button"
                 onClick={handleLogout}
@@ -450,7 +390,6 @@ export function DashboardShell({
   return (
     <div
       className="min-h-screen bg-surface-sunken"
-      style={theme === 'light' ? (LIGHT_THEME_VARS as React.CSSProperties) : undefined}
     >
       {allowed.has('orders:view') && <AlertWatcher />}
 
@@ -495,7 +434,6 @@ export function DashboardShell({
           </button>
           <span className="truncate px-3 font-medium">{restaurant.name}</span>
           <div className="flex shrink-0 items-center gap-3">
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <Link
               href={`/r/${restaurant.slug}`}
               className="text-sm text-ink-muted underline underline-offset-4"
@@ -597,11 +535,6 @@ export function DashboardShell({
                   <span className="block truncate text-sm font-medium">{user.name}</span>
                   <span className="block truncate text-xs text-white/40">{user.email}</span>
                 </span>
-                <ThemeToggle
-                  theme={theme}
-                  onToggle={toggleTheme}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
-                />
               </div>
 
               <button

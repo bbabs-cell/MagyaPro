@@ -15,18 +15,11 @@
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
-    /* Le site gère lui-même ses deux thèmes via des variables CSS
-       (`--ink`, `--surface`, ...). Sans cette déclaration, le mode
-       « sombre forcé » de certains navigateurs (notamment Chrome sur
-       Android, ou l'option système « Appliquer le mode sombre aux sites »)
-       tente de deviner et d'inverser les couleurs lui-même — de façon
-       incohérente sur un site déjà themé par variables CSS, ce qui produit
-       exactement le symptôme signalé : certains textes pâles/illisibles
-       alors que d'autres, juste à côté, restent corrects. Cette ligne
-       indique au navigateur que les deux thèmes sont déjà pris en charge,
-       ce qui désactive cette réinterprétation automatique.
-     */
-    color-scheme: light dark;
+    /* Un seul thème, clair : cette déclaration empêche aussi le mode
+       « sombre forcé » de certains navigateurs (Chrome Android, ou
+       l'option système équivalente) de tenter de réinterpréter les
+       couleurs du site lui-même. */
+    color-scheme: light;
   }
 
   body {

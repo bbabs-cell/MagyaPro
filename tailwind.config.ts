@@ -15,22 +15,20 @@ const config: Config = {
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
         navy: '#0b1730',
-        // `ink`/`surface` sont pilotées par variables CSS, redéfinies par
-        // `SiteChrome` (sites publics) et `DashboardShell` (tableau de bord)
-        // selon le thème actif. Les valeurs par défaut ci-dessous sont le
-        // thème dark premium — l'identité visuelle par défaut du produit —
-        // teintées bleu nuit pour prolonger le `navy` de la marque plutôt
-        // qu'un gris neutre. Le thème clair (optionnel, jamais blanc pur)
-        // est appliqué en surcharge explicite quand l'utilisateur le choisit.
+        // `ink`/`surface` : un seul thème, clair, jamais en blanc pur (un
+        // ivoire doux, plus reposant pour les yeux). Restent pilotées par
+        // variable CSS uniquement pour permettre au reçu imprimable
+        // (`app/recu/layout.tsx`) de repasser en blanc pur à l'impression —
+        // aucun composant ne bascule plus ces variables pour un mode sombre.
         ink: {
-          DEFAULT: 'var(--ink, #f2f4f8)',
-          muted: 'var(--ink-muted, #a6adbb)',
-          faint: 'var(--ink-faint, #757d8f)',
+          DEFAULT: 'var(--ink, #221f1a)',
+          muted: 'var(--ink-muted, #6b6459)',
+          faint: 'var(--ink-faint, #948c7e)',
         },
         surface: {
-          DEFAULT: 'var(--surface, #10131c)',
-          sunken: 'var(--surface-sunken, #171b26)',
-          border: 'var(--surface-border, #262c3b)',
+          DEFAULT: 'var(--surface, #faf8f4)',
+          sunken: 'var(--surface-sunken, #f1ede4)',
+          border: 'var(--surface-border, #e3ddd0)',
         },
       },
       fontFamily: {
