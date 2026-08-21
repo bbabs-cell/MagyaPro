@@ -49,13 +49,17 @@ model User {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  memberships   RestaurantUser[]
-  sessions      Session[]
-  tokens        VerificationToken[]
-  auditLogs     AuditLog[]
-  supportAccess SupportAccess[]
-  notifications Notification[]
-  courierOrders Order[]             @relation("CourierOrders")
+  memberships      RestaurantUser[]
+  /// Adhésions MagyaPro Boutique — distinctes des adhésions Restaurant : un
+  /// compte peut appartenir aux deux produits sans que l'un ne connaisse
+  /// l'autre.
+  storeMemberships StoreUser[]
+  sessions         Session[]
+  tokens           VerificationToken[]
+  auditLogs        AuditLog[]
+  supportAccess    SupportAccess[]
+  notifications    Notification[]
+  courierOrders    Order[]             @relation("CourierOrders")
 
   @@index([platformRole])
   @@map("users")
@@ -194,30 +198,30 @@ model Restaurant {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  settings        RestaurantSettings?
-  subscription    Subscription?
+  settings             RestaurantSettings?
+  subscription         Subscription?
   subscriptionPayments SubscriptionPayment[]
-  members         RestaurantUser[]
-  openingHours    OpeningHour[]
-  categories      Category[]
-  products        Product[]
-  orders          Order[]
-  customers       Customer[]
-  deliveryZones   DeliveryZone[]
-  promotions      Promotion[]
-  payments        Payment[]
-  domains         Domain[]
-  notifications   Notification[]
-  analyticsEvents AnalyticsEvent[]
-  auditLogs       AuditLog[]
-  supportAccess   SupportAccess[]
-  reviews         Review[]
-  reservations    Reservation[]
-  tables          RestaurantTable[]
-  loyaltyTiers    LoyaltyTier[]
-  loyaltyRewards  LoyaltyReward[]
-  expenses        Expense[]
-  galleryImages   GalleryImage[]
+  members              RestaurantUser[]
+  openingHours         OpeningHour[]
+  categories           Category[]
+  products             Product[]
+  orders               Order[]
+  customers            Customer[]
+  deliveryZones        DeliveryZone[]
+  promotions           Promotion[]
+  payments             Payment[]
+  domains              Domain[]
+  notifications        Notification[]
+  analyticsEvents      AnalyticsEvent[]
+  auditLogs            AuditLog[]
+  supportAccess        SupportAccess[]
+  reviews              Review[]
+  reservations         Reservation[]
+  tables               RestaurantTable[]
+  loyaltyTiers         LoyaltyTier[]
+  loyaltyRewards       LoyaltyReward[]
+  expenses             Expense[]
+  galleryImages        GalleryImage[]
 
   @@index([status])
   @@map("restaurants")
@@ -227,32 +231,32 @@ model RestaurantSettings {
   id           String @id @default(cuid())
   restaurantId String @unique
 
-  orderingEnabled      Boolean  @default(true)
-  deliveryEnabled      Boolean  @default(true)
-  pickupEnabled        Boolean  @default(true)
+  orderingEnabled         Boolean  @default(true)
+  deliveryEnabled         Boolean  @default(true)
+  pickupEnabled           Boolean  @default(true)
   /// Commande autonome depuis la table, via QR code. Distincte du droit
   /// accordé par le plan : un restaurant éligible peut choisir de ne
   /// proposer que l'appel serveur / demande d'addition, sans la commande.
-  tableOrderingEnabled Boolean  @default(false)
+  tableOrderingEnabled    Boolean  @default(false)
   /// Montant minimum de commande, toutes zones confondues (unité mineure).
-  minOrderAmount       Int      @default(0)
-  prepTimeMinutes      Int      @default(30)
+  minOrderAmount          Int      @default(0)
+  prepTimeMinutes         Int      @default(30)
   /// Identifiants des fournisseurs de paiement activés (voir src/lib/payments).
-  paymentProviders     String[] @default(["cash_on_delivery"])
+  paymentProviders        String[] @default(["cash_on_delivery"])
   /// Numéros receveurs du restaurant pour le paiement mobile manuel — jamais
   /// codés en dur, configurés ici.
-  orangeMoneyNumber    String?
-  waveNumber           String?
-  notificationEmail    String?
+  orangeMoneyNumber       String?
+  waveNumber              String?
+  notificationEmail       String?
   /// Son personnalisé joué à l'arrivée d'une commande (remplace le bip par
   /// défaut). Téléversé comme une image, mais dans le dossier `sounds`.
-  notificationSoundUrl String?
+  notificationSoundUrl    String?
   /// Notes internes affichées au personnel dans le dashboard.
-  staffNotes           String?
+  staffNotes              String?
   /// Délai après l'heure de réservation avant qu'elle soit signalée comme
   /// probable no-show dans le dashboard (le personnel décide alors de
   /// l'annuler ou non — rien n'est automatique).
-  reservationGraceMinutes Int @default(60)
+  reservationGraceMinutes Int      @default(60)
 
   /// TVA optionnelle : les prix affichés au client restent TTC (rien ne
   /// change dans le tunnel de commande) — le taux sert uniquement à faire
@@ -299,14 +303,14 @@ model OpeningHour {
 // ---------------------------------------------------------------------------
 
 model Category {
-  id           String  @id @default(cuid())
-  restaurantId String
-  name         String
-  slug         String
-  description  String?
-  imageUrl     String?
-  position     Int     @default(0)
-  isActive     Boolean @default(true)
+  id            String  @id @default(cuid())
+  restaurantId  String
+  name          String
+  slug          String
+  description   String?
+  imageUrl      String?
+  position      Int     @default(0)
+  isActive      Boolean @default(true)
   /// Traductions facultatives. Vide = le site affiche le nom français.
   nameEn        String?
   nameAr        String?
@@ -507,23 +511,23 @@ model Order {
   total       Int
   currency    String @default("XOF")
 
-  deliveryZoneId String?
-  promotionId    String?
-  promoCode      String?
+  deliveryZoneId           String?
+  promotionId              String?
+  promoCode                String?
   /// Renseigné pour une commande passée depuis la table (service à table).
-  tableId        String?
+  tableId                  String?
   /// Livreur qui a pris en charge la course (commandes en livraison
   /// uniquement).
-  courierId      String?
+  courierId                String?
   /// Code à six chiffres communiqué au client, vérifié par le livreur à la
   /// remise pour confirmer qu'il livre la bonne commande à la bonne personne.
-  deliveryCode   String?
+  deliveryCode             String?
   /// Position GPS du livreur, mise à jour depuis son téléphone tant que la
   /// livraison est `OUT_FOR_DELIVERY`. `null` en dehors de cette fenêtre —
   /// jamais conservée après la remise.
-  courierLat                Float?
-  courierLng                Float?
-  courierLocationUpdatedAt  DateTime?
+  courierLat               Float?
+  courierLng               Float?
+  courierLocationUpdatedAt DateTime?
 
   placedAt        DateTime  @default(now())
   statusUpdatedAt DateTime  @default(now())
@@ -860,8 +864,10 @@ model Plan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  subscriptions Subscription[]
-  subscriptionPayments SubscriptionPayment[]
+  subscriptions             Subscription[]
+  subscriptionPayments      SubscriptionPayment[]
+  storeSubscriptions        StoreSubscription[]
+  storeSubscriptionPayments StoreSubscriptionPayment[]
 
   @@map("plans")
 }
@@ -875,14 +881,14 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id               String             @id @default(cuid())
-  restaurantId     String             @unique
-  planId           String
-  status           SubscriptionStatus @default(TRIALING)
-  startedAt        DateTime           @default(now())
-  currentPeriodEnd DateTime
-  trialEndsAt      DateTime?
-  cancelledAt      DateTime?
+  id                String             @id @default(cuid())
+  restaurantId      String             @unique
+  planId            String
+  status            SubscriptionStatus @default(TRIALING)
+  startedAt         DateTime           @default(now())
+  currentPeriodEnd  DateTime
+  trialEndsAt       DateTime?
+  cancelledAt       DateTime?
   /// Horodatage de l'alerte « expire dans 5 jours » déjà envoyée — évite de
   /// la renvoyer chaque jour. Remise à zéro à chaque renouvellement, pour
   /// qu'une prochaine échéance déclenche à nouveau l'alerte.
@@ -918,23 +924,23 @@ enum SubscriptionPaymentStatus {
  * l'abonnement de la plateforme plutôt qu'à une commande d'un client.
  */
 model SubscriptionPayment {
-  id                String                    @id @default(cuid())
-  restaurantId      String
-  planId            String
+  id               String                    @id @default(cuid())
+  restaurantId     String
+  planId           String
   /// 'wave_manual' | 'orange_money_manual' — même vocabulaire que les
   /// fournisseurs de paiement de commande, pour rester cohérent.
-  provider          String
+  provider         String
   /// Pays depuis lequel le transfert est effectué — déclaré par le
   /// restaurateur avant paiement, utile pour rapprocher la preuve reçue.
-  country           String?
-  amount            Int
-  currency          String                    @default("XOF")
-  status            SubscriptionPaymentStatus @default(PENDING)
-  proofImageUrl     String?
-  proofSubmittedAt  DateTime?
-  note              String?
-  reviewedByUserId  String?
-  reviewedAt        DateTime?
+  country          String?
+  amount           Int
+  currency         String                    @default("XOF")
+  status           SubscriptionPaymentStatus @default(PENDING)
+  proofImageUrl    String?
+  proofSubmittedAt DateTime?
+  note             String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -953,7 +959,7 @@ model SubscriptionPayment {
  * réglages de plateforme à l'avenir sans nouvelle table.
  */
 model PlatformSettings {
-  id                String   @id @default(cuid())
+  id                String  @id @default(cuid())
   waveNumber        String?
   orangeMoneyNumber String?
 
@@ -1040,6 +1046,9 @@ enum NotificationType {
 model Notification {
   id           String           @id @default(cuid())
   restaurantId String?
+  /// Renseigné à la place de `restaurantId` pour une notification MagyaPro
+  /// Boutique — jamais les deux à la fois.
+  storeId      String?
   userId       String?
   type         NotificationType
   title        String
@@ -1051,9 +1060,11 @@ model Notification {
   createdAt    DateTime         @default(now())
 
   restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  store      Store?      @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId, readAt])
+  @@index([storeId, readAt])
   @@index([userId, readAt])
   @@map("notifications")
 }
@@ -1131,6 +1142,10 @@ model AuditLog {
   /// Conservé même si le compte est supprimé.
   actorEmail   String?
   restaurantId String?
+  /// Renseigné à la place de `restaurantId` pour une action MagyaPro
+  /// Boutique — jamais les deux à la fois. Journal commun aux deux
+  /// produits : le Core reste le seul propriétaire de cette table.
+  storeId      String?
   action       String
   targetType   String?
   targetId     String?
@@ -1140,8 +1155,10 @@ model AuditLog {
 
   actor      User?       @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
   restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  store      Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   @@index([restaurantId, createdAt])
+  @@index([storeId, createdAt])
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
   @@map("audit_logs")
@@ -1174,19 +1191,961 @@ enum AnnouncementSeverity {
 /// Message publié par un Super Admin, visible dans le dashboard de tous les
 /// restaurants tant qu'il est dans sa fenêtre de publication.
 model PlatformAnnouncement {
-  id        String                @id @default(cuid())
-  title     String
-  body      String
-  severity  AnnouncementSeverity  @default(INFO)
+  id             String               @id @default(cuid())
+  title          String
+  body           String
+  severity       AnnouncementSeverity @default(INFO)
   /// Conservé même si le compte administrateur est supprimé.
   createdByEmail String
-  publishedAt DateTime            @default(now())
+  publishedAt    DateTime             @default(now())
   /// `null` = pas de date de fin programmée ; reste actif jusqu'à suppression.
-  expiresAt DateTime?
+  expiresAt      DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([publishedAt, expiresAt])
   @@map("platform_announcements")
+}
+
+// =============================================================================
+// MAGYAPRO BOUTIQUE
+//
+// Second produit de la plateforme, indépendant de Restaurant : aucune de ses
+// tables n'est référencée par le module Restaurant, et réciproquement. Seul
+// le Core (User, Session, Plan, AuditLog, Notification, stockage, email/SMS)
+// est partagé — voir `src/lib/boutique/store-tenant.ts` pour l'équivalent
+// Boutique de `src/lib/tenant.ts`.
+//
+// Règle structurante identique à Restaurant : toute donnée appartenant à une
+// boutique porte une colonne `storeId` non nullable et un index dessus,
+// filtrée côté serveur — jamais depuis une valeur du client. Montants en
+// entiers, unité mineure de la devise de la boutique. Aucun flottant pour
+// l'argent.
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// Tenant & accès
+// -----------------------------------------------------------------------
+
+enum StoreRole {
+  OWNER
+  ADMIN
+  MANAGER
+  CASHIER
+  SALESPERSON
+  STOCK_MANAGER
+  ACCOUNTANT
+}
+
+model StoreUser {
+  id               String    @id @default(cuid())
+  storeId          String
+  userId           String
+  role             StoreRole @default(SALESPERSON)
+  /// Permissions accordées en plus de celles du rôle (système extensible,
+  /// même principe que `RestaurantUser.extraPermissions`).
+  extraPermissions String[]  @default([])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, userId])
+  @@index([userId])
+  @@index([storeId])
+  @@map("store_users")
+}
+
+enum StoreStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+}
+
+enum StoreBusinessType {
+  CLOTHING
+  ELECTRONICS
+  COSMETICS
+  GROCERY
+  OTHER
+}
+
+model Store {
+  id           String            @id @default(cuid())
+  /// Sous-domaine public : <slug>.boutique.magyapro.app
+  slug         String            @unique
+  name         String
+  description  String?
+  businessType StoreBusinessType @default(OTHER)
+  status       StoreStatus       @default(DRAFT)
+  isDemo       Boolean           @default(false)
+
+  logoUrl        String?
+  coverUrl       String?
+  primaryColor   String  @default("#b45309")
+  secondaryColor String  @default("#12151a")
+
+  phone       String?
+  email       String?
+  addressLine String?
+  city        String?
+  country     String?
+
+  currency String @default("XOF")
+  timezone String @default("Africa/Abidjan")
+
+  taxEnabled Boolean @default(false)
+  /// Taux en dixièmes de pourcent (ex. 185 = 18,5 %), pour rester en entier.
+  taxRate    Int     @default(0)
+
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
+
+  /// Compteur de numérotation des ventes, incrémenté transactionnellement —
+  /// même principe que `Restaurant.orderCounter`.
+  saleCounter Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  members              StoreUser[]
+  subscription         StoreSubscription?
+  subscriptionPayments StoreSubscriptionPayment[]
+  domains              StoreDomain[]
+  brands               Brand[]
+  categories           StoreCategory[]
+  products             StoreProduct[]
+  warehouses           Warehouse[]
+  inventoryMovements   InventoryMovement[]
+  suppliers            Supplier[]
+  supplierPayments     SupplierPayment[]
+  purchaseOrders       PurchaseOrder[]
+  customers            StoreCustomer[]
+  creditPayments       StoreCreditPayment[]
+  sales                Sale[]
+  returns              StoreReturn[]
+  cashRegisters        CashRegister[]
+  cashSessions         CashSession[]
+  expenses             StoreExpense[]
+  invoices             Invoice[]
+  promotions           StorePromotion[]
+  auditLogs            AuditLog[]
+  notifications        Notification[]
+
+  @@index([status])
+  @@map("stores")
+}
+
+enum StoreDomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum StoreDomainStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+/// Distinct de `Domain` (Restaurant) : même mécanique, jamais la même table —
+/// une collision de nom d'hôte entre les deux produits doit rester possible
+/// à traiter proprement (contrainte d'unicité propre à chaque table).
+model StoreDomain {
+  id                String            @id @default(cuid())
+  storeId           String
+  hostname          String            @unique
+  type              StoreDomainType   @default(CUSTOM)
+  status            StoreDomainStatus @default(PENDING)
+  verificationToken String
+  verifiedAt        DateTime?
+  lastCheckedAt     DateTime?
+  isPrimary         Boolean           @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("store_domains")
+}
+
+// -----------------------------------------------------------------------
+// Abonnement — réutilise `Plan` (générique), jamais `Subscription`
+// (Restaurant) : la contrainte d'unicité de `Subscription.restaurantId` en
+// interdirait de toute façon le partage.
+// -----------------------------------------------------------------------
+
+model StoreSubscription {
+  id                String             @id @default(cuid())
+  storeId           String             @unique
+  planId            String
+  status            SubscriptionStatus @default(TRIALING)
+  startedAt         DateTime           @default(now())
+  currentPeriodEnd  DateTime
+  trialEndsAt       DateTime?
+  cancelledAt       DateTime?
+  expiryAlertSentAt DateTime?
+  graceEndsAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([status])
+  @@map("store_subscriptions")
+}
+
+model StoreSubscriptionPayment {
+  id               String                    @id @default(cuid())
+  storeId          String
+  planId           String
+  provider         String
+  country          String?
+  amount           Int
+  currency         String                    @default("XOF")
+  status           SubscriptionPaymentStatus @default(PENDING)
+  proofImageUrl    String?
+  proofSubmittedAt DateTime?
+  note             String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan  Plan  @relation(fields: [planId], references: [id])
+
+  @@index([storeId, status])
+  @@index([status])
+  @@map("store_subscription_payments")
+}
+
+// -----------------------------------------------------------------------
+// Catalogue
+// -----------------------------------------------------------------------
+
+model Brand {
+  id      String  @id @default(cuid())
+  storeId String
+  name    String
+  logoUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products StoreProduct[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+  @@map("boutique_brands")
+}
+
+model StoreCategory {
+  id       String  @id @default(cuid())
+  storeId  String
+  name     String
+  /// Sous-catégorie : parent optionnel dans la même table.
+  parentId String?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  parent   StoreCategory?  @relation("StoreCategoryChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children StoreCategory[] @relation("StoreCategoryChildren")
+  products StoreProduct[]
+
+  @@unique([storeId, name, parentId])
+  @@index([storeId])
+  @@map("boutique_categories")
+}
+
+enum StoreProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+/// Une fiche produit. Le stock, le prix et le code-barres réels vivent
+/// toujours sur `StoreProductVariant` — un produit sans variante déclarée par le
+/// commerçant reçoit automatiquement une variante par défaut (créée par la
+/// couche applicative, jamais par le schéma), pour n'avoir qu'un seul chemin
+/// de gestion du stock.
+model StoreProduct {
+  id            String             @id @default(cuid())
+  storeId       String
+  categoryId    String?
+  brandId       String?
+  supplierId    String?
+  name          String
+  description   String?
+  imageUrl      String?
+  /// Attributs libres non couverts par les champs dédiés (ex. matière,
+  /// garantie) — jamais utilisé pour du contenu qui doit être filtrable ou
+  /// requêté : ces attributs-là méritent leur propre colonne.
+  attributes    Json               @default("{}")
+  status        StoreProductStatus @default(DRAFT)
+  minStockAlert Int                @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category StoreCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand    Brand?                @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  supplier Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  variants StoreProductVariant[]
+
+  @@index([storeId, status])
+  @@index([categoryId])
+  @@index([brandId])
+  @@map("boutique_products")
+}
+
+/// Unité réellement vendue et stockée. `attributes` porte la combinaison
+/// d'options (ex. { "taille": "M", "couleur": "Rouge" }) — affichage libre,
+/// sans table d'options séparée : la variabilité des attributs d'une
+/// boutique à l'autre rendrait un schéma d'options rigide contre-productif.
+model StoreProductVariant {
+  id         String  @id @default(cuid())
+  productId  String
+  sku        String?
+  barcode    String?
+  attributes Json    @default("{}")
+  /// Coût d'achat, en unité mineure — sert au calcul de marge.
+  cost       Int     @default(0)
+  price      Int
+  /// Prix promotionnel actif, prioritaire sur `price` à l'affichage/vente.
+  salePrice  Int?
+  imageUrl   String?
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product            StoreProduct        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory          Inventory[]
+  inventoryMovements InventoryMovement[]
+  saleItems          SaleItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  returnItems        StoreReturnItem[]
+
+  @@unique([productId, sku])
+  @@index([productId])
+  @@index([barcode])
+  @@map("boutique_product_variants")
+}
+
+// -----------------------------------------------------------------------
+// Stock
+// -----------------------------------------------------------------------
+
+model Warehouse {
+  id        String  @id @default(cuid())
+  storeId   String
+  name      String
+  /// Le point de vente principal de la boutique reçoit `isDefault = true` à
+  /// sa création — toujours au moins un emplacement pour recevoir du stock.
+  isDefault Boolean @default(false)
+  address   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  inventory          Inventory[]
+  inventoryMovements InventoryMovement[]
+  transfersOut       StockTransfer[]     @relation("TransferSource")
+  transfersIn        StockTransfer[]     @relation("TransferDestination")
+
+  @@index([storeId])
+  @@map("boutique_warehouses")
+}
+
+/// Quantité en stock d'une variante dans un entrepôt donné. Jamais modifiée
+/// directement : uniquement recalculée à partir des `InventoryMovement`
+/// (voir plus bas), pour qu'aucune écriture ne puisse désynchroniser le
+/// solde de son historique.
+model Inventory {
+  id               String @id @default(cuid())
+  productVariantId String
+  warehouseId      String
+  quantity         Int    @default(0)
+  /// Quantité retenue par des ventes non finalisées (panier en cours) — ne
+  /// réduit pas `quantity`, mais réduit le disponible réel à la vente.
+  reservedQuantity Int    @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  warehouse      Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@unique([productVariantId, warehouseId])
+  @@index([warehouseId])
+  @@map("boutique_inventory")
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  RETURN
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+  INITIAL
+}
+
+/// Chaque mouvement de stock, sans exception — la table `Inventory` n'est
+/// qu'une projection dénormalisée de la somme de ces mouvements, jamais la
+/// source de vérité.
+model InventoryMovement {
+  id               String            @id @default(cuid())
+  storeId          String
+  productVariantId String
+  warehouseId      String
+  type             StockMovementType
+  /// Négatif pour une sortie, positif pour une entrée.
+  quantityChange   Int
+  quantityBefore   Int
+  quantityAfter    Int
+  userId           String?
+  reason           String?
+  /// Référence de l'opération à l'origine du mouvement (ex. id de vente,
+  /// d'achat, de transfert) — jamais interprétée, seulement affichée.
+  referenceType    String?
+  referenceId      String?
+  createdAt        DateTime          @default(now())
+
+  store          Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  warehouse      Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, createdAt])
+  @@index([productVariantId, createdAt])
+  @@index([warehouseId, createdAt])
+  @@map("boutique_inventory_movements")
+}
+
+enum StockTransferStatus {
+  PENDING
+  IN_TRANSIT
+  RECEIVED
+  CANCELLED
+}
+
+model StockTransfer {
+  id              String              @id @default(cuid())
+  fromWarehouseId String
+  toWarehouseId   String
+  status          StockTransferStatus @default(PENDING)
+  note            String?
+  sentAt          DateTime?
+  receivedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fromWarehouse Warehouse           @relation("TransferSource", fields: [fromWarehouseId], references: [id], onDelete: Cascade)
+  toWarehouse   Warehouse           @relation("TransferDestination", fields: [toWarehouseId], references: [id], onDelete: Cascade)
+  items         StockTransferItem[]
+
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
+  @@map("boutique_stock_transfers")
+}
+
+model StockTransferItem {
+  id               String @id @default(cuid())
+  transferId       String
+  productVariantId String
+  quantity         Int
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@map("boutique_stock_transfer_items")
+}
+
+// -----------------------------------------------------------------------
+// Fournisseurs & achats
+// -----------------------------------------------------------------------
+
+model Supplier {
+  id           String  @id @default(cuid())
+  storeId      String
+  name         String
+  contactName  String?
+  phone        String?
+  email        String?
+  address      String?
+  paymentTerms String?
+  /// Dette envers ce fournisseur, en unité mineure — recalculée à chaque
+  /// commande reçue et à chaque paiement, jamais modifiée à la main.
+  debtBalance  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store          Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products       StoreProduct[]
+  purchaseOrders PurchaseOrder[]
+  payments       SupplierPayment[]
+
+  @@index([storeId])
+  @@map("boutique_suppliers")
+}
+
+model SupplierPayment {
+  id         String   @id @default(cuid())
+  storeId    String
+  supplierId String
+  amount     Int
+  paidAt     DateTime @default(now())
+  note       String?
+
+  createdAt DateTime @default(now())
+
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([supplierId, paidAt])
+  @@map("boutique_supplier_payments")
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id         String              @id @default(cuid())
+  storeId    String
+  supplierId String
+  reference  String
+  status     PurchaseOrderStatus @default(DRAFT)
+  /// Frais annexes (transport, douane...) répartis sur le coût des lignes —
+  /// affichés séparément, jamais fondus silencieusement dans les prix.
+  extraFees  Int                 @default(0)
+  note       String?
+  orderedAt  DateTime?
+  receivedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items    PurchaseOrderItem[]
+
+  @@unique([storeId, reference])
+  @@index([storeId, status])
+  @@map("boutique_purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String @id @default(cuid())
+  purchaseOrderId  String
+  productVariantId String
+  quantityOrdered  Int
+  /// Cumul reçu — une réception partielle incrémente ce champ sans jamais le
+  /// dépasser `quantityOrdered` (contrôlé côté application).
+  quantityReceived Int    @default(0)
+  unitCost         Int
+  discount         Int    @default(0)
+
+  purchaseOrder  PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@map("boutique_purchase_order_items")
+}
+
+// -----------------------------------------------------------------------
+// Clients & crédit
+// -----------------------------------------------------------------------
+
+model StoreCustomer {
+  id      String  @id @default(cuid())
+  storeId String
+  name    String
+  phone   String
+  email   String?
+  address String?
+  notes   String?
+
+  /// Agrégats dénormalisés, recalculés à chaque vente — même principe que
+  /// `Customer` (Restaurant).
+  salesCount Int       @default(0)
+  totalSpent Int       @default(0)
+  lastSaleAt DateTime?
+
+  /// Solde dû par le client, en unité mineure — recalculé à chaque vente à
+  /// crédit et à chaque paiement, jamais modifié à la main.
+  creditBalance Int @default(0)
+  creditLimit   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store          Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales          Sale[]
+  creditPayments StoreCreditPayment[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@map("boutique_customers")
+}
+
+model StoreCreditPayment {
+  id         String   @id @default(cuid())
+  storeId    String
+  customerId String
+  amount     Int
+  paidAt     DateTime @default(now())
+  note       String?
+
+  createdAt DateTime @default(now())
+
+  store    Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer StoreCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([customerId, paidAt])
+  @@map("boutique_credit_payments")
+}
+
+// -----------------------------------------------------------------------
+// Ventes (POS)
+// -----------------------------------------------------------------------
+
+enum SaleStatus {
+  COMPLETED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+model Sale {
+  id            String     @id @default(cuid())
+  storeId       String
+  /// Numéro affiché au client — suite de `Store.saleCounter`, jamais
+  /// l'identifiant technique.
+  number        Int
+  customerId    String?
+  cashSessionId String?
+  userId        String?
+  status        SaleStatus @default(COMPLETED)
+  subtotal      Int
+  discount      Int        @default(0)
+  taxAmount     Int        @default(0)
+  total         Int
+  /// Part réglée à crédit (compte client) sur le total — le reste est
+  /// couvert par les lignes de `StorePayment`.
+  creditAmount  Int        @default(0)
+  note          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store       Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer    StoreCustomer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  cashSession CashSession?    @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  items       SaleItem[]
+  payments    StorePayment[]
+  returns     StoreReturn[]
+  invoice     Invoice?
+  promotion   StorePromotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  promotionId String?
+
+  @@unique([storeId, number])
+  @@index([storeId, createdAt])
+  @@index([customerId])
+  @@map("boutique_sales")
+}
+
+model SaleItem {
+  id               String  @id @default(cuid())
+  saleId           String
+  productVariantId String
+  /// Nom et attributs figés au moment de la vente : une fiche produit
+  /// modifiée ou supprimée plus tard ne doit jamais réécrire l'historique
+  /// des ventes déjà réalisées.
+  productName      String
+  variantLabel     String?
+  quantity         Int
+  unitPrice        Int
+  discount         Int     @default(0)
+  total            Int
+
+  sale           Sale                @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([productVariantId])
+  @@map("boutique_sale_items")
+}
+
+/// Un règlement sur une vente. Plusieurs lignes possibles (paiement scindé :
+/// une partie espèces, une partie mobile money).
+model StorePayment {
+  id        String  @id @default(cuid())
+  saleId    String
+  /// Identifiant libre du moyen de paiement (ex. 'cash', 'wave',
+  /// 'orange_money', 'card') — jamais un identifiant ou numéro de compte en
+  /// dur : voir `StorePaymentMethod` pour la configuration par boutique.
+  method    String
+  amount    Int
+  reference String?
+
+  createdAt DateTime @default(now())
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@map("boutique_payments")
+}
+
+/// Moyens de paiement activés par une boutique, configurés depuis son
+/// tableau de bord — jamais codés en dur dans l'application.
+model StorePaymentMethod {
+  id        String  @id @default(cuid())
+  storeId   String
+  /// Même vocabulaire que `StorePayment.method`.
+  method    String
+  label     String
+  isEnabled Boolean @default(true)
+  position  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, method])
+  @@index([storeId])
+  @@map("boutique_payment_methods")
+}
+
+// -----------------------------------------------------------------------
+// Retours
+// -----------------------------------------------------------------------
+
+enum StoreReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum StoreReturnResolution {
+  REFUND
+  EXCHANGE
+}
+
+model StoreReturn {
+  id         String                 @id @default(cuid())
+  storeId    String
+  saleId     String
+  status     StoreReturnStatus      @default(PENDING)
+  resolution StoreReturnResolution?
+  reason     String?
+  userId     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sale  Sale              @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  items StoreReturnItem[]
+
+  @@index([storeId, createdAt])
+  @@index([saleId])
+  @@map("boutique_returns")
+}
+
+model StoreReturnItem {
+  id               String @id @default(cuid())
+  returnId         String
+  productVariantId String
+  quantity         Int
+  unitPrice        Int
+
+  return         StoreReturn         @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+  @@map("boutique_return_items")
+}
+
+// -----------------------------------------------------------------------
+// Caisses
+// -----------------------------------------------------------------------
+
+model CashRegister {
+  id       String  @id @default(cuid())
+  storeId  String
+  name     String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessions CashSession[]
+
+  @@index([storeId])
+  @@map("boutique_cash_registers")
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
+model CashSession {
+  id              String            @id @default(cuid())
+  storeId         String
+  cashRegisterId  String
+  userId          String?
+  status          CashSessionStatus @default(OPEN)
+  openingBalance  Int
+  /// Solde théorique en fin de session — calculé à la fermeture à partir de
+  /// `openingBalance` + mouvements + ventes en espèces.
+  expectedBalance Int?
+  /// Solde réellement compté par l'utilisateur à la fermeture.
+  countedBalance  Int?
+  /// `countedBalance - expectedBalance` — jamais recalculé après coup.
+  difference      Int?
+  openedAt        DateTime          @default(now())
+  closedAt        DateTime?
+
+  store        Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  cashRegister CashRegister   @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  sales        Sale[]
+  movements    CashMovement[]
+
+  @@index([storeId, status])
+  @@index([cashRegisterId])
+  @@map("boutique_cash_sessions")
+}
+
+enum CashMovementType {
+  SALE
+  DEPOSIT
+  WITHDRAWAL
+  EXPENSE
+}
+
+model CashMovement {
+  id            String           @id @default(cuid())
+  cashSessionId String
+  type          CashMovementType
+  amount        Int
+  reason        String?
+  userId        String?
+
+  createdAt DateTime @default(now())
+
+  cashSession CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+
+  @@index([cashSessionId, createdAt])
+  @@map("boutique_cash_movements")
+}
+
+// -----------------------------------------------------------------------
+// Dépenses & finances
+// -----------------------------------------------------------------------
+
+enum StoreExpenseCategory {
+  RENT
+  UTILITIES
+  STAFF
+  TRANSPORT
+  MARKETING
+  MAINTENANCE
+  SUPPLIES
+  OTHER
+}
+
+model StoreExpense {
+  id         String               @id @default(cuid())
+  storeId    String
+  label      String
+  amount     Int
+  category   StoreExpenseCategory @default(OTHER)
+  incurredAt DateTime
+  notes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, incurredAt])
+  @@map("boutique_expenses")
+}
+
+// -----------------------------------------------------------------------
+// Factures
+// -----------------------------------------------------------------------
+
+model Invoice {
+  id       String   @id @default(cuid())
+  storeId  String
+  saleId   String   @unique
+  number   String
+  issuedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sale  Sale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, number])
+  @@index([storeId])
+  @@map("boutique_invoices")
+}
+
+// -----------------------------------------------------------------------
+// Promotions
+// -----------------------------------------------------------------------
+
+enum StorePromotionType {
+  PERCENT
+  FIXED
+}
+
+model StorePromotion {
+  id             String             @id @default(cuid())
+  storeId        String
+  code           String
+  type           StorePromotionType
+  /// Pourcentage (1-100) si PERCENT, montant en unité mineure si FIXED.
+  value          Int
+  minCartAmount  Int                @default(0)
+  maxRedemptions Int?
+  usedCount      Int                @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean            @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sales Sale[]
+
+  @@unique([storeId, code])
+  @@index([storeId])
+  @@map("boutique_promotions")
 }
