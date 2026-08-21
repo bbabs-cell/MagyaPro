@@ -16,6 +16,12 @@ export default async function BoutiqueCaissePage() {
     select: { id: true },
   });
 
+  const customers = await prisma.storeCustomer.findMany({
+    where: { storeId: context.store.id },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, phone: true, creditBalance: true, creditLimit: true },
+  });
+
   const variants = await prisma.storeProductVariant.findMany({
     where: { product: { storeId: context.store.id, status: 'ACTIVE' }, isActive: true },
     select: {
@@ -52,7 +58,7 @@ export default async function BoutiqueCaissePage() {
           }
         />
       ) : (
-        <Pos products={products} currency={context.store.currency} />
+        <Pos products={products} customers={customers} currency={context.store.currency} />
       )}
     </>
   );

@@ -8,11 +8,11 @@ import { formatMoney } from '@/lib/money';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
- * Caisse (POS) — première version : un seul moyen de paiement par vente,
- * pas encore de client associé ni de paiement scindé. La recherche filtre
- * côté client une liste déjà chargée : suffisant pour un catalogue de
- * quelques centaines de références, à revoir (recherche serveur paginée)
- * si un commerce dépasse cette taille.
+ * Caisse (POS) — première version : un seul moyen de paiement par vente
+ * (immédiat ou crédit, jamais scindé), pas encore de paiement partiel. La
+ * recherche filtre côté client une liste déjà chargée : suffisant pour un
+ * catalogue de quelques centaines de références, à revoir (recherche
+ * serveur paginée) si un commerce dépasse cette taille.
  */
 
 type Product = {
@@ -21,6 +21,14 @@ type Product = {
   variantId: string;
   price: number;
   stock: number;
+};
+
+type Customer = {
+  id: string;
+  name: string;
+  phone: string;
+  creditBalance: number;
+  creditLimit: number;
 };
 
 type CartLine = { variantId: string; name: string; unitPrice: number; quantity: number; maxStock: number };
@@ -32,11 +40,21 @@ const PAYMENT_METHODS = [
   { value: 'card', label: 'Carte' },
 ];
 
-export function Pos({ products, currency }: { products: Product[]; currency: string }) {
+export function Pos({
+  products,
+  customers,
+  currency,
+}: {
+  products: Product[];
+  customers: Customer[];
+  currency: string;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]!.value);
+  const [customerId, setCustomerId] = useState('');
+  const [isCredit, setIsCredit] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<{ number: number; total: number } | null>(null);
@@ -100,11 +118,14 @@ export function Pos({ products, currency }: { products: Product[]; currency: str
         '/api/boutique/sales',
         {
           items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
-          paymentMethod,
+          customerId: customerId || undefined,
+          isCredit,
+          ...(isCredit ? {} : { paymentMethod }),
         },
       );
       setLastReceipt({ number: sale.number, total: sale.total });
       setCart([]);
+      setIsCredit(false);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "La vente n'a pas pu être enregistrée.");
@@ -199,23 +220,61 @@ export function Pos({ products, currency }: { products: Product[]; currency: str
           <span>{formatMoney(total, currency)}</span>
         </div>
 
-        <div className="mt-4">
-          <label htmlFor="paymentMethod" className="block text-sm font-medium text-ink">
-            Moyen de paiement
-          </label>
-          <select
-            id="paymentMethod"
-            value={paymentMethod}
-            onChange={(event) => setPaymentMethod(event.target.value)}
-            className={cx(inputClass, 'mt-1.5')}
-          >
-            {PAYMENT_METHODS.map((method) => (
-              <option key={method.value} value={method.value}>
-                {method.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {customers.length > 0 && (
+          <div className="mt-4">
+            <label htmlFor="customerId" className="block text-sm font-medium text-ink">
+              Client (facultatif)
+            </label>
+            <select
+              id="customerId"
+              value={customerId}
+              onChange={(event) => {
+                setCustomerId(event.target.value);
+                if (!event.target.value) setIsCredit(false);
+              }}
+              className={cx(inputClass, 'mt-1.5')}
+            >
+              <option value="">Aucun</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name} — {customer.phone}
+                </option>
+              ))}
+            </select>
+
+            {customerId && (
+              <label className="mt-2 flex items-center gap-2 text-sm text-ink-muted">
+                <input
+                  type="checkbox"
+                  checked={isCredit}
+                  onChange={(event) => setIsCredit(event.target.checked)}
+                  className="accent-ink"
+                />
+                Vente à crédit (payée plus tard par le client)
+              </label>
+            )}
+          </div>
+        )}
+
+        {!isCredit && (
+          <div className="mt-4">
+            <label htmlFor="paymentMethod" className="block text-sm font-medium text-ink">
+              Moyen de paiement
+            </label>
+            <select
+              id="paymentMethod"
+              value={paymentMethod}
+              onChange={(event) => setPaymentMethod(event.target.value)}
+              className={cx(inputClass, 'mt-1.5')}
+            >
+              {PAYMENT_METHODS.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <Button
           type="button"

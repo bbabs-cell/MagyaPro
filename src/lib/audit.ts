@@ -90,6 +90,9 @@ export const AUDIT_ACTIONS = {
   STORE_SUPPLIER_DELETED: 'store_supplier.deleted',
   PURCHASE_ORDER_CREATED: 'purchase_order.created',
   PURCHASE_ORDER_RECEIVED: 'purchase_order.received',
+  STORE_CUSTOMER_CREATED: 'store_customer.created',
+  STORE_CUSTOMER_UPDATED: 'store_customer.updated',
+  STORE_CREDIT_PAYMENT_RECORDED: 'store_credit_payment.recorded',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

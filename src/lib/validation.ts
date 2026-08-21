@@ -570,22 +570,51 @@ export const storePurchaseOrderSchema = z.object({
   note: optionalText(500),
 });
 
+export const storeCustomerSchema = z.object({
+  name: nameSchema,
+  phone: phoneSchema,
+  email: emailSchema.optional().or(z.literal('').transform(() => undefined)),
+  address: optionalText(200),
+  notes: optionalText(500),
+  creditLimit: amountSchema.default(0),
+});
+
+export const storeCreditPaymentSchema = z.object({
+  amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
+  note: optionalText(200),
+});
+
 /**
  * Vente (caisse/POS). Les prix ne sont **jamais** pris depuis la requête —
  * seuls `productVariantId` et `quantity` sont lus ici ; le serveur
  * recalcule chaque montant depuis la base (voir la route associée).
+ *
+ * Deux modes, exclusifs : paiement immédiat (`paymentMethod` requis) ou
+ * vente à crédit (`isCredit: true`, `customerId` requis) — pas encore de
+ * paiement scindé entre les deux dans cette première version.
  */
-export const storeSaleSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        productVariantId: z.string().min(1),
-        quantity: z.number().int().min(1).max(10_000),
-      }),
-    )
-    .min(1, 'Le panier est vide.')
-    .max(200),
-  /** Identifiant libre du moyen de paiement — voir `StorePayment.method`. */
-  paymentMethod: z.string().min(1).max(40),
-  discount: amountSchema.default(0),
-});
+export const storeSaleSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          productVariantId: z.string().min(1),
+          quantity: z.number().int().min(1).max(10_000),
+        }),
+      )
+      .min(1, 'Le panier est vide.')
+      .max(200),
+    /** Identifiant libre du moyen de paiement — voir `StorePayment.method`. */
+    paymentMethod: z.string().min(1).max(40).optional(),
+    customerId: z.string().min(1).optional(),
+    isCredit: z.boolean().default(false),
+    discount: amountSchema.default(0),
+  })
+  .refine((data) => data.isCredit || Boolean(data.paymentMethod), {
+    message: 'Choisissez un moyen de paiement.',
+    path: ['paymentMethod'],
+  })
+  .refine((data) => !data.isCredit || Boolean(data.customerId), {
+    message: 'Une vente à crédit doit être associée à un client.',
+    path: ['customerId'],
+  });
