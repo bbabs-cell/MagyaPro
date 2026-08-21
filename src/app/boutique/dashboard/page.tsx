@@ -29,9 +29,14 @@ export default async function BoutiqueDashboardPage() {
         title={`Bonjour, ${context.store.name}`}
         description={`Connecté en tant que ${STORE_ROLE_LABELS[context.role]}.`}
         action={
-          <LinkButton href="/boutique/dashboard/produits" variant="secondary" size="sm">
-            Voir les produits
-          </LinkButton>
+          <>
+            <LinkButton href="/boutique/dashboard/caisse" size="sm">
+              Ouvrir la caisse
+            </LinkButton>
+            <LinkButton href="/boutique/dashboard/produits" variant="secondary" size="sm">
+              Voir les produits
+            </LinkButton>
+          </>
         }
       />
 
@@ -44,9 +49,10 @@ export default async function BoutiqueDashboardPage() {
       <Card className="mt-6 p-5">
         <h2 className="font-semibold text-ink">Bientôt disponible</h2>
         <p className="mt-1.5 text-sm text-ink-muted">
-          Le catalogue produits et le suivi de stock sont maintenant
-          disponibles. La caisse (POS), les ventes, les achats et les
-          fournisseurs arrivent dans les prochaines mises à jour.
+          Le catalogue produits, le suivi de stock, la caisse et les ventes
+          sont maintenant disponibles. Les achats, les fournisseurs, les
+          clients et les caisses (ouverture/fermeture) arrivent dans les
+          prochaines mises à jour.
         </p>
       </Card>
     </>

@@ -539,3 +539,23 @@ export const storeProductSchema = z.object({
   /** Quantité en stock à la création — mouvement `INITIAL`, jamais silencieux. */
   initialStock: z.number().int().min(0).max(1_000_000).default(0),
 });
+
+/**
+ * Vente (caisse/POS). Les prix ne sont **jamais** pris depuis la requête —
+ * seuls `productVariantId` et `quantity` sont lus ici ; le serveur
+ * recalcule chaque montant depuis la base (voir la route associée).
+ */
+export const storeSaleSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productVariantId: z.string().min(1),
+        quantity: z.number().int().min(1).max(10_000),
+      }),
+    )
+    .min(1, 'Le panier est vide.')
+    .max(200),
+  /** Identifiant libre du moyen de paiement — voir `StorePayment.method`. */
+  paymentMethod: z.string().min(1).max(40),
+  discount: amountSchema.default(0),
+});

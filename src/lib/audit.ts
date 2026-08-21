@@ -83,6 +83,8 @@ export const AUDIT_ACTIONS = {
   STORE_PRODUCT_CREATED: 'store_product.created',
   STORE_PRODUCT_UPDATED: 'store_product.updated',
   STORE_PRODUCT_DELETED: 'store_product.deleted',
+  SALE_CREATED: 'sale.created',
+  SALE_REFUNDED: 'sale.refunded',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
