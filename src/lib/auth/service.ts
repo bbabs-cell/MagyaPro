@@ -212,8 +212,12 @@ export async function authenticate(input: {
   return user;
 }
 
-/** Émet un jeton à usage unique et invalide les précédents du même type. */
-async function issueVerificationToken(
+/**
+ * Émet un jeton à usage unique et invalide les précédents du même type.
+ * Exportée : mécanique Core générique (`User`/`VerificationToken`), réutilisée
+ * telle quelle par MagyaPro Boutique (`src/lib/boutique/auth.ts`).
+ */
+export async function issueVerificationToken(
   userId: string,
   type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET',
   amount: number,

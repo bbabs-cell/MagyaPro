@@ -64,6 +64,15 @@ export const AUDIT_ACTIONS = {
   ANNOUNCEMENT_CREATED: 'announcement.created',
   ANNOUNCEMENT_UPDATED: 'announcement.updated',
   ANNOUNCEMENT_DELETED: 'announcement.deleted',
+
+  // MagyaPro Boutique — préfixe `store.` distinct de `restaurant.` : jamais
+  // les mêmes actions, jamais la même table de conversion en clair.
+  STORE_CREATED: 'store.created',
+  STORE_UPDATED: 'store.updated',
+  STORE_PUBLISHED: 'store.published',
+  STORE_SUSPENDED: 'store.suspended',
+  STORE_REACTIVATED: 'store.reactivated',
+  STORE_DELETED: 'store.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -93,6 +102,7 @@ export type AuditInput = {
   actorUserId?: string | null;
   actorEmail?: string | null;
   restaurantId?: string | null;
+  storeId?: string | null;
   targetType?: string | null;
   targetId?: string | null;
   ip?: string | null;
@@ -135,6 +145,7 @@ export async function recordAudit(input: AuditInput): Promise<void> {
         actorUserId: input.actorUserId ?? null,
         actorEmail: input.actorEmail ?? null,
         restaurantId: input.restaurantId ?? null,
+        storeId: input.storeId ?? null,
         targetType: input.targetType ?? null,
         targetId: input.targetId ?? null,
         ip: input.ip ?? null,

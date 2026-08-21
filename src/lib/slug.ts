@@ -46,6 +46,28 @@ export async function uniqueRestaurantSlug(name: string): Promise<string> {
 }
 
 /**
+ * Produit un slug de boutique libre au niveau de la plateforme (table
+ * `stores`, distincte de `restaurants` — une même chaîne peut donc être
+ * prise des deux côtés sans collision réelle, les sous-domaines ne se
+ * chevauchant jamais : `<slug>.magyapro.com` contre
+ * `<slug>.boutique.magyapro.com`).
+ */
+export async function uniqueStoreSlug(name: string): Promise<string> {
+  const base = slugify(name) || 'boutique';
+  let candidate = isReservedSlug(base) ? `${base}-shop` : base;
+
+  for (let suffix = 2; suffix < 200; suffix++) {
+    const taken = await prisma.store.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    });
+    if (!taken) return candidate;
+    candidate = `${base}-${suffix}`;
+  }
+  return `${base}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
  * Produit un slug unique **à l'intérieur d'un restaurant** (catégorie, produit).
  * `excludeId` permet de renommer une entité sans entrer en conflit avec
  * elle-même.
