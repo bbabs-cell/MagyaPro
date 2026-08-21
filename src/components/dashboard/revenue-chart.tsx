@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-import { formatMoney } from '@/lib/money';
+import { formatMoney, toMajor } from '@/lib/money';
 
 /**
  * Évolution du chiffre d'affaires — série unique.
@@ -79,28 +79,45 @@ export function RevenueChart({
           aria-label={`Évolution du chiffre d'affaires. Total ${formatMoney(total, currency)}. Meilleur jour : ${formatDay(peak.date)} avec ${formatMoney(peak.revenue, currency)}.`}
           onMouseLeave={() => setHovered(null)}
         >
-          {/* Repères horizontaux, en retrait derrière la donnée. */}
+          {/* Repères horizontaux, en retrait derrière la donnée — avec la
+              valeur correspondante, pour donner une échelle de lecture. */}
           {[0, 0.5, 1].map((ratio) => {
             const y = PADDING.top + (VIEW_HEIGHT - PADDING.top - PADDING.bottom) * ratio;
+            const value = geometry.max * (1 - ratio);
             return (
-              <line
-                key={ratio}
-                x1={PADDING.left}
-                x2={VIEW_WIDTH - PADDING.right}
-                y1={y}
-                y2={y}
-                stroke="var(--surface-border)"
-                strokeWidth="1"
-              />
+              <g key={ratio}>
+                <line
+                  x1={PADDING.left}
+                  x2={VIEW_WIDTH - PADDING.right}
+                  y1={y}
+                  y2={y}
+                  stroke="var(--surface-border)"
+                  strokeWidth="1"
+                />
+                <text
+                  x={PADDING.left}
+                  y={y - 4}
+                  fill="var(--ink-faint)"
+                  fontSize="10"
+                >
+                  {formatCompactMoney(value, currency)}
+                </text>
+              </g>
             );
           })}
 
-          <path d={geometry.area} fill="var(--ink)" fillOpacity="0.06" />
+          <defs>
+            <linearGradient id="revenue-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={geometry.area} fill="url(#revenue-area)" />
           <path
             d={geometry.line}
             fill="none"
-            stroke="var(--ink)"
-            strokeWidth="2"
+            stroke="var(--brand)"
+            strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
@@ -121,7 +138,7 @@ export function RevenueChart({
                 cx={activeCoord.x}
                 cy={activeCoord.y}
                 r="5"
-                fill="var(--ink)"
+                fill="var(--brand)"
                 stroke="var(--surface)"
                 strokeWidth="2"
               />
@@ -196,6 +213,15 @@ export function RevenueChart({
         </div>
       </details>
     </figure>
+  );
+}
+
+/** Repère d'axe compact (« 15 k », « 1,2 M ») — l'unité est déjà donnée par
+    le titre de la carte et par l'infobulle au survol. */
+function formatCompactMoney(value: number, currency: string): string {
+  if (value <= 0) return '0';
+  return new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 }).format(
+    toMajor(value, currency),
   );
 }
 
