@@ -108,15 +108,15 @@ export function RevenueChart({
 
           <defs>
             <linearGradient id="revenue-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--brand, #ff5e2e)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--brand, #ff5e2e)" stopOpacity="0" />
             </linearGradient>
           </defs>
           <path d={geometry.area} fill="url(#revenue-area)" />
           <path
             d={geometry.line}
             fill="none"
-            stroke="var(--brand)"
+            stroke="var(--brand, #ff5e2e)"
             strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -138,7 +138,7 @@ export function RevenueChart({
                 cx={activeCoord.x}
                 cy={activeCoord.y}
                 r="5"
-                fill="var(--brand)"
+                fill="var(--brand, #ff5e2e)"
                 stroke="var(--surface)"
                 strokeWidth="2"
               />
