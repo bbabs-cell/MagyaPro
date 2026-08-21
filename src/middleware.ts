@@ -1,26 +1,38 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Routage multi-domaine.
+ * Routage multi-domaine et multi-produit.
  *
- * Une seule application sert trois familles d'URL :
- *   - le domaine racine (magyapro.app)        → landing, dashboard, administration
- *   - un sous-domaine (chez-fatou.magyapro.app) → site public du restaurant
- *   - un domaine personnalisé (mon-resto.com) → site public du restaurant
+ * Une seule application sert plusieurs familles d'URL :
+ *   - le domaine racine (magyapro.com)              → landing, dashboard, administration MagyaPro Restaurant
+ *   - un sous-domaine (chez-fatou.magyapro.com)      → site public du restaurant
+ *   - un domaine personnalisé (mon-resto.com)        → site public du restaurant
+ *   - boutique.magyapro.com                          → landing, dashboard MagyaPro Boutique
+ *   - un sous-domaine de boutique (ma-boutique.boutique.magyapro.com) → site public de la boutique
  *
- * Le middleware ne fait que réécrire : il identifie l'hôte et route la requête
- * vers `/r/<hôte>`. Il ne consulte pas la base — il s'exécute sur chaque
- * requête, y compris les fichiers statiques, et doit rester instantané. C'est
- * le segment `/r/[host]` qui résout l'hôte en restaurant, avec les contrôles
- * de statut associés.
+ * Restaurant reste l'espace historique, servi directement sous le domaine
+ * racine, pour ne rien changer à ses URL existantes. Chaque nouveau produit
+ * (Boutique, puis d'éventuels suivants) reçoit son propre préfixe de
+ * sous-domaine, réservé dans `PLATFORM_SUBDOMAINS` pour qu'un restaurant ne
+ * puisse jamais choisir ce mot comme identifiant.
+ *
+ * Le middleware ne fait que réécrire : il identifie l'hôte et route la
+ * requête. Il ne consulte pas la base — il s'exécute sur chaque requête, y
+ * compris les fichiers statiques, et doit rester instantané. Ce sont les
+ * segments `/r/[host]` (site public restaurant) et `/s/[host]` (site public
+ * boutique) qui résolvent l'hôte en tenant, avec les contrôles de statut
+ * associés.
  */
 
 const ROOT_DOMAIN = (process.env.APP_ROOT_DOMAIN ?? 'magyapro.localhost:3000')
   .split(':')[0]!
   .toLowerCase();
 
-/** Sous-domaines qui appartiennent à la plateforme, pas à un restaurant. */
-const PLATFORM_SUBDOMAINS = new Set(['www', 'app', 'api', 'admin']);
+/** Sous-domaine racine d'un produit — jamais un identifiant de restaurant/boutique. */
+const PRODUCT_SUBDOMAINS = new Set(['boutique']);
+
+/** Sous-domaines qui appartiennent à la plateforme, pas à un tenant. */
+const PLATFORM_SUBDOMAINS = new Set(['www', 'app', 'api', 'admin', ...PRODUCT_SUBDOMAINS]);
 
 export const config = {
   matcher: [
@@ -38,7 +50,9 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Réécriture déjà effectuée, ou accès direct en prévisualisation.
-  if (pathname.startsWith('/r/')) return NextResponse.next();
+  if (pathname.startsWith('/r/') || pathname.startsWith('/s/') || pathname.startsWith('/boutique')) {
+    return NextResponse.next();
+  }
 
   const isRootDomain =
     host === ROOT_DOMAIN ||
@@ -49,22 +63,41 @@ export function middleware(request: NextRequest) {
 
   if (isRootDomain) return NextResponse.next();
 
-  let identifier: string | null = null;
+  // boutique.magyapro.com : landing et dashboard MagyaPro Boutique, servis
+  // depuis `src/app/boutique/`, sous le même déploiement que Restaurant.
+  if (host === `boutique.${ROOT_DOMAIN}`) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/boutique${pathname === '/' ? '' : pathname}`;
+    return NextResponse.rewrite(url);
+  }
 
-  if (host.endsWith(`.${ROOT_DOMAIN}`)) {
+  let identifier: string | null = null;
+  let isBoutiqueTenant = false;
+
+  if (host.endsWith(`.boutique.${ROOT_DOMAIN}`)) {
+    // <slug>.boutique.magyapro.com : site public d'une boutique.
+    const subdomain = host.slice(0, -(`.boutique.${ROOT_DOMAIN}`.length));
+    if (!subdomain.includes('.')) {
+      identifier = subdomain;
+      isBoutiqueTenant = true;
+    }
+  } else if (host.endsWith(`.${ROOT_DOMAIN}`)) {
     const subdomain = host.slice(0, -(ROOT_DOMAIN.length + 1));
     // Un sous-domaine à plusieurs niveaux n'identifie pas un restaurant.
     if (!subdomain.includes('.') && !PLATFORM_SUBDOMAINS.has(subdomain)) {
       identifier = subdomain;
     }
   } else {
-    // Hôte étranger au domaine racine : domaine personnalisé potentiel.
+    // Hôte étranger au domaine racine : domaine personnalisé potentiel,
+    // toujours résolu côté Restaurant pour l'instant — Boutique n'expose pas
+    // encore de domaine personnalisé (voir `StoreDomain`, non branché ici).
     identifier = host;
   }
 
   if (!identifier) return NextResponse.next();
 
   const url = request.nextUrl.clone();
-  url.pathname = `/r/${identifier}${pathname === '/' ? '' : pathname}`;
+  const prefix = isBoutiqueTenant ? '/s/' : '/r/';
+  url.pathname = `${prefix}${identifier}${pathname === '/' ? '' : pathname}`;
   return NextResponse.rewrite(url);
 }
