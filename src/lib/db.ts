@@ -50,9 +50,20 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-/** `true` uniquement sur Workers : `DATABASE_URL` n'y existe jamais en variable simple. */
+/**
+ * `true` uniquement sur Workers.
+ *
+ * Ne se base plus sur l'absence de `DATABASE_URL` : cette variable peut
+ * exister aussi sur Workers (contournement temporaire du binding Hyperdrive,
+ * ou tout autre besoin futur), auquel cas se fier à sa présence ferait
+ * croire à tort qu'on tourne sur un serveur Node classique et désactiverait
+ * le cache par requête ci-dessus — avec des connexions PG réutilisées d'une
+ * requête à l'autre malgré elles, et des ruptures de connexion aléatoires en
+ * conséquence (constaté en production). `navigator.userAgent` vaut
+ * `"Cloudflare-Workers"` sur ce runtime, jamais sur Node.
+ */
 function isCloudflareRuntime(): boolean {
-  return !process.env.DATABASE_URL;
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
 }
 
 const requestScopedClients = new WeakMap<object, PrismaClient>();
