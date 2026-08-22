@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
   // l'adaptateur Cloudflare d'OpenNext puisse copier le moteur WASM de
   // Prisma (query_compiler_bg.wasm) dans le bundle Worker final.
   serverExternalPackages: ['@prisma/client', '.prisma/client'],
+  // Sur Vercel, le traceur de dépendances des fonctions serverless ne suit
+  // pas automatiquement le moteur WASM de Prisma (chargé via un chemin de
+  // fichier, pas un `require()` classique) : sans cette inclusion explicite,
+  // le fichier .wasm manque au déploiement (`ENOENT ... query_compiler_bg.wasm`).
+  outputFileTracingIncludes: {
+    '/*': ['./node_modules/.prisma/client/**/*'],
+  },
   images: {
     // Uploads are served from the storage abstraction; remote drivers are
     // declared through NEXT_PUBLIC_STORAGE_HOST when a CDN is configured.
