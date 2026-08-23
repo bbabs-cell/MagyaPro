@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { getStoreContext } from '@/lib/boutique/store-tenant';
+import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
 
 export const metadata: Metadata = { title: { template: '%s — MagyaPro Boutique', default: 'Tableau de bord' } };
@@ -22,6 +23,7 @@ export default async function BoutiqueDashboardLayout({
 
   return (
     <DashboardShell
+      platformLogoUrl={platformLogoUrl()}
       storeName={context.store.name}
       userName={user.name}
       userEmail={user.email}

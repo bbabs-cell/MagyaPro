@@ -1,40 +1,133 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { api } from '@/lib/client/api';
 import { cx } from '@/components/ui';
-
-const NAV_ITEMS = [
-  { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
-  { href: '/boutique/dashboard/caisse', label: 'Caisse', exact: false },
-  { href: '/boutique/dashboard/ventes', label: 'Ventes', exact: false },
-  { href: '/boutique/dashboard/produits', label: 'Produits', exact: false },
-  { href: '/boutique/dashboard/achats', label: 'Achats', exact: false },
-  { href: '/boutique/dashboard/clients', label: 'Clients', exact: false },
-  { href: '/boutique/dashboard/equipe', label: 'Équipe', exact: false },
-];
+import { Logo } from '@/components/ui/logo';
 
 /**
- * Ossature minimale du tableau de bord MagyaPro Boutique — navigation
- * horizontale simple tant que le nombre de rubriques reste faible ; une
- * vraie barre latérale (comme celle de Restaurant) prendra le relais quand
- * stock, ventes, achats, etc. rejoindront la liste.
+ * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
+ * que celle de Restaurant (barre latérale à sections, icônes, dégradé),
+ * volontairement recopiée pour que l'identité de la plateforme reste
+ * cohérente d'un produit à l'autre. Pas de filtrage par permission dans
+ * cette première version (toutes les rubriques existantes sont accessibles
+ * à toute l'équipe) — Boutique n'a pas encore la granularité de rôles
+ * différenciés que Restaurant applique à sa propre navigation.
  */
+
+type NavItem = { href: string; label: string; exact?: boolean };
+
+const ICON_PROPS = {
+  width: 18,
+  height: 18,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  'aria-hidden': true as const,
+};
+
+const NAV_ICONS: Record<string, React.ReactElement> = {
+  '/boutique/dashboard': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="3" width="8" height="8" rx="1.5" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" />
+    </svg>
+  ),
+  '/boutique/dashboard/caisse': (
+    <svg {...ICON_PROPS}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <circle cx="16" cy="14.5" r="1.6" />
+    </svg>
+  ),
+  '/boutique/dashboard/ventes': (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8h12l-1 11H7L6 8Z" />
+      <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+    </svg>
+  ),
+  '/boutique/dashboard/produits': (
+    <svg {...ICON_PROPS}>
+      <path d="M5 3v18M5 3c3 0 3 4 0 4M19 3v18" />
+    </svg>
+  ),
+  '/boutique/dashboard/achats': (
+    <svg {...ICON_PROPS}>
+      <path d="M3 12a9 9 0 1 1 3 6.7" />
+      <path d="M3 12v5h5" />
+    </svg>
+  ),
+  '/boutique/dashboard/clients': (
+    <svg {...ICON_PROPS}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17.5" cy="9" r="2.4" />
+      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
+    </svg>
+  ),
+  '/boutique/dashboard/equipe': (
+    <svg {...ICON_PROPS}>
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
+      <path d="M14.5 20a4.5 4.5 0 0 1 7-3.6" />
+    </svg>
+  ),
+};
+
+const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
+  {
+    title: 'Pilotage',
+    items: [
+      { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
+      { href: '/boutique/dashboard/caisse', label: 'Caisse' },
+      { href: '/boutique/dashboard/ventes', label: 'Ventes' },
+    ],
+  },
+  {
+    title: 'Boutique',
+    items: [
+      { href: '/boutique/dashboard/produits', label: 'Produits' },
+      { href: '/boutique/dashboard/achats', label: 'Achats' },
+      { href: '/boutique/dashboard/clients', label: 'Clients' },
+    ],
+  },
+  {
+    title: 'Compte',
+    items: [{ href: '/boutique/dashboard/equipe', label: 'Équipe' }],
+  },
+];
+
 export function DashboardShell({
+  platformLogoUrl,
   storeName,
   userName,
   userEmail,
   children,
 }: {
+  platformLogoUrl: string | null;
   storeName: string;
   userName: string;
   userEmail: string;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function isActive(item: NavItem) {
+    return item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  }
 
   async function handleLogout() {
     await api.post('/api/auth/logout');
@@ -42,49 +135,113 @@ export function DashboardShell({
     router.refresh();
   }
 
+  const navigation = (
+    <nav className="space-y-6" aria-label="Navigation du tableau de bord">
+      {NAV_SECTIONS.map((section) => (
+        <div key={section.title}>
+          <p className="px-3 text-xs font-medium uppercase tracking-wide text-white/35">
+            {section.title}
+          </p>
+          <ul className="mt-2 space-y-0.5">
+            {section.items.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={isActive(item) ? 'page' : undefined}
+                  className={cx(
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                    isActive(item)
+                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white',
+                  )}
+                >
+                  <span className="shrink-0">{NAV_ICONS[item.href]}</span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+
   return (
-    <div className="min-h-screen bg-surface-sunken text-ink">
-      <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">
-        <div className="container-page flex h-16 items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate font-semibold tracking-tight">{storeName}</p>
-            <p className="truncate text-xs text-ink-faint">MagyaPro Boutique</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="hidden text-right text-xs text-ink-muted sm:block">
-              <p className="font-medium text-ink">{userName}</p>
-              <p>{userEmail}</p>
-            </div>
+    <div className="min-h-screen bg-surface-sunken">
+      <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
+        <div className="flex h-14 items-center justify-between px-4">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="menu-mobile-boutique"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
+          >
+            <span className="sr-only">{menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}</span>
+            <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
+          </button>
+          <span className="truncate px-3 font-medium">{storeName}</span>
+          <div className="w-10" />
+        </div>
+        {menuOpen && (
+          <div id="menu-mobile-boutique" className="border-t border-white/10 bg-navy p-4 text-white">
+            {navigation}
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex h-9 items-center rounded-lg border border-surface-border px-3 text-sm hover:bg-surface-sunken"
+              className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
             >
               Se déconnecter
             </button>
           </div>
-        </div>
-        <nav aria-label="Navigation du tableau de bord" className="container-page flex gap-1 overflow-x-auto pb-2">
-          {NAV_ITEMS.map((item) => {
-            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? 'page' : undefined}
-                className={cx(
-                  'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
-                  active ? 'bg-ink text-surface' : 'text-ink-muted hover:text-ink',
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        )}
       </header>
 
-      <main className="container-page py-8">{children}</main>
+      <div className="lg:flex">
+        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
+          />
+          <div className="relative flex h-full flex-col p-4">
+            <Link href="/boutique/dashboard" className="flex items-center gap-2 px-2 py-2">
+              <Logo src={platformLogoUrl} />
+            </Link>
+
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+              <p className="truncate text-sm font-medium">{storeName}</p>
+              <p className="mt-0.5 truncate text-xs text-white/40">MagyaPro Boutique</p>
+            </div>
+
+            <div className="mt-6 flex-1">{navigation}</div>
+
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff9a4d] to-[#ff5e2e] text-xs font-bold text-white">
+                  {userName.charAt(0).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{userName}</span>
+                  <span className="block truncate text-xs text-white/40">{userEmail}</span>
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+              >
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-5xl">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
