@@ -1510,10 +1510,10 @@ enum StoreProductStatus {
   ARCHIVED
 }
 
-/// Unité d'affichage du produit. Les quantités restent des entiers dans
-/// cette première version (voir le commentaire sur `StoreProduct.unit`) :
-/// KG/LITER couvrent pour l'instant des produits vendus par pièce entière
-/// dans cette unité (ex. un pack de 1 kg), pas une pesée fractionnée.
+/// Unité d'affichage du produit — détermine le pas des quantités saisies
+/// (voir `src/lib/boutique/units.ts`) : KG/GRAM/LITER/MILLILITER acceptent
+/// une quantité décimale (pesée/volume fractionné), UNIT/PACK restent
+/// pensés pour un compte entier.
 enum ProductUnit {
   UNIT
   KG
