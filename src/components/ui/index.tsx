@@ -80,16 +80,23 @@ export function LinkButton({
   variant = 'primary',
   size = 'md',
   className,
+  target,
   children,
 }: {
   href: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   className?: string;
+  target?: string;
   children: ReactNode;
 }) {
   return (
-    <Link href={href} className={buttonClass(variant, size, className)}>
+    <Link
+      href={href}
+      target={target}
+      rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+      className={buttonClass(variant, size, className)}
+    >
       {children}
     </Link>
   );

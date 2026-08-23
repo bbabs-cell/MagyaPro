@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
-import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { Badge, Button, Card, Field, LinkButton, cx, inputClass } from '@/components/ui';
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Espèces',
@@ -216,11 +216,21 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
                   {formatMoney(sale.total, currency)}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {canReturn && (
-                    <Button size="sm" variant="secondary" onClick={() => startReturn(sale)}>
-                      Retourner
-                    </Button>
-                  )}
+                  <div className="flex justify-end gap-1.5">
+                    <LinkButton
+                      href={`/boutique/recu/${sale.id}`}
+                      size="sm"
+                      variant="secondary"
+                      target="_blank"
+                    >
+                      Facture
+                    </LinkButton>
+                    {canReturn && (
+                      <Button size="sm" variant="secondary" onClick={() => startReturn(sale)}>
+                        Retourner
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             );
