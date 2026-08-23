@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { toQty } from '@/lib/boutique/quantity';
 import { EmptyState, PageHeader } from '@/components/ui';
 import { SalesManager } from '@/components/boutique/sales-manager';
 
@@ -29,7 +30,7 @@ export default async function BoutiqueSalesPage() {
     for (const storeReturn of sale.returns) {
       for (const item of storeReturn.items) {
         returnedByVariant[item.productVariantId] =
-          (returnedByVariant[item.productVariantId] ?? 0) + item.quantity;
+          (returnedByVariant[item.productVariantId] ?? 0) + toQty(item.quantity);
       }
     }
     return {
@@ -38,7 +39,7 @@ export default async function BoutiqueSalesPage() {
       createdAt: sale.createdAt.toISOString(),
       status: sale.status,
       total: sale.total,
-      items: sale.items,
+      items: sale.items.map((item) => ({ ...item, quantity: toQty(item.quantity) })),
       payments: sale.payments,
       returnedByVariant,
     };

@@ -422,12 +422,17 @@ function ProductForm({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Stock initial" htmlFor="initialStock" hint="Quantité déjà en votre possession.">
+          <Field
+            label="Stock initial"
+            htmlFor="initialStock"
+            hint="Quantité déjà en votre possession. Décimale pour un produit vendu au poids/volume."
+          >
             <input
               id="initialStock"
               name="initialStock"
               type="number"
               min="0"
+              step="0.001"
               className={inputClass}
               defaultValue="0"
             />
@@ -438,6 +443,7 @@ function ProductForm({
               name="minStockAlert"
               type="number"
               min="0"
+              step="0.001"
               className={inputClass}
               defaultValue="0"
             />

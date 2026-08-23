@@ -1542,7 +1542,7 @@ model StoreProduct {
   /// requêté : ces attributs-là méritent leur propre colonne.
   attributes    Json               @default("{}")
   status        StoreProductStatus @default(DRAFT)
-  minStockAlert Int                @default(0)
+  minStockAlert Decimal            @default(0) @db.Decimal(14, 3)
   /// Unité dans laquelle le produit se vend et se stocke — un article
   /// (vêtement, appareil) se compte en unités entières, une denrée en poids
   /// ou volume. Détermine si les quantités saisies acceptent des décimales.
@@ -1630,13 +1630,16 @@ model Warehouse {
 /// (voir plus bas), pour qu'aucune écriture ne puisse désynchroniser le
 /// solde de son historique.
 model Inventory {
-  id               String @id @default(cuid())
+  id               String  @id @default(cuid())
   productVariantId String
   warehouseId      String
-  quantity         Int    @default(0)
+  /// Décimal (3 décimales) : un article compté en unités y stocke un entier
+  /// comme n'importe quel autre nombre, une denrée vendue au poids/volume
+  /// (voir `StoreProduct.unit`) y stocke une valeur fractionnaire (1,5 kg).
+  quantity         Decimal @default(0) @db.Decimal(14, 3)
   /// Quantité retenue par des ventes non finalisées (panier en cours) — ne
   /// réduit pas `quantity`, mais réduit le disponible réel à la vente.
-  reservedQuantity Int    @default(0)
+  reservedQuantity Decimal @default(0) @db.Decimal(14, 3)
 
   updatedAt DateTime @updatedAt
 
@@ -1668,9 +1671,9 @@ model InventoryMovement {
   warehouseId      String
   type             StockMovementType
   /// Négatif pour une sortie, positif pour une entrée.
-  quantityChange   Int
-  quantityBefore   Int
-  quantityAfter    Int
+  quantityChange   Decimal           @db.Decimal(14, 3)
+  quantityBefore   Decimal           @db.Decimal(14, 3)
+  quantityAfter    Decimal           @db.Decimal(14, 3)
   userId           String?
   reason           String?
   /// Référence de l'opération à l'origine du mouvement (ex. id de vente,
@@ -1701,8 +1704,8 @@ model StockBatch {
   storeId           String
   productVariantId  String
   warehouseId       String
-  quantity          Int
-  remainingQuantity Int
+  quantity          Decimal  @db.Decimal(14, 3)
+  remainingQuantity Decimal  @db.Decimal(14, 3)
   expiryDate        DateTime
   receivedAt        DateTime @default(now())
 
@@ -1747,10 +1750,10 @@ model StockTransfer {
 }
 
 model StockTransferItem {
-  id               String @id @default(cuid())
+  id               String  @id @default(cuid())
   transferId       String
   productVariantId String
-  quantity         Int
+  quantity         Decimal @db.Decimal(14, 3)
 
   transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
 
@@ -1839,15 +1842,15 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id               String @id @default(cuid())
+  id               String  @id @default(cuid())
   purchaseOrderId  String
   productVariantId String
-  quantityOrdered  Int
+  quantityOrdered  Decimal @db.Decimal(14, 3)
   /// Cumul reçu — une réception partielle incrémente ce champ sans jamais le
   /// dépasser `quantityOrdered` (contrôlé côté application).
-  quantityReceived Int    @default(0)
+  quantityReceived Decimal @default(0) @db.Decimal(14, 3)
   unitCost         Int
-  discount         Int    @default(0)
+  discount         Int     @default(0)
 
   purchaseOrder  PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
@@ -1968,7 +1971,7 @@ model SaleItem {
   /// des ventes déjà réalisées.
   productName      String
   variantLabel     String?
-  quantity         Int
+  quantity         Decimal @db.Decimal(14, 3)
   unitPrice        Int
   discount         Int     @default(0)
   total            Int
@@ -2058,10 +2061,10 @@ model StoreReturn {
 }
 
 model StoreReturnItem {
-  id               String @id @default(cuid())
+  id               String  @id @default(cuid())
   returnId         String
   productVariantId String
-  quantity         Int
+  quantity         Decimal @db.Decimal(14, 3)
   unitPrice        Int
 
   return         StoreReturn         @relation(fields: [returnId], references: [id], onDelete: Cascade)

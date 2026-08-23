@@ -2,6 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
+import { toQty } from '@/lib/boutique/quantity';
 import { storeReturnSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
@@ -66,7 +67,7 @@ export const POST = route(async (request) => {
     for (const item of previousReturn.items) {
       alreadyReturnedByVariant.set(
         item.productVariantId,
-        (alreadyReturnedByVariant.get(item.productVariantId) ?? 0) + item.quantity,
+        (alreadyReturnedByVariant.get(item.productVariantId) ?? 0) + toQty(item.quantity),
       );
     }
   }
@@ -80,7 +81,7 @@ export const POST = route(async (request) => {
       });
     }
     const alreadyReturned = alreadyReturnedByVariant.get(requested.productVariantId) ?? 0;
-    const remaining = saleItem.quantity - alreadyReturned;
+    const remaining = toQty(saleItem.quantity) - alreadyReturned;
     if (requested.quantity > remaining) {
       throw new ValidationError(
         `Quantité demandée supérieure à ce qui peut encore être retourné (${remaining} restant${remaining > 1 ? 's' : ''}).`,
@@ -95,7 +96,7 @@ export const POST = route(async (request) => {
     };
   });
 
-  const totalSoldQuantity = sale.items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalSoldQuantity = sale.items.reduce((sum, i) => sum + toQty(i.quantity), 0);
   const totalReturnedAfter =
     [...alreadyReturnedByVariant.values()].reduce((sum, q) => sum + q, 0) +
     lines.reduce((sum, l) => sum + l.quantity, 0);

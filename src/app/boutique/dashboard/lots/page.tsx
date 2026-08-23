@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { formatQty } from '@/lib/boutique/quantity';
+import { UNIT_LABELS } from '@/lib/boutique/units';
 import { PageHeader, EmptyState, Card, Badge } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Lots' };
@@ -63,7 +65,8 @@ export default async function BoutiqueLotsPage() {
                       {batch.warehouse.name}
                     </td>
                     <td data-label="Quantité restante" className="px-4 py-3 text-right">
-                      {batch.remainingQuantity}
+                      {formatQty(batch.remainingQuantity)}{' '}
+                      {UNIT_LABELS[batch.productVariant.product.unit]}
                     </td>
                     <td data-label="Péremption" className="px-4 py-3">
                       <div className="flex items-center gap-2">

@@ -367,7 +367,8 @@ function OrderForm({
               </select>
               <input
                 type="number"
-                min={1}
+                min={0.001}
+                step={0.001}
                 value={line.quantity}
                 onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
                 className={inputClass}

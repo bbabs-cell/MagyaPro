@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
 
@@ -62,9 +63,14 @@ export default async function BoutiqueProductsPage() {
         }))}
         initialProducts={products.map((product) => ({
           ...product,
+          minStockAlert: toQty(product.minStockAlert),
           variants: product.variants.map((variant) => ({
             ...variant,
             attributes: (variant.attributes ?? {}) as Record<string, string>,
+            inventory: variant.inventory.map((inv) => ({
+              ...inv,
+              quantity: toQty(inv.quantity),
+            })),
           })),
         }))}
         currency={context.store.currency}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
 import { CashSessionBar } from '@/components/boutique/cash-session-bar';
@@ -28,7 +29,7 @@ export default async function BoutiqueCaissePage() {
     select: {
       id: true,
       price: true,
-      product: { select: { name: true } },
+      product: { select: { name: true, unit: true } },
       inventory: defaultWarehouse
         ? { where: { warehouseId: defaultWarehouse.id }, select: { quantity: true } }
         : false,
@@ -41,7 +42,8 @@ export default async function BoutiqueCaissePage() {
     variantId: variant.id,
     name: variant.product.name,
     price: variant.price,
-    stock: variant.inventory?.[0]?.quantity ?? 0,
+    unit: variant.product.unit,
+    stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
   }));
 
   const session = await prisma.cashSession.findFirst({

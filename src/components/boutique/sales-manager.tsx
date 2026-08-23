@@ -123,6 +123,7 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
                       type="number"
                       min={0}
                       max={remaining}
+                      step={0.001}
                       value={quantities[item.productVariantId] ?? ''}
                       onChange={(event) =>
                         setQuantities((current) => ({

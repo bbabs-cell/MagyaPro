@@ -541,6 +541,20 @@ export const variantAttributesSchema = z
   .refine((obj) => Object.keys(obj).length <= 10, 'Trop d’attributs (10 maximum).')
   .default({});
 
+/**
+ * Quantité Boutique — décimale à 3 décimales (vente au poids/volume : kg, g,
+ * L, mL). Arrondie plutôt que rejetée par une précision excessive : le
+ * client ne doit pas voir une erreur pour un troisième chiffre après la
+ * virgule saisi par accident, la colonne en base est de toute façon limitée
+ * à cette précision.
+ */
+export const quantitySchema = (max: number) =>
+  z
+    .number()
+    .min(0)
+    .max(max)
+    .transform((value) => Math.round(value * 1000) / 1000);
+
 export const storeProductSchema = z.object({
   name: nameSchema,
   description: optionalText(1000),
@@ -549,7 +563,7 @@ export const storeProductSchema = z.object({
   supplierId: z.string().min(1).nullable().optional(),
   imageUrl: urlSchema.nullable().optional(),
   status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']).default('DRAFT'),
-  minStockAlert: z.number().int().min(0).max(1_000_000).default(0),
+  minStockAlert: quantitySchema(1_000_000).default(0),
   unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']).default('UNIT'),
   sku: optionalText(60),
   barcode: optionalText(60),
@@ -557,7 +571,7 @@ export const storeProductSchema = z.object({
   price: amountSchema,
   attributes: variantAttributesSchema,
   /** Quantité en stock à la création — mouvement `INITIAL`, jamais silencieux. */
-  initialStock: z.number().int().min(0).max(1_000_000).default(0),
+  initialStock: quantitySchema(1_000_000).default(0),
   /** Date de péremption du stock initial, facultative — crée un lot suivi séparément. */
   initialStockExpiryDate: z.coerce.date().optional(),
 });
@@ -583,7 +597,7 @@ export const storePurchaseOrderSchema = z.object({
     .array(
       z.object({
         productVariantId: z.string().min(1),
-        quantity: z.number().int().min(1).max(100_000),
+        quantity: quantitySchema(100_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
         unitCost: amountSchema,
       }),
     )
@@ -654,7 +668,7 @@ export const storeReturnSchema = z.object({
     .array(
       z.object({
         productVariantId: z.string().min(1),
-        quantity: z.number().int().min(1).max(10_000),
+        quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
       }),
     )
     .min(1, 'Sélectionnez au moins un article à retourner.')
@@ -705,7 +719,7 @@ export const storeSaleSchema = z
       .array(
         z.object({
           productVariantId: z.string().min(1),
-          quantity: z.number().int().min(1).max(10_000),
+          quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
         }),
       )
       .min(1, 'Le panier est vide.')

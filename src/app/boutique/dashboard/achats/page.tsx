@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader } from '@/components/ui';
 import { PurchasesManager } from '@/components/boutique/purchases-manager';
 
@@ -38,7 +39,14 @@ export default async function BoutiquePurchasesPage() {
       <PurchasesManager
         initialSuppliers={suppliers}
         initialProducts={variants.map((v) => ({ variantId: v.id, name: v.product.name }))}
-        initialOrders={orders}
+        initialOrders={orders.map((order) => ({
+          ...order,
+          items: order.items.map((item) => ({
+            ...item,
+            quantityOrdered: toQty(item.quantityOrdered),
+            quantityReceived: toQty(item.quantityReceived),
+          })),
+        }))}
         currency={context.store.currency}
         canManage={context.permissions.has('purchases:manage')}
       />

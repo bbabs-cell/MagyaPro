@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { periodRange, type PeriodKey } from '@/lib/analytics';
+import { toQty } from '@/lib/boutique/quantity';
 
 /**
  * Statistiques Boutique — même principe que `src/lib/analytics.ts`
@@ -120,7 +121,7 @@ export async function getStorePopularProducts(
       quantity: 0,
       revenue: 0,
     };
-    entry.quantity += item.quantity;
+    entry.quantity += toQty(item.quantity);
     entry.revenue += item.total;
     totals.set(item.productName, entry);
   }

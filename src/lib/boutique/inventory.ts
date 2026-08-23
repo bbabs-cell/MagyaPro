@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import type { Prisma, StockMovementType } from '@prisma/client';
+import { toQty } from '@/lib/boutique/quantity';
 
 /**
  * Point d'entrée unique pour toute modification de stock — jamais
@@ -41,7 +42,7 @@ export async function recordStockMovement(
     },
   });
 
-  const quantityBefore = existing?.quantity ?? 0;
+  const quantityBefore = existing ? toQty(existing.quantity) : 0;
   const quantityAfter = quantityBefore + params.quantityChange;
 
   if (quantityAfter < 0) {
@@ -128,10 +129,11 @@ async function depleteBatchesFifo(
   let remaining = quantityToDeplete;
   for (const batch of batches) {
     if (remaining <= 0) break;
-    const take = Math.min(batch.remainingQuantity, remaining);
+    const batchRemaining = toQty(batch.remainingQuantity);
+    const take = Math.min(batchRemaining, remaining);
     await tx.stockBatch.update({
       where: { id: batch.id },
-      data: { remainingQuantity: batch.remainingQuantity - take },
+      data: { remainingQuantity: batchRemaining - take },
     });
     remaining -= take;
   }

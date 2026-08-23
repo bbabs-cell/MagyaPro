@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
+import { UNIT_LABELS, isDecimalUnit, quantityStep } from '@/lib/boutique/units';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
@@ -21,6 +22,7 @@ type Product = {
   variantId: string;
   price: number;
   stock: number;
+  unit: string;
 };
 
 type Customer = {
@@ -31,7 +33,14 @@ type Customer = {
   creditLimit: number;
 };
 
-type CartLine = { variantId: string; name: string; unitPrice: number; quantity: number; maxStock: number };
+type CartLine = {
+  variantId: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  maxStock: number;
+  unit: string;
+};
 
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Espèces' },
@@ -72,10 +81,13 @@ export function Pos({
     setError(null);
     setCart((current) => {
       const existing = current.find((line) => line.variantId === product.variantId);
+      const step = quantityStep(product.unit);
       if (existing) {
         if (existing.quantity >= product.stock) return current;
         return current.map((line) =>
-          line.variantId === product.variantId ? { ...line, quantity: line.quantity + 1 } : line,
+          line.variantId === product.variantId
+            ? { ...line, quantity: Math.min(line.quantity + step, line.maxStock) }
+            : line,
         );
       }
       if (product.stock <= 0) return current;
@@ -85,8 +97,9 @@ export function Pos({
           variantId: product.variantId,
           name: product.name,
           unitPrice: product.price,
-          quantity: 1,
+          quantity: step,
           maxStock: product.stock,
+          unit: product.unit,
         },
       ];
     });
@@ -97,7 +110,7 @@ export function Pos({
       current
         .map((line) =>
           line.variantId === variantId
-            ? { ...line, quantity: Math.max(1, Math.min(quantity, line.maxStock)) }
+            ? { ...line, quantity: Math.max(quantityStep(line.unit), Math.min(quantity, line.maxStock)) }
             : line,
         )
         .filter((line) => line.quantity > 0),
@@ -162,9 +175,14 @@ export function Pos({
                 className="card flex flex-col items-start gap-1 p-4 text-left transition-shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="font-medium text-ink">{product.name}</span>
-                <span className="text-sm text-ink-muted">{formatMoney(product.price, currency)}</span>
+                <span className="text-sm text-ink-muted">
+                  {formatMoney(product.price, currency)}
+                  {product.unit !== 'UNIT' && ` / ${UNIT_LABELS[product.unit]}`}
+                </span>
                 <Badge tone={product.stock > 0 ? 'neutral' : 'danger'}>
-                  {product.stock > 0 ? `${product.stock} en stock` : 'Rupture'}
+                  {product.stock > 0
+                    ? `${product.stock} ${UNIT_LABELS[product.unit]} en stock`
+                    : 'Rupture'}
                 </Badge>
               </button>
             ))}
@@ -199,12 +217,16 @@ export function Pos({
                 </div>
                 <input
                   type="number"
-                  min={1}
+                  min={quantityStep(line.unit)}
                   max={line.maxStock}
+                  step={quantityStep(line.unit)}
                   value={line.quantity}
                   onChange={(event) => updateQuantity(line.variantId, Number(event.target.value))}
-                  className="w-14 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
+                  className="w-16 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
                 />
+                {isDecimalUnit(line.unit) && (
+                  <span className="text-xs text-ink-faint">{UNIT_LABELS[line.unit]}</span>
+                )}
                 <button
                   type="button"
                   onClick={() => removeLine(line.variantId)}

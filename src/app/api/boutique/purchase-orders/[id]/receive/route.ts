@@ -4,6 +4,7 @@ import { route, ok, parseOrThrow, readJson } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
+import { toQty } from '@/lib/boutique/quantity';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 
@@ -46,19 +47,21 @@ export const POST = route(async (request, { params }: Params) => {
   }
 
   const totalCost = purchaseOrder.items.reduce(
-    (sum, item) => sum + item.unitCost * item.quantityOrdered,
+    (sum, item) => sum + item.unitCost * toQty(item.quantityOrdered),
     0,
   ) + purchaseOrder.extraFees;
 
   await prisma.$transaction(async (tx) => {
     for (const item of purchaseOrder.items) {
+      const quantityOrdered = toQty(item.quantityOrdered);
+
       await recordStockMovement(
         {
           storeId: context.store.id,
           productVariantId: item.productVariantId,
           warehouseId: defaultWarehouse.id,
           type: 'PURCHASE',
-          quantityChange: item.quantityOrdered,
+          quantityChange: quantityOrdered,
           userId: context.user.id,
           referenceType: 'purchase_order',
           referenceId: purchaseOrder.id,
@@ -74,7 +77,7 @@ export const POST = route(async (request, { params }: Params) => {
 
       await tx.purchaseOrderItem.update({
         where: { id: item.id },
-        data: { quantityReceived: item.quantityOrdered },
+        data: { quantityReceived: quantityOrdered },
       });
     }
 

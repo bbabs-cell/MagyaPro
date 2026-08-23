@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore, findStoreScopedOrThrow } from '@/lib/boutique/store-tenant';
-import { nameSchema, optionalText, urlSchema } from '@/lib/validation';
+import { nameSchema, optionalText, quantitySchema, urlSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import type { StoreProduct } from '@prisma/client';
@@ -17,7 +17,7 @@ const updateSchema = z.object({
   brandId: z.string().min(1).nullable().optional(),
   imageUrl: urlSchema.nullable().optional(),
   status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
-  minStockAlert: z.number().int().min(0).max(1_000_000),
+  minStockAlert: quantitySchema(1_000_000),
   unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']),
 });
 

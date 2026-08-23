@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { formatMoney } from '@/lib/money';
+import { formatQty } from '@/lib/boutique/quantity';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { PrintButton } from '@/components/dashboard/print-button';
 
@@ -126,7 +127,7 @@ export default async function BoutiqueInvoicePage({
                 {item.productName}
                 {item.variantLabel && <span className="text-ink-muted"> · {item.variantLabel}</span>}
               </td>
-              <td className="py-2 text-right">{item.quantity}</td>
+              <td className="py-2 text-right">{formatQty(item.quantity)}</td>
               <td className="py-2 text-right">{formatMoney(item.unitPrice, currency)}</td>
               <td className="py-2 text-right">{formatMoney(item.total, currency)}</td>
             </tr>
