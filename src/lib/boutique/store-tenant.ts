@@ -246,7 +246,8 @@ type StoreScopedModel =
   | 'storeExpense'
   | 'invoice'
   | 'storePromotion'
-  | 'inventoryMovement';
+  | 'inventoryMovement'
+  | 'storeOrder';
 
 export async function findStoreScopedOrThrow<T>(
   model: StoreScopedModel,

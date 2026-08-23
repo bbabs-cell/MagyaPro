@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { CartProvider } from '@/components/site-store/cart-context';
+import { CartLink } from '@/components/site-store/cart-link';
 
 /**
  * Racine du site public d'une boutique, atteinte via
@@ -49,39 +51,42 @@ export default async function StoreSiteLayout({
   if (!store) notFound();
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <header className="border-b border-gray-200">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <Link href={`/s/${host}`} className="flex items-center gap-2.5">
-            {store.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- logo déposé par le tenant
-              <img src={store.logoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
-            ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
-                {store.name.charAt(0).toUpperCase()}
-              </span>
-            )}
-            <span className="font-semibold tracking-tight">{store.name}</span>
-          </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href={`/s/${host}/produits`} className="text-gray-600 hover:text-gray-900">
-              Catalogue
+    <CartProvider storeId={store.id}>
+      <div className="min-h-screen bg-white text-gray-900">
+        <header className="border-b border-gray-200">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <Link href={`/s/${host}`} className="flex items-center gap-2.5">
+              {store.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- logo déposé par le tenant
+                <img src={store.logoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
+                  {store.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="font-semibold tracking-tight">{store.name}</span>
             </Link>
-          </nav>
-        </div>
-      </header>
+            <nav className="flex items-center gap-5 text-sm">
+              <Link href={`/s/${host}/produits`} className="text-gray-600 hover:text-gray-900">
+                Catalogue
+              </Link>
+              <CartLink host={host} />
+            </nav>
+          </div>
+        </header>
 
-      <main>{children}</main>
+        <main>{children}</main>
 
-      <footer className="mt-16 border-t border-gray-200 py-8 text-center text-xs text-gray-400">
-        <p>{store.name}</p>
-        <p className="mt-1">
-          Propulsé par{' '}
-          <a href="https://magyapro.com" className="underline underline-offset-2">
-            MagyaPro
-          </a>
-        </p>
-      </footer>
-    </div>
+        <footer className="mt-16 border-t border-gray-200 py-8 text-center text-xs text-gray-400">
+          <p>{store.name}</p>
+          <p className="mt-1">
+            Propulsé par{' '}
+            <a href="https://magyapro.com" className="underline underline-offset-2">
+              MagyaPro
+            </a>
+          </p>
+        </footer>
+      </div>
+    </CartProvider>
   );
 }

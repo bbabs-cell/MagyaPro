@@ -1318,10 +1318,13 @@ model Store {
 
   /// Compteur de numérotation des ventes, incrémenté transactionnellement —
   /// même principe que `Restaurant.orderCounter`.
-  saleCounter Int       @default(0)
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  saleCounter  Int       @default(0)
+  /// Compteur de numérotation des commandes en ligne — distinct de
+  /// `saleCounter`, une commande n'est pas encore une vente.
+  orderCounter Int       @default(0)
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   members              StoreUser[]
   subscription         StoreSubscription?
@@ -1339,6 +1342,7 @@ model Store {
   customers            StoreCustomer[]
   creditPayments       StoreCreditPayment[]
   sales                Sale[]
+  orders               StoreOrder[]
   returns              StoreReturn[]
   cashRegisters        CashRegister[]
   cashSessions         CashSession[]
@@ -1588,6 +1592,7 @@ model StoreProductVariant {
   inventory          Inventory[]
   inventoryMovements InventoryMovement[]
   saleItems          SaleItem[]
+  orderItems         StoreOrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
   returnItems        StoreReturnItem[]
   stockBatches       StockBatch[]
@@ -2072,6 +2077,70 @@ model StoreReturnItem {
 
   @@index([returnId])
   @@map("boutique_return_items")
+}
+
+// -----------------------------------------------------------------------
+// Commandes en ligne (site public)
+// -----------------------------------------------------------------------
+
+enum StoreOrderStatus {
+  PENDING
+  CONFIRMED
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+/// Commande passée par un client depuis le site public (`/s/[host]`), en
+/// retrait boutique uniquement dans cette première version — pas de
+/// livraison, pas de paiement en ligne : le client règle sur place. Distinct
+/// de `Sale` (vente en caisse, toujours créée par un membre de l'équipe) :
+/// une commande en ligne n'est jamais un client invité ; elle devient une
+/// vente réelle seulement à la confirmation par la boutique.
+model StoreOrder {
+  id            String           @id @default(cuid())
+  storeId       String
+  /// Numéro affiché au client — suite de `Store.orderCounter`, jamais
+  /// l'identifiant technique.
+  number        Int
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  status        StoreOrderStatus @default(PENDING)
+  subtotal      Int
+  total         Int
+  currency      String
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items StoreOrderItem[]
+
+  @@unique([storeId, number])
+  @@index([storeId, status])
+  @@index([storeId, createdAt])
+  @@map("boutique_orders")
+}
+
+model StoreOrderItem {
+  id               String  @id @default(cuid())
+  orderId          String
+  productVariantId String
+  /// Nom figé au moment de la commande : une fiche produit modifiée ou
+  /// supprimée plus tard ne doit jamais réécrire l'historique.
+  productName      String
+  quantity         Decimal @db.Decimal(14, 3)
+  unitPrice        Int
+  total            Int
+
+  order          StoreOrder          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productVariantId])
+  @@map("boutique_order_items")
 }
 
 // -----------------------------------------------------------------------

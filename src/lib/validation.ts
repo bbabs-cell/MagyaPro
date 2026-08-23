@@ -660,6 +660,34 @@ export const storeCreditPaymentSchema = z.object({
   note: optionalText(200),
 });
 
+/**
+ * Commande passée depuis le site public d'une boutique — retrait en
+ * boutique uniquement, aucun paiement en ligne dans cette première
+ * version : le client règle sur place. Comme pour la vente en caisse, les
+ * prix ne sont jamais pris depuis la requête, seuls `productId` et
+ * `quantity` sont lus ici.
+ */
+export const publicStoreOrderSchema = z.object({
+  storeId: z.string().min(1),
+  customerName: nameSchema,
+  customerPhone: phoneSchema,
+  customerEmail: emailSchema.optional().or(z.literal('').transform(() => undefined)),
+  notes: optionalText(300),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
+      }),
+    )
+    .min(1, 'Le panier est vide.')
+    .max(50),
+});
+
+export const storeOrderStatusSchema = z.object({
+  status: z.enum(['PENDING', 'CONFIRMED', 'READY', 'COMPLETED', 'CANCELLED']),
+});
+
 export const storeReturnSchema = z.object({
   saleId: z.string().min(1),
   resolution: z.enum(['REFUND', 'EXCHANGE']),

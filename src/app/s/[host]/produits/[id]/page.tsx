@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
 import { loadPublicProduct, resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { AddToCart } from '@/components/site-store/add-to-cart';
 
 export async function generateMetadata({
   params,
@@ -102,13 +103,27 @@ export default async function StoreProductPage({
             </dl>
           )}
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          {inStock && (
+            <AddToCart
+              product={{
+                id: product.id,
+                name: product.name,
+                imageUrl: product.imageUrl,
+                unit: product.unit,
+                price: product.price,
+                stock: product.stock,
+              }}
+              host={host}
+            />
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
             {store.phone && (
               <a
                 href={`tel:${store.phone}`}
-                className="inline-flex h-11 items-center rounded-xl bg-gray-900 px-6 text-sm font-medium text-white hover:bg-gray-800"
+                className="inline-flex h-10 items-center rounded-xl border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50"
               >
-                Appeler pour commander
+                Appeler la boutique
               </a>
             )}
             {whatsappHref && (
@@ -116,17 +131,12 @@ export default async function StoreProductPage({
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-11 items-center rounded-xl border border-gray-300 px-6 text-sm font-medium hover:bg-gray-50"
+                className="inline-flex h-10 items-center rounded-xl border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50"
               >
                 WhatsApp
               </a>
             )}
           </div>
-          {!store.phone && (
-            <p className="mt-4 text-sm text-gray-500">
-              Contactez la boutique pour commander ce produit.
-            </p>
-          )}
         </div>
       </div>
     </div>

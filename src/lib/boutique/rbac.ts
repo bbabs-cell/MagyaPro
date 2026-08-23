@@ -30,6 +30,9 @@ export const STORE_PERMISSIONS = [
   'sales:view',
   'sales:refund',
 
+  'orders:view',
+  'orders:manage',
+
   'cash:manage',
 
   'customers:view',
@@ -59,6 +62,8 @@ const CASHIER_PERMISSIONS: StorePermission[] = [
   'products:view',
   'pos:access',
   'sales:view',
+  'orders:view',
+  'orders:manage',
   'cash:manage',
   'customers:view',
 ];
@@ -68,6 +73,8 @@ const SALESPERSON_PERMISSIONS: StorePermission[] = [
   'products:view',
   'pos:access',
   'sales:view',
+  'orders:view',
+  'orders:manage',
   'customers:view',
   'customers:manage',
 ];
@@ -185,6 +192,8 @@ export const STORE_PERMISSION_LABELS: Record<StorePermission, string> = {
   'pos:access': 'Accéder à la caisse (POS)',
   'sales:view': 'Voir les ventes',
   'sales:refund': 'Effectuer des retours/remboursements',
+  'orders:view': 'Voir les commandes en ligne',
+  'orders:manage': 'Traiter les commandes en ligne',
   'cash:manage': 'Gérer les sessions de caisse',
   'customers:view': 'Voir les clients',
   'customers:manage': 'Gérer les clients',
