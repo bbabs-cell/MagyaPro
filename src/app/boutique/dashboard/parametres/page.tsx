@@ -7,6 +7,7 @@ import { cnameTarget, verificationRecordName } from '@/lib/domains';
 import { PageHeader } from '@/components/ui';
 import { PublishPanel } from '@/components/boutique/publish-panel';
 import { DomainsManager } from '@/components/boutique/domains-manager';
+import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 
 export const metadata: Metadata = { title: 'Réglages' };
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,11 @@ export default async function BoutiqueSettingsPage() {
           status={context.store.status}
           slug={context.store.slug}
           canPublish={context.permissions.has('store:publish')}
+        />
+        <TaxSettingsPanel
+          taxEnabled={context.store.taxEnabled}
+          taxRate={context.store.taxRate}
+          canManage={context.permissions.has('settings:manage')}
         />
         <DomainsManager
           domains={domains.map((domain) => ({

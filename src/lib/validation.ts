@@ -703,6 +703,12 @@ export const storeReturnSchema = z.object({
     .max(200),
 });
 
+/** Réglage de TVA d'une boutique — `taxRate` en dixièmes de %, voir `Store.taxRate`. */
+export const storeTaxSchema = z.object({
+  taxEnabled: z.boolean(),
+  taxRate: z.number().int().min(0).max(1000),
+});
+
 export const storeExpenseSchema = z.object({
   label: z.string().trim().min(1, 'Indiquez un libellé.').max(200),
   amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
@@ -737,35 +743,36 @@ export const storeTeamMemberUpdateSchema = storeTeamMemberSchema.omit({ email: t
  * seuls `productVariantId` et `quantity` sont lus ici ; le serveur
  * recalcule chaque montant depuis la base (voir la route associée).
  *
- * Deux modes, exclusifs : paiement immédiat (`paymentMethod` requis) ou
- * vente à crédit (`isCredit: true`, `customerId` requis) — pas encore de
- * paiement scindé entre les deux dans cette première version.
+ * Paiement scindé : `payments` porte une ligne par moyen utilisé (espèces,
+ * Orange Money, Moov Money, carte…). Si leur somme n'atteint pas le total de
+ * la vente, le reste est mis à crédit sur le client choisi — c'est
+ * `customerId` seul qui autorise ce reste, pas un indicateur séparé. Le
+ * total exact (avec remise et TVA) n'étant connu qu'après recalcul serveur
+ * des lignes, cette cohérence-là est vérifiée dans la route, pas ici.
  */
-export const storeSaleSchema = z
-  .object({
-    items: z
-      .array(
-        z.object({
-          productVariantId: z.string().min(1),
-          quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
-        }),
-      )
-      .min(1, 'Le panier est vide.')
-      .max(200),
-    /** Identifiant libre du moyen de paiement — voir `StorePayment.method`. */
-    paymentMethod: z.string().min(1).max(40).optional(),
-    customerId: z.string().min(1).optional(),
-    isCredit: z.boolean().default(false),
-    discount: amountSchema.default(0),
-    /** Code promo saisi par le caissier — jamais son montant : le rabais est
-     *  toujours recalculé côté serveur depuis la promotion elle-même. */
-    promoCode: z.string().trim().max(30).optional(),
-  })
-  .refine((data) => data.isCredit || Boolean(data.paymentMethod), {
-    message: 'Choisissez un moyen de paiement.',
-    path: ['paymentMethod'],
-  })
-  .refine((data) => !data.isCredit || Boolean(data.customerId), {
-    message: 'Une vente à crédit doit être associée à un client.',
-    path: ['customerId'],
-  });
+export const storeSaleSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productVariantId: z.string().min(1),
+        quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
+      }),
+    )
+    .min(1, 'Le panier est vide.')
+    .max(200),
+  /** Identifiant libre du moyen de paiement — voir `StorePayment.method`. */
+  payments: z
+    .array(
+      z.object({
+        method: z.string().min(1).max(40),
+        amount: amountSchema.refine((v) => v > 0, 'Montant invalide.'),
+      }),
+    )
+    .max(6)
+    .default([]),
+  customerId: z.string().min(1).optional(),
+  discount: amountSchema.default(0),
+  /** Code promo saisi par le caissier — jamais son montant : le rabais est
+   *  toujours recalculé côté serveur depuis la promotion elle-même. */
+  promoCode: z.string().trim().max(30).optional(),
+});

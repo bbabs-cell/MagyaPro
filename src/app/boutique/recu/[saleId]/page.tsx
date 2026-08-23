@@ -146,6 +146,12 @@ export default async function BoutiqueInvoicePage({
             <span>−{formatMoney(sale.discount, currency)}</span>
           </div>
         )}
+        {sale.taxAmount > 0 && (
+          <div className="flex justify-between">
+            <span className="text-ink-muted">TVA</span>
+            <span>{formatMoney(sale.taxAmount, currency)}</span>
+          </div>
+        )}
         <div className="flex justify-between border-t border-ink pt-1.5 text-base font-bold">
           <span>Total</span>
           <span>{formatMoney(sale.total, currency)}</span>

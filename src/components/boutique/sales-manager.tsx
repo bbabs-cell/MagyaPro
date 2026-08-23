@@ -9,9 +9,10 @@ import { Badge, Button, Card, Field, LinkButton, cx, inputClass } from '@/compon
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: 'Espèces',
-  wave: 'Wave',
   orange_money: 'Orange Money',
+  moov_money: 'Moov Money',
   card: 'Carte',
+  wave: 'Wave',
 };
 
 const STATUS_LABELS: Record<string, string> = {

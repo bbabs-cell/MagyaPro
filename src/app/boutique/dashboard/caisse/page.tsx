@@ -29,6 +29,7 @@ export default async function BoutiqueCaissePage() {
     select: {
       id: true,
       price: true,
+      barcode: true,
       product: { select: { name: true, unit: true } },
       inventory: defaultWarehouse
         ? { where: { warehouseId: defaultWarehouse.id }, select: { quantity: true } }
@@ -43,6 +44,7 @@ export default async function BoutiqueCaissePage() {
     name: variant.product.name,
     price: variant.price,
     unit: variant.product.unit,
+    barcode: variant.barcode,
     stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
   }));
 
@@ -72,7 +74,13 @@ export default async function BoutiqueCaissePage() {
           }
         />
       ) : (
-        <Pos products={products} customers={customers} currency={context.store.currency} />
+        <Pos
+          products={products}
+          customers={customers}
+          currency={context.store.currency}
+          taxEnabled={context.store.taxEnabled}
+          taxRate={context.store.taxRate}
+        />
       )}
     </>
   );

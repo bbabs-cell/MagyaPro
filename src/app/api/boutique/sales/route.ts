@@ -113,7 +113,25 @@ export const POST = route(async (request) => {
   }
 
   const discount = Math.min(input.discount + promoDiscount, subtotal);
-  const total = subtotal - discount;
+  const taxableAmount = subtotal - discount;
+  const taxAmount = context.store.taxEnabled
+    ? Math.round((taxableAmount * context.store.taxRate) / 1000)
+    : 0;
+  const total = taxableAmount + taxAmount;
+
+  const paymentsTotal = input.payments.reduce((sum, p) => sum + p.amount, 0);
+  if (paymentsTotal > total) {
+    throw new ValidationError('Le total des paiements dépasse le montant de la vente.', {
+      payments: `Total à régler : ${total}.`,
+    });
+  }
+  // Le reste, non couvert par un paiement, est mis à crédit sur le client.
+  const creditAmount = total - paymentsTotal;
+  if (creditAmount > 0 && !customer) {
+    throw new ValidationError('Choisissez un client pour la part à crédit.', {
+      customerId: 'Requis quand les paiements ne couvrent pas le total.',
+    });
+  }
 
   // Rattache la vente à la session de caisse en cours, si une est ouverte —
   // c'est ce qui permet à la fermeture de caisse de retrouver les ventes en
@@ -123,8 +141,8 @@ export const POST = route(async (request) => {
     select: { id: true },
   });
 
-  if (input.isCredit && customer) {
-    const projectedBalance = customer.creditBalance + total;
+  if (creditAmount > 0 && customer) {
+    const projectedBalance = customer.creditBalance + creditAmount;
     if (customer.creditLimit > 0 && projectedBalance > customer.creditLimit) {
       throw new ValidationError('Cette vente dépasserait la limite de crédit du client.', {
         customerId: `Limite : ${customer.creditLimit}, solde actuel : ${customer.creditBalance}.`,
@@ -149,11 +167,10 @@ export const POST = route(async (request) => {
         promotionId: promotion?.id ?? null,
         subtotal,
         discount,
+        taxAmount,
         total,
-        creditAmount: input.isCredit ? total : 0,
-        ...(input.isCredit
-          ? {}
-          : { payments: { create: { method: input.paymentMethod!, amount: total } } }),
+        creditAmount,
+        payments: { create: input.payments },
         items: { create: lines },
       },
       include: { items: true, payments: true },
@@ -173,7 +190,7 @@ export const POST = route(async (request) => {
           salesCount: { increment: 1 },
           totalSpent: { increment: total },
           lastSaleAt: new Date(),
-          ...(input.isCredit ? { creditBalance: { increment: total } } : {}),
+          ...(creditAmount > 0 ? { creditBalance: { increment: creditAmount } } : {}),
         },
       });
     }

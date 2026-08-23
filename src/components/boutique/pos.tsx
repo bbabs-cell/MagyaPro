@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -9,11 +9,16 @@ import { UNIT_LABELS, isDecimalUnit, quantityStep } from '@/lib/boutique/units';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
- * Caisse (POS) — première version : un seul moyen de paiement par vente
- * (immédiat ou crédit, jamais scindé), pas encore de paiement partiel. La
- * recherche filtre côté client une liste déjà chargée : suffisant pour un
+ * Caisse (POS).
+ *
+ * La recherche filtre côté client une liste déjà chargée : suffisant pour un
  * catalogue de quelques centaines de références, à revoir (recherche
  * serveur paginée) si un commerce dépasse cette taille.
+ *
+ * Un scanner code-barres USB/Bluetooth se comporte comme un clavier : il
+ * tape les chiffres puis Entrée. La recherche les reconnaît — une
+ * correspondance exacte sur `barcode` ajoute directement l'article au
+ * panier plutôt que de simplement filtrer la liste.
  */
 
 type Product = {
@@ -23,6 +28,7 @@ type Product = {
   price: number;
   stock: number;
   unit: string;
+  barcode: string | null;
 };
 
 type Customer = {
@@ -42,28 +48,36 @@ type CartLine = {
   unit: string;
 };
 
+type PaymentLine = { method: string; amount: string };
+
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Espèces' },
-  { value: 'wave', label: 'Wave' },
   { value: 'orange_money', label: 'Orange Money' },
+  { value: 'moov_money', label: 'Moov Money' },
   { value: 'card', label: 'Carte' },
+  { value: 'wave', label: 'Wave' },
 ];
 
 export function Pos({
   products,
   customers,
   currency,
+  taxEnabled,
+  taxRate,
 }: {
   products: Product[];
   customers: Customer[];
   currency: string;
+  /** TVA de la boutique — voir `Store.taxEnabled`/`taxRate` (dixièmes de %). */
+  taxEnabled: boolean;
+  taxRate: number;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]!.value);
+  const [discount, setDiscount] = useState('');
+  const [payments, setPayments] = useState<PaymentLine[]>([{ method: 'cash', amount: '' }]);
   const [customerId, setCustomerId] = useState('');
-  const [isCredit, setIsCredit] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +86,21 @@ export function Pos({
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(needle));
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(needle) || p.barcode?.toLowerCase() === needle,
+    );
   }, [products, query]);
 
-  const total = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const subtotal = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const discountAmount = Math.min(Math.max(Number(discount) || 0, 0), subtotal);
+  const taxableAmount = subtotal - discountAmount;
+  // Estimation : le code promo, lui, n'est vérifié et chiffré que côté serveur.
+  const taxAmount = taxEnabled ? Math.round((taxableAmount * taxRate) / 1000) : 0;
+  const total = taxableAmount + taxAmount;
+
+  const paymentsTotal = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const remaining = Math.max(total - paymentsTotal, 0);
+  const customer = customers.find((c) => c.id === customerId) ?? null;
 
   function addToCart(product: Product) {
     setError(null);
@@ -105,6 +130,21 @@ export function Pos({
     });
   }
 
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return;
+    const needle = query.trim().toLowerCase();
+    if (!needle) return;
+    const match = products.find((p) => p.barcode?.toLowerCase() === needle);
+    if (!match) return;
+    event.preventDefault();
+    if (match.stock <= 0) {
+      setError(`${match.name} : rupture de stock.`);
+      return;
+    }
+    addToCart(match);
+    setQuery('');
+  }
+
   function updateQuantity(variantId: string, quantity: number) {
     setCart((current) =>
       current
@@ -121,6 +161,20 @@ export function Pos({
     setCart((current) => current.filter((line) => line.variantId !== variantId));
   }
 
+  function addPaymentLine() {
+    const usedMethods = new Set(payments.map((p) => p.method));
+    const nextMethod = PAYMENT_METHODS.find((m) => !usedMethods.has(m.value))?.value ?? 'cash';
+    setPayments((current) => [...current, { method: nextMethod, amount: String(remaining || '') }]);
+  }
+
+  function updatePaymentLine(index: number, patch: Partial<PaymentLine>) {
+    setPayments((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  }
+
+  function removePaymentLine(index: number) {
+    setPayments((current) => current.filter((_, i) => i !== index));
+  }
+
   async function checkout() {
     if (cart.length === 0) return;
     setPending(true);
@@ -133,15 +187,18 @@ export function Pos({
         {
           items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
           customerId: customerId || undefined,
-          isCredit,
+          discount: discountAmount,
           promoCode: promoCode.trim() || undefined,
-          ...(isCredit ? {} : { paymentMethod }),
+          payments: payments
+            .filter((p) => Number(p.amount) > 0)
+            .map((p) => ({ method: p.method, amount: Number(p.amount) })),
         },
       );
       setLastReceipt({ number: sale.number, total: sale.total });
       setCart([]);
-      setIsCredit(false);
+      setDiscount('');
       setPromoCode('');
+      setPayments([{ method: 'cash', amount: '' }]);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "La vente n'a pas pu être enregistrée.");
@@ -150,14 +207,17 @@ export function Pos({
     }
   }
 
+  const canCheckout = cart.length > 0 && (remaining === 0 || Boolean(customer));
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <div>
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Rechercher un produit…"
+          onKeyDown={handleSearchKeyDown}
+          placeholder="Rechercher un produit ou scanner un code-barres…"
           className={cx(inputClass, 'mb-4')}
           autoFocus
         />
@@ -240,46 +300,21 @@ export function Pos({
           </ul>
         )}
 
-        <div className="mt-4 flex items-center justify-between border-t border-surface-border pt-4 text-sm font-semibold">
-          <span>Total</span>
-          <span>{formatMoney(total, currency)}</span>
+        <div className="mt-4">
+          <label htmlFor="discount" className="block text-sm font-medium text-ink">
+            Remise (montant)
+          </label>
+          <input
+            id="discount"
+            type="number"
+            min={0}
+            max={subtotal}
+            value={discount}
+            onChange={(event) => setDiscount(event.target.value)}
+            placeholder="0"
+            className={cx(inputClass, 'mt-1.5')}
+          />
         </div>
-
-        {customers.length > 0 && (
-          <div className="mt-4">
-            <label htmlFor="customerId" className="block text-sm font-medium text-ink">
-              Client (facultatif)
-            </label>
-            <select
-              id="customerId"
-              value={customerId}
-              onChange={(event) => {
-                setCustomerId(event.target.value);
-                if (!event.target.value) setIsCredit(false);
-              }}
-              className={cx(inputClass, 'mt-1.5')}
-            >
-              <option value="">Aucun</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name} — {customer.phone}
-                </option>
-              ))}
-            </select>
-
-            {customerId && (
-              <label className="mt-2 flex items-center gap-2 text-sm text-ink-muted">
-                <input
-                  type="checkbox"
-                  checked={isCredit}
-                  onChange={(event) => setIsCredit(event.target.checked)}
-                  className="accent-ink"
-                />
-                Vente à crédit (payée plus tard par le client)
-              </label>
-            )}
-          </div>
-        )}
 
         <div className="mt-4">
           <label htmlFor="promoCode" className="block text-sm font-medium text-ink">
@@ -292,37 +327,122 @@ export function Pos({
             placeholder="SOLDES20"
             className={cx(inputClass, 'mt-1.5 font-mono uppercase')}
           />
-          <p className="mt-1 text-xs text-ink-faint">
-            La remise est vérifiée et appliquée à l&apos;encaissement.
-          </p>
         </div>
 
-        {!isCredit && (
+        <div className="mt-4 space-y-1 border-t border-surface-border pt-4 text-sm">
+          <div className="flex items-center justify-between text-ink-muted">
+            <span>Sous-total</span>
+            <span>{formatMoney(subtotal, currency)}</span>
+          </div>
+          {discountAmount > 0 && (
+            <div className="flex items-center justify-between text-ink-muted">
+              <span>Remise</span>
+              <span>−{formatMoney(discountAmount, currency)}</span>
+            </div>
+          )}
+          {taxEnabled && (
+            <div className="flex items-center justify-between text-ink-muted">
+              <span>TVA ({(taxRate / 10).toLocaleString('fr-FR')} %)</span>
+              <span>{formatMoney(taxAmount, currency)}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between text-base font-semibold text-ink">
+            <span>Total</span>
+            <span>{formatMoney(total, currency)}</span>
+          </div>
+        </div>
+
+        {customers.length > 0 && (
           <div className="mt-4">
-            <label htmlFor="paymentMethod" className="block text-sm font-medium text-ink">
-              Moyen de paiement
+            <label htmlFor="customerId" className="block text-sm font-medium text-ink">
+              Client (facultatif)
             </label>
             <select
-              id="paymentMethod"
-              value={paymentMethod}
-              onChange={(event) => setPaymentMethod(event.target.value)}
+              id="customerId"
+              value={customerId}
+              onChange={(event) => setCustomerId(event.target.value)}
               className={cx(inputClass, 'mt-1.5')}
             >
-              {PAYMENT_METHODS.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
+              <option value="">Aucun</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.phone}
                 </option>
               ))}
             </select>
           </div>
         )}
 
+        <div className="mt-4">
+          <p className="text-sm font-medium text-ink">Paiement</p>
+          <div className="mt-1.5 space-y-2">
+            {payments.map((line, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <select
+                  value={line.method}
+                  onChange={(event) => updatePaymentLine(index, { method: event.target.value })}
+                  className={cx(inputClass, 'flex-1')}
+                >
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method.value} value={method.value}>
+                      {method.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={0}
+                  value={line.amount}
+                  onChange={(event) => updatePaymentLine(index, { amount: event.target.value })}
+                  placeholder="0"
+                  className={cx(inputClass, 'w-28')}
+                />
+                {payments.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removePaymentLine(index)}
+                    aria-label="Retirer ce paiement"
+                    className="shrink-0 text-ink-faint hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {payments.length < PAYMENT_METHODS.length && (
+            <button
+              type="button"
+              onClick={addPaymentLine}
+              className="mt-2 text-sm font-medium text-brand hover:underline"
+            >
+              + Scinder le paiement
+            </button>
+          )}
+
+          {remaining > 0 && (
+            <p className="mt-2 text-sm text-ink-muted">
+              {customer ? (
+                <>
+                  Reste à crédit sur {customer.name} : <strong>{formatMoney(remaining, currency)}</strong>
+                </>
+              ) : (
+                <>
+                  Reste non couvert : <strong>{formatMoney(remaining, currency)}</strong> — choisissez un
+                  client pour le mettre à crédit.
+                </>
+              )}
+            </p>
+          )}
+        </div>
+
         <Button
           type="button"
           className="mt-4 w-full"
           size="lg"
           loading={pending}
-          disabled={cart.length === 0}
+          disabled={!canCheckout}
           onClick={checkout}
         >
           Encaisser {formatMoney(total, currency)}
