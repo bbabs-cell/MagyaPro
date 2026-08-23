@@ -614,6 +614,23 @@ export const storeReturnSchema = z.object({
     .max(200),
 });
 
+export const storeExpenseSchema = z.object({
+  label: z.string().trim().min(1, 'Indiquez un libellé.').max(200),
+  amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
+  category: z.enum([
+    'RENT',
+    'UTILITIES',
+    'STAFF',
+    'TRANSPORT',
+    'MARKETING',
+    'MAINTENANCE',
+    'SUPPLIES',
+    'OTHER',
+  ]),
+  incurredAt: z.coerce.date(),
+  notes: optionalText(500),
+});
+
 export const storeTeamMemberSchema = z.object({
   email: emailSchema,
   name: nameSchema,
