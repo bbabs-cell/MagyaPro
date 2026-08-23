@@ -5,8 +5,11 @@ import type { Metadata } from 'next';
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
 
 /**
- * Racine du site public d'une boutique (`<slug>.boutique.magyapro.com`,
- * réécrit vers `/s/<slug>` par le middleware). Première version volontairement
+ * Racine du site public d'une boutique, atteinte via
+ * `boutique.magyapro.com/s/<slug>` (voir le commentaire dans
+ * `src/middleware.ts` — un sous-domaine dédié par boutique demanderait de
+ * déléguer les serveurs de noms à Vercel, ce que le registrar actuel ne
+ * permet pas). Première version volontairement
  * simple : pas de thème par tenant (`Store` n'a ni `templateKey` ni
  * `fontFamily`, à la différence de `Restaurant`), une seule mise en page
  * neutre pour toutes les boutiques. Styles en dur (jamais les tokens

@@ -66,6 +66,14 @@ export function middleware(request: NextRequest) {
   // boutique.magyapro.com : landing et dashboard MagyaPro Boutique, servis
   // depuis `src/app/boutique/`, sous le même déploiement que Restaurant.
   if (host === `boutique.${ROOT_DOMAIN}`) {
+    // Le site public d'une boutique (`/s/<slug>`) reste ici plutôt que sur un
+    // sous-domaine dédié (`<slug>.boutique.magyapro.com`) : ce joker
+    // demanderait de déléguer les serveurs de noms à Vercel, ce que le
+    // registrar actuel (Cloudflare Registrar) n'autorise pas sans transfert
+    // complet du domaine. Chemin sous ce domaine à la place — aucun DNS
+    // supplémentaire requis.
+    if (pathname.startsWith('/s/')) return NextResponse.next();
+
     const url = request.nextUrl.clone();
     url.pathname = `/boutique${pathname === '/' ? '' : pathname}`;
     return NextResponse.rewrite(url);

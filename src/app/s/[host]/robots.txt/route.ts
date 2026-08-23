@@ -17,10 +17,12 @@ export async function GET(
     });
   }
 
-  const isPreview = new URL(request.url).pathname.startsWith('/s/');
-  const base = isPreview
-    ? `${env.appUrl}/s/${host}`
-    : `${env.isProduction ? 'https' : 'http'}://${new URL(request.url).host}`;
+  // Contrairement au site Restaurant, servi soit par sous-domaine soit par
+  // domaine personnalisé (jamais de préfixe de chemin en usage réel), le
+  // catalogue Boutique est toujours atteint via `boutique.magyapro.com/s/<slug>`
+  // (voir le commentaire dans `src/middleware.ts`) — l'URL de base inclut donc
+  // systématiquement ce préfixe.
+  const base = `${env.isProduction ? 'https' : 'http'}://${new URL(request.url).host}/s/${host}`;
 
   const body = store.isDemo
     ? 'User-agent: *\nDisallow: /\n'

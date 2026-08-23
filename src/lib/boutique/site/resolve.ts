@@ -6,11 +6,13 @@ import { toQty } from '@/lib/boutique/quantity';
 /**
  * Résolution d'un hôte public en boutique — équivalent de
  * `src/lib/site/resolve.ts` (Restaurant), fichier séparé et volontairement
- * plus simple : le middleware (`src/middleware.ts`) ne produit ici qu'un
- * slug (`<slug>.boutique.magyapro.com` → `/s/<slug>`), jamais un nom d'hôte
- * complet — les domaines personnalisés de boutique (`StoreDomain`) ne sont
- * pas encore branchés au routage, cette fonction n'a donc qu'un identifiant
- * à traiter, contrairement à son équivalent Restaurant.
+ * plus simple : l'identifiant est toujours un slug, jamais un nom d'hôte
+ * complet. Le catalogue d'une boutique est atteint via
+ * `boutique.magyapro.com/s/<slug>` plutôt qu'un sous-domaine dédié par
+ * boutique (voir le commentaire dans `src/middleware.ts` — bloqué par le
+ * registrar actuel) ; les domaines personnalisés de boutique (`StoreDomain`)
+ * ne sont pas non plus branchés au routage, cette fonction n'a donc qu'un
+ * identifiant à traiter, contrairement à son équivalent Restaurant.
  */
 
 export type PublicStore = NonNullable<Awaited<ReturnType<typeof loadStore>>>;
