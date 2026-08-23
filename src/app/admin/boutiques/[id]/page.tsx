@@ -7,6 +7,7 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { StatusPill } from '@/app/admin/page';
+import { BoutiqueAdminActions } from '@/components/admin/boutique-actions';
 
 export const metadata: Metadata = { title: 'Fiche boutique' };
 export const dynamic = 'force-dynamic';
@@ -92,6 +93,22 @@ export default async function AdminBoutiqueDetailPage({
           <p className="mt-1 text-lg font-semibold">{store._count.products}</p>
         </div>
       </div>
+
+      <section aria-labelledby="actions" className="mt-8">
+        <h2 id="actions" className="text-sm font-medium">
+          Actions d&apos;administration
+        </h2>
+        <div className="mt-3 rounded-2xl border border-white/10 p-4">
+          <BoutiqueAdminActions
+            store={{
+              id: store.id,
+              name: store.name,
+              status: store.status,
+              salesCount: store._count.sales,
+            }}
+          />
+        </div>
+      </section>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <section>
