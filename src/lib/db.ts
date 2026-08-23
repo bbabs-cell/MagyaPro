@@ -87,11 +87,18 @@ function getRequestScopedClient(): PrismaClient {
 }
 
 function getNodeSingletonClient(): PrismaClient {
-  const client = globalForPrisma.prisma ?? createPrismaClient();
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = client;
+  // Mis en cache dans tous les environnements, pas seulement en
+  // développement : la restriction précédente n'avait jamais été exercée en
+  // production (l'app ne tournait que sur Workers, qui passe par le chemin
+  // request-scoped ci-dessus) — sur un vrai serveur Node ou une fonction
+  // serverless (Vercel...), elle recréait un client Prisma neuf, avec son
+  // propre pool de connexions, à *chaque* accès à `prisma`, cassant au
+  // passage toute transaction interactive en cours (P2028 « Transaction
+  // not found ») et multipliant les connexions ouvertes vers la base.
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
   }
-  return client;
+  return globalForPrisma.prisma;
 }
 
 /**
