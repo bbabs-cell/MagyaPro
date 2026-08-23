@@ -127,3 +127,22 @@ export async function getStorePopularProducts(
 
   return [...totals.values()].sort((a, b) => b.quantity - a.quantity).slice(0, limit);
 }
+
+/** Répartition des ventes par heure — pour identifier les coups de feu. */
+export async function getStoreHourlyActivity(
+  storeId: string,
+  period: PeriodKey = '30d',
+): Promise<Array<{ hour: number; orders: number }>> {
+  const { from, to } = periodRange(period);
+
+  const sales = await prisma.sale.findMany({
+    where: { storeId, createdAt: { gte: from, lte: to }, ...COUNTED_SALES },
+    select: { createdAt: true },
+  });
+
+  const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, orders: 0 }));
+  for (const sale of sales) {
+    hours[sale.createdAt.getHours()]!.orders += 1;
+  }
+  return hours;
+}

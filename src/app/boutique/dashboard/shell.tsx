@@ -54,6 +54,13 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M9 8V6a3 3 0 0 1 6 0v2" />
     </svg>
   ),
+  '/boutique/dashboard/statistiques': (
+    <svg {...ICON_PROPS}>
+      <path d="M4 20V10" />
+      <path d="M12 20V4" />
+      <path d="M20 20v-7" />
+    </svg>
+  ),
   '/boutique/dashboard/produits': (
     <svg {...ICON_PROPS}>
       <path d="M3 8l9-5 9 5-9 5-9-5Z" />
@@ -119,6 +126,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
       { href: '/boutique/dashboard/caisse', label: 'Caisse' },
       { href: '/boutique/dashboard/ventes', label: 'Ventes' },
+      { href: '/boutique/dashboard/statistiques', label: 'Statistiques' },
     ],
   },
   {
