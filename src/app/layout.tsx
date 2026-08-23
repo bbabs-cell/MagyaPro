@@ -35,6 +35,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: '#12151a',
+  // Le `color-scheme: light` de globals.css ne suffit pas à empêcher le
+  // mode sombre forcé de Chrome/Android (assombrissement automatique des
+  // pages) : ces navigateurs vérifient spécifiquement cette balise <meta>,
+  // pas seulement la propriété CSS. Sans elle, certains éléments se
+  // retrouvent réinterprétés en clair sur fond clair (texte quasi invisible).
+  colorScheme: 'light',
 };
 
 export default function RootLayout({
