@@ -6,7 +6,12 @@ import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
 import { ForbiddenError, NotFoundError, UnauthorizedError } from '@/lib/errors';
 import { effectiveStorePermissions, type StorePermission } from '@/lib/boutique/rbac';
-import { getCurrentUser, requiresEmailVerification, type SessionUser } from '@/lib/auth/session';
+import {
+  getCurrentUser,
+  requiresEmailVerification,
+  SUPPORT_STORE_COOKIE,
+  type SessionUser,
+} from '@/lib/auth/session';
 
 /**
  * Résolution du tenant MagyaPro Boutique — équivalent de `src/lib/tenant.ts`
@@ -25,8 +30,12 @@ export const ACTIVE_STORE_COOKIE = 'magyapro_store';
 export type StoreContext = {
   user: SessionUser;
   store: Store;
-  role: StoreRole;
+  /** `null` quand l'accès provient d'une session de support Super Admin. */
+  role: StoreRole | null;
   permissions: Set<StorePermission>;
+  /** Vrai si un Super Admin consulte l'espace sans en être membre. */
+  isSupportAccess: boolean;
+  supportAccessId: string | null;
 };
 
 /** Adhésions de l'utilisateur, pour le sélecteur de boutique. */
@@ -46,20 +55,74 @@ export const listStoreMemberships = cache(async () => {
   });
 });
 
+const SUPPORT_STORE_PERMISSIONS = new Set<StorePermission>([
+  'store:view',
+  'store:update',
+  'store:publish',
+  'products:view',
+  'products:manage',
+  'inventory:view',
+  'inventory:manage',
+  'inventory:transfer',
+  'purchases:view',
+  'purchases:manage',
+  'suppliers:view',
+  'suppliers:manage',
+  'pos:access',
+  'sales:view',
+  'sales:refund',
+  'cash:manage',
+  'customers:view',
+  'customers:manage',
+  'credits:manage',
+  'expenses:manage',
+  'finances:view',
+  'promotions:manage',
+  'invoices:view',
+  'reports:view',
+  'analytics:view',
+  'employees:view',
+  'audit:view',
+  'settings:manage',
+  'subscription:view',
+]);
+
 /**
  * Contexte tenant de la requête courante, ou `null` si l'utilisateur n'a
  * accès à aucune boutique.
- *
- * Contrairement à `getTenantContext` (Restaurant), il n'y a pas encore de
- * voie d'accès support Super Admin ici — elle arrivera avec la Phase Super
- * Admin de MagyaPro Boutique, en suivant exactement le même principe
- * (journalisé, révocable, limité).
  */
 export const getStoreContext = cache(async (): Promise<StoreContext | null> => {
   const user = await getCurrentUser();
   if (!user) return null;
 
   const cookieStore = await cookies();
+
+  // --- Voie 1 : accès support d'un Super Admin -----------------------------
+  // Examinée en premier car un Super Admin peut aussi être membre d'une
+  // boutique : tant qu'une session de support est ouverte, c'est elle qui
+  // prime, pour que le journal d'audit reflète l'accès réel.
+  const supportAccessId = cookieStore.get(SUPPORT_STORE_COOKIE)?.value;
+  if (supportAccessId && user.platformRole === 'SUPER_ADMIN') {
+    const access = await prisma.storeSupportAccess.findFirst({
+      where: { id: supportAccessId, adminUserId: user.id, endedAt: null },
+      include: { store: true },
+    });
+    if (access) {
+      return {
+        user,
+        store: access.store,
+        role: null,
+        // Le support dispose des droits de lecture et d'intervention, mais
+        // pas de la suppression de la boutique ni de la gestion de
+        // l'abonnement : ces actions engagent le client, pas l'assistance.
+        permissions: SUPPORT_STORE_PERMISSIONS,
+        isSupportAccess: true,
+        supportAccessId: access.id,
+      };
+    }
+  }
+
+  // --- Voie 2 : adhésion réelle -------------------------------------------
   const requestedId = cookieStore.get(ACTIVE_STORE_COOKIE)?.value;
 
   // Le cookie n'est qu'une *préférence* : la clause `userId` garantit qu'un
@@ -84,6 +147,8 @@ export const getStoreContext = cache(async (): Promise<StoreContext | null> => {
     store: membership.store,
     role: membership.role,
     permissions: effectiveStorePermissions(membership.role, membership.extraPermissions),
+    isSupportAccess: false,
+    supportAccessId: null,
   };
 });
 
@@ -115,7 +180,8 @@ export async function requireStore(permission?: StorePermission): Promise<StoreC
     permission &&
     permission !== 'store:view' &&
     permission !== 'subscription:view' &&
-    permission !== 'subscription:manage'
+    permission !== 'subscription:manage' &&
+    !context.isSupportAccess
   ) {
     throw new ForbiddenError(
       'Cette boutique est suspendue. Régularisez votre abonnement pour reprendre la main.',

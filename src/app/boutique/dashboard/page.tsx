@@ -88,7 +88,7 @@ export default async function BoutiqueDashboardPage() {
     <>
       <PageHeader
         title={`👋 Bonjour, ${context.store.name}`}
-        description={`Votre activité des 30 derniers jours — connecté en tant que ${STORE_ROLE_LABELS[context.role]}.`}
+        description={`Votre activité des 30 derniers jours — connecté en tant que ${context.role ? STORE_ROLE_LABELS[context.role] : 'accès support'}.`}
         action={
           <>
             <LinkButton href="/boutique/dashboard/caisse" size="sm">

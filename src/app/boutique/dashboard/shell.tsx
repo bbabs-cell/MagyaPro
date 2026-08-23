@@ -157,19 +157,29 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
 export function DashboardShell({
   platformLogoUrl,
   storeName,
+  storeStatus,
   userName,
   userEmail,
+  isSupportAccess = false,
   children,
 }: {
   platformLogoUrl: string | null;
   storeName: string;
+  storeStatus?: string;
   userName: string;
   userEmail: string;
+  isSupportAccess?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  async function handleEndSupport() {
+    await api.post('/api/admin/boutique-support-access/fin');
+    router.replace('/admin');
+    router.refresh();
+  }
 
   // Empêche le défilement de la page derrière le menu plein écran — sans
   // ça, on peut faire défiler le contenu masqué en même temps que le menu.
@@ -232,6 +242,29 @@ export function DashboardShell({
     // ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
     // bord (clair, ink/surface) quasi invisibles sur leur fond clair.
     <div className="min-h-screen bg-surface-sunken text-ink">
+      {/* Bandeau d'accès support : impossible à manquer, pour que
+          l'administrateur sache qu'il agit dans l'espace d'un client. */}
+      {isSupportAccess && (
+        <div className="bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950">
+          Accès support actif sur « {storeName} ». Vos actions sont
+          journalisées.{' '}
+          <button
+            type="button"
+            onClick={handleEndSupport}
+            className="underline underline-offset-2"
+          >
+            Quitter l&apos;accès support
+          </button>
+        </div>
+      )}
+
+      {storeStatus === 'SUSPENDED' && (
+        <div role="alert" className="bg-red-600 px-4 py-2 text-center text-sm text-white">
+          Cette boutique est suspendue : son site public est hors ligne et les
+          modifications sont bloquées.
+        </div>
+      )}
+
       <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button

@@ -15,6 +15,8 @@ import {
 export const SESSION_COOKIE = 'magyapro_session';
 /** Cookie posé lorsqu'un Super Admin ouvre l'espace d'un restaurant en support. */
 export const SUPPORT_COOKIE = 'magyapro_support';
+/** Équivalent pour l'espace d'une boutique — jamais le même cookie : les deux accès sont indépendants. */
+export const SUPPORT_STORE_COOKIE = 'magyapro_store_support';
 
 export type SessionUser = {
   id: string;
@@ -94,6 +96,7 @@ export async function destroySession(): Promise<void> {
 
   cookieStore.delete(SESSION_COOKIE);
   cookieStore.delete(SUPPORT_COOKIE);
+  cookieStore.delete(SUPPORT_STORE_COOKIE);
 }
 
 /** Révoque toutes les sessions d'un utilisateur (changement de mot de passe). */

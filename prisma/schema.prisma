@@ -49,17 +49,18 @@ model User {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  memberships      RestaurantUser[]
+  memberships        RestaurantUser[]
   /// Adhésions MagyaPro Boutique — distinctes des adhésions Restaurant : un
   /// compte peut appartenir aux deux produits sans que l'un ne connaisse
   /// l'autre.
-  storeMemberships StoreUser[]
-  sessions         Session[]
-  tokens           VerificationToken[]
-  auditLogs        AuditLog[]
-  supportAccess    SupportAccess[]
-  notifications    Notification[]
-  courierOrders    Order[]             @relation("CourierOrders")
+  storeMemberships   StoreUser[]
+  sessions           Session[]
+  tokens             VerificationToken[]
+  auditLogs          AuditLog[]
+  supportAccess      SupportAccess[]
+  storeSupportAccess StoreSupportAccess[]
+  notifications      Notification[]
+  courierOrders      Order[]              @relation("CourierOrders")
 
   @@index([platformRole])
   @@map("users")
@@ -1334,6 +1335,7 @@ model Store {
   promotions           StorePromotion[]
   auditLogs            AuditLog[]
   notifications        Notification[]
+  supportAccessLogs    StoreSupportAccess[]
 
   @@index([status])
   @@map("stores")
@@ -1371,6 +1373,27 @@ model StoreDomain {
 
   @@index([storeId])
   @@map("store_domains")
+}
+
+/// Accès support Super Admin sur une boutique — mêmes garanties que
+/// `SupportAccess` (Restaurant) : motivé, tracé, révocable. Modèle distinct
+/// plutôt que `restaurantId`/`storeId` nullables sur `SupportAccess` : un
+/// accès support concerne toujours exactement un produit, jamais les deux.
+model StoreSupportAccess {
+  id          String    @id @default(cuid())
+  adminUserId String
+  storeId     String
+  reason      String
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  ip          String?
+
+  admin User  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, startedAt])
+  @@index([adminUserId, startedAt])
+  @@map("store_support_access")
 }
 
 // -----------------------------------------------------------------------

@@ -19,14 +19,19 @@ export default async function BoutiqueDashboardLayout({
   const context = await getStoreContext();
   if (!context) redirect('/boutique/bienvenue');
 
-  if (!context.store.onboardingCompletedAt) redirect('/boutique/bienvenue');
+  // L'onboarding inachevé reprend là où il s'est arrêté, sauf en accès support.
+  if (!context.store.onboardingCompletedAt && !context.isSupportAccess) {
+    redirect('/boutique/bienvenue');
+  }
 
   return (
     <DashboardShell
       platformLogoUrl={platformLogoUrl()}
       storeName={context.store.name}
+      storeStatus={context.store.status}
       userName={user.name}
       userEmail={user.email}
+      isSupportAccess={context.isSupportAccess}
     >
       {children}
     </DashboardShell>

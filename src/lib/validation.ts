@@ -488,6 +488,13 @@ export const supportAccessSchema = z.object({
   ),
 });
 
+export const storeSupportAccessSchema = z.object({
+  storeId: z.string().min(1),
+  reason: cleanString(300).pipe(
+    z.string().min(10, 'Précisez le motif (au moins 10 caractères).'),
+  ),
+});
+
 export const domainSchema = z.object({
   hostname: z
     .string()

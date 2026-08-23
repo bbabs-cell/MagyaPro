@@ -22,7 +22,7 @@ export function BoutiqueAdminActions({
   };
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<'idle' | 'suspend' | 'delete'>('idle');
+  const [mode, setMode] = useState<'idle' | 'support' | 'suspend' | 'delete'>('idle');
   const [reason, setReason] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [pending, setPending] = useState(false);
@@ -33,6 +33,22 @@ export function BoutiqueAdminActions({
     setReason('');
     setConfirmation('');
     setError(null);
+  }
+
+  async function startSupport() {
+    setPending(true);
+    setError(null);
+    try {
+      const result = await api.post<{ redirectTo: string }>('/api/admin/boutique-support-access', {
+        storeId: store.id,
+        reason,
+      });
+      router.push(result.redirectTo);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "L'accès support a échoué.");
+      setPending(false);
+    }
   }
 
   async function changeStatus(status: 'ACTIVE' | 'SUSPENDED') {
@@ -91,6 +107,14 @@ export function BoutiqueAdminActions({
 
       {mode === 'idle' && (
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('support')}
+            className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+          >
+            Accès support
+          </button>
+
           {store.status === 'SUSPENDED' ? (
             <button
               type="button"
@@ -117,6 +141,38 @@ export function BoutiqueAdminActions({
           >
             Supprimer
           </button>
+        </div>
+      )}
+
+      {mode === 'support' && (
+        <div className="space-y-3">
+          <label htmlFor="support-reason" className="block text-sm">
+            Motif de l&apos;accès
+            <span className="mt-1 block text-xs text-white/50">
+              Consigné au journal avec votre identité et la durée de la session.
+              Le commerçant voit un bandeau pendant toute la durée de l&apos;accès.
+            </span>
+          </label>
+          <input
+            id="support-reason"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Demande d'aide du client sur la configuration du catalogue"
+            className={inputStyle}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={pending || reason.trim().length < 10}
+              onClick={startSupport}
+              className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+            >
+              {pending ? 'Ouverture…' : "Ouvrir l'accès support"}
+            </button>
+            <button type="button" onClick={reset} className={`${buttonStyle} text-white/60`}>
+              Annuler
+            </button>
+          </div>
         </div>
       )}
 
