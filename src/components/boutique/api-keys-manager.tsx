@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
@@ -63,7 +64,11 @@ export function ApiKeysManager({ apiKeys, canManage }: { apiKeys: ApiKey[]; canM
       <h2 className="text-sm font-medium">Clés d&apos;API</h2>
       <p className="mt-1 text-sm text-ink-muted">
         Pour un accès en lecture seule à votre catalogue et vos ventes depuis un service externe,
-        avec l&apos;en-tête <span className="font-mono">Authorization: Bearer &lt;clé&gt;</span>.
+        avec l&apos;en-tête <span className="font-mono">Authorization: Bearer &lt;clé&gt;</span>. Voir la{' '}
+        <Link href="/boutique/dashboard/api-docs" className="underline underline-offset-4">
+          documentation de l&apos;API
+        </Link>
+        .
       </p>
 
       {error && (

@@ -38,6 +38,7 @@ export default async function BoutiqueDashboardLayout({
       storeStatus={context.store.status}
       stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
       unreadNotifications={unreadNotifications}
+      canManageApi={context.permissions.has('api:manage')}
       userName={user.name}
       userEmail={user.email}
       isSupportAccess={context.isSupportAccess}
