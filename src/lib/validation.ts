@@ -599,6 +599,21 @@ export const storeCreditPaymentSchema = z.object({
   note: optionalText(200),
 });
 
+export const storeReturnSchema = z.object({
+  saleId: z.string().min(1),
+  resolution: z.enum(['REFUND', 'EXCHANGE']),
+  reason: optionalText(300),
+  items: z
+    .array(
+      z.object({
+        productVariantId: z.string().min(1),
+        quantity: z.number().int().min(1).max(10_000),
+      }),
+    )
+    .min(1, 'Sélectionnez au moins un article à retourner.')
+    .max(200),
+});
+
 export const storeTeamMemberSchema = z.object({
   email: emailSchema,
   name: nameSchema,
