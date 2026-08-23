@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -278,6 +278,16 @@ export function DashboardShell({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Empêche le défilement de la page derrière le menu plein écran — sans
+  // ça, on peut faire défiler le contenu masqué en même temps que le menu.
+  useEffect(() => {
+    if (!menuOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   const allowed = new Set(permissions);
 
   const sections = NAV_SECTIONS.map((section) => ({
@@ -422,17 +432,15 @@ export function DashboardShell({
         <div className="flex h-14 items-center justify-between px-4">
           <button
             type="button"
-            onClick={() => setMenuOpen((open) => !open)}
+            onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
             aria-controls="menu-mobile"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border text-ink"
           >
-            <span className="sr-only">
-              {menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-            </span>
-            <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
+            <span className="sr-only">Ouvrir le menu</span>
+            <span aria-hidden="true" className="text-lg leading-none">☰</span>
           </button>
-          <span className="truncate px-3 font-medium">{restaurant.name}</span>
+          <span className="truncate px-3 font-medium text-ink">{restaurant.name}</span>
           <div className="flex shrink-0 items-center gap-3">
             <Link
               href={`/r/${restaurant.slug}`}
@@ -442,19 +450,37 @@ export function DashboardShell({
             </Link>
           </div>
         </div>
-        {menuOpen && (
-          <div id="menu-mobile" className="border-t border-white/10 bg-navy p-4 text-white">
-            {navigation}
+      </header>
+
+      {/* Menu mobile : recouvrement plein écran fixe (pas un dépliant qui
+          pousse le contenu) — évite l'état confus où le menu semble prendre
+          la page sans qu'on sache où se trouve le reste du contenu. */}
+      {menuOpen && (
+        <div
+          id="menu-mobile"
+          className="fixed inset-0 z-40 overflow-y-auto bg-navy p-4 text-white lg:hidden"
+        >
+          <div className="flex h-14 items-center justify-between">
+            <span className="truncate px-1 font-medium text-white">{restaurant.name}</span>
             <button
               type="button"
-              onClick={handleLogout}
-              className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+              onClick={() => setMenuOpen(false)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white"
             >
-              Se déconnecter
+              <span className="sr-only">Fermer le menu</span>
+              <span aria-hidden="true" className="text-lg leading-none">✕</span>
             </button>
           </div>
-        )}
-      </header>
+          {navigation}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      )}
 
       <div className="lg:flex">
         <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">

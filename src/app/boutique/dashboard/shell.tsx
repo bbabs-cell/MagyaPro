@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -56,13 +56,16 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   ),
   '/boutique/dashboard/produits': (
     <svg {...ICON_PROPS}>
-      <path d="M5 3v18M5 3c3 0 3 4 0 4M19 3v18" />
+      <path d="M3 8l9-5 9 5-9 5-9-5Z" />
+      <path d="M3 8v8l9 5 9-5V8" />
+      <path d="M12 13v8" />
     </svg>
   ),
   '/boutique/dashboard/achats': (
     <svg {...ICON_PROPS}>
-      <path d="M3 12a9 9 0 1 1 3 6.7" />
-      <path d="M3 12v5h5" />
+      <path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6" />
+      <circle cx="9" cy="20" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none" />
     </svg>
   ),
   '/boutique/dashboard/clients': (
@@ -123,6 +126,16 @@ export function DashboardShell({
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Empêche le défilement de la page derrière le menu plein écran — sans
+  // ça, on peut faire défiler le contenu masqué en même temps que le menu.
+  useEffect(() => {
+    if (!menuOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
   function isActive(item: NavItem) {
     return item.exact
       ? pathname === item.href
@@ -173,30 +186,48 @@ export function DashboardShell({
         <div className="flex h-14 items-center justify-between px-4">
           <button
             type="button"
-            onClick={() => setMenuOpen((open) => !open)}
+            onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
             aria-controls="menu-mobile-boutique"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border text-ink"
           >
-            <span className="sr-only">{menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}</span>
-            <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
+            <span className="sr-only">Ouvrir le menu</span>
+            <span aria-hidden="true" className="text-lg leading-none">☰</span>
           </button>
-          <span className="truncate px-3 font-medium">{storeName}</span>
+          <span className="truncate px-3 font-medium text-ink">{storeName}</span>
           <div className="w-10" />
         </div>
-        {menuOpen && (
-          <div id="menu-mobile-boutique" className="border-t border-white/10 bg-navy p-4 text-white">
-            {navigation}
+      </header>
+
+      {/* Menu mobile : recouvrement plein écran fixe (pas un dépliant qui
+          pousse le contenu) — évite l'état confus où le menu semble prendre
+          la page sans qu'on sache où se trouve le reste du contenu. */}
+      {menuOpen && (
+        <div
+          id="menu-mobile-boutique"
+          className="fixed inset-0 z-40 overflow-y-auto bg-navy p-4 text-white lg:hidden"
+        >
+          <div className="flex h-14 items-center justify-between">
+            <span className="truncate px-1 font-medium text-white">{storeName}</span>
             <button
               type="button"
-              onClick={handleLogout}
-              className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+              onClick={() => setMenuOpen(false)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white"
             >
-              Se déconnecter
+              <span className="sr-only">Fermer le menu</span>
+              <span aria-hidden="true" className="text-lg leading-none">✕</span>
             </button>
           </div>
-        )}
-      </header>
+          {navigation}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+          >
+            Se déconnecter
+          </button>
+        </div>
+      )}
 
       <div className="lg:flex">
         <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
