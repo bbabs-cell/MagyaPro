@@ -47,6 +47,17 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/boutiques',
+    label: 'Boutiques',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M3 8l9-5 9 5-9 5-9-5Z" />
+        <path d="M3 8v8l9 5 9-5V8" />
+        <path d="M12 13v8" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/utilisateurs',
     label: 'Utilisateurs',
     icon: (
