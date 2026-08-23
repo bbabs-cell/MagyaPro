@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { getCurrentUser } from '@/lib/auth/session';
-import { getStoreContext } from '@/lib/boutique/store-tenant';
+import { getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tenant';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
 
@@ -24,11 +24,15 @@ export default async function BoutiqueDashboardLayout({
     redirect('/boutique/bienvenue');
   }
 
+  const memberships = context.isSupportAccess ? [] : await listStoreMemberships();
+
   return (
     <DashboardShell
       platformLogoUrl={platformLogoUrl()}
+      storeId={context.store.id}
       storeName={context.store.name}
       storeStatus={context.store.status}
+      stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
       userName={user.name}
       userEmail={user.email}
       isSupportAccess={context.isSupportAccess}

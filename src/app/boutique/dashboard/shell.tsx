@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
+import type { StoreRole } from '@prisma/client';
+
 import { api } from '@/lib/client/api';
 import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
+import { StoreSwitcher } from '@/components/boutique/store-switcher';
 
 /**
  * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
@@ -124,6 +127,13 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M7 15h4" />
     </svg>
   ),
+  '/boutique/dashboard/toutes-boutiques': (
+    <svg {...ICON_PROPS}>
+      <path d="M4 21V9l8-5 8 5v12" />
+      <path d="M9 21v-6h6v6" />
+      <path d="M4 9h16" />
+    </svg>
+  ),
   '/boutique/dashboard/parametres': (
     <svg {...ICON_PROPS}>
       <circle cx="12" cy="12" r="3" />
@@ -132,55 +142,65 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
-const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
-  {
-    title: 'Pilotage',
-    items: [
-      { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
-      { href: '/boutique/dashboard/caisse', label: 'Caisse' },
-      { href: '/boutique/dashboard/ventes', label: 'Ventes' },
-      { href: '/boutique/dashboard/commandes', label: 'Commandes en ligne' },
-      { href: '/boutique/dashboard/statistiques', label: 'Statistiques' },
-    ],
-  },
-  {
-    title: 'Boutique',
-    items: [
-      { href: '/boutique/dashboard/produits', label: 'Produits' },
-      { href: '/boutique/dashboard/achats', label: 'Achats' },
-      { href: '/boutique/dashboard/lots', label: 'Lots' },
-      { href: '/boutique/dashboard/clients', label: 'Clients' },
-    ],
-  },
-  {
-    title: 'Finances',
-    items: [
-      { href: '/boutique/dashboard/depenses', label: 'Dépenses' },
-      { href: '/boutique/dashboard/promotions', label: 'Promotions' },
-    ],
-  },
-  {
-    title: 'Compte',
-    items: [
-      { href: '/boutique/dashboard/equipe', label: 'Équipe' },
-      { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
-      { href: '/boutique/dashboard/parametres', label: 'Réglages' },
-    ],
-  },
-];
+function getNavSections(canViewAllStores: boolean): Array<{ title: string; items: NavItem[] }> {
+  return [
+    {
+      title: 'Pilotage',
+      items: [
+        { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
+        { href: '/boutique/dashboard/caisse', label: 'Caisse' },
+        { href: '/boutique/dashboard/ventes', label: 'Ventes' },
+        { href: '/boutique/dashboard/commandes', label: 'Commandes en ligne' },
+        { href: '/boutique/dashboard/statistiques', label: 'Statistiques' },
+        ...(canViewAllStores
+          ? [{ href: '/boutique/dashboard/toutes-boutiques', label: 'Toutes les boutiques' }]
+          : []),
+      ],
+    },
+    {
+      title: 'Boutique',
+      items: [
+        { href: '/boutique/dashboard/produits', label: 'Produits' },
+        { href: '/boutique/dashboard/achats', label: 'Achats' },
+        { href: '/boutique/dashboard/lots', label: 'Lots' },
+        { href: '/boutique/dashboard/clients', label: 'Clients' },
+      ],
+    },
+    {
+      title: 'Finances',
+      items: [
+        { href: '/boutique/dashboard/depenses', label: 'Dépenses' },
+        { href: '/boutique/dashboard/promotions', label: 'Promotions' },
+      ],
+    },
+    {
+      title: 'Compte',
+      items: [
+        { href: '/boutique/dashboard/equipe', label: 'Équipe' },
+        { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
+        { href: '/boutique/dashboard/parametres', label: 'Réglages' },
+      ],
+    },
+  ];
+}
 
 export function DashboardShell({
   platformLogoUrl,
+  storeId,
   storeName,
   storeStatus,
+  stores,
   userName,
   userEmail,
   isSupportAccess = false,
   children,
 }: {
   platformLogoUrl: string | null;
+  storeId: string;
   storeName: string;
   storeStatus?: string;
+  /** Boutiques du compte connecté, pour le sélecteur — voir `listStoreMemberships`. */
+  stores: Array<{ id: string; name: string; role: StoreRole }>;
   userName: string;
   userEmail: string;
   isSupportAccess?: boolean;
@@ -189,6 +209,9 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const canViewAllStores =
+    stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
+  const navSections = getNavSections(canViewAllStores);
 
   async function handleEndSupport() {
     await api.post('/api/admin/boutique-support-access/fin');
@@ -220,7 +243,7 @@ export function DashboardShell({
 
   const navigation = (
     <nav className="space-y-6" aria-label="Navigation du tableau de bord">
-      {NAV_SECTIONS.map((section) => (
+      {navSections.map((section) => (
         <div key={section.title}>
           <p className="px-3 text-xs font-medium uppercase tracking-wide text-white/35">
             {section.title}
@@ -338,10 +361,7 @@ export function DashboardShell({
               <Logo src={platformLogoUrl} />
             </Link>
 
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
-              <p className="truncate text-sm font-medium">{storeName}</p>
-              <p className="mt-0.5 truncate text-xs text-white/40">MagyaPro Boutique</p>
-            </div>
+            <StoreSwitcher currentStoreId={storeId} currentStoreName={storeName} stores={stores} />
 
             <div className="mt-6 flex-1">{navigation}</div>
 

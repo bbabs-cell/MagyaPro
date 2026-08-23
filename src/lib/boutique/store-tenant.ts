@@ -48,7 +48,7 @@ export const listStoreMemberships = cache(async () => {
     select: {
       role: true,
       store: {
-        select: { id: true, name: true, slug: true, logoUrl: true, status: true },
+        select: { id: true, name: true, slug: true, logoUrl: true, status: true, currency: true },
       },
     },
     orderBy: { createdAt: 'asc' },
