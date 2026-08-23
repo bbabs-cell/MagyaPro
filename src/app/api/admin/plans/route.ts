@@ -36,6 +36,7 @@ export const POST = route(async (request) => {
   const plan = await prisma.plan.create({
     data: {
       key: input.key,
+      product: input.product,
       name: input.name,
       description: input.description ?? null,
       price: input.price,

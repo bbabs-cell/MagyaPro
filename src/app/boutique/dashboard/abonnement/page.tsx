@@ -8,6 +8,7 @@ import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+import { STORE_FEATURE_LABELS, type StoreFeature } from '@/lib/boutique/entitlements';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
@@ -20,11 +21,11 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: 'Expiré',
 };
 
-/// Boutique n'a pas de table de libellés par fonctionnalité (celle de
-/// Restaurant, `FEATURE_LABELS`, ne couvre que ses propres clés) — on
-/// humanise la clé brute plutôt que d'afficher un intitulé erroné.
-function humanizeFeatureKey(key: string): string {
-  return key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+/// Libellé d'une clé de fonctionnalité de plan Boutique — `STORE_FEATURE_LABELS`
+/// pour les clés connues ; humanisée en repli pour une clé plus récente que
+/// ce déploiement (les plans vivent en base, sans redéploiement).
+function featureLabel(key: string): string {
+  return STORE_FEATURE_LABELS[key as StoreFeature] ?? key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
 }
 
 /**
@@ -41,7 +42,10 @@ export default async function StoreSubscriptionPage() {
         where: { storeId: context.store.id },
         include: { plan: true },
       }),
-      prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
+      prisma.plan.findMany({
+        where: { isActive: true, product: 'STORE' },
+        orderBy: { position: 'asc' },
+      }),
       getPlatformSettings(),
       prisma.storeSubscriptionPayment.findFirst({
         where: { storeId: context.store.id, status: 'PENDING' },
@@ -165,7 +169,7 @@ export default async function StoreSubscriptionPage() {
             price: plan.price,
             interval: plan.interval,
             trialDays: plan.trialDays,
-            features: plan.features.map(humanizeFeatureKey),
+            features: plan.features.map(featureLabel),
           }))}
         />
       </div>

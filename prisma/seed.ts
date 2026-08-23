@@ -52,6 +52,7 @@ function daysAgo(days: number): Date {
 const PLANS = [
   {
     key: 'starter',
+    product: 'RESTAURANT' as const,
     name: 'Starter',
     description: 'Pour démarrer : votre site, votre menu et vos commandes.',
     price: 0,
@@ -64,6 +65,7 @@ const PLANS = [
   },
   {
     key: 'pro',
+    product: 'RESTAURANT' as const,
     name: 'Pro',
     description: 'Pour développer : promotions, équipe et statistiques.',
     price: 15_000,
@@ -84,6 +86,7 @@ const PLANS = [
   },
   {
     key: 'premium',
+    product: 'RESTAURANT' as const,
     name: 'Premium',
     description: 'Pour aller plus loin : domaine, templates premium, sans limite.',
     price: 35_000,
@@ -103,6 +106,52 @@ const PLANS = [
       'loyalty',
     ],
     limits: { maxProducts: -1, maxCategories: -1, maxUsers: 20 },
+    position: 2,
+  },
+];
+
+// Plans MagyaPro Boutique — clés et contenu distincts des plans Restaurant
+// ci-dessus (voir Plan.product) : seules `multiple_users`/`maxProducts`/
+// `maxUsers` ont un effet réel aujourd'hui (src/lib/boutique/entitlements.ts),
+// pas de fonctionnalité listée sans contenu derrière.
+const STORE_PLANS = [
+  {
+    key: 'store_starter',
+    product: 'STORE' as const,
+    name: 'Starter',
+    description: 'Pour démarrer : caisse, stock et ventes.',
+    price: 0,
+    currency: 'XOF',
+    interval: 'MONTH' as const,
+    trialDays: 30,
+    features: [],
+    limits: { maxProducts: 20, maxUsers: 1 },
+    position: 0,
+  },
+  {
+    key: 'store_pro',
+    product: 'STORE' as const,
+    name: 'Pro',
+    description: 'Pour développer : plus de produits et une équipe.',
+    price: 10_000,
+    currency: 'XOF',
+    interval: 'MONTH' as const,
+    trialDays: 14,
+    features: ['multiple_users'],
+    limits: { maxProducts: 200, maxUsers: 5 },
+    position: 1,
+  },
+  {
+    key: 'store_premium',
+    product: 'STORE' as const,
+    name: 'Premium',
+    description: 'Pour aller plus loin : catalogue et équipe sans limite.',
+    price: 25_000,
+    currency: 'XOF',
+    interval: 'MONTH' as const,
+    trialDays: 14,
+    features: ['multiple_users'],
+    limits: { maxProducts: -1, maxUsers: 20 },
     position: 2,
   },
 ];
@@ -142,7 +191,7 @@ const TEMPLATES = [
 ];
 
 async function seedReference() {
-  for (const plan of PLANS) {
+  for (const plan of [...PLANS, ...STORE_PLANS]) {
     await prisma.plan.upsert({
       where: { key: plan.key },
       create: { ...plan, limits: plan.limits as never },
@@ -151,7 +200,7 @@ async function seedReference() {
       update: { name: plan.name, description: plan.description },
     });
   }
-  console.info(`✓ ${PLANS.length} plans`);
+  console.info(`✓ ${PLANS.length + STORE_PLANS.length} plans`);
 
   for (const template of TEMPLATES) {
     await prisma.template.upsert({

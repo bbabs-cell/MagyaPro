@@ -20,6 +20,7 @@ export const PATCH = route(async (request, { params }: Params) => {
     where: { id: existing.id },
     data: {
       key: input.key,
+      product: input.product,
       name: input.name,
       description: input.description ?? null,
       price: input.price,
@@ -51,16 +52,21 @@ export const DELETE = route(async (_request, { params }: Params) => {
 
   const plan = await prisma.plan.findUnique({
     where: { id },
-    select: { id: true, key: true, _count: { select: { subscriptions: true } } },
+    select: {
+      id: true,
+      key: true,
+      _count: { select: { subscriptions: true, storeSubscriptions: true } },
+    },
   });
   if (!plan) throw new NotFoundError('Plan introuvable.');
 
-  // Supprimer un plan souscrit laisserait des restaurants sans droits d'un
-  // instant à l'autre. On oriente vers la désactivation, qui retire le plan de
-  // la vente sans toucher aux abonnements en cours.
-  if (plan._count.subscriptions > 0) {
+  // Supprimer un plan souscrit laisserait des restaurants/boutiques sans
+  // droits d'un instant à l'autre. On oriente vers la désactivation, qui
+  // retire le plan de la vente sans toucher aux abonnements en cours.
+  const subscribersCount = plan._count.subscriptions + plan._count.storeSubscriptions;
+  if (subscribersCount > 0) {
     throw new ConflictError(
-      `${plan._count.subscriptions} restaurant${plan._count.subscriptions > 1 ? 's sont abonnés' : ' est abonné'} à ce plan. Désactivez-le plutôt que de le supprimer.`,
+      `${subscribersCount} abonné${subscribersCount > 1 ? 's' : ''} à ce plan. Désactivez-le plutôt que de le supprimer.`,
     );
   }
 

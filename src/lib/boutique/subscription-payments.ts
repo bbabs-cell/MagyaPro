@@ -27,7 +27,7 @@ export async function createStoreSubscriptionPaymentRequest(params: {
   country: string;
 }) {
   const plan = await prisma.plan.findFirst({
-    where: { key: params.planKey, isActive: true },
+    where: { key: params.planKey, isActive: true, product: 'STORE' },
   });
   if (!plan) throw new NotFoundError("Ce plan n'est pas disponible.");
   if (plan.price <= 0) {
@@ -301,7 +301,7 @@ export async function processStoreSubscriptionLifecycle(): Promise<{
   });
 
   const fallbackPlan = await prisma.plan.findFirst({
-    where: { isActive: true },
+    where: { isActive: true, product: 'STORE' },
     orderBy: { position: 'asc' },
   });
 

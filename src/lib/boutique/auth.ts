@@ -52,10 +52,12 @@ export async function registerStoreAccount(input: {
 
   const trialPlan =
     (input.planKey
-      ? await prisma.plan.findFirst({ where: { key: input.planKey, isActive: true } })
+      ? await prisma.plan.findFirst({
+          where: { key: input.planKey, isActive: true, product: 'STORE' },
+        })
       : null) ??
     (await prisma.plan.findFirst({
-      where: { isActive: true },
+      where: { isActive: true, product: 'STORE' },
       orderBy: { position: 'asc' },
     }));
 

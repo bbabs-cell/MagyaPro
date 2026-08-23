@@ -206,6 +206,12 @@ export function StoreSubscriptionPaymentFlow({
 
       <h2 className="mb-3 text-sm font-medium">Plans disponibles</h2>
 
+      {plans.length === 0 && (
+        <p className="text-sm text-ink-muted">
+          Aucun plan n&apos;est proposé pour le moment. Revenez bientôt.
+        </p>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = plan.key === currentPlanKey;

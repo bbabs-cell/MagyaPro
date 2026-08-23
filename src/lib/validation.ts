@@ -462,6 +462,7 @@ export const planSchema = z.object({
     .min(2)
     .max(40)
     .regex(/^[a-z0-9_-]+$/, 'Lettres minuscules, chiffres, tiret et souligné uniquement.'),
+  product: z.enum(['RESTAURANT', 'STORE']).default('RESTAURANT'),
   name: nameSchema,
   description: optionalText(500),
   price: amountSchema,

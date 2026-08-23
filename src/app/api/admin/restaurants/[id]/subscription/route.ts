@@ -48,8 +48,11 @@ export const PATCH = route(async (request, { params }: Params) => {
   }
 
   if (input.planId) {
-    const plan = await prisma.plan.findUnique({ where: { id: input.planId }, select: { id: true } });
-    if (!plan) {
+    const plan = await prisma.plan.findUnique({
+      where: { id: input.planId },
+      select: { id: true, product: true },
+    });
+    if (!plan || plan.product !== 'RESTAURANT') {
       throw new ValidationError('Plan introuvable.', { planId: 'Choisissez un plan existant.' });
     }
   }

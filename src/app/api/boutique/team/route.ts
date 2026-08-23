@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { storeTeamMemberSchema } from '@/lib/validation';
 import { ConflictError } from '@/lib/errors';
+import { STORE_FEATURES, getStoreEntitlements, requireStoreFeature, requireStoreWithinLimit } from '@/lib/boutique/entitlements';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken } from '@/lib/auth/tokens';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
@@ -30,6 +31,10 @@ export const GET = route(async () => {
  */
 export const POST = route(async (request) => {
   const context = await requireStore('employees:manage');
+
+  const entitlements = await getStoreEntitlements(context.store.id);
+  requireStoreFeature(entitlements, STORE_FEATURES.MULTIPLE_USERS);
+  await requireStoreWithinLimit(context.store.id, 'maxUsers', entitlements);
 
   const input = parseOrThrow(storeTeamMemberSchema, await readJson(request));
 

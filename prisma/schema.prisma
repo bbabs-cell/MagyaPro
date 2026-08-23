@@ -845,17 +845,28 @@ enum BillingInterval {
   YEAR
 }
 
+enum PlanProduct {
+  RESTAURANT
+  STORE
+}
+
 model Plan {
   id          String          @id @default(cuid())
   key         String          @unique
   name        String
   description String?
+  /// Un plan appartient toujours exactement à un produit — jamais partagé
+  /// entre Restaurant et Boutique, dont les fonctionnalités/limites n'ont pas
+  /// le même sens. Défaut `RESTAURANT` : préserve le comportement de tous
+  /// les plans existants au moment de l'introduction de ce champ.
+  product     PlanProduct     @default(RESTAURANT)
   /// Prix en unité mineure. Jamais codé en dur dans l'application.
   price       Int
   currency    String          @default("XOF")
   interval    BillingInterval @default(MONTH)
   trialDays   Int             @default(14)
-  /// Clés de fonctionnalités accordées (voir src/lib/entitlements.ts).
+  /// Clés de fonctionnalités accordées (voir src/lib/entitlements.ts ou
+  /// src/lib/boutique/entitlements.ts selon `product`).
   features    String[]        @default([])
   /// Limites quantitatives : { maxProducts, maxUsers, maxCategories, ... }
   limits      Json            @default("{}")
@@ -870,6 +881,7 @@ model Plan {
   storeSubscriptions        StoreSubscription[]
   storeSubscriptionPayments StoreSubscriptionPayment[]
 
+  @@index([product, isActive])
   @@map("plans")
 }
 

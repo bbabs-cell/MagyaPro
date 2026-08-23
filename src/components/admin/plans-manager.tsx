@@ -10,6 +10,7 @@ import type { PlanLimits } from '@/lib/entitlements';
 type Plan = {
   id: string;
   key: string;
+  product: 'RESTAURANT' | 'STORE';
   name: string;
   description: string | null;
   price: number;
@@ -23,11 +24,19 @@ type Plan = {
   subscriptionsCount: number;
 };
 
-const LIMIT_FIELDS: Array<{ key: keyof PlanLimits; label: string }> = [
+const RESTAURANT_LIMIT_FIELDS: Array<{ key: keyof PlanLimits; label: string }> = [
   { key: 'maxProducts', label: 'Produits' },
   { key: 'maxCategories', label: 'Catégories' },
   { key: 'maxUsers', label: 'Utilisateurs' },
   { key: 'maxOrdersPerMonth', label: 'Commandes / mois' },
+];
+
+// Boutique n'a pour l'instant que ces deux limites réellement appliquées
+// (voir src/lib/boutique/entitlements.ts) — inutile de proposer un champ
+// sans effet, qui donnerait l'illusion d'un réglage qui ne fait rien.
+const STORE_LIMIT_FIELDS: Array<{ key: keyof PlanLimits; label: string }> = [
+  { key: 'maxProducts', label: 'Produits' },
+  { key: 'maxUsers', label: 'Utilisateurs' },
 ];
 
 const inputStyle =
@@ -36,20 +45,27 @@ const buttonStyle = 'rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-5
 
 export function PlansManager({
   plans,
-  availableFeatures,
+  restaurantFeatures,
+  storeFeatures,
 }: {
   plans: Plan[];
-  availableFeatures: Array<{ value: string; label: string }>;
+  restaurantFeatures: Array<{ value: string; label: string }>;
+  storeFeatures: Array<{ value: string; label: string }>;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Plan | 'new' | null>(null);
+  const [product, setProduct] = useState<'RESTAURANT' | 'STORE'>('RESTAURANT');
   const [features, setFeatures] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const availableFeatures = product === 'STORE' ? storeFeatures : restaurantFeatures;
+  const limitFields = product === 'STORE' ? STORE_LIMIT_FIELDS : RESTAURANT_LIMIT_FIELDS;
+
   function open(plan: Plan | 'new') {
     setEditing(plan);
+    setProduct(plan === 'new' ? 'RESTAURANT' : plan.product);
     setFeatures(plan === 'new' ? [] : plan.features);
     setError(null);
     setFieldErrors({});
@@ -65,13 +81,14 @@ export function PlansManager({
     // Une limite laissée vide n'est pas envoyée : elle reste indéfinie, donc
     // non appliquée. « -1 » exprime explicitement « illimité ».
     const limits: Record<string, number> = {};
-    for (const field of LIMIT_FIELDS) {
+    for (const field of limitFields) {
       const raw = String(formData.get(field.key) ?? '').trim();
       if (raw !== '') limits[field.key] = Number(raw);
     }
 
     const payload = {
       key: String(formData.get('key') ?? ''),
+      product,
       name: String(formData.get('name') ?? ''),
       description: String(formData.get('description') ?? ''),
       price: toMinor(String(formData.get('price') ?? '0'), currency),
@@ -138,6 +155,25 @@ export function PlansManager({
               {error}
             </p>
           )}
+
+          <label className="block text-sm">
+            Produit
+            <select
+              value={product}
+              onChange={(event) => {
+                const next = event.target.value as 'RESTAURANT' | 'STORE';
+                setProduct(next);
+                // Les clés de fonctionnalités ne sont pas les mêmes d'un
+                // produit à l'autre : une sélection faite pour l'un n'a pas
+                // de sens gardée en changeant vers l'autre.
+                setFeatures([]);
+              }}
+              className={`${inputStyle} mt-1`}
+            >
+              <option value="RESTAURANT" className="text-ink">Restaurant</option>
+              <option value="STORE" className="text-ink">Boutique</option>
+            </select>
+          </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
@@ -230,7 +266,7 @@ export function PlansManager({
               Vide = aucune limite appliquée. −1 = illimité affiché explicitement.
             </p>
             <div className="mt-2 grid gap-4 sm:grid-cols-4">
-              {LIMIT_FIELDS.map((field) => (
+              {limitFields.map((field) => (
                 <label key={field.key} className="block text-sm">
                   {field.label}
                   <input
@@ -337,6 +373,9 @@ export function PlansManager({
               <p className="flex flex-wrap items-center gap-2 font-medium">
                 {plan.name}
                 <span className="font-mono text-xs text-white/40">{plan.key}</span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                  {plan.product === 'STORE' ? 'Boutique' : 'Restaurant'}
+                </span>
                 {!plan.isActive && (
                   <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
                     Inactif

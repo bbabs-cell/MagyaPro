@@ -23,7 +23,7 @@ export const POST = route(async (request) => {
   const { planKey } = parseOrThrow(schema, await readJson(request));
 
   const plan = await prisma.plan.findUnique({ where: { key: planKey } });
-  if (!plan || !plan.isActive) {
+  if (!plan || !plan.isActive || plan.product !== 'RESTAURANT') {
     throw new NotFoundError("Ce plan n'est pas disponible.");
   }
   // Un plan payant passe par la demande de paiement (`/api/abonnement/paiement`),

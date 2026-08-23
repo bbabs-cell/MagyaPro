@@ -48,7 +48,7 @@ export default async function AdminRestaurantDetailPage({
       include: { admin: { select: { email: true } } },
     }),
     prisma.plan.findMany({
-      where: { isActive: true },
+      where: { isActive: true, product: 'RESTAURANT' },
       orderBy: { position: 'asc' },
       select: { id: true, name: true },
     }),

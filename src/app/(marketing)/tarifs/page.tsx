@@ -15,7 +15,7 @@ export const revalidate = 300;
 export default async function TarifsPage() {
   const [plans, promo] = await Promise.all([
     prisma.plan.findMany({
-      where: { isActive: true },
+      where: { isActive: true, product: 'RESTAURANT' },
       orderBy: { position: 'asc' },
     }),
     getActivePromo(),

@@ -27,7 +27,10 @@ export default async function SubscriptionPage() {
   const [entitlements, plans, usage, platformSettings, pendingPayment, promo, paidPayments] =
     await Promise.all([
       getEntitlements(context.restaurant.id),
-      prisma.plan.findMany({ where: { isActive: true }, orderBy: { position: 'asc' } }),
+      prisma.plan.findMany({
+        where: { isActive: true, product: 'RESTAURANT' },
+        orderBy: { position: 'asc' },
+      }),
       Promise.all([
         prisma.product.count({ where: { restaurantId: context.restaurant.id } }),
         prisma.category.count({ where: { restaurantId: context.restaurant.id } }),

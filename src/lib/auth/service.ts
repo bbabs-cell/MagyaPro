@@ -66,10 +66,12 @@ export async function registerAccount(input: {
   // lecture — l'administration pourra lui en attribuer un.
   const trialPlan =
     (input.planKey
-      ? await prisma.plan.findFirst({ where: { key: input.planKey, isActive: true } })
+      ? await prisma.plan.findFirst({
+          where: { key: input.planKey, isActive: true, product: 'RESTAURANT' },
+        })
       : null) ??
     (await prisma.plan.findFirst({
-      where: { isActive: true },
+      where: { isActive: true, product: 'RESTAURANT' },
       orderBy: { position: 'asc' },
     }));
 

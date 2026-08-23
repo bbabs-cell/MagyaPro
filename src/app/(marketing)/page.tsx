@@ -100,7 +100,7 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
 export default async function LandingPage() {
   const [plans, templates, demos, promo] = await Promise.all([
     prisma.plan.findMany({
-      where: { isActive: true },
+      where: { isActive: true, product: 'RESTAURANT' },
       orderBy: { position: 'asc' },
     }),
     prisma.template.findMany({

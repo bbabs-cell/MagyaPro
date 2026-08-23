@@ -19,7 +19,7 @@ export const POST = route(async (request) => {
   const { planKey } = parseOrThrow(schema, await readJson(request));
 
   const plan = await prisma.plan.findUnique({ where: { key: planKey } });
-  if (!plan || !plan.isActive) {
+  if (!plan || !plan.isActive || plan.product !== 'STORE') {
     throw new NotFoundError("Ce plan n'est pas disponible.");
   }
   if (plan.price > 0) {

@@ -32,7 +32,7 @@ export async function createSubscriptionPaymentRequest(params: {
   country: string;
 }) {
   const plan = await prisma.plan.findFirst({
-    where: { key: params.planKey, isActive: true },
+    where: { key: params.planKey, isActive: true, product: 'RESTAURANT' },
   });
   if (!plan) throw new NotFoundError("Ce plan n'est pas disponible.");
   if (plan.price <= 0) {
@@ -351,7 +351,7 @@ export async function processSubscriptionLifecycle(): Promise<{
   });
 
   const fallbackPlan = await prisma.plan.findFirst({
-    where: { isActive: true },
+    where: { isActive: true, product: 'RESTAURANT' },
     orderBy: { position: 'asc' },
   });
 

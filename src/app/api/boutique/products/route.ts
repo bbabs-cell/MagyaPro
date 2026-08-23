@@ -2,6 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
+import { requireStoreWithinLimit } from '@/lib/boutique/entitlements';
 import { storeProductSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
@@ -28,6 +29,7 @@ export const GET = route(async () => {
 export const POST = route(async (request) => {
   const context = await requireStore('products:manage');
   hit(`boutique-products:${context.store.id}`, RATE_LIMITS.write);
+  await requireStoreWithinLimit(context.store.id, 'maxProducts');
 
   const input = parseOrThrow(storeProductSchema, await readJson(request));
 
