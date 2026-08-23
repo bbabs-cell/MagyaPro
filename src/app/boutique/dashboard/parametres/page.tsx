@@ -9,6 +9,7 @@ import { PublishPanel } from '@/components/boutique/publish-panel';
 import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
+import { WebhooksManager } from '@/components/boutique/webhooks-manager';
 
 export const metadata: Metadata = { title: 'Réglages' };
 export const dynamic = 'force-dynamic';
@@ -16,13 +17,15 @@ export const dynamic = 'force-dynamic';
 export default async function BoutiqueSettingsPage() {
   const context = await requireStore('store:view');
 
-  const [domains, entitlements, apiKeys] = await Promise.all([
+  const canManageApi = context.permissions.has('api:manage');
+
+  const [domains, entitlements, apiKeys, webhooks] = await Promise.all([
     prisma.storeDomain.findMany({
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'asc' },
     }),
     getStoreEntitlements(context.store.id),
-    context.permissions.has('api:manage')
+    canManageApi
       ? prisma.storeApiKey.findMany({
           where: { storeId: context.store.id },
           orderBy: { createdAt: 'desc' },
@@ -34,6 +37,13 @@ export default async function BoutiqueSettingsPage() {
             revokedAt: true,
             createdAt: true,
           },
+        })
+      : Promise.resolve([]),
+    canManageApi
+      ? prisma.storeWebhook.findMany({
+          where: { storeId: context.store.id },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, url: true, events: true, isActive: true, createdAt: true },
         })
       : Promise.resolve([]),
   ]);
@@ -63,16 +73,22 @@ export default async function BoutiqueSettingsPage() {
             hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)
           }
         />
-        {context.permissions.has('api:manage') && (
-          <ApiKeysManager
-            apiKeys={apiKeys.map((key) => ({
-              ...key,
-              lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
-              revokedAt: key.revokedAt?.toISOString() ?? null,
-              createdAt: key.createdAt.toISOString(),
-            }))}
-            canManage={context.permissions.has('api:manage')}
-          />
+        {canManageApi && (
+          <>
+            <ApiKeysManager
+              apiKeys={apiKeys.map((key) => ({
+                ...key,
+                lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
+                revokedAt: key.revokedAt?.toISOString() ?? null,
+                createdAt: key.createdAt.toISOString(),
+              }))}
+              canManage={canManageApi}
+            />
+            <WebhooksManager
+              webhooks={webhooks.map((w) => ({ ...w, createdAt: w.createdAt.toISOString() }))}
+              canManage={canManageApi}
+            />
+          </>
         )}
       </div>
     </>

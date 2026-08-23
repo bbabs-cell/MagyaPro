@@ -2,6 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
+import { triggerWebhooks } from '@/lib/boutique/webhooks';
 import { storeSaleSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
@@ -226,6 +227,13 @@ export const POST = route(async (request) => {
     targetType: 'sale',
     targetId: sale.id,
     metadata: { total: sale.total, itemCount: sale.items.length },
+  });
+
+  await triggerWebhooks(context.store.id, 'SALE_CREATED', {
+    id: sale.id,
+    number: sale.number,
+    total: sale.total,
+    itemCount: sale.items.length,
   });
 
   return ok({ sale }, 201);

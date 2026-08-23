@@ -5,6 +5,7 @@ import { storeOrderStatusSchema } from '@/lib/validation';
 import { ConflictError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { notifyCustomerOrderEvent } from '@/lib/boutique/order-notifications';
+import { triggerWebhooks } from '@/lib/boutique/webhooks';
 import type { StoreOrder } from '@prisma/client';
 
 type Params = { params: Promise<{ id: string }> };
@@ -41,6 +42,12 @@ export const PATCH = route(async (request, { params }: Params) => {
   if (status === 'CONFIRMED' || status === 'READY' || status === 'CANCELLED') {
     await notifyCustomerOrderEvent(status, updated, context.store.name);
   }
+
+  await triggerWebhooks(context.store.id, 'ORDER_STATUS_CHANGED', {
+    id: updated.id,
+    number: updated.number,
+    status: updated.status,
+  });
 
   return ok({ order: updated });
 });

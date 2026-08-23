@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import type { Prisma, StockMovementType } from '@prisma/client';
 import { toQty } from '@/lib/boutique/quantity';
 import { createNotification } from '@/lib/notifications';
+import { triggerWebhooks } from '@/lib/boutique/webhooks';
 
 /**
  * Point d'entrée unique pour toute modification de stock — jamais
@@ -130,6 +131,12 @@ export async function recordStockMovement(
           title: `Stock faible : ${variant.product.name}`,
           body: `${variant.product.name} : ${quantityAfter} restant${quantityAfter > 1 ? 's' : ''}, sous le seuil d'alerte (${threshold}).`,
           href: '/boutique/dashboard/produits',
+        });
+        await triggerWebhooks(params.storeId, 'LOW_STOCK', {
+          productVariantId: params.productVariantId,
+          productName: variant.product.name,
+          quantity: quantityAfter,
+          threshold,
         });
       }
     }
