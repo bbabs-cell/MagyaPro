@@ -87,6 +87,8 @@ export const AUDIT_ACTIONS = {
   STORE_PRODUCT_UPDATED: 'store_product.updated',
   STORE_PRODUCT_DELETED: 'store_product.deleted',
   STORE_PRODUCTS_IMPORTED: 'store_products.imported',
+  STORE_API_KEY_CREATED: 'store_api_key.created',
+  STORE_API_KEY_REVOKED: 'store_api_key.revoked',
   SALE_CREATED: 'sale.created',
   SALE_REFUNDED: 'sale.refunded',
   STORE_SUPPLIER_CREATED: 'store_supplier.created',

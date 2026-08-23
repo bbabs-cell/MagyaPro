@@ -1355,9 +1355,60 @@ model Store {
   auditLogs            AuditLog[]
   notifications        Notification[]
   supportAccessLogs    StoreSupportAccess[]
+  apiKeys              StoreApiKey[]
+  webhooks             StoreWebhook[]
 
   @@index([status])
   @@map("stores")
+}
+
+/// Clé d'API pour l'accès en lecture seule à `/api/v1/*` — voir
+/// `src/lib/boutique/api-auth.ts`. Seule l'empreinte est persistée, même
+/// principe que `Session.tokenHash` : la clé en clair n'est montrée qu'une
+/// fois, à sa création.
+model StoreApiKey {
+  id         String    @id @default(cuid())
+  storeId    String
+  name       String
+  keyHash    String    @unique
+  /// Préfixe affiché dans la liste (ex. `mpk_a1b2c3d4`) — insuffisant pour
+  /// reconstituer la clé, seulement pour la reconnaître.
+  keyPrefix  String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("store_api_keys")
+}
+
+enum StoreWebhookEvent {
+  SALE_CREATED
+  ORDER_CREATED
+  ORDER_STATUS_CHANGED
+  LOW_STOCK
+}
+
+/// Endpoint HTTP sortant notifié sur les événements souscrits — voir
+/// `src/lib/boutique/webhooks.ts`. `secret` sert à signer chaque envoi
+/// (HMAC-SHA256, en-tête `X-Magyapro-Signature`) pour que le destinataire
+/// puisse vérifier que l'appel vient bien de Magyapro.
+model StoreWebhook {
+  id        String              @id @default(cuid())
+  storeId   String
+  url       String
+  events    StoreWebhookEvent[]
+  secret    String
+  isActive  Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@map("store_webhooks")
 }
 
 enum StoreDomainType {

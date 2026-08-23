@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui';
 import { PublishPanel } from '@/components/boutique/publish-panel';
 import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
+import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
 
 export const metadata: Metadata = { title: 'Réglages' };
 export const dynamic = 'force-dynamic';
@@ -15,12 +16,26 @@ export const dynamic = 'force-dynamic';
 export default async function BoutiqueSettingsPage() {
   const context = await requireStore('store:view');
 
-  const [domains, entitlements] = await Promise.all([
+  const [domains, entitlements, apiKeys] = await Promise.all([
     prisma.storeDomain.findMany({
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'asc' },
     }),
     getStoreEntitlements(context.store.id),
+    context.permissions.has('api:manage')
+      ? prisma.storeApiKey.findMany({
+          where: { storeId: context.store.id },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            keyPrefix: true,
+            lastUsedAt: true,
+            revokedAt: true,
+            createdAt: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -48,6 +63,17 @@ export default async function BoutiqueSettingsPage() {
             hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)
           }
         />
+        {context.permissions.has('api:manage') && (
+          <ApiKeysManager
+            apiKeys={apiKeys.map((key) => ({
+              ...key,
+              lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
+              revokedAt: key.revokedAt?.toISOString() ?? null,
+              createdAt: key.createdAt.toISOString(),
+            }))}
+            canManage={context.permissions.has('api:manage')}
+          />
+        )}
       </div>
     </>
   );
