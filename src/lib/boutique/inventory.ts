@@ -21,6 +21,14 @@ export async function recordStockMovement(
     reason?: string | null;
     referenceType?: string | null;
     referenceId?: string | null;
+    /**
+     * Date de péremption de l'entrée de stock — uniquement pertinente pour
+     * `quantityChange > 0`. Crée un lot séparé, tracé par sa propre date.
+     * Une entrée sans date renseignée n'a pas de lot, ce qui reste sans
+     * conséquence sur le total agrégé (`Inventory`), seulement sur le suivi
+     * fin par lot.
+     */
+    expiryDate?: Date | null;
   },
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
@@ -73,5 +81,58 @@ export async function recordStockMovement(
     },
   });
 
+  if (params.quantityChange > 0 && params.expiryDate) {
+    await tx.stockBatch.create({
+      data: {
+        storeId: params.storeId,
+        productVariantId: params.productVariantId,
+        warehouseId: params.warehouseId,
+        quantity: params.quantityChange,
+        remainingQuantity: params.quantityChange,
+        expiryDate: params.expiryDate,
+      },
+    });
+  } else if (params.quantityChange < 0) {
+    await depleteBatchesFifo(
+      tx,
+      params.storeId,
+      params.productVariantId,
+      params.warehouseId,
+      -params.quantityChange,
+    );
+  }
+
   return { quantityBefore, quantityAfter };
+}
+
+/**
+ * Épuise les lots existants en priorité sur la date de péremption la plus
+ * proche (FIFO), jusqu'à couvrir la quantité sortante — ou jusqu'à épuiser
+ * les lots disponibles si une partie du stock n'a jamais été rattachée à un
+ * lot (reçue avant l'introduction de cette fonctionnalité, ou sans date
+ * renseignée). Ce n'est pas un système de coût par lot : seule la quantité
+ * restante et la date sont suivies.
+ */
+async function depleteBatchesFifo(
+  tx: Prisma.TransactionClient | typeof prisma,
+  storeId: string,
+  productVariantId: string,
+  warehouseId: string,
+  quantityToDeplete: number,
+) {
+  const batches = await tx.stockBatch.findMany({
+    where: { storeId, productVariantId, warehouseId, remainingQuantity: { gt: 0 } },
+    orderBy: { expiryDate: 'asc' },
+  });
+
+  let remaining = quantityToDeplete;
+  for (const batch of batches) {
+    if (remaining <= 0) break;
+    const take = Math.min(batch.remainingQuantity, remaining);
+    await tx.stockBatch.update({
+      where: { id: batch.id },
+      data: { remainingQuantity: batch.remainingQuantity - take },
+    });
+    remaining -= take;
+  }
 }

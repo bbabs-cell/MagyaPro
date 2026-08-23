@@ -550,6 +550,8 @@ export const storeProductSchema = z.object({
   attributes: variantAttributesSchema,
   /** Quantité en stock à la création — mouvement `INITIAL`, jamais silencieux. */
   initialStock: z.number().int().min(0).max(1_000_000).default(0),
+  /** Date de péremption du stock initial, facultative — crée un lot suivi séparément. */
+  initialStockExpiryDate: z.coerce.date().optional(),
 });
 
 export const storeSupplierSchema = z.object({

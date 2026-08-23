@@ -1,4 +1,6 @@
-import { route, ok } from '@/lib/api';
+import { z } from 'zod';
+
+import { route, ok, parseOrThrow, readJson } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
@@ -7,6 +9,11 @@ import { NotFoundError, ValidationError } from '@/lib/errors';
 
 type Params = { params: Promise<{ id: string }> };
 
+const receiveSchema = z.object({
+  /** Date de péremption commune au lot reçu, facultative (denrées, cosmétiques...). */
+  expiryDate: z.coerce.date().optional(),
+});
+
 /**
  * Réception d'une commande d'achat — première version : réception complète
  * uniquement (pas de réception partielle). Augmente le stock de chaque
@@ -14,9 +21,10 @@ type Params = { params: Promise<{ id: string }> };
  * affichée doit refléter le dernier prix payé) et incrémente la dette
  * envers le fournisseur — jamais modifiée à la main.
  */
-export const POST = route(async (_request, { params }: Params) => {
+export const POST = route(async (request, { params }: Params) => {
   const context = await requireStore('purchases:manage');
   const { id } = await params;
+  const input = parseOrThrow(receiveSchema, await readJson(request).catch(() => ({})));
 
   const purchaseOrder = await prisma.purchaseOrder.findFirst({
     where: { id, storeId: context.store.id },
@@ -54,6 +62,7 @@ export const POST = route(async (_request, { params }: Params) => {
           userId: context.user.id,
           referenceType: 'purchase_order',
           referenceId: purchaseOrder.id,
+          expiryDate: input.expiryDate ?? null,
         },
         tx,
       );

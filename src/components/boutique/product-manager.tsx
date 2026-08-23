@@ -343,6 +343,7 @@ function ProductForm({
         price: toMinor(String(formData.get('price') ?? '0'), currency),
         attributes,
         initialStock: Number(formData.get('initialStock') ?? 0),
+        initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
       });
       onDone();
     } catch (err) {
@@ -442,6 +443,19 @@ function ProductForm({
             />
           </Field>
         </div>
+
+        <Field
+          label="Date de péremption du stock initial (facultatif)"
+          htmlFor="initialStockExpiryDate"
+          hint="Pour les denrées ou cosmétiques — laisser vide sinon."
+        >
+          <input
+            id="initialStockExpiryDate"
+            name="initialStockExpiryDate"
+            type="date"
+            className={inputClass}
+          />
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Référence / SKU (facultatif)" htmlFor="sku">

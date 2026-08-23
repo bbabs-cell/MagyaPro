@@ -1319,6 +1319,7 @@ model Store {
   products             StoreProduct[]
   warehouses           Warehouse[]
   inventoryMovements   InventoryMovement[]
+  stockBatches         StockBatch[]
   suppliers            Supplier[]
   supplierPayments     SupplierPayment[]
   purchaseOrders       PurchaseOrder[]
@@ -1554,6 +1555,7 @@ model StoreProductVariant {
   saleItems          SaleItem[]
   purchaseOrderItems PurchaseOrderItem[]
   returnItems        StoreReturnItem[]
+  stockBatches       StockBatch[]
 
   @@unique([productId, sku])
   @@index([productId])
@@ -1582,6 +1584,7 @@ model Warehouse {
   inventoryMovements InventoryMovement[]
   transfersOut       StockTransfer[]     @relation("TransferSource")
   transfersIn        StockTransfer[]     @relation("TransferDestination")
+  stockBatches       StockBatch[]
 
   @@index([storeId])
   @@map("boutique_warehouses")
@@ -1649,6 +1652,35 @@ model InventoryMovement {
   @@index([productVariantId, createdAt])
   @@index([warehouseId, createdAt])
   @@map("boutique_inventory_movements")
+}
+
+/// Suivi par lot — uniquement pour les entrées de stock où une date de
+/// péremption a été renseignée (réception d'achat, stock initial) ; une
+/// entrée sans date n'a pas de lot, ce qui reste sans conséquence : le
+/// dépérissement (voir `recordStockMovement`) ne fait qu'épuiser les lots
+/// existants en priorité sur la date la plus proche, sans exiger qu'ils
+/// couvrent tout le stock. Volontairement pas un système de coût par lot
+/// (FIFO costing) : seule la date de péremption est trackée ici.
+model StockBatch {
+  id                String   @id @default(cuid())
+  storeId           String
+  productVariantId  String
+  warehouseId       String
+  quantity          Int
+  remainingQuantity Int
+  expiryDate        DateTime
+  receivedAt        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store          Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  warehouse      Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, expiryDate])
+  @@index([productVariantId, warehouseId, expiryDate])
+  @@map("boutique_stock_batches")
 }
 
 enum StockTransferStatus {

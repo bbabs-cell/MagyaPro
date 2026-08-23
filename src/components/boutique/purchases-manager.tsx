@@ -54,13 +54,17 @@ export function PurchasesManager({
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [receivingId, setReceivingId] = useState<string | null>(null);
+  const [expiryPromptFor, setExpiryPromptFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function receive(orderId: string) {
+  async function receive(orderId: string, expiryDate?: string) {
     setReceivingId(orderId);
     setError(null);
     try {
-      await api.post(`/api/boutique/purchase-orders/${orderId}/receive`);
+      await api.post(`/api/boutique/purchase-orders/${orderId}/receive`, {
+        expiryDate: expiryDate || undefined,
+      });
+      setExpiryPromptFor(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "La réception a échoué.");
@@ -175,8 +179,7 @@ export function PurchasesManager({
                         <Button
                           size="sm"
                           variant="secondary"
-                          loading={receivingId === order.id}
-                          onClick={() => receive(order.id)}
+                          onClick={() => setExpiryPromptFor(order.id)}
                         >
                           Réceptionner
                         </Button>
@@ -185,6 +188,49 @@ export function PurchasesManager({
                   </tr>
                 );
               })}
+              {orders.map(
+                (order) =>
+                  expiryPromptFor === order.id && (
+                    <tr key={`${order.id}-receive`} className="border-b border-surface-border bg-surface-sunken">
+                      <td colSpan={5} className="px-4 py-3">
+                        <form
+                          className="flex flex-wrap items-end gap-3"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            const formData = new FormData(event.currentTarget);
+                            receive(order.id, String(formData.get('expiryDate') ?? ''));
+                          }}
+                        >
+                          <p className="w-full text-sm text-ink-muted">
+                            Réception de {order.reference} —{' '}
+                            {formatMoney(
+                              order.items.reduce((sum, item) => sum + item.unitCost * item.quantityOrdered, 0),
+                              currency,
+                            )}
+                          </p>
+                          <Field
+                            label="Date de péremption du lot (facultatif)"
+                            htmlFor="expiryDate"
+                            hint="Pour les denrées ou cosmétiques — laisser vide sinon."
+                          >
+                            <input id="expiryDate" name="expiryDate" type="date" className={cx(inputClass, 'w-56')} />
+                          </Field>
+                          <Button type="submit" size="sm" loading={receivingId === order.id}>
+                            Confirmer la réception
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setExpiryPromptFor(null)}
+                          >
+                            Annuler
+                          </Button>
+                        </form>
+                      </td>
+                    </tr>
+                  ),
+              )}
             </tbody>
           </table>
         </Card>

@@ -87,6 +87,7 @@ export const POST = route(async (request) => {
           reason: 'Stock initial à la création du produit',
           referenceType: 'store_product',
           referenceId: created.id,
+          expiryDate: input.initialStockExpiryDate ?? null,
         },
         tx,
       );
