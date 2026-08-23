@@ -40,10 +40,18 @@ function connectionString(): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  // `max: 1` : Hyperdrive maintient déjà le vrai pool de connexions côté
-  // origine ; un pool local plus large ne ferait que multiplier des
-  // connexions Worker → Hyperdrive pour rien, sans gagner en débit.
-  const adapter = new PrismaPg({ connectionString: connectionString(), max: 1 });
+  // `max: 1` seulement sur Workers : Hyperdrive maintient déjà le vrai pool
+  // de connexions côté origine, un pool local plus large ne ferait que
+  // multiplier des connexions Worker → Hyperdrive pour rien. Sur un serveur
+  // Node classique (Vercel, Railway...), il n'y a pas de Hyperdrive — ce pool
+  // local *est* la seule connexion réelle à la base, et le limiter à 1 a
+  // provoqué des transactions interactives cassées en production
+  // (« Transaction not found », la connexion unique étant disputée entre
+  // requêtes concurrentes).
+  const adapter = new PrismaPg({
+    connectionString: connectionString(),
+    max: isCloudflareRuntime() ? 1 : 5,
+  });
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
