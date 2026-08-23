@@ -226,7 +226,12 @@ export function DashboardShell({
   );
 
   return (
-    <div className="min-h-screen bg-surface-sunken">
+    // `text-ink` réinitialise explicitement la couleur de texte : le layout
+    // racine `/boutique` (pages avant connexion) pose un texte clair sur fond
+    // sombre pour son propre thème, hérité sinon par tout élément d'ici qui
+    // ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
+    // bord (clair, ink/surface) quasi invisibles sur leur fond clair.
+    <div className="min-h-screen bg-surface-sunken text-ink">
       <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button
