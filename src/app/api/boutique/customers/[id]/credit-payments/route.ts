@@ -5,6 +5,8 @@ import { storeCreditPaymentSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
+import { createNotification } from '@/lib/notifications';
+import { formatMoney } from '@/lib/money';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -50,6 +52,14 @@ export const POST = route(async (request, { params }: Params) => {
     targetType: 'store_customer',
     targetId: customer.id,
     metadata: { amount: input.amount },
+  });
+
+  await createNotification({
+    storeId: context.store.id,
+    type: 'PAYMENT_RECEIVED',
+    title: `Paiement reçu : ${customer.name}`,
+    body: `${customer.name} a réglé ${formatMoney(input.amount, context.store.currency)} sur son solde à crédit.`,
+    href: '/boutique/dashboard/clients',
   });
 
   return ok({ success: true });

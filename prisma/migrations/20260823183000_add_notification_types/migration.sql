@@ -1,0 +1,3 @@
+ALTER TYPE "NotificationType" ADD VALUE 'LOW_STOCK';
+ALTER TYPE "NotificationType" ADD VALUE 'OUT_OF_STOCK';
+ALTER TYPE "NotificationType" ADD VALUE 'PAYMENT_RECEIVED';

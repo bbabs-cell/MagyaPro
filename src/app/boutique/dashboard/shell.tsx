@@ -21,7 +21,7 @@ import { StoreSwitcher } from '@/components/boutique/store-switcher';
  * différenciés que Restaurant applique à sa propre navigation.
  */
 
-type NavItem = { href: string; label: string; exact?: boolean };
+type NavItem = { href: string; label: string; exact?: boolean; badge?: number };
 
 const ICON_PROPS = {
   width: 18,
@@ -140,6 +140,12 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M7 15h4" />
     </svg>
   ),
+  '/boutique/dashboard/notifications': (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+      <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
+    </svg>
+  ),
   '/boutique/dashboard/toutes-boutiques': (
     <svg {...ICON_PROPS}>
       <path d="M4 21V9l8-5 8 5v12" />
@@ -155,7 +161,10 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
-function getNavSections(canViewAllStores: boolean): Array<{ title: string; items: NavItem[] }> {
+function getNavSections(
+  canViewAllStores: boolean,
+  unreadNotifications: number,
+): Array<{ title: string; items: NavItem[] }> {
   return [
     {
       title: 'Pilotage',
@@ -164,6 +173,11 @@ function getNavSections(canViewAllStores: boolean): Array<{ title: string; items
         { href: '/boutique/dashboard/caisse', label: 'Caisse' },
         { href: '/boutique/dashboard/ventes', label: 'Ventes' },
         { href: '/boutique/dashboard/commandes', label: 'Commandes en ligne' },
+        {
+          href: '/boutique/dashboard/notifications',
+          label: 'Notifications',
+          badge: unreadNotifications,
+        },
         { href: '/boutique/dashboard/rapports', label: 'Rapports' },
         { href: '/boutique/dashboard/statistiques', label: 'Statistiques' },
         ...(canViewAllStores
@@ -205,6 +219,7 @@ export function DashboardShell({
   storeName,
   storeStatus,
   stores,
+  unreadNotifications = 0,
   userName,
   userEmail,
   isSupportAccess = false,
@@ -216,6 +231,7 @@ export function DashboardShell({
   storeStatus?: string;
   /** Boutiques du compte connecté, pour le sélecteur — voir `listStoreMemberships`. */
   stores: Array<{ id: string; name: string; role: StoreRole }>;
+  unreadNotifications?: number;
   userName: string;
   userEmail: string;
   isSupportAccess?: boolean;
@@ -226,7 +242,7 @@ export function DashboardShell({
   const [menuOpen, setMenuOpen] = useState(false);
   const canViewAllStores =
     stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
-  const navSections = getNavSections(canViewAllStores);
+  const navSections = getNavSections(canViewAllStores, unreadNotifications);
 
   async function handleEndSupport() {
     await api.post('/api/admin/boutique-support-access/fin');
@@ -279,6 +295,11 @@ export function DashboardShell({
                 >
                   <span className="shrink-0">{NAV_ICONS[item.href]}</span>
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {Boolean(item.badge) && (
+                    <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

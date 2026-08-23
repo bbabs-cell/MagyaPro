@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
+import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tenant';
 import { platformLogoUrl } from '@/lib/storage';
@@ -25,6 +26,9 @@ export default async function BoutiqueDashboardLayout({
   }
 
   const memberships = context.isSupportAccess ? [] : await listStoreMemberships();
+  const unreadNotifications = await prisma.notification.count({
+    where: { storeId: context.store.id, readAt: null },
+  });
 
   return (
     <DashboardShell
@@ -33,6 +37,7 @@ export default async function BoutiqueDashboardLayout({
       storeName={context.store.name}
       storeStatus={context.store.status}
       stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
+      unreadNotifications={unreadNotifications}
       userName={user.name}
       userEmail={user.email}
       isSupportAccess={context.isSupportAccess}

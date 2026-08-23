@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import type { Prisma, StockMovementType } from '@prisma/client';
 import { toQty } from '@/lib/boutique/quantity';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * Point d'entrée unique pour toute modification de stock — jamais
@@ -101,6 +102,37 @@ export async function recordStockMovement(
       params.warehouseId,
       -params.quantityChange,
     );
+  }
+
+  // Alerte uniquement au *franchissement* du seuil (une sortie de stock qui
+  // fait passer sous le seuil), jamais à chaque mouvement suivant : sans
+  // quoi chaque vente d'un produit déjà bas noierait l'équipe d'alertes
+  // redondantes.
+  if (params.quantityChange < 0) {
+    const variant = await tx.storeProductVariant.findUnique({
+      where: { id: params.productVariantId },
+      select: { product: { select: { name: true, minStockAlert: true } } },
+    });
+    if (variant) {
+      const threshold = toQty(variant.product.minStockAlert);
+      if (quantityBefore > 0 && quantityAfter <= 0) {
+        await createNotification({
+          storeId: params.storeId,
+          type: 'OUT_OF_STOCK',
+          title: `Rupture de stock : ${variant.product.name}`,
+          body: `${variant.product.name} n'a plus de stock disponible.`,
+          href: '/boutique/dashboard/produits',
+        });
+      } else if (threshold > 0 && quantityBefore > threshold && quantityAfter <= threshold) {
+        await createNotification({
+          storeId: params.storeId,
+          type: 'LOW_STOCK',
+          title: `Stock faible : ${variant.product.name}`,
+          body: `${variant.product.name} : ${quantityAfter} restant${quantityAfter > 1 ? 's' : ''}, sous le seuil d'alerte (${threshold}).`,
+          href: '/boutique/dashboard/produits',
+        });
+      }
+    }
   }
 
   return { quantityBefore, quantityAfter };
