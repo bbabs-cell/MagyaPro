@@ -5,6 +5,7 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
+import { ExcelImportExport } from '@/components/boutique/excel-import-export';
 
 export const metadata: Metadata = { title: 'Produits' };
 export const dynamic = 'force-dynamic';
@@ -50,6 +51,7 @@ export default async function BoutiqueProductsPage() {
         title="Produits"
         description="Votre catalogue et le suivi de votre stock."
       />
+      <ExcelImportExport canImport={context.permissions.has('products:manage')} />
       <ProductManager
         initialCategories={categories.map((c) => ({
           id: c.id,
