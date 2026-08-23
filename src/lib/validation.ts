@@ -598,6 +598,32 @@ export const cashMovementSchema = z.object({
   reason: optionalText(200),
 });
 
+export const storePromotionSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .min(2, 'Au moins 2 caractères.')
+      .max(30)
+      .regex(/^[A-Z0-9_-]+$/, 'Lettres, chiffres, tirets et underscores uniquement.'),
+    type: z.enum(['PERCENT', 'FIXED']),
+    value: z.number().int().min(1),
+    minCartAmount: amountSchema.default(0),
+    maxRedemptions: z.number().int().min(1).nullable().optional(),
+    startsAt: z.coerce.date().nullable().optional(),
+    endsAt: z.coerce.date().nullable().optional(),
+    isActive: z.boolean().default(true),
+  })
+  .refine((data) => data.type !== 'PERCENT' || data.value <= 100, {
+    message: 'Un pourcentage ne peut pas dépasser 100.',
+    path: ['value'],
+  })
+  .refine((data) => !data.startsAt || !data.endsAt || data.startsAt <= data.endsAt, {
+    message: 'La date de fin doit être après la date de début.',
+    path: ['endsAt'],
+  });
+
 export const storeCustomerSchema = z.object({
   name: nameSchema,
   phone: phoneSchema,
@@ -681,6 +707,9 @@ export const storeSaleSchema = z
     customerId: z.string().min(1).optional(),
     isCredit: z.boolean().default(false),
     discount: amountSchema.default(0),
+    /** Code promo saisi par le caissier — jamais son montant : le rabais est
+     *  toujours recalculé côté serveur depuis la promotion elle-même. */
+    promoCode: z.string().trim().max(30).optional(),
   })
   .refine((data) => data.isCredit || Boolean(data.paymentMethod), {
     message: 'Choisissez un moyen de paiement.',

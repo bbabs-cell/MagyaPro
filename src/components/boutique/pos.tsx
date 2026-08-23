@@ -55,6 +55,7 @@ export function Pos({
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]!.value);
   const [customerId, setCustomerId] = useState('');
   const [isCredit, setIsCredit] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<{ number: number; total: number } | null>(null);
@@ -120,12 +121,14 @@ export function Pos({
           items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
           customerId: customerId || undefined,
           isCredit,
+          promoCode: promoCode.trim() || undefined,
           ...(isCredit ? {} : { paymentMethod }),
         },
       );
       setLastReceipt({ number: sale.number, total: sale.total });
       setCart([]);
       setIsCredit(false);
+      setPromoCode('');
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "La vente n'a pas pu être enregistrée.");
@@ -255,6 +258,22 @@ export function Pos({
             )}
           </div>
         )}
+
+        <div className="mt-4">
+          <label htmlFor="promoCode" className="block text-sm font-medium text-ink">
+            Code promo (facultatif)
+          </label>
+          <input
+            id="promoCode"
+            value={promoCode}
+            onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+            placeholder="SOLDES20"
+            className={cx(inputClass, 'mt-1.5 font-mono uppercase')}
+          />
+          <p className="mt-1 text-xs text-ink-faint">
+            La remise est vérifiée et appliquée à l&apos;encaissement.
+          </p>
+        </div>
 
         {!isCredit && (
           <div className="mt-4">

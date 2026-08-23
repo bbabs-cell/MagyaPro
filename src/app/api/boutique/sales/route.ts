@@ -81,7 +81,38 @@ export const POST = route(async (request) => {
     };
   });
 
-  const discount = Math.min(input.discount, subtotal);
+  let promotion = null;
+  let promoDiscount = 0;
+  if (input.promoCode) {
+    promotion = await prisma.storePromotion.findUnique({
+      where: { storeId_code: { storeId: context.store.id, code: input.promoCode.toUpperCase() } },
+    });
+    if (!promotion || !promotion.isActive) {
+      throw new ValidationError('Code promo invalide ou inactif.', { promoCode: 'Introuvable.' });
+    }
+    const now = new Date();
+    if (promotion.startsAt && now < promotion.startsAt) {
+      throw new ValidationError("Ce code promo n'est pas encore actif.", { promoCode: ' ' });
+    }
+    if (promotion.endsAt && now > promotion.endsAt) {
+      throw new ValidationError('Ce code promo a expiré.', { promoCode: ' ' });
+    }
+    if (promotion.maxRedemptions !== null && promotion.usedCount >= promotion.maxRedemptions) {
+      throw new ValidationError("Ce code promo a atteint sa limite d'utilisation.", { promoCode: ' ' });
+    }
+    if (subtotal < promotion.minCartAmount) {
+      throw new ValidationError(
+        `Panier minimum de ${promotion.minCartAmount} requis pour ce code.`,
+        { promoCode: ' ' },
+      );
+    }
+    promoDiscount =
+      promotion.type === 'PERCENT'
+        ? Math.round((subtotal * promotion.value) / 100)
+        : Math.min(promotion.value, subtotal);
+  }
+
+  const discount = Math.min(input.discount + promoDiscount, subtotal);
   const total = subtotal - discount;
 
   // Rattache la vente à la session de caisse en cours, si une est ouverte —
@@ -115,6 +146,7 @@ export const POST = route(async (request) => {
         userId: context.user.id,
         customerId: customer?.id ?? null,
         cashSessionId: openSession?.id ?? null,
+        promotionId: promotion?.id ?? null,
         subtotal,
         discount,
         total,
@@ -126,6 +158,13 @@ export const POST = route(async (request) => {
       },
       include: { items: true, payments: true },
     });
+
+    if (promotion) {
+      await tx.storePromotion.update({
+        where: { id: promotion.id },
+        data: { usedCount: { increment: 1 } },
+      });
+    }
 
     if (customer) {
       await tx.storeCustomer.update({

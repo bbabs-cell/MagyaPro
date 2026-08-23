@@ -104,6 +104,9 @@ export const AUDIT_ACTIONS = {
   STORE_EXPENSE_UPDATED: 'store_expense.updated',
   STORE_EXPENSE_DELETED: 'store_expense.deleted',
   STORE_INVOICE_CREATED: 'store_invoice.created',
+  STORE_PROMOTION_CREATED: 'store_promotion.created',
+  STORE_PROMOTION_UPDATED: 'store_promotion.updated',
+  STORE_PROMOTION_DELETED: 'store_promotion.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
