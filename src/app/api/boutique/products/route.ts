@@ -59,12 +59,14 @@ export const POST = route(async (request) => {
         imageUrl: input.imageUrl ?? null,
         status: input.status,
         minStockAlert: input.minStockAlert,
+        unit: input.unit,
         variants: {
           create: {
             sku: input.sku ?? null,
             barcode: input.barcode ?? null,
             cost: input.cost,
             price: input.price,
+            attributes: input.attributes,
           },
         },
       },

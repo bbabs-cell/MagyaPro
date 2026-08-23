@@ -524,6 +524,15 @@ export const storeBrandSchema = z.object({
  * (voir `StoreProductVariant` dans le schéma : un produit sans variante
  * déclarée reçoit une variante par défaut, gérée ici plutôt qu'en base).
  */
+/** Attributs de variante libres (ex. { "taille": "M", "couleur": "Rouge" }) —
+ *  clés et valeurs bornées en longueur, nombre de paires limité, pour éviter
+ *  qu'un champ pensé pour quelques attributs de présentation ne serve à
+ *  stocker un objet arbitraire. */
+export const variantAttributesSchema = z
+  .record(z.string().max(60), z.string().max(200))
+  .refine((obj) => Object.keys(obj).length <= 10, 'Trop d’attributs (10 maximum).')
+  .default({});
+
 export const storeProductSchema = z.object({
   name: nameSchema,
   description: optionalText(1000),
@@ -533,10 +542,12 @@ export const storeProductSchema = z.object({
   imageUrl: urlSchema.nullable().optional(),
   status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']).default('DRAFT'),
   minStockAlert: z.number().int().min(0).max(1_000_000).default(0),
+  unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']).default('UNIT'),
   sku: optionalText(60),
   barcode: optionalText(60),
   cost: amountSchema,
   price: amountSchema,
+  attributes: variantAttributesSchema,
   /** Quantité en stock à la création — mouvement `INITIAL`, jamais silencieux. */
   initialStock: z.number().int().min(0).max(1_000_000).default(0),
 });

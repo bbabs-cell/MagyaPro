@@ -1474,6 +1474,19 @@ enum StoreProductStatus {
   ARCHIVED
 }
 
+/// Unité d'affichage du produit. Les quantités restent des entiers dans
+/// cette première version (voir le commentaire sur `StoreProduct.unit`) :
+/// KG/LITER couvrent pour l'instant des produits vendus par pièce entière
+/// dans cette unité (ex. un pack de 1 kg), pas une pesée fractionnée.
+enum ProductUnit {
+  UNIT
+  KG
+  GRAM
+  LITER
+  MILLILITER
+  PACK
+}
+
 /// Une fiche produit. Le stock, le prix et le code-barres réels vivent
 /// toujours sur `StoreProductVariant` — un produit sans variante déclarée par le
 /// commerçant reçoit automatiquement une variante par défaut (créée par la
@@ -1494,6 +1507,10 @@ model StoreProduct {
   attributes    Json               @default("{}")
   status        StoreProductStatus @default(DRAFT)
   minStockAlert Int                @default(0)
+  /// Unité dans laquelle le produit se vend et se stocke — un article
+  /// (vêtement, appareil) se compte en unités entières, une denrée en poids
+  /// ou volume. Détermine si les quantités saisies acceptent des décimales.
+  unit          ProductUnit        @default(UNIT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

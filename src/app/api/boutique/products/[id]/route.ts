@@ -18,6 +18,7 @@ const updateSchema = z.object({
   imageUrl: urlSchema.nullable().optional(),
   status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   minStockAlert: z.number().int().min(0).max(1_000_000),
+  unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']),
 });
 
 export const PATCH = route(async (request, { params }: Params) => {
@@ -38,6 +39,7 @@ export const PATCH = route(async (request, { params }: Params) => {
       imageUrl: input.imageUrl ?? null,
       status: input.status,
       minStockAlert: input.minStockAlert,
+      unit: input.unit,
     },
   });
 

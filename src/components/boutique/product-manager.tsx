@@ -17,13 +17,21 @@ import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/compon
 
 type Category = { id: string; name: string; productCount: number };
 type BrandRow = { id: string; name: string; productCount: number };
-type Variant = { id: string; sku: string | null; barcode: string | null; cost: number; price: number };
+type Variant = {
+  id: string;
+  sku: string | null;
+  barcode: string | null;
+  cost: number;
+  price: number;
+  attributes: Record<string, string>;
+};
 type Product = {
   id: string;
   name: string;
   description: string | null;
   status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
   minStockAlert: number;
+  unit: string;
   category: { id: string; name: string } | null;
   brand: { id: string; name: string } | null;
   variants: Array<Variant & { inventory: Array<{ quantity: number; warehouseId: string }> }>;
@@ -41,18 +49,43 @@ const STATUS_TONES: Record<Product['status'], 'success' | 'neutral' | 'warning'>
   ARCHIVED: 'warning',
 };
 
+const UNIT_LABELS: Record<string, string> = {
+  UNIT: 'pièce(s)',
+  KG: 'kg',
+  GRAM: 'g',
+  LITER: 'L',
+  MILLILITER: 'mL',
+  PACK: 'pack(s)',
+};
+
+/**
+ * Libellés d'attributs suggérés selon le type de commerce de la boutique —
+ * même mécanisme d'attributs libres (`attributes` en JSON) pour tous, mais
+ * l'interface propose des exemples pertinents au métier plutôt que des
+ * champs génériques « Attribut 1 / Attribut 2 ».
+ */
+const ATTRIBUTE_SUGGESTIONS: Record<string, [string, string]> = {
+  CLOTHING: ['Taille', 'Couleur'],
+  COSMETICS: ['Contenance', 'Teinte / Parfum'],
+  ELECTRONICS: ['Numéro de série', 'Garantie'],
+  GROCERY: ['Origine', 'Conservation'],
+  OTHER: ['Attribut 1', 'Attribut 2'],
+};
+
 export function ProductManager({
   initialCategories,
   initialBrands,
   initialProducts,
   currency,
   canManage,
+  businessType,
 }: {
   initialCategories: Category[];
   initialBrands: BrandRow[];
   initialProducts: Product[];
   currency: string;
   canManage: boolean;
+  businessType: string;
 }) {
   const router = useRouter();
   const [categories] = useState(initialCategories);
@@ -121,6 +154,7 @@ export function ProductManager({
           categories={categories}
           brands={brands}
           currency={currency}
+          businessType={businessType}
           onDone={() => {
             setShowForm(false);
             router.refresh();
@@ -162,6 +196,13 @@ export function ProductManager({
                   <tr key={product.id} className="border-b border-surface-border last:border-0">
                     <td data-label="Produit" className="px-4 py-3 font-medium">
                       {product.name}
+                      {variant && Object.keys(variant.attributes).length > 0 && (
+                        <p className="mt-0.5 text-xs font-normal text-ink-faint">
+                          {Object.entries(variant.attributes)
+                            .map(([key, value]) => `${key} : ${value}`)
+                            .join(' · ')}
+                        </p>
+                      )}
                     </td>
                     <td data-label="Catégorie" className="px-4 py-3 text-ink-muted">
                       {product.category?.name ?? '—'}
@@ -179,7 +220,7 @@ export function ProductManager({
                         stock <= product.minStockAlert && 'font-medium text-amber-700',
                       )}
                     >
-                      {stock}
+                      {stock} {product.unit !== 'UNIT' && UNIT_LABELS[product.unit]}
                     </td>
                     <td data-label="Statut" className="px-4 py-3">
                       <Badge tone={STATUS_TONES[product.status]}>
@@ -257,18 +298,21 @@ function ProductForm({
   categories,
   brands,
   currency,
+  businessType,
   onDone,
   onCancel,
 }: {
   categories: Category[];
   brands: BrandRow[];
   currency: string;
+  businessType: string;
   onDone: () => void;
   onCancel: () => void;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [attr1Label, attr2Label] = ATTRIBUTE_SUGGESTIONS[businessType] ?? ATTRIBUTE_SUGGESTIONS.OTHER!;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -280,6 +324,12 @@ function ProductForm({
     const categoryId = String(formData.get('categoryId') ?? '');
     const brandId = String(formData.get('brandId') ?? '');
 
+    const attributes: Record<string, string> = {};
+    const attr1Value = String(formData.get('attr1') ?? '').trim();
+    const attr2Value = String(formData.get('attr2') ?? '').trim();
+    if (attr1Value) attributes[attr1Label] = attr1Value;
+    if (attr2Value) attributes[attr2Label] = attr2Value;
+
     try {
       await api.post('/api/boutique/products', {
         name: String(formData.get('name') ?? ''),
@@ -287,9 +337,11 @@ function ProductForm({
         brandId: brandId || null,
         status: String(formData.get('status') ?? 'DRAFT'),
         minStockAlert: Number(formData.get('minStockAlert') ?? 0),
+        unit: String(formData.get('unit') ?? 'UNIT'),
         sku: String(formData.get('sku') ?? '') || undefined,
         cost: toMinor(String(formData.get('cost') ?? '0'), currency),
         price: toMinor(String(formData.get('price') ?? '0'), currency),
+        attributes,
         initialStock: Number(formData.get('initialStock') ?? 0),
       });
       onDone();
@@ -391,9 +443,32 @@ function ProductForm({
           </Field>
         </div>
 
-        <Field label="Référence / SKU (facultatif)" htmlFor="sku">
-          <input id="sku" name="sku" className={inputClass} placeholder="TSH-001" />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Référence / SKU (facultatif)" htmlFor="sku">
+            <input id="sku" name="sku" className={inputClass} placeholder="TSH-001" />
+          </Field>
+          <Field label="Unité" htmlFor="unit" hint="Détermine comment le stock s'affiche.">
+            <select id="unit" name="unit" className={inputClass} defaultValue="UNIT">
+              {Object.entries(UNIT_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <fieldset>
+          <legend className="text-sm font-medium">Attributs (facultatif)</legend>
+          <div className="mt-2 grid gap-4 sm:grid-cols-2">
+            <Field label={attr1Label} htmlFor="attr1">
+              <input id="attr1" name="attr1" className={inputClass} />
+            </Field>
+            <Field label={attr2Label} htmlFor="attr2">
+              <input id="attr2" name="attr2" className={inputClass} />
+            </Field>
+          </div>
+        </fieldset>
 
         <Field label="Statut" htmlFor="status">
           <select id="status" name="status" className={inputClass} defaultValue="DRAFT">

@@ -35,6 +35,7 @@ export default async function BoutiqueProductsPage() {
             barcode: true,
             cost: true,
             price: true,
+            attributes: true,
             inventory: { select: { quantity: true, warehouseId: true } },
           },
         },
@@ -59,9 +60,16 @@ export default async function BoutiqueProductsPage() {
           name: b.name,
           productCount: b._count.products,
         }))}
-        initialProducts={products}
+        initialProducts={products.map((product) => ({
+          ...product,
+          variants: product.variants.map((variant) => ({
+            ...variant,
+            attributes: (variant.attributes ?? {}) as Record<string, string>,
+          })),
+        }))}
         currency={context.store.currency}
         canManage={context.permissions.has('products:manage')}
+        businessType={context.store.businessType}
       />
     </>
   );
