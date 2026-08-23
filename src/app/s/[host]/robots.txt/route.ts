@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { env } from '@/lib/env';
 
 /** robots.txt du site public d'une boutique — équivalent Restaurant. */
@@ -17,12 +18,7 @@ export async function GET(
     });
   }
 
-  // Contrairement au site Restaurant, servi soit par sous-domaine soit par
-  // domaine personnalisé (jamais de préfixe de chemin en usage réel), le
-  // catalogue Boutique est toujours atteint via `boutique.magyapro.com/s/<slug>`
-  // (voir le commentaire dans `src/middleware.ts`) — l'URL de base inclut donc
-  // systématiquement ce préfixe.
-  const base = `${env.isProduction ? 'https' : 'http'}://${new URL(request.url).host}/s/${host}`;
+  const base = `${env.isProduction ? 'https' : 'http'}://${new URL(request.url).host}${sitePathBase(host)}`;
 
   const body = store.isDemo
     ? 'User-agent: *\nDisallow: /\n'

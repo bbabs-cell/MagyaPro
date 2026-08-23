@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { useCart } from '@/components/site-store/cart-context';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 
 export function CartLink({ host }: { host: string }) {
   const { lines } = useCart();
@@ -10,7 +11,7 @@ export function CartLink({ host }: { host: string }) {
 
   return (
     <Link
-      href={`/s/${host}/panier`}
+      href={`${sitePathBase(host)}/panier`}
       className="relative flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

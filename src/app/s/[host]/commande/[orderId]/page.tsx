@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { formatMoney } from '@/lib/money';
 import { formatQty } from '@/lib/boutique/quantity';
 
@@ -65,7 +66,7 @@ export default async function StoreOrderStatusPage({
       </p>
 
       <Link
-        href={`/s/${host}/produits`}
+        href={`${sitePathBase(host)}/produits`}
         className="mt-6 inline-flex h-11 items-center rounded-xl border border-gray-300 px-6 text-sm font-medium hover:bg-gray-50"
       >
         Continuer mes achats

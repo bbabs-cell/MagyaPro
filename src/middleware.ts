@@ -8,7 +8,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  *   - un sous-domaine (chez-fatou.magyapro.com)      → site public du restaurant
  *   - un domaine personnalisé (mon-resto.com)        → site public du restaurant
  *   - boutique.magyapro.com                          → landing, dashboard MagyaPro Boutique
- *   - un sous-domaine de boutique (ma-boutique.boutique.magyapro.com) → site public de la boutique
+ *   - un chemin sous ce domaine (boutique.magyapro.com/s/<slug>) → site public d'une boutique
  *
  * Restaurant reste l'espace historique, servi directement sous le domaine
  * racine, pour ne rien changer à ses URL existantes. Chaque nouveau produit
@@ -18,10 +18,23 @@ import { NextResponse, type NextRequest } from 'next/server';
  *
  * Le middleware ne fait que réécrire : il identifie l'hôte et route la
  * requête. Il ne consulte pas la base — il s'exécute sur chaque requête, y
- * compris les fichiers statiques, et doit rester instantané. Ce sont les
- * segments `/r/[host]` (site public restaurant) et `/s/[host]` (site public
+ * compris les fichiers statiques, et doit rester instantané (runtime Edge :
+ * un appel Prisma/Postgres y est impossible sans un pilote compatible Edge,
+ * que ce projet n'a pas ; le runtime Node.js du middleware, qui le
+ * permettrait, n'est pas encore disponible dans la version de Next.js
+ * installée — tenté puis annulé, voir l'historique). Ce sont les segments
+ * `/r/[host]` (site public restaurant) et `/s/[host]` (site public
  * boutique) qui résolvent l'hôte en tenant, avec les contrôles de statut
  * associés.
+ *
+ * Conséquence pour un domaine personnalisé de boutique (`StoreDomain`) :
+ * l'ajout et la vérification DNS fonctionnent (`/api/boutique/domaines`),
+ * mais le domaine vérifié n'est pas encore automatiquement servi — un hôte
+ * étranger au domaine racine reste toujours résolu côté Restaurant ici.
+ * Activer le routage réel demandera soit une mise à niveau de Next.js une
+ * fois le runtime Node.js du middleware stable, soit un accès Postgres
+ * compatible Edge (ex. Prisma Accelerate) — décision à prendre séparément,
+ * pas dans ce commit.
  */
 
 const ROOT_DOMAIN = (process.env.APP_ROOT_DOMAIN ?? 'magyapro.localhost:3000')
@@ -97,8 +110,10 @@ export function middleware(request: NextRequest) {
     }
   } else {
     // Hôte étranger au domaine racine : domaine personnalisé potentiel,
-    // toujours résolu côté Restaurant pour l'instant — Boutique n'expose pas
-    // encore de domaine personnalisé (voir `StoreDomain`, non branché ici).
+    // toujours résolu côté Restaurant pour l'instant — un domaine personnalisé
+    // de boutique peut être ajouté et vérifié (voir `StoreDomain`), mais son
+    // routage réel n'est pas encore branché ici (voir le commentaire en tête
+    // de fichier).
     identifier = host;
   }
 

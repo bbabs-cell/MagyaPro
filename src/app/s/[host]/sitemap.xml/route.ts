@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { loadPublicProducts, resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { env } from '@/lib/env';
 
 function escapeXml(value: string): string {
@@ -33,14 +34,9 @@ export async function GET(
 
   const products = await loadPublicProducts(store.id);
 
-  // Le catalogue Boutique est toujours atteint via
-  // `boutique.magyapro.com/s/<slug>` (voir le commentaire dans
-  // `src/middleware.ts`) — jamais par sous-domaine ou domaine personnalisé,
-  // contrairement au site Restaurant. L'URL de base inclut donc
-  // systématiquement ce préfixe.
   const requestHost = new URL(request.url).host;
   const protocol = env.isProduction ? 'https' : 'http';
-  const base = `${protocol}://${requestHost}/s/${host}`;
+  const base = `${protocol}://${requestHost}${sitePathBase(host)}`;
 
   const entries: Array<{ path: string; priority: string; changefreq: string }> = [
     { path: '', priority: '1.0', changefreq: 'weekly' },

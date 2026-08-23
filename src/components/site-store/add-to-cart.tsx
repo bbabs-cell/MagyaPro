@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { useCart } from '@/components/site-store/cart-context';
 import { quantityStep } from '@/lib/boutique/units';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 
 export function AddToCart({
   product,
@@ -67,7 +68,7 @@ export function AddToCart({
       {added && (
         <button
           type="button"
-          onClick={() => router.push(`/s/${host}/panier`)}
+          onClick={() => router.push(`${sitePathBase(host)}/panier`)}
           className="text-sm font-medium text-gray-900 underline underline-offset-2"
         >
           Voir le panier →

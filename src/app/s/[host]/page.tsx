@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
 import { loadPublicCategories, loadPublicProducts, resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   CLOTHING: 'Habillement',
@@ -27,6 +28,7 @@ export default async function StoreHomePage({
     loadPublicProducts(store.id),
   ]);
   const featured = products.slice(0, 8);
+  const base = sitePathBase(host);
 
   return (
     <>
@@ -50,7 +52,7 @@ export default async function StoreHomePage({
           </div>
 
           <Link
-            href={`/s/${host}/produits`}
+            href={`${base}/produits`}
             className="mt-6 inline-flex h-11 items-center rounded-xl bg-gray-900 px-6 text-sm font-medium text-white hover:bg-gray-800"
           >
             Voir le catalogue
@@ -64,7 +66,7 @@ export default async function StoreHomePage({
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/s/${host}/produits?categorie=${category.id}`}
+                href={`${base}/produits?categorie=${category.id}`}
                 className="rounded-full border border-gray-200 px-4 py-1.5 text-sm text-gray-700 hover:border-gray-400"
               >
                 {category.name}
@@ -87,7 +89,7 @@ export default async function StoreHomePage({
               {featured.map((product) => (
                 <Link
                   key={product.id}
-                  href={`/s/${host}/produits/${product.id}`}
+                  href={`${base}/produits/${product.id}`}
                   className="group rounded-2xl border border-gray-200 p-3 transition-shadow hover:shadow-md"
                 >
                   <div className="aspect-square overflow-hidden rounded-xl bg-gray-100">
@@ -117,7 +119,7 @@ export default async function StoreHomePage({
             {products.length > featured.length && (
               <div className="mt-8 text-center">
                 <Link
-                  href={`/s/${host}/produits`}
+                  href={`${base}/produits`}
                   className="inline-flex h-11 items-center rounded-xl border border-gray-300 px-6 text-sm font-medium hover:bg-gray-50"
                 >
                   Voir tout le catalogue

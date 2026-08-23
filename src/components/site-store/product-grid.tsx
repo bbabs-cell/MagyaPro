@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 
 type Product = {
   id: string;
@@ -58,7 +59,7 @@ export function ProductGrid({
           {filtered.map((product) => (
             <Link
               key={product.id}
-              href={`/s/${host}/produits/${product.id}`}
+              href={`${sitePathBase(host)}/produits/${product.id}`}
               className="group rounded-2xl border border-gray-200 p-3 transition-shadow hover:shadow-md"
             >
               <div className="aspect-square overflow-hidden rounded-xl bg-gray-100">

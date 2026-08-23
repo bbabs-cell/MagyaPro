@@ -9,6 +9,7 @@ import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { toQty } from '@/lib/boutique/quantity';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
+import { notifyCustomerOrderEvent } from '@/lib/boutique/order-notifications';
 
 /**
  * Création d'une commande depuis le site public d'une boutique — miroir
@@ -31,7 +32,7 @@ export const POST = route(async (request) => {
 
   const store = await prisma.store.findFirst({
     where: { id: input.storeId, status: 'ACTIVE' },
-    select: { id: true, currency: true },
+    select: { id: true, name: true, currency: true },
   });
   if (!store) throw new NotFoundError('Boutique introuvable.');
 
@@ -127,6 +128,8 @@ export const POST = route(async (request) => {
     href: '/boutique/dashboard/commandes',
     metadata: { orderId: order.id, number: order.number },
   });
+
+  await notifyCustomerOrderEvent('CREATED', order, store.name);
 
   return ok({ order }, 201);
 });

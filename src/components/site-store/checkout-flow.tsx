@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS, quantityStep } from '@/lib/boutique/units';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { useCart } from '@/components/site-store/cart-context';
 
 /**
@@ -47,7 +48,7 @@ export function CheckoutFlow({
         items: lines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
       });
       clear();
-      router.push(`/s/${host}/commande/${order.id}`);
+      router.push(`${sitePathBase(host)}/commande/${order.id}`);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

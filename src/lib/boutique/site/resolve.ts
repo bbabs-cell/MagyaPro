@@ -1,18 +1,17 @@
 import { cache } from 'react';
 
 import { prisma } from '@/lib/db';
+import { rootHostname } from '@/lib/env';
 import { toQty } from '@/lib/boutique/quantity';
 
 /**
  * Résolution d'un hôte public en boutique — équivalent de
- * `src/lib/site/resolve.ts` (Restaurant), fichier séparé et volontairement
- * plus simple : l'identifiant est toujours un slug, jamais un nom d'hôte
- * complet. Le catalogue d'une boutique est atteint via
- * `boutique.magyapro.com/s/<slug>` plutôt qu'un sous-domaine dédié par
- * boutique (voir le commentaire dans `src/middleware.ts` — bloqué par le
- * registrar actuel) ; les domaines personnalisés de boutique (`StoreDomain`)
- * ne sont pas non plus branchés au routage, cette fonction n'a donc qu'un
- * identifiant à traiter, contrairement à son équivalent Restaurant.
+ * `src/lib/site/resolve.ts` (Restaurant). Deux formes d'identifiant, comme
+ * pour Restaurant :
+ *   - un slug (`ma-boutique`), pour `boutique.magyapro.com/s/<slug>` ;
+ *   - un nom d'hôte complet (`ma-boutique.com`), pour un domaine
+ *     personnalisé — honoré seulement s'il est **vérifié** (`StoreDomain`,
+ *     voir le commentaire dans `src/middleware.ts`).
  */
 
 export type PublicStore = NonNullable<Awaited<ReturnType<typeof loadStore>>>;
@@ -39,6 +38,16 @@ const storeSelect = {
 
 async function loadStore(identifier: string) {
   const normalized = identifier.trim().toLowerCase();
+
+  // Un identifiant contenant un point ne peut être qu'un nom d'hôte complet.
+  if (normalized.includes('.') && !normalized.endsWith(`.${rootHostname()}`)) {
+    const domain = await prisma.storeDomain.findFirst({
+      where: { hostname: normalized, status: 'VERIFIED' },
+      select: { store: { select: storeSelect } },
+    });
+    return domain?.store ?? null;
+  }
+
   return prisma.store.findUnique({
     where: { slug: normalized },
     select: storeSelect,

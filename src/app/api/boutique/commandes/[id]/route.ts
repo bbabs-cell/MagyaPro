@@ -4,6 +4,7 @@ import { requireStore, findStoreScopedOrThrow } from '@/lib/boutique/store-tenan
 import { storeOrderStatusSchema } from '@/lib/validation';
 import { ConflictError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { notifyCustomerOrderEvent } from '@/lib/boutique/order-notifications';
 import type { StoreOrder } from '@prisma/client';
 
 type Params = { params: Promise<{ id: string }> };
@@ -34,6 +35,12 @@ export const PATCH = route(async (request, { params }: Params) => {
     targetId: order.id,
     metadata: { from: order.status, to: status },
   });
+
+  // Pas de message pour COMPLETED : le client vient de retirer sa commande
+  // en personne, l'avertir n'apporte rien.
+  if (status === 'CONFIRMED' || status === 'READY' || status === 'CANCELLED') {
+    await notifyCustomerOrderEvent(status, updated, context.store.name);
+  }
 
   return ok({ order: updated });
 });

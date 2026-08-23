@@ -15,12 +15,14 @@ import { PlanLimitError } from '@/lib/errors';
 
 export const STORE_FEATURES = {
   MULTIPLE_USERS: 'multiple_users',
+  CUSTOM_DOMAIN: 'custom_domain',
 } as const;
 
 export type StoreFeature = (typeof STORE_FEATURES)[keyof typeof STORE_FEATURES];
 
 export const STORE_FEATURE_LABELS: Record<StoreFeature, string> = {
   multiple_users: 'Plusieurs comptes utilisateurs',
+  custom_domain: 'Nom de domaine personnalisé',
 };
 
 export type StorePlanLimits = {

@@ -3,20 +3,20 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
+import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { CartProvider } from '@/components/site-store/cart-context';
 import { CartLink } from '@/components/site-store/cart-link';
 
 /**
- * Racine du site public d'une boutique, atteinte via
- * `boutique.magyapro.com/s/<slug>` (voir le commentaire dans
- * `src/middleware.ts` — un sous-domaine dédié par boutique demanderait de
- * déléguer les serveurs de noms à Vercel, ce que le registrar actuel ne
- * permet pas). Première version volontairement
- * simple : pas de thème par tenant (`Store` n'a ni `templateKey` ni
- * `fontFamily`, à la différence de `Restaurant`), une seule mise en page
- * neutre pour toutes les boutiques. Styles en dur (jamais les tokens
- * `ink`/`surface`/`brand`, réservés au dashboard Restaurant — voir le
- * commentaire de `src/app/boutique/layout.tsx`).
+ * Racine du site public d'une boutique, atteinte soit via
+ * `boutique.magyapro.com/s/<slug>`, soit via un domaine personnalisé
+ * vérifié (voir `StoreDomain` et le commentaire dans `src/middleware.ts`) —
+ * `sitePathBase()` adapte les liens internes à ces deux cas. Première
+ * version volontairement simple : pas de thème par tenant (`Store` n'a ni
+ * `templateKey` ni `fontFamily`, à la différence de `Restaurant`), une
+ * seule mise en page neutre pour toutes les boutiques. Styles en dur
+ * (jamais les tokens `ink`/`surface`/`brand`, réservés au dashboard
+ * Restaurant — voir le commentaire de `src/app/boutique/layout.tsx`).
  */
 export async function generateMetadata({
   params,
@@ -49,13 +49,14 @@ export default async function StoreSiteLayout({
   const { host } = await params;
   const store = await resolvePublicStore(host);
   if (!store) notFound();
+  const base = sitePathBase(host);
 
   return (
     <CartProvider storeId={store.id}>
       <div className="min-h-screen bg-white text-gray-900">
         <header className="border-b border-gray-200">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <Link href={`/s/${host}`} className="flex items-center gap-2.5">
+            <Link href={base || '/'} className="flex items-center gap-2.5">
               {store.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- logo déposé par le tenant
                 <img src={store.logoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
@@ -67,7 +68,7 @@ export default async function StoreSiteLayout({
               <span className="font-semibold tracking-tight">{store.name}</span>
             </Link>
             <nav className="flex items-center gap-5 text-sm">
-              <Link href={`/s/${host}/produits`} className="text-gray-600 hover:text-gray-900">
+              <Link href={`${base}/produits`} className="text-gray-600 hover:text-gray-900">
                 Catalogue
               </Link>
               <CartLink host={host} />

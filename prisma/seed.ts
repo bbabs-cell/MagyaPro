@@ -150,7 +150,7 @@ const STORE_PLANS = [
     currency: 'XOF',
     interval: 'MONTH' as const,
     trialDays: 14,
-    features: ['multiple_users'],
+    features: ['multiple_users', 'custom_domain'],
     limits: { maxProducts: -1, maxUsers: 20 },
     position: 2,
   },
