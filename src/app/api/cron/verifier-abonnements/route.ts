@@ -2,6 +2,10 @@ import { ok, route } from '@/lib/api';
 import { UnauthorizedError } from '@/lib/errors';
 import { env } from '@/lib/env';
 import { processSubscriptionLifecycle, sendExpiringSubscriptionAlerts } from '@/lib/subscription-payments';
+import {
+  processStoreSubscriptionLifecycle,
+  sendExpiringStoreSubscriptionAlerts,
+} from '@/lib/boutique/subscription-payments';
 
 /**
  * Cycle de vie quotidien des abonnements : alerte à 5 jours de l'échéance,
@@ -28,12 +32,17 @@ async function runSubscriptionLifecycle(request: Request) {
     throw new UnauthorizedError('Secret cron invalide.');
   }
 
-  const [alerts, lifecycle] = await Promise.all([
+  const [alerts, lifecycle, storeAlerts, storeLifecycle] = await Promise.all([
     sendExpiringSubscriptionAlerts(),
     processSubscriptionLifecycle(),
+    sendExpiringStoreSubscriptionAlerts(),
+    processStoreSubscriptionLifecycle(),
   ]);
 
-  return ok({ ...alerts, ...lifecycle });
+  return ok({
+    restaurants: { ...alerts, ...lifecycle },
+    stores: { ...storeAlerts, ...storeLifecycle },
+  });
 }
 
 export const POST = route((request) => runSubscriptionLifecycle(request));

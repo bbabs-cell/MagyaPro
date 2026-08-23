@@ -18,6 +18,7 @@ import { sendNewOrderEmail } from '@/lib/mail';
 
 export type CreateNotificationInput = {
   restaurantId?: string | null;
+  storeId?: string | null;
   userId?: string | null;
   type: NotificationType;
   title: string;
@@ -33,6 +34,7 @@ export async function createNotification(
     await prisma.notification.create({
       data: {
         restaurantId: input.restaurantId ?? null,
+        storeId: input.storeId ?? null,
         userId: input.userId ?? null,
         type: input.type,
         title: input.title,

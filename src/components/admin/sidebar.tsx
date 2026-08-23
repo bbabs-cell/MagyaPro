@@ -91,6 +91,18 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/boutique-abonnements',
+    label: 'Abonnements Boutique',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="6" width="18" height="13" rx="2" />
+        <path d="M3 10h18" />
+        <path d="M7 15h4" />
+        <path d="M17 3l2 2-2 2" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/analytics',
     label: 'Analytics',
     icon: (
