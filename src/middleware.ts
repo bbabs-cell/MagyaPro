@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { env } from '@/lib/env';
+
 /**
  * Routage multi-domaine et multi-produit.
  *
@@ -16,25 +18,22 @@ import { NextResponse, type NextRequest } from 'next/server';
  * sous-domaine, réservé dans `PLATFORM_SUBDOMAINS` pour qu'un restaurant ne
  * puisse jamais choisir ce mot comme identifiant.
  *
- * Le middleware ne fait que réécrire : il identifie l'hôte et route la
- * requête. Il ne consulte pas la base — il s'exécute sur chaque requête, y
- * compris les fichiers statiques, et doit rester instantané (runtime Edge :
- * un appel Prisma/Postgres y est impossible sans un pilote compatible Edge,
- * que ce projet n'a pas ; le runtime Node.js du middleware, qui le
- * permettrait, n'est pas encore disponible dans la version de Next.js
- * installée — tenté puis annulé, voir l'historique). Ce sont les segments
- * `/r/[host]` (site public restaurant) et `/s/[host]` (site public
- * boutique) qui résolvent l'hôte en tenant, avec les contrôles de statut
- * associés.
+ * Le middleware s'exécute sur chaque requête, y compris les fichiers
+ * statiques, sur le runtime Edge : un appel Prisma/Postgres direct y est
+ * impossible (le pilote utilisé a besoin de vrais sockets TCP). Pour un
+ * sous-domaine ou un chemin `/s/<slug>` de la plateforme, aucune base n'est
+ * nécessaire ici — ce sont les segments `/r/[host]` et `/s/[host]` qui
+ * résolvent l'identifiant en tenant, avec les contrôles de statut associés.
  *
- * Conséquence pour un domaine personnalisé de boutique (`StoreDomain`) :
- * l'ajout et la vérification DNS fonctionnent (`/api/boutique/domaines`),
- * mais le domaine vérifié n'est pas encore automatiquement servi — un hôte
- * étranger au domaine racine reste toujours résolu côté Restaurant ici.
- * Activer le routage réel demandera soit une mise à niveau de Next.js une
- * fois le runtime Node.js du middleware stable, soit un accès Postgres
- * compatible Edge (ex. Prisma Accelerate) — décision à prendre séparément,
- * pas dans ce commit.
+ * Pour un domaine personnalisé (hôte étranger au domaine racine), il faut en
+ * revanche savoir *avant* la réécriture s'il appartient à un restaurant ou à
+ * une boutique — deux arborescences de routes différentes. Le middleware
+ * délègue cette unique décision à `/api/internal/resoudre-domaine`, une
+ * route Node.js classique (donc avec accès Prisma) appelée via `fetch` —
+ * compatible Edge, contrairement à une connexion base de données directe.
+ * En cas d'échec de cet appel (réseau, route indisponible), on revient au
+ * comportement précédent (résolution côté Restaurant) plutôt que de casser
+ * les domaines personnalisés de restaurant déjà en production.
  */
 
 const ROOT_DOMAIN = (process.env.APP_ROOT_DOMAIN ?? 'magyapro.localhost:3000')
@@ -58,7 +57,7 @@ export const config = {
   ],
 };
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const host = (request.headers.get('host') ?? '').split(':')[0]!.toLowerCase();
   const { pathname } = request.nextUrl;
 
@@ -109,12 +108,11 @@ export function middleware(request: NextRequest) {
       identifier = subdomain;
     }
   } else {
-    // Hôte étranger au domaine racine : domaine personnalisé potentiel,
-    // toujours résolu côté Restaurant pour l'instant — un domaine personnalisé
-    // de boutique peut être ajouté et vérifié (voir `StoreDomain`), mais son
-    // routage réel n'est pas encore branché ici (voir le commentaire en tête
-    // de fichier).
+    // Hôte étranger au domaine racine : domaine personnalisé, restaurant ou
+    // boutique — la décision se fait via la route de résolution (voir le
+    // commentaire en tête de fichier).
     identifier = host;
+    isBoutiqueTenant = await resolvesToStore(host);
   }
 
   if (!identifier) return NextResponse.next();
@@ -123,4 +121,25 @@ export function middleware(request: NextRequest) {
   const prefix = isBoutiqueTenant ? '/s/' : '/r/';
   url.pathname = `${prefix}${identifier}${pathname === '/' ? '' : pathname}`;
   return NextResponse.rewrite(url);
+}
+
+/**
+ * `true` si l'hôte étranger appartient à une boutique vérifiée, `false`
+ * sinon (y compris à l'échec).
+ *
+ * L'appel vise notre propre domaine (`env.appUrl`), pas l'hôte entrant : ce
+ * dernier n'est qu'un CNAME externe vers cette même plateforme, y repasser
+ * ajouterait une résolution DNS et une poignée de main TLS inutiles.
+ */
+async function resolvesToStore(host: string): Promise<boolean> {
+  try {
+    const resolveUrl = new URL('/api/internal/resoudre-domaine', env.appUrl);
+    resolveUrl.search = `host=${encodeURIComponent(host)}`;
+    const response = await fetch(resolveUrl, { headers: { accept: 'application/json' } });
+    if (!response.ok) return false;
+    const { product } = (await response.json()) as { product: 'restaurant' | 'store' | null };
+    return product === 'store';
+  } catch {
+    return false;
+  }
 }

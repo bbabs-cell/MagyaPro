@@ -35,17 +35,22 @@ export const POST = route(async (request) => {
   }
 
   // `hostname` est unique au niveau de la plateforme : deux restaurants ne
-  // peuvent pas revendiquer la même adresse.
-  const taken = await prisma.domain.findUnique({
-    where: { hostname },
-    select: { restaurantId: true },
-  });
+  // peuvent pas revendiquer la même adresse — ni un restaurant et une
+  // boutique (tables distinctes, la contrainte `@unique` de chacune ne voit
+  // pas l'autre).
+  const [taken, takenByStore] = await Promise.all([
+    prisma.domain.findUnique({ where: { hostname }, select: { restaurantId: true } }),
+    prisma.storeDomain.findUnique({ where: { hostname }, select: { id: true } }),
+  ]);
   if (taken) {
     throw new ConflictError(
       taken.restaurantId === context.restaurant.id
         ? 'Ce domaine est déjà enregistré sur votre restaurant.'
         : 'Ce domaine est déjà utilisé.',
     );
+  }
+  if (takenByStore) {
+    throw new ConflictError('Ce domaine est déjà utilisé.');
   }
 
   const domain = await prisma.domain.create({
