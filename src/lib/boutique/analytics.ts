@@ -129,6 +129,100 @@ export async function getStorePopularProducts(
   return [...totals.values()].sort((a, b) => b.quantity - a.quantity).slice(0, limit);
 }
 
+export type StoreEmployeePerformance = {
+  userId: string;
+  name: string;
+  salesCount: number;
+  revenue: number;
+  averageBasket: number;
+};
+
+/**
+ * Performance par employé (vendeur/caissier ayant enregistré la vente). Deux
+ * requêtes plutôt qu'une jointure Prisma : `Sale.userId` n'a pas de relation
+ * déclarée vers `User` (colonne libre, sans contrainte de clé étrangère —
+ * un employé retiré ne doit jamais faire disparaître l'historique de ses
+ * ventes passées).
+ */
+export async function getStoreEmployeePerformance(
+  storeId: string,
+  period: PeriodKey = '30d',
+): Promise<StoreEmployeePerformance[]> {
+  const { from, to } = periodRange(period);
+
+  const sales = await prisma.sale.groupBy({
+    by: ['userId'],
+    where: { storeId, createdAt: { gte: from, lte: to }, ...COUNTED_SALES, userId: { not: null } },
+    _sum: { total: true },
+    _count: true,
+  });
+  if (sales.length === 0) return [];
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: sales.map((s) => s.userId!) } },
+    select: { id: true, name: true },
+  });
+  const nameById = new Map(users.map((u) => [u.id, u.name]));
+
+  return sales
+    .map((s) => {
+      const revenue = s._sum.total ?? 0;
+      return {
+        userId: s.userId!,
+        name: nameById.get(s.userId!) ?? 'Employé supprimé',
+        salesCount: s._count,
+        revenue,
+        averageBasket: s._count > 0 ? Math.round(revenue / s._count) : 0,
+      };
+    })
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+export type StoreCashRegisterPerformance = {
+  cashRegisterId: string;
+  name: string;
+  salesCount: number;
+  revenue: number;
+};
+
+/** Performance par caisse — via la session de caisse rattachée à chaque vente. */
+export async function getStoreCashRegisterPerformance(
+  storeId: string,
+  period: PeriodKey = '30d',
+): Promise<StoreCashRegisterPerformance[]> {
+  const { from, to } = periodRange(period);
+
+  const sales = await prisma.sale.findMany({
+    where: {
+      storeId,
+      createdAt: { gte: from, lte: to },
+      ...COUNTED_SALES,
+      cashSessionId: { not: null },
+    },
+    select: {
+      total: true,
+      cashSession: { select: { cashRegister: { select: { id: true, name: true } } } },
+    },
+  });
+
+  const totals = new Map<string, StoreCashRegisterPerformance>();
+  for (const sale of sales) {
+    const register = sale.cashSession?.cashRegister;
+    if (!register) continue;
+    const entry = totals.get(register.id) ?? {
+      cashRegisterId: register.id,
+      name: register.name,
+      salesCount: 0,
+      revenue: 0,
+    };
+    entry.salesCount += 1;
+    entry.revenue += sale.total;
+    totals.set(register.id, entry);
+  }
+
+  return [...totals.values()].sort((a, b) => b.revenue - a.revenue);
+}
+
 /** Répartition des ventes par heure — pour identifier les coups de feu. */
 export async function getStoreHourlyActivity(
   storeId: string,

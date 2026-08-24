@@ -4,7 +4,9 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import { formatMoney } from '@/lib/money';
 import { PERIODS, isPeriodKey, type PeriodKey } from '@/lib/analytics';
 import {
+  getStoreCashRegisterPerformance,
   getStoreDashboardMetrics,
+  getStoreEmployeePerformance,
   getStoreHourlyActivity,
   getStorePopularProducts,
   getStoreRevenueSeries,
@@ -33,11 +35,13 @@ export default async function StoreAnalyticsPage({
   const period: PeriodKey =
     params.periode && isPeriodKey(params.periode) ? params.periode : '30d';
 
-  const [metrics, series, popular, hourly] = await Promise.all([
+  const [metrics, series, popular, hourly, employees, cashRegisters] = await Promise.all([
     getStoreDashboardMetrics(context.store.id, period),
     getStoreRevenueSeries(context.store.id, period),
     getStorePopularProducts(context.store.id, period, 10),
     getStoreHourlyActivity(context.store.id, period),
+    getStoreEmployeePerformance(context.store.id, period),
+    getStoreCashRegisterPerformance(context.store.id, period),
   ]);
 
   const currency = context.store.currency;
@@ -151,6 +155,74 @@ export default async function StoreAnalyticsPage({
               <div className="mt-4">
                 <HourlyActivityChart data={hourly} />
               </div>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="p-4 sm:p-5">
+              <h2 className="text-sm font-medium">Performance par employé</h2>
+              {employees.length === 0 ? (
+                <p className="mt-4 text-sm text-ink-muted">
+                  Aucune vente rattachée à un compte sur la période.
+                </p>
+              ) : (
+                <table className="mt-4 w-full text-sm">
+                  <caption className="sr-only">Ventes et chiffre d&apos;affaires par employé</caption>
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
+                      <th scope="col" className="py-1.5 font-medium">Employé</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">Ventes</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">CA</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">Panier moyen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.map((employee) => (
+                      <tr key={employee.userId} className="border-t border-surface-border">
+                        <td className="py-2 pr-2">{employee.name}</td>
+                        <td className="py-2 text-right">{employee.salesCount}</td>
+                        <td className="py-2 text-right font-medium">
+                          {formatMoney(employee.revenue, currency)}
+                        </td>
+                        <td className="py-2 text-right">
+                          {formatMoney(employee.averageBasket, currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </Card>
+
+            <Card className="p-4 sm:p-5">
+              <h2 className="text-sm font-medium">Performance par caisse</h2>
+              {cashRegisters.length === 0 ? (
+                <p className="mt-4 text-sm text-ink-muted">
+                  Aucune vente rattachée à une session de caisse sur la période.
+                </p>
+              ) : (
+                <table className="mt-4 w-full text-sm">
+                  <caption className="sr-only">Ventes et chiffre d&apos;affaires par caisse</caption>
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
+                      <th scope="col" className="py-1.5 font-medium">Caisse</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">Ventes</th>
+                      <th scope="col" className="py-1.5 text-right font-medium">CA</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cashRegisters.map((register) => (
+                      <tr key={register.cashRegisterId} className="border-t border-surface-border">
+                        <td className="py-2 pr-2">{register.name}</td>
+                        <td className="py-2 text-right">{register.salesCount}</td>
+                        <td className="py-2 text-right font-medium">
+                          {formatMoney(register.revenue, currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </Card>
           </div>
         </div>
