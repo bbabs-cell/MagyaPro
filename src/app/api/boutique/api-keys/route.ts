@@ -30,7 +30,7 @@ const createKeySchema = z.object({ name: z.string().trim().min(1).max(60) });
 
 export const POST = route(async (request) => {
   const context = await requireStore('api:manage');
-  hit(`boutique-api-key-create:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-api-key-create:${context.store.id}`, RATE_LIMITS.write);
 
   const { name } = parseOrThrow(createKeySchema, await readJson(request));
   const { key, keyHash, keyPrefix } = generateApiKey();

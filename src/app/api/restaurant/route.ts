@@ -13,7 +13,7 @@ export const GET = route(async () => {
 
 export const PATCH = route(async (request) => {
   const context = await requireTenant('restaurant:update');
-  hit(`restaurant:${context.restaurant.id}`, RATE_LIMITS.write);
+  await hit(`restaurant:${context.restaurant.id}`, RATE_LIMITS.write);
 
   const input = parseOrThrow(restaurantProfileSchema, await readJson(request));
 

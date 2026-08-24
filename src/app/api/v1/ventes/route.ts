@@ -12,7 +12,7 @@ const PAGE_SIZE = 100;
  */
 export const GET = route(async (request) => {
   const store = await requireApiKeyStore(request);
-  hit(`api-v1:${store.id}`, RATE_LIMITS.apiPublic);
+  await hit(`api-v1:${store.id}`, RATE_LIMITS.apiPublic);
 
   const url = new URL(request.url);
   const page = Math.max(1, Number(url.searchParams.get('page')) || 1);

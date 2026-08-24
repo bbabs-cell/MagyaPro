@@ -4,6 +4,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth/session';
 import { confirmTwoFactorEnrollment } from '@/lib/auth/service';
 import { UnauthorizedError } from '@/lib/errors';
+import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 
 const schema = z.object({ code: z.string().trim().min(1).max(10) });
 
@@ -11,6 +12,8 @@ const schema = z.object({ code: z.string().trim().min(1).max(10) });
 export const POST = route(async (request) => {
   const user = await getCurrentUser();
   if (!user) throw new UnauthorizedError();
+
+  await hit(`2fa-confirm:${user.id}`, RATE_LIMITS.twoFactor);
 
   const { code } = parseOrThrow(schema, await readJson(request));
   const backupCodes = await confirmTwoFactorEnrollment(user.id, code);

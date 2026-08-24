@@ -13,7 +13,7 @@ type Params = { params: Promise<{ id: string }> };
 /** Encaissement d'un remboursement partiel ou total sur le solde à crédit d'un client. */
 export const POST = route(async (request, { params }: Params) => {
   const context = await requireStore('credits:manage');
-  hit(`boutique-credit-payments:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-credit-payments:${context.store.id}`, RATE_LIMITS.write);
   const { id } = await params;
 
   const customer = await prisma.storeCustomer.findFirst({

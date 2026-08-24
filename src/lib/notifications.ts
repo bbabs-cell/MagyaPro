@@ -30,6 +30,18 @@ export type CreateNotificationInput = {
 export async function createNotification(
   input: CreateNotificationInput,
 ): Promise<void> {
+  // `restaurantId` et `storeId` ne doivent jamais être renseignés
+  // simultanément (voir le commentaire sur `Notification.storeId`) : rien
+  // au niveau du schéma ne l'empêche, cette vérification est la seule
+  // garantie qu'une notification Boutique ne se retrouve jamais rattachée à
+  // un restaurant, ou l'inverse. Erreur de programmation, pas une panne —
+  // elle n'est donc jamais avalée par le `catch` ci-dessous.
+  if (input.restaurantId && input.storeId) {
+    throw new Error(
+      '[notifications] createNotification : restaurantId et storeId ne peuvent pas être renseignés ensemble.',
+    );
+  }
+
   try {
     await prisma.notification.create({
       data: {

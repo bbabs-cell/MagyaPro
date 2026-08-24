@@ -5,7 +5,7 @@ import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 /** GET /api/v1/boutique — informations de base sur la boutique authentifiée. */
 export const GET = route(async (request) => {
   const store = await requireApiKeyStore(request);
-  hit(`api-v1:${store.id}`, RATE_LIMITS.apiPublic);
+  await hit(`api-v1:${store.id}`, RATE_LIMITS.apiPublic);
 
   return ok({
     id: store.id,

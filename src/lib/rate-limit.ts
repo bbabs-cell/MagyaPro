@@ -1,29 +1,23 @@
+import { prisma } from '@/lib/db';
 import { RateLimitError } from '@/lib/errors';
 
 /**
- * Limitation de débit à fenêtre glissante, en mémoire.
+ * Limitation de débit à fenêtre glissante, persistée en base (table
+ * `RateLimitHit`).
  *
- * Portée : un processus. Cela protège efficacement contre le bourrage de
- * mot de passe et le spam de commandes sur un déploiement mono-instance, qui
- * est la cible de ce MVP. Le jour où l'application tourne sur plusieurs
- * instances, seul le corps de `hit()` change — un Redis avec la même
- * signature — sans toucher aux appelants.
+ * L'application tourne en serverless (Vercel) et peut aussi tourner sur
+ * Cloudflare Workers : dans les deux cas, plusieurs instances/isolats
+ * traitent les requêtes en parallèle, chacun avec sa propre mémoire. Un
+ * compteur en mémoire du processus ne protège donc quasiment rien contre un
+ * bourrage réparti sur plusieurs requêtes concurrentes — d'où le passage à
+ * un stockage partagé.
+ *
+ * Compromis assumé : `count()` puis `create()` ne sont pas atomiques, une
+ * poignée de requêtes strictement concurrentes peut donc dépasser la limite
+ * de quelques unités dans le pire cas. Acceptable pour une protection
+ * anti-brute-force (l'objectif est de rendre l'attaque infaisable, pas
+ * d'appliquer un quota comptable exact).
  */
-type Bucket = { timestamps: number[] };
-
-const buckets = new Map<string, Bucket>();
-let lastSweep = Date.now();
-
-/** Purge périodique : sans elle, la Map croîtrait avec chaque IP vue. */
-function sweep(now: number, windowMs: number) {
-  if (now - lastSweep < 60_000) return;
-  lastSweep = now;
-  for (const [key, bucket] of buckets) {
-    const fresh = bucket.timestamps.filter((t) => now - t < windowMs);
-    if (fresh.length === 0) buckets.delete(key);
-    else bucket.timestamps = fresh;
-  }
-}
 
 export type RateLimitRule = {
   /** Nombre de requêtes autorisées dans la fenêtre. */
@@ -49,38 +43,53 @@ export const RATE_LIMITS = {
   tableCall: { limit: 10, windowSeconds: 300 },
 } as const satisfies Record<string, RateLimitRule>;
 
+/** Purge opportuniste des tentatives expirées — évite une table qui ne cesse de croître. */
+async function sweep(): Promise<void> {
+  await prisma.rateLimitHit
+    .deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 24 * 3600 * 1000) } } })
+    .catch(() => undefined);
+}
+
 /**
  * Enregistre une tentative et lève `RateLimitError` si le quota est dépassé.
  * `key` doit isoler l'auteur : IP, et si possible identifiant de compte.
  */
-export function hit(key: string, rule: RateLimitRule): void {
-  const now = Date.now();
+export async function hit(key: string, rule: RateLimitRule): Promise<void> {
   const windowMs = rule.windowSeconds * 1000;
-  sweep(now, windowMs);
+  const windowStart = new Date(Date.now() - windowMs);
 
-  const bucket = buckets.get(key) ?? { timestamps: [] };
-  bucket.timestamps = bucket.timestamps.filter((t) => now - t < windowMs);
+  const [count] = await Promise.all([
+    prisma.rateLimitHit.count({ where: { key, createdAt: { gte: windowStart } } }),
+    // Purge rare (≈1 tentative sur 50) : assez fréquente pour que la table
+    // ne grossisse pas sans borne, assez rare pour ne pas ajouter un
+    // aller-retour supplémentaire à chaque appel.
+    Math.random() < 0.02 ? sweep() : Promise.resolve(),
+  ]);
 
-  if (bucket.timestamps.length >= rule.limit) {
-    const oldest = bucket.timestamps[0]!;
-    const retryAfter = Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000));
-    buckets.set(key, bucket);
+  if (count >= rule.limit) {
+    const oldest = await prisma.rateLimitHit.findFirst({
+      where: { key, createdAt: { gte: windowStart } },
+      orderBy: { createdAt: 'asc' },
+      select: { createdAt: true },
+    });
+    const retryAfter = oldest
+      ? Math.max(1, Math.ceil((oldest.createdAt.getTime() + windowMs - Date.now()) / 1000))
+      : rule.windowSeconds;
     throw new RateLimitError(
       `Trop de tentatives. Réessayez dans ${retryAfter} seconde${retryAfter > 1 ? 's' : ''}.`,
       retryAfter,
     );
   }
 
-  bucket.timestamps.push(now);
-  buckets.set(key, bucket);
+  await prisma.rateLimitHit.create({ data: { key } });
 }
 
 /** Efface le compteur après une opération réussie (connexion valide). */
-export function reset(key: string): void {
-  buckets.delete(key);
+export async function reset(key: string): Promise<void> {
+  await prisma.rateLimitHit.deleteMany({ where: { key } }).catch(() => undefined);
 }
 
 /** Vide l'ensemble des compteurs — réservé aux tests. */
-export function resetAll(): void {
-  buckets.clear();
+export async function resetAll(): Promise<void> {
+  await prisma.rateLimitHit.deleteMany({});
 }

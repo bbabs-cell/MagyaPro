@@ -18,7 +18,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireStore('suppliers:manage');
-  hit(`boutique-suppliers:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-suppliers:${context.store.id}`, RATE_LIMITS.write);
 
   const input = parseOrThrow(storeSupplierSchema, await readJson(request));
 

@@ -24,7 +24,7 @@ export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
   const input = parseOrThrow(schema, await readJson(request));
 
-  hit(`review:ip:${ip}`, RATE_LIMITS.checkout);
+  await hit(`review:ip:${ip}`, RATE_LIMITS.checkout);
 
   const restaurant = await prisma.restaurant.findFirst({
     where: { id: input.restaurantId, status: 'ACTIVE' },

@@ -23,10 +23,32 @@ const nextConfig: NextConfig = {
       : [],
   },
   async headers() {
+    // Hôte de stockage des images (uploads) : même variable que
+    // `images.remotePatterns` ci-dessus, pour que la CSP autorise
+    // effectivement les images réellement servies par l'application.
+    const storageHost = process.env.NEXT_PUBLIC_STORAGE_HOST;
+    const csp = [
+      "default-src 'self'",
+      // Next.js et les widgets embarqués (Turnstile) reposent sur des
+      // scripts injectés/inline au chargement : les interdire casserait
+      // l'hydratation et la vérification anti-robot. `object-src`/`base-uri`
+      // restent verrouillés, ce qui couvre l'essentiel du risque XSS.
+      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: https:${storageHost ? ` https://${storageHost}` : ''}`,
+      "font-src 'self' data:",
+      "frame-src https://challenges.cloudflare.com",
+      "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'self'",
+    ].join('; ');
+
     return [
       {
         source: '/:path*',
         headers: [
+          { key: 'Content-Security-Policy', value: csp },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

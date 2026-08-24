@@ -20,10 +20,10 @@ export const POST = route(async (request) => {
 
   // Un compteur par jeton en attente : six chiffres, l'essai en boucle doit
   // rester impossible même limité à une seule connexion en cours.
-  hit(`2fa:${pendingToken}`, RATE_LIMITS.twoFactor);
+  await hit(`2fa:${pendingToken}`, RATE_LIMITS.twoFactor);
 
   const user = await verifyTwoFactorLogin({ pendingToken, code, ip });
-  reset(`2fa:${pendingToken}`);
+  await reset(`2fa:${pendingToken}`);
 
   await createSession(user.id);
   await pruneExpiredSessions();

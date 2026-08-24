@@ -40,6 +40,10 @@ export const PERMISSIONS = [
   'analytics:view',
   'finances:manage',
   'audit:view',
+  /// Purge du journal — distincte de `audit:view` : un rôle qui ne fait que
+  /// consulter le journal ne doit pas pouvoir en effacer irréversiblement
+  /// l'historique.
+  'audit:manage',
 
   'team:view',
   'team:manage',
@@ -155,6 +159,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'analytics:view': 'Voir les statistiques',
   'finances:manage': 'Gérer les finances',
   'audit:view': 'Voir le journal',
+  'audit:manage': 'Purger le journal',
   'team:view': "Voir l'équipe",
   'team:manage': "Gérer l'équipe",
   'settings:manage': 'Gérer les réglages',

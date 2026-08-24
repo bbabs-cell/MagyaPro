@@ -8,7 +8,7 @@ export const POST = route(async () => {
   const user = await getCurrentUser();
   if (!user) throw new UnauthorizedError();
 
-  hit(`resend-verification:${user.id}`, RATE_LIMITS.emailVerificationResend);
+  await hit(`resend-verification:${user.id}`, RATE_LIMITS.emailVerificationResend);
 
   if (!user.emailVerifiedAt) {
     await resendVerificationEmail(user);

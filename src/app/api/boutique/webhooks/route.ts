@@ -21,7 +21,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireStore('api:manage');
-  hit(`boutique-webhook-create:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-webhook-create:${context.store.id}`, RATE_LIMITS.write);
 
   const input = parseOrThrow(storeWebhookSchema, await readJson(request));
   await assertPublicWebhookUrl(input.url);

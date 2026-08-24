@@ -10,7 +10,7 @@ import { verifyTurnstile } from '@/lib/turnstile';
 
 export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
-  hit(`store-register:${ip}`, RATE_LIMITS.register);
+  await hit(`store-register:${ip}`, RATE_LIMITS.register);
 
   const { turnstileToken, ...input } = parseOrThrow(registerStoreSchema, await readJson(request));
   await verifyTurnstile(turnstileToken, ip);

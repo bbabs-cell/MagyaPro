@@ -15,7 +15,7 @@ export const POST = route(async (request, { params }: Params) => {
   // Le code à six chiffres protège contre une remise à la mauvaise personne :
   // limiter les tentatives par commande empêche de le deviner par essais
   // successifs.
-  hit(`delivery-code:${orderId}`, RATE_LIMITS.deliveryCode);
+  await hit(`delivery-code:${orderId}`, RATE_LIMITS.deliveryCode);
 
   const order = await confirmDelivery({
     restaurantId: restaurant.id,

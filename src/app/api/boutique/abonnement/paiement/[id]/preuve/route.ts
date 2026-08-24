@@ -10,7 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 /** Dépose la preuve de paiement sur une demande d'abonnement Boutique en attente. */
 export const POST = route(async (request, { params }: Params) => {
   const context = await requireStore('subscription:manage');
-  hit(`upload:${context.store.id}`, RATE_LIMITS.upload);
+  await hit(`upload:${context.store.id}`, RATE_LIMITS.upload);
   const { id } = await params;
 
   const formData = await request.formData().catch(() => null);

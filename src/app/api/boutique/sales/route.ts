@@ -23,7 +23,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireStore('pos:access');
-  hit(`boutique-sales:${context.store.id}`, RATE_LIMITS.checkout);
+  await hit(`boutique-sales:${context.store.id}`, RATE_LIMITS.checkout);
 
   const input = parseOrThrow(storeSaleSchema, await readJson(request));
 

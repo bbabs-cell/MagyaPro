@@ -8,7 +8,7 @@ import type { StoreCategory } from '@prisma/client';
 
 export const PATCH = route(async (request, { params }: { params: Promise<{ id: string }> }) => {
   const context = await requireStore('products:manage');
-  hit(`boutique-categories:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-categories:${context.store.id}`, RATE_LIMITS.write);
   const { id } = await params;
 
   await findStoreScopedOrThrow<StoreCategory>('storeCategory', context.store.id, id);

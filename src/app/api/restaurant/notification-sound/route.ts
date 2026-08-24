@@ -13,7 +13,7 @@ import { RATE_LIMITS, hit } from '@/lib/rate-limit';
  */
 export const POST = route(async (request) => {
   const context = await requireTenant('settings:manage');
-  hit(`upload:${context.restaurant.id}`, RATE_LIMITS.upload);
+  await hit(`upload:${context.restaurant.id}`, RATE_LIMITS.upload);
 
   const formData = await request.formData().catch(() => null);
   if (!formData) {

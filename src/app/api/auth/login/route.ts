@@ -17,14 +17,14 @@ export const POST = route(async (request) => {
 
   // Deux compteurs : par IP contre le balayage de comptes, par email contre le
   // bourrage ciblé d'un compte depuis plusieurs adresses.
-  hit(`login:ip:${ip}`, RATE_LIMITS.login);
-  hit(`login:email:${input.email}`, RATE_LIMITS.login);
+  await hit(`login:ip:${ip}`, RATE_LIMITS.login);
+  await hit(`login:email:${input.email}`, RATE_LIMITS.login);
   await verifyTurnstile(turnstileToken, ip);
 
   const user = await authenticate({ ...input, ip });
 
-  reset(`login:ip:${ip}`);
-  reset(`login:email:${input.email}`);
+  await reset(`login:ip:${ip}`);
+  await reset(`login:email:${input.email}`);
 
   // La destination dépend du produit d'où vient la connexion (l'hôte de la
   // requête) : se fier à l'hôte plutôt qu'à la seule présence d'une adhésion

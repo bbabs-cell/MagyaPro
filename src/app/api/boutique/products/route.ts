@@ -28,7 +28,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireStore('products:manage');
-  hit(`boutique-products:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-products:${context.store.id}`, RATE_LIMITS.write);
   await requireStoreWithinLimit(context.store.id, 'maxProducts');
 
   const input = parseOrThrow(storeProductSchema, await readJson(request));

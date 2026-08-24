@@ -17,7 +17,7 @@ const folderSchema = z.enum(['logos', 'covers', 'products', 'categories', 'seo',
  */
 export const POST = route(async (request) => {
   const context = await requireTenant('restaurant:update');
-  hit(`upload:${context.restaurant.id}`, RATE_LIMITS.upload);
+  await hit(`upload:${context.restaurant.id}`, RATE_LIMITS.upload);
 
   const formData = await request.formData().catch(() => null);
   if (!formData) {

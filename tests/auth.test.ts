@@ -67,7 +67,7 @@ describe('Jetons', () => {
 describe('Inscription et connexion', () => {
   beforeAll(async () => {
     await resetDatabase();
-    resetAll();
+    await resetAll();
   });
 
   afterAll(async () => {
@@ -321,25 +321,25 @@ describe("Vérification d'email", () => {
 });
 
 describe('Limitation de débit', () => {
-  it('bloque après le nombre de tentatives autorisé', () => {
-    resetAll();
+  it('bloque après le nombre de tentatives autorisé', async () => {
+    await resetAll();
     const key = 'test:login';
 
     for (let attempt = 0; attempt < RATE_LIMITS.login.limit; attempt++) {
-      expect(() => hit(key, RATE_LIMITS.login)).not.toThrow();
+      await expect(hit(key, RATE_LIMITS.login)).resolves.not.toThrow();
     }
 
-    expect(() => hit(key, RATE_LIMITS.login)).toThrow(/trop de tentatives/i);
+    await expect(hit(key, RATE_LIMITS.login)).rejects.toThrow(/trop de tentatives/i);
   });
 
-  it('compte séparément deux clés distinctes', () => {
-    resetAll();
+  it('compte séparément deux clés distinctes', async () => {
+    await resetAll();
 
     for (let attempt = 0; attempt < RATE_LIMITS.login.limit; attempt++) {
-      hit('ip:1.2.3.4', RATE_LIMITS.login);
+      await hit('ip:1.2.3.4', RATE_LIMITS.login);
     }
 
     // Une autre IP ne doit pas être pénalisée par la première.
-    expect(() => hit('ip:5.6.7.8', RATE_LIMITS.login)).not.toThrow();
+    await expect(hit('ip:5.6.7.8', RATE_LIMITS.login)).resolves.not.toThrow();
   });
 });

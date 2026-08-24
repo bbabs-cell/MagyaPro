@@ -66,7 +66,7 @@ export default async function JournalPage({
             >
               Exporter (CSV)
             </a>
-            <JournalPurgeButton />
+            {context.permissions.has('audit:manage') && <JournalPurgeButton />}
           </div>
         }
       />

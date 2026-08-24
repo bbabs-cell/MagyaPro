@@ -28,8 +28,8 @@ export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
   const input = parseOrThrow(publicStoreOrderSchema, await readJson(request));
 
-  hit(`store-checkout:ip:${ip}`, RATE_LIMITS.checkout);
-  hit(`store-checkout:phone:${input.customerPhone}`, RATE_LIMITS.checkout);
+  await hit(`store-checkout:ip:${ip}`, RATE_LIMITS.checkout);
+  await hit(`store-checkout:phone:${input.customerPhone}`, RATE_LIMITS.checkout);
 
   const store = await prisma.store.findFirst({
     where: { id: input.storeId, status: 'ACTIVE' },

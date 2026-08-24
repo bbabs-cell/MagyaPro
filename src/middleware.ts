@@ -135,7 +135,12 @@ async function resolvesToStore(host: string): Promise<boolean> {
   try {
     const resolveUrl = new URL('/api/internal/resoudre-domaine', env.appUrl);
     resolveUrl.search = `host=${encodeURIComponent(host)}`;
-    const response = await fetch(resolveUrl, { headers: { accept: 'application/json' } });
+    const response = await fetch(resolveUrl, {
+      headers: {
+        accept: 'application/json',
+        ...(env.internalApiSecret ? { 'x-internal-secret': env.internalApiSecret } : {}),
+      },
+    });
     if (!response.ok) return false;
     const { product } = (await response.json()) as { product: 'restaurant' | 'store' | null };
     return product === 'store';

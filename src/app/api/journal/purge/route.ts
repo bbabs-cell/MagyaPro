@@ -4,7 +4,7 @@ import { requireTenant } from '@/lib/tenant';
 
 /** Purge du journal au-delà de douze mois — geste volontaire, sans automatisme. */
 export const POST = route(async () => {
-  const { restaurant } = await requireTenant('audit:view');
+  const { restaurant } = await requireTenant('audit:manage');
 
   const cutoff = new Date();
   cutoff.setFullYear(cutoff.getFullYear() - 1);

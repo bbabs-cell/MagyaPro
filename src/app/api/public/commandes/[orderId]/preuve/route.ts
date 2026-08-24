@@ -23,8 +23,8 @@ export const POST = route(async (request, { params }: Params) => {
   const { orderId } = await params;
   const ip = clientIp(await headers()) ?? 'inconnu';
 
-  hit(`payment-proof:ip:${ip}`, RATE_LIMITS.upload);
-  hit(`payment-proof:order:${orderId}`, RATE_LIMITS.upload);
+  await hit(`payment-proof:ip:${ip}`, RATE_LIMITS.upload);
+  await hit(`payment-proof:order:${orderId}`, RATE_LIMITS.upload);
 
   const payment = await prisma.payment.findFirst({
     where: {

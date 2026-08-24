@@ -20,5 +20,10 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  // `tests/` est exclu ici volontairement : ce tsconfig est aussi celui que
+  // `next build` utilise pour son propre typecheck, et les fichiers de test
+  // ont besoin des globales Vitest (describe/it/expect) que ce projet
+  // n'expose pas. Voir tsconfig.test.json (`npm run typecheck:tests`) pour
+  // le typecheck des tests eux-mêmes.
   "exclude": ["node_modules", "tests"]
 }

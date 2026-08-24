@@ -10,7 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export const PATCH = route(async (request, { params }: Params) => {
   const context = await requireStore('customers:manage');
-  hit(`boutique-customers:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-customers:${context.store.id}`, RATE_LIMITS.write);
   const { id } = await params;
 
   await findStoreScopedOrThrow<StoreCustomer>('storeCustomer', context.store.id, id);

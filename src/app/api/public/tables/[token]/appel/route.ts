@@ -23,7 +23,7 @@ export const POST = route(async (request, { params }: Params) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
   const input = parseOrThrow(tableRequestSchema, await readJson(request));
 
-  hit(`table-appel:ip:${ip}`, RATE_LIMITS.write);
+  await hit(`table-appel:ip:${ip}`, RATE_LIMITS.write);
 
   const table = await prisma.restaurantTable.findFirst({
     where: { token, restaurant: { status: 'ACTIVE' } },
@@ -35,7 +35,7 @@ export const POST = route(async (request, { params }: Params) => {
   // partageant le Wi-Fi du restaurant se gêneraient entre eux, tandis qu'un
   // client isolé pourrait solliciter une même table sans limite tant qu'il
   // reste sous le plafond global par IP.
-  hit(`table-appel:table:${table.id}`, RATE_LIMITS.tableCall);
+  await hit(`table-appel:table:${table.id}`, RATE_LIMITS.tableCall);
 
   const entitlements = await getEntitlements(table.restaurantId);
   requireFeature(entitlements, FEATURES.TABLE_SERVICE);

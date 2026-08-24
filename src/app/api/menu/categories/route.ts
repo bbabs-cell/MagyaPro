@@ -21,7 +21,7 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireTenant('menu:manage');
-  hit(`menu:${context.restaurant.id}`, RATE_LIMITS.write);
+  await hit(`menu:${context.restaurant.id}`, RATE_LIMITS.write);
 
   // La limite du plan est vérifiée côté serveur, juste avant l'insertion.
   await requireWithinLimit(context.restaurant.id, 'maxCategories');

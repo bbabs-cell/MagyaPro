@@ -33,7 +33,7 @@ export const GET = route(async (request) => {
 
 export const POST = route(async (request) => {
   const context = await requireTenant('menu:manage');
-  hit(`menu:${context.restaurant.id}`, RATE_LIMITS.write);
+  await hit(`menu:${context.restaurant.id}`, RATE_LIMITS.write);
   await requireWithinLimit(context.restaurant.id, 'maxProducts');
 
   const input = parseOrThrow(productSchema, await readJson(request));

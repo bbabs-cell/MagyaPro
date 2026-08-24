@@ -29,8 +29,8 @@ export const POST = route(async (request) => {
 
   // Deux compteurs : par IP, et par numéro de téléphone — sans quoi un même
   // client pourrait saturer un restaurant depuis plusieurs connexions.
-  hit(`checkout:ip:${ip}`, RATE_LIMITS.checkout);
-  hit(`checkout:phone:${input.customerPhone}`, RATE_LIMITS.checkout);
+  await hit(`checkout:ip:${ip}`, RATE_LIMITS.checkout);
+  await hit(`checkout:phone:${input.customerPhone}`, RATE_LIMITS.checkout);
 
   const restaurant = await prisma.restaurant.findFirst({
     where: { id: input.restaurantId, status: 'ACTIVE' },

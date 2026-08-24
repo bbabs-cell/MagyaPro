@@ -54,6 +54,14 @@ export const env = {
   /// worker) : sans lui, `/api/cron/*` refuse toute requête.
   cronSecret: process.env.CRON_SECRET,
 
+  /// Secret partagé entre le middleware et `/api/internal/resoudre-domaine` :
+  /// cette route n'est censée être appelée que depuis le middleware, mais
+  /// reste techniquement accessible publiquement (elle ne renvoie qu'un
+  /// booléen à faible sensibilité). Si absent, la route reste ouverte comme
+  /// avant plutôt que de casser la résolution des domaines personnalisés en
+  /// production tant que la variable n'a pas été définie.
+  internalApiSecret: process.env.INTERNAL_API_SECRET,
+
   /// Cloudflare Turnstile (anti-robot sur inscription/connexion). La clé de
   /// site est publique par nature (visible dans le HTML du widget) : elle
   /// n'a pas besoin du préfixe `NEXT_PUBLIC_` puisqu'elle transite par une

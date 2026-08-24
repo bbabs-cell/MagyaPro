@@ -23,7 +23,7 @@ const updateSchema = z.object({
 
 export const PATCH = route(async (request, { params }: Params) => {
   const context = await requireStore('products:manage');
-  hit(`boutique-products:${context.store.id}`, RATE_LIMITS.write);
+  await hit(`boutique-products:${context.store.id}`, RATE_LIMITS.write);
   const { id } = await params;
 
   await findStoreScopedOrThrow<StoreProduct>('storeProduct', context.store.id, id);

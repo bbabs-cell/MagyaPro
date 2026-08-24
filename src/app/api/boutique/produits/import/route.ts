@@ -33,7 +33,7 @@ function cellString(value: ExcelJS.CellValue): string {
  */
 export const POST = route(async (request) => {
   const context = await requireStore('products:manage');
-  hit(`boutique-import:${context.store.id}`, RATE_LIMITS.upload);
+  await hit(`boutique-import:${context.store.id}`, RATE_LIMITS.upload);
 
   const formData = await request.formData().catch(() => null);
   if (!formData) return fail('Requête de téléversement invalide.', 400, 'VALIDATION_ERROR');

@@ -1394,6 +1394,12 @@ model Store {
 /// `src/lib/boutique/api-auth.ts`. Seule l'empreinte est persistée, même
 /// principe que `Session.tokenHash` : la clé en clair n'est montrée qu'une
 /// fois, à sa création.
+///
+/// Volontairement propre à Boutique : Restaurant n'a pas d'équivalent
+/// (`RestaurantApiKey`). Ce n'est pas un oubli — Boutique cible
+/// l'intégration e-commerce/inventaire, un besoin que Restaurant n'a pas
+/// exprimé pour l'instant. Si Restaurant en avait besoin un jour, reprendre
+/// ce modèle et `StoreWebhook` ci-dessous comme référence.
 model StoreApiKey {
   id         String    @id @default(cuid())
   storeId    String
@@ -2388,4 +2394,25 @@ model StorePromotion {
   @@unique([storeId, code])
   @@index([storeId])
   @@map("boutique_promotions")
+}
+
+// =============================================================================
+// PLATEFORME — LIMITATION DE DÉBIT
+//
+
+/// Enregistrement d'une tentative pour la limitation de débit à fenêtre
+/// glissante (`src/lib/rate-limit.ts`) — persistée en base plutôt qu'en
+/// mémoire du processus : sur un déploiement serverless (Vercel) ou
+/// multi-isolat (Cloudflare Workers), une limite en mémoire locale ne
+/// protège quasiment rien, chaque instance repartant avec son propre
+/// compteur. Une ligne par tentative, purgée après sa fenêtre — le volume
+/// reste faible (connexion, inscription, 2FA, écritures API...), jamais un
+/// journal d'activité.
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@map("rate_limit_hits")
 }

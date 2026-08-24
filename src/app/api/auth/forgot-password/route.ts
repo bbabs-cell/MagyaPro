@@ -8,7 +8,7 @@ import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 
 export const POST = route(async (request) => {
   const ip = clientIp(await headers()) ?? 'inconnu';
-  hit(`forgot:${ip}`, RATE_LIMITS.passwordReset);
+  await hit(`forgot:${ip}`, RATE_LIMITS.passwordReset);
 
   const { email } = parseOrThrow(forgotPasswordSchema, await readJson(request));
   await requestPasswordReset(email);

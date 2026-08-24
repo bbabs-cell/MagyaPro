@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/db';
+import { env } from '@/lib/env';
 
 /**
  * Résolution d'un domaine personnalisé étranger vers son produit (Restaurant
@@ -18,6 +19,14 @@ import { prisma } from '@/lib/db';
  * statut (actif/suspendu).
  */
 export async function GET(request: Request) {
+  // Ferme l'accès public dès que le secret est configuré (voir
+  // `env.internalApiSecret`) — reste ouvert tant qu'il ne l'est pas, pour ne
+  // pas casser la résolution des domaines personnalisés avant que la
+  // variable d'environnement ne soit définie en production.
+  if (env.internalApiSecret && request.headers.get('x-internal-secret') !== env.internalApiSecret) {
+    return NextResponse.json({ product: null }, { status: 401 });
+  }
+
   const host = new URL(request.url).searchParams.get('host')?.trim().toLowerCase();
   if (!host) {
     return NextResponse.json({ product: null }, { status: 400 });
