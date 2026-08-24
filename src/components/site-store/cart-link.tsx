@@ -4,10 +4,12 @@ import Link from 'next/link';
 
 import { useCart } from '@/components/site-store/cart-context';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 
-export function CartLink({ host }: { host: string }) {
+export function CartLink({ host, locale }: { host: string; locale: string }) {
   const { lines } = useCart();
   const count = lines.length;
+  const dict = getBoutiqueSiteDictionary(locale);
 
   return (
     <Link
@@ -19,7 +21,7 @@ export function CartLink({ host }: { host: string }) {
         <circle cx="9" cy="20" r="1.3" fill="currentColor" stroke="none" />
         <circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none" />
       </svg>
-      Panier
+      {dict.cart}
       {count > 0 && (
         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-900 px-1 text-xs font-medium text-white">
           {count}

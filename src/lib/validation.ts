@@ -721,6 +721,11 @@ export const storeTaxSchema = z.object({
   taxRate: z.number().int().min(0).max(1000),
 });
 
+/** Langue du site public d'une boutique — voir `src/lib/i18n/locales.ts`. */
+export const storeLanguageSchema = z.object({
+  language: z.enum(['fr', 'en', 'ar']),
+});
+
 export const storeExpenseSchema = z.object({
   label: z.string().trim().min(1, 'Indiquez un libellé.').max(200),
   amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),

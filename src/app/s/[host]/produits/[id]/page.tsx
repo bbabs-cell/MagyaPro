@@ -6,6 +6,7 @@ import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
 import { loadPublicProduct, resolvePublicStore } from '@/lib/boutique/site/resolve';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 import { AddToCart } from '@/components/site-store/add-to-cart';
 
 export async function generateMetadata({
@@ -38,8 +39,9 @@ export default async function StoreProductPage({
 
   const inStock = product.stock > 0;
   const attributeEntries = Object.entries(product.attributes);
+  const dict = getBoutiqueSiteDictionary(store.language);
 
-  const contactMessage = encodeURIComponent(`Bonjour, je suis intéressé(e) par « ${product.name} ».`);
+  const contactMessage = encodeURIComponent(dict.interestedIn(product.name));
   const whatsappHref = store.phone
     ? `https://wa.me/${store.phone.replace(/[^0-9+]/g, '')}?text=${contactMessage}`
     : null;
@@ -49,7 +51,7 @@ export default async function StoreProductPage({
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <Link href={`${base}/produits`} className="text-sm text-gray-500 hover:text-gray-800">
-        ← Catalogue
+        {dict.backToCatalog}
       </Link>
 
       <div className="mt-4 grid gap-8 sm:grid-cols-2">
@@ -88,7 +90,7 @@ export default async function StoreProductPage({
           </p>
 
           <p className={`mt-2 text-sm font-medium ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>
-            {inStock ? 'En stock' : 'Rupture de stock'}
+            {inStock ? dict.inStock : dict.outOfStock}
           </p>
 
           {product.description && (
@@ -117,6 +119,7 @@ export default async function StoreProductPage({
                 stock: product.stock,
               }}
               host={host}
+              locale={store.language}
             />
           )}
 
@@ -126,7 +129,7 @@ export default async function StoreProductPage({
                 href={`tel:${store.phone}`}
                 className="inline-flex h-10 items-center rounded-xl border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50"
               >
-                Appeler la boutique
+                {dict.callStore}
               </a>
             )}
             {whatsappHref && (
@@ -136,7 +139,7 @@ export default async function StoreProductPage({
                 rel="noopener noreferrer"
                 className="inline-flex h-10 items-center rounded-xl border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50"
               >
-                WhatsApp
+                {dict.whatsapp}
               </a>
             )}
           </div>

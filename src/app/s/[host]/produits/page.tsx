@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { loadPublicCategories, loadPublicProducts, resolvePublicStore } from '@/lib/boutique/site/resolve';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 import { ProductGrid } from '@/components/site-store/product-grid';
 
 export const metadata: Metadata = { title: 'Catalogue' };
@@ -24,10 +25,11 @@ export default async function StoreCatalogPage({
     loadPublicProducts(store.id, categorie),
   ]);
   const base = sitePathBase(host);
+  const dict = getBoutiqueSiteDictionary(store.language);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Catalogue</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{dict.catalog}</h1>
 
       {categories.length > 0 && (
         <nav className="mt-4 flex flex-wrap gap-2">
@@ -37,7 +39,7 @@ export default async function StoreCatalogPage({
               !categorie ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-400'
             }`}
           >
-            Tout
+            {dict.all}
           </a>
           {categories.map((category) => (
             <a
@@ -56,7 +58,7 @@ export default async function StoreCatalogPage({
       )}
 
       <div className="mt-6">
-        <ProductGrid products={products} host={host} currency={store.currency} />
+        <ProductGrid products={products} host={host} currency={store.currency} locale={store.language} />
       </div>
     </div>
   );

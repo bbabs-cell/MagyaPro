@@ -5,14 +5,7 @@ import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
 import { loadPublicCategories, loadPublicProducts, resolvePublicStore } from '@/lib/boutique/site/resolve';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
-
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  CLOTHING: 'Habillement',
-  ELECTRONICS: 'Électronique',
-  COSMETICS: 'Cosmétique',
-  GROCERY: 'Alimentation',
-  OTHER: 'Commerce',
-};
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 
 export default async function StoreHomePage({
   params,
@@ -29,13 +22,14 @@ export default async function StoreHomePage({
   ]);
   const featured = products.slice(0, 8);
   const base = sitePathBase(host);
+  const dict = getBoutiqueSiteDictionary(store.language);
 
   return (
     <>
       <section className="border-b border-gray-100 bg-gray-50">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            {BUSINESS_TYPE_LABELS[store.businessType] ?? 'Commerce'}
+            {dict.businessTypes[store.businessType] ?? dict.businessTypes.OTHER}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{store.name}</h1>
           {store.description && (
@@ -55,7 +49,7 @@ export default async function StoreHomePage({
             href={`${base}/produits`}
             className="mt-6 inline-flex h-11 items-center rounded-xl bg-gray-900 px-6 text-sm font-medium text-white hover:bg-gray-800"
           >
-            Voir le catalogue
+            {dict.viewCatalog}
           </Link>
         </div>
       </section>
@@ -79,12 +73,10 @@ export default async function StoreHomePage({
 
       <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         {products.length === 0 ? (
-          <p className="py-12 text-center text-sm text-gray-500">
-            Aucun produit disponible pour le moment.
-          </p>
+          <p className="py-12 text-center text-sm text-gray-500">{dict.noProductsYet}</p>
         ) : (
           <>
-            <h2 className="mb-4 text-lg font-semibold tracking-tight">Produits</h2>
+            <h2 className="mb-4 text-lg font-semibold tracking-tight">{dict.products}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {featured.map((product) => (
                 <Link
@@ -122,7 +114,7 @@ export default async function StoreHomePage({
                   href={`${base}/produits`}
                   className="inline-flex h-11 items-center rounded-xl border border-gray-300 px-6 text-sm font-medium hover:bg-gray-50"
                 >
-                  Voir tout le catalogue
+                  {dict.viewFullCatalog}
                 </Link>
               </div>
             )}

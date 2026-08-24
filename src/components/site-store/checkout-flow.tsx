@@ -7,6 +7,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS, quantityStep } from '@/lib/boutique/units';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 import { useCart } from '@/components/site-store/cart-context';
 
 /**
@@ -19,13 +20,16 @@ export function CheckoutFlow({
   storeId,
   host,
   currency,
+  locale,
 }: {
   storeId: string;
   host: string;
   currency: string;
+  locale: string;
 }) {
   const router = useRouter();
   const { lines, total, setQuantity, removeLine, clear } = useCart();
+  const dict = getBoutiqueSiteDictionary(locale);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -64,7 +68,7 @@ export function CheckoutFlow({
   if (lines.length === 0) {
     return (
       <p className="mt-8 rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-500">
-        Votre panier est vide.
+        {dict.cartEmpty}
       </p>
     );
   }
@@ -114,16 +118,14 @@ export function CheckoutFlow({
         </ul>
 
         <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 text-base font-semibold">
-          <span>Total</span>
+          <span>{dict.total}</span>
           <span>{formatMoney(total, currency)}</span>
         </div>
       </div>
 
       <div className="rounded-2xl border border-gray-200 p-5">
-        <h2 className="text-sm font-medium">Vos coordonnées</h2>
-        <p className="mt-1 text-xs text-gray-500">
-          À retirer en boutique — vous réglerez sur place.
-        </p>
+        <h2 className="text-sm font-medium">{dict.yourDetails}</h2>
+        <p className="mt-1 text-xs text-gray-500">{dict.pickupPayOnSite}</p>
 
         {error && (
           <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -134,7 +136,7 @@ export function CheckoutFlow({
         <div className="mt-4 space-y-3">
           <div>
             <label htmlFor="customerName" className="block text-xs font-medium text-gray-600">
-              Nom
+              {dict.name}
             </label>
             <input
               id="customerName"
@@ -148,7 +150,7 @@ export function CheckoutFlow({
           </div>
           <div>
             <label htmlFor="customerPhone" className="block text-xs font-medium text-gray-600">
-              Téléphone
+              {dict.phone}
             </label>
             <input
               id="customerPhone"
@@ -162,7 +164,7 @@ export function CheckoutFlow({
           </div>
           <div>
             <label htmlFor="customerEmail" className="block text-xs font-medium text-gray-600">
-              Email (facultatif)
+              {dict.emailOptional}
             </label>
             <input
               id="customerEmail"
@@ -174,7 +176,7 @@ export function CheckoutFlow({
           </div>
           <div>
             <label htmlFor="notes" className="block text-xs font-medium text-gray-600">
-              Message (facultatif)
+              {dict.messageOptional}
             </label>
             <textarea
               id="notes"
@@ -192,7 +194,7 @@ export function CheckoutFlow({
           onClick={submit}
           className="mt-5 flex h-11 w-full items-center justify-center rounded-xl bg-gray-900 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
         >
-          {pending ? 'Envoi…' : `Commander — ${formatMoney(total, currency)}`}
+          {pending ? dict.sending : dict.orderButton(formatMoney(total, currency))}
         </button>
       </div>
     </div>

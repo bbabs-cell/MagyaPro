@@ -6,10 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/components/site-store/cart-context';
 import { quantityStep } from '@/lib/boutique/units';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 
 export function AddToCart({
   product,
   host,
+  locale,
 }: {
   product: {
     id: string;
@@ -20,9 +22,11 @@ export function AddToCart({
     stock: number;
   };
   host: string;
+  locale: string;
 }) {
   const router = useRouter();
   const { addLine, lines } = useCart();
+  const dict = getBoutiqueSiteDictionary(locale);
   const step = quantityStep(product.unit);
   const inCart = lines.find((l) => l.productId === product.id)?.quantity ?? 0;
   const [quantity, setQuantity] = useState(step);
@@ -63,7 +67,7 @@ export function AddToCart({
         onClick={handleAdd}
         className="inline-flex h-11 items-center rounded-xl bg-gray-900 px-6 text-sm font-medium text-white hover:bg-gray-800"
       >
-        Ajouter au panier
+        {dict.addToCart}
       </button>
       {added && (
         <button
@@ -71,7 +75,7 @@ export function AddToCart({
           onClick={() => router.push(`${sitePathBase(host)}/panier`)}
           className="text-sm font-medium text-gray-900 underline underline-offset-2"
         >
-          Voir le panier →
+          {dict.viewCartArrow}
         </button>
       )}
     </div>

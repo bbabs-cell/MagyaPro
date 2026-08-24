@@ -1311,6 +1311,9 @@ model Store {
 
   currency String @default("XOF")
   timezone String @default("Africa/Abidjan")
+  /// Langue du site public de la boutique — voir `src/lib/i18n/locales.ts`
+  /// (`fr`, `en`, `ar`), même liste que le sélecteur visiteur de Restaurant.
+  language String @default("fr")
 
   taxEnabled Boolean @default(false)
   /// Taux en dixièmes de pourcent (ex. 185 = 18,5 %), pour rester en entier.

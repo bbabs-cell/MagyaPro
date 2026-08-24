@@ -33,6 +33,7 @@ const storeSelect = {
   city: true,
   country: true,
   currency: true,
+  language: true,
   isDemo: true,
 } as const;
 

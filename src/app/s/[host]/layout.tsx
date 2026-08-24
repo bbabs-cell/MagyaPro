@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 
 import { resolvePublicStore } from '@/lib/boutique/site/resolve';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
+import { DEFAULT_LOCALE, dirFor, isLocale } from '@/lib/i18n/locales';
 import { CartProvider } from '@/components/site-store/cart-context';
 import { CartLink } from '@/components/site-store/cart-link';
 
@@ -50,10 +52,12 @@ export default async function StoreSiteLayout({
   const store = await resolvePublicStore(host);
   if (!store) notFound();
   const base = sitePathBase(host);
+  const dict = getBoutiqueSiteDictionary(store.language);
+  const locale = isLocale(store.language) ? store.language : DEFAULT_LOCALE;
 
   return (
     <CartProvider storeId={store.id}>
-      <div className="min-h-screen bg-white text-gray-900">
+      <div dir={dirFor(locale)} className="min-h-screen bg-white text-gray-900">
         <header className="border-b border-gray-200">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <Link href={base || '/'} className="flex items-center gap-2.5">
@@ -69,9 +73,9 @@ export default async function StoreSiteLayout({
             </Link>
             <nav className="flex items-center gap-5 text-sm">
               <Link href={`${base}/produits`} className="text-gray-600 hover:text-gray-900">
-                Catalogue
+                {dict.catalog}
               </Link>
-              <CartLink host={host} />
+              <CartLink host={host} locale={store.language} />
             </nav>
           </div>
         </header>
@@ -81,7 +85,7 @@ export default async function StoreSiteLayout({
         <footer className="mt-16 border-t border-gray-200 py-8 text-center text-xs text-gray-400">
           <p>{store.name}</p>
           <p className="mt-1">
-            Propulsé par{' '}
+            {dict.poweredBy}{' '}
             <a href="https://magyapro.com" className="underline underline-offset-2">
               MagyaPro
             </a>

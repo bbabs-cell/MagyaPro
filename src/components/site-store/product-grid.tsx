@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS } from '@/lib/boutique/units';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
+import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 
 type Product = {
   id: string;
@@ -27,12 +28,15 @@ export function ProductGrid({
   products,
   host,
   currency,
+  locale,
 }: {
   products: Product[];
   host: string;
   currency: string;
+  locale: string;
 }) {
   const [query, setQuery] = useState('');
+  const dict = getBoutiqueSiteDictionary(locale);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -46,14 +50,12 @@ export function ProductGrid({
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Rechercher un produit…"
+        placeholder={dict.searchPlaceholder}
         className="mb-6 h-11 w-full rounded-xl border border-gray-300 px-4 text-sm focus:border-gray-500 focus:outline-none"
       />
 
       {filtered.length === 0 ? (
-        <p className="py-12 text-center text-sm text-gray-500">
-          Aucun produit ne correspond à cette recherche.
-        </p>
+        <p className="py-12 text-center text-sm text-gray-500">{dict.noSearchResults}</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((product) => (
@@ -84,7 +86,7 @@ export function ProductGrid({
                 )}
               </p>
               {product.stock <= 0 && (
-                <p className="mt-0.5 text-xs font-medium text-red-600">Rupture de stock</p>
+                <p className="mt-0.5 text-xs font-medium text-red-600">{dict.outOfStock}</p>
               )}
             </Link>
           ))}
