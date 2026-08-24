@@ -9,9 +9,10 @@ import { Button, Card, inputClass } from '@/components/ui';
 type Step = 'idle' | 'enrolling' | 'confirmed';
 
 /**
- * Authentification à deux facteurs (TOTP) — Core, partagée avec Restaurant
- * dès qu'il en aura besoin (`/api/auth/2fa/*`, `src/lib/auth/service.ts`) ;
- * seule cette page d'accès est propre à Boutique.
+ * Authentification à deux facteurs (TOTP) — composant Core, partagé entre
+ * Restaurant et Boutique (`/api/auth/2fa/*`, `src/lib/auth/service.ts` ne
+ * connaissent que l'utilisateur, jamais un tenant) ; seule la page qui
+ * l'utilise diffère par produit.
  */
 export function TwoFactorPanel({ enabled: initialEnabled }: { enabled: boolean }) {
   const router = useRouter();

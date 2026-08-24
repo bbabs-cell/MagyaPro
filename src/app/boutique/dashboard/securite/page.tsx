@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/auth/session';
 import { PageHeader } from '@/components/ui';
-import { TwoFactorPanel } from '@/components/boutique/two-factor-panel';
+import { TwoFactorPanel } from '@/components/account/two-factor-panel';
 
 export const metadata: Metadata = { title: 'Sécurité' };
 export const dynamic = 'force-dynamic';

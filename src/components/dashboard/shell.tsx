@@ -185,6 +185,12 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M7 15h4" />
     </svg>
   ),
+  '/dashboard/securite': (
+    <svg {...ICON_PROPS}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
+      <path d="M9.5 12l1.8 1.8 3.2-3.6" />
+    </svg>
+  ),
   '/dashboard/aide': (
     <svg {...ICON_PROPS}>
       <circle cx="12" cy="12" r="9" />
@@ -230,6 +236,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: '/dashboard/equipe', label: 'Équipe', permission: 'team:view' },
       { href: '/dashboard/journal', label: 'Journal', permission: 'audit:view' },
       { href: '/dashboard/abonnement', label: 'Abonnement', permission: 'subscription:view' },
+      { href: '/dashboard/securite', label: 'Sécurité' },
       { href: '/dashboard/aide', label: "Centre d'aide" },
     ],
   },
