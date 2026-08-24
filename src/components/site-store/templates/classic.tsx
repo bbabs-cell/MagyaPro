@@ -27,7 +27,7 @@ export function ClassicHero({ store, categories, base, dict }: StoreHeroProps) {
 
           <Link
             href={`${base}/produits`}
-            className="mt-6 inline-flex h-11 items-center rounded-xl bg-gray-900 px-6 text-sm font-medium text-white hover:bg-gray-800"
+            className="mt-6 inline-flex h-11 items-center rounded-xl bg-[var(--brand)] px-6 text-sm font-medium text-white hover:brightness-90"
           >
             {dict.viewCatalog}
           </Link>
@@ -41,7 +41,7 @@ export function ClassicHero({ store, categories, base, dict }: StoreHeroProps) {
               <Link
                 key={category.id}
                 href={`${base}/produits?categorie=${category.id}`}
-                className="rounded-full border border-gray-200 px-4 py-1.5 text-sm text-gray-700 hover:border-gray-400"
+                className="rounded-full border border-gray-200 px-4 py-1.5 text-sm text-gray-700 hover:border-[var(--brand)] hover:text-[var(--brand)]"
               >
                 {category.name}
                 <span className="ml-1.5 text-gray-400">{category._count.products}</span>
@@ -86,7 +86,7 @@ export function ClassicProductGrid({ store, products, base, dict }: StoreProduct
                   )}
                 </div>
                 <p className="mt-2 truncate text-sm font-medium">{product.name}</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-medium text-[var(--brand)]">
                   {formatMoney(product.price, store.currency)}
                   {product.unit !== 'UNIT' && <span className="text-gray-400"> / {UNIT_LABELS[product.unit]}</span>}
                 </p>

@@ -11,15 +11,43 @@ import { CartLink } from '@/components/site-store/cart-link';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 
 /**
+ * Poids Google Fonts à charger pour chaque police proposée dans les réglages
+ * d'apparence (`appearance-form.tsx`) — même liste fermée que côté
+ * Restaurant (`src/app/r/[host]/layout.tsx`), dupliquée ici plutôt que
+ * partagée : les deux produits évoluent indépendamment.
+ */
+const GOOGLE_FONT_FAMILIES: Record<string, string> = {
+  Inter: 'Inter:wght@400;500;600;700',
+  Poppins: 'Poppins:wght@300;400;500;600;700',
+  'DM Sans': 'DM+Sans:wght@400;500;600;700',
+  'Space Grotesk': 'Space+Grotesk:wght@400;500;600;700',
+  'Playfair Display': 'Playfair+Display:wght@500;600;700',
+};
+
+const FONT_STACKS: Record<string, string> = {
+  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
+  Poppins: "'Poppins', ui-sans-serif, system-ui, sans-serif",
+  'DM Sans': "'DM Sans', ui-sans-serif, system-ui, sans-serif",
+  'Space Grotesk': "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
+  'Playfair Display': "'Playfair Display', ui-serif, Georgia, serif",
+};
+
+function googleFontsHref(fontFamily: string): string {
+  const family = GOOGLE_FONT_FAMILIES[fontFamily] ?? GOOGLE_FONT_FAMILIES.Inter!;
+  return `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+}
+
+/**
  * Racine du site public d'une boutique, atteinte soit via
  * `boutique.magyapro.com/s/<slug>`, soit via un domaine personnalisé
  * vérifié (voir `StoreDomain` et le commentaire dans `src/middleware.ts`) —
- * `sitePathBase()` adapte les liens internes à ces deux cas. Première
- * version volontairement simple : pas de thème par tenant (`Store` n'a ni
- * `templateKey` ni `fontFamily`, à la différence de `Restaurant`), une
- * seule mise en page neutre pour toutes les boutiques. Styles en dur
- * (jamais les tokens `ink`/`surface`/`brand`, réservés au dashboard
- * Restaurant — voir le commentaire de `src/app/boutique/layout.tsx`).
+ * `sitePathBase()` adapte les liens internes à ces deux cas. La mise en page
+ * (choisie via `templateKey`, voir `src/components/site-store/templates`)
+ * varie d'une boutique à l'autre, mais cette enveloppe commune (en-tête,
+ * pied de page) reste neutre — les couleurs choisies par la boutique
+ * (`--brand`) et sa police y sont injectées en variables CSS, jamais les
+ * tokens `ink`/`surface`/`brand` réservés au dashboard (voir le commentaire
+ * de `src/app/boutique/layout.tsx`).
  */
 export async function generateMetadata({
   params,
@@ -33,6 +61,7 @@ export async function generateMetadata({
   return {
     title: store.name,
     description: store.description ?? `${store.name} sur MagyaPro Boutique.`,
+    icons: store.faviconUrl ? { icon: store.faviconUrl } : undefined,
     robots: store.isDemo ? { index: false, follow: false } : undefined,
     openGraph: {
       title: store.name,
@@ -58,7 +87,23 @@ export default async function StoreSiteLayout({
 
   return (
     <CartProvider storeId={store.id}>
-      <div dir={dirFor(locale)} className="min-h-screen bg-white text-gray-900">
+      {/* Rendu n'importe où dans l'arbre, un `<link>` de Server Component est
+          remonté par Next.js dans le `<head>` du document. */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="stylesheet" href={googleFontsHref(store.fontFamily)} />
+
+      <div
+        dir={dirFor(locale)}
+        className="min-h-screen bg-white text-gray-900"
+        style={
+          {
+            '--brand': store.primaryColor,
+            '--brand-dark': store.secondaryColor,
+            fontFamily: FONT_STACKS[store.fontFamily] ?? FONT_STACKS.Inter,
+          } as React.CSSProperties
+        }
+      >
         {store.isDemo && (
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-gray-900 px-4 py-2 text-center text-xs text-white">
             <span>Boutique de démonstration — les commandes passées ici sont fictives.</span>
@@ -75,7 +120,7 @@ export default async function StoreSiteLayout({
                 // eslint-disable-next-line @next/next/no-img-element -- logo déposé par le tenant
                 <img src={store.logoUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
               ) : (
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-bold text-white">
                   {store.name.charAt(0).toUpperCase()}
                 </span>
               )}

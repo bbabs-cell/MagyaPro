@@ -8,11 +8,11 @@ import type { StoreHeroProps, StoreProductGridProps } from './types';
 export function VitrineHero({ store, categories, base, dict }: StoreHeroProps) {
   return (
     <>
-      <section className="border-b border-blue-100 bg-blue-50">
+      <section className="border-b border-gray-200 bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
                 {dict.businessTypes[store.businessType] ?? dict.businessTypes.OTHER}
               </p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{store.name}</h1>
@@ -20,7 +20,7 @@ export function VitrineHero({ store, categories, base, dict }: StoreHeroProps) {
             </div>
             <Link
               href={`${base}/produits`}
-              className="inline-flex h-11 shrink-0 items-center rounded-lg bg-blue-700 px-6 text-sm font-medium text-white hover:bg-blue-800"
+              className="inline-flex h-11 shrink-0 items-center rounded-lg bg-[var(--brand)] px-6 text-sm font-medium text-white hover:brightness-90"
             >
               {dict.viewCatalog}
             </Link>
@@ -35,7 +35,7 @@ export function VitrineHero({ store, categories, base, dict }: StoreHeroProps) {
               <Link
                 key={category.id}
                 href={`${base}/produits?categorie=${category.id}`}
-                className="shrink-0 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-blue-400 hover:text-blue-700"
+                className="shrink-0 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-[var(--brand)] hover:text-[var(--brand)]"
               >
                 {category.name} <span className="text-gray-400">({category._count.products})</span>
               </Link>
@@ -61,7 +61,7 @@ export function VitrineProductGrid({ store, products, base, dict }: StoreProduct
               <Link
                 key={product.id}
                 href={`${base}/produits/${product.id}`}
-                className="group rounded-lg border border-gray-200 bg-white p-2.5 transition-colors hover:border-blue-400"
+                className="group rounded-lg border border-gray-200 bg-white p-2.5 transition-colors hover:border-[var(--brand)]"
               >
                 <div className="aspect-square overflow-hidden rounded-md bg-gray-50">
                   {product.imageUrl ? (
@@ -78,7 +78,7 @@ export function VitrineProductGrid({ store, products, base, dict }: StoreProduct
                   )}
                 </div>
                 <p className="mt-2 line-clamp-2 text-xs font-medium leading-snug">{product.name}</p>
-                <p className="mt-1 text-sm font-semibold text-blue-700">
+                <p className="mt-1 text-sm font-semibold text-[var(--brand)]">
                   {formatMoney(product.price, store.currency)}
                   {product.unit !== 'UNIT' && (
                     <span className="text-xs font-normal text-gray-400"> / {UNIT_LABELS[product.unit]}</span>

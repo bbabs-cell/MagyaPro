@@ -9,12 +9,10 @@ import { PublishPanel } from '@/components/boutique/publish-panel';
 import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
-import { TemplateSettingsPanel } from '@/components/boutique/template-settings-panel';
 import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
 import { WebhooksManager } from '@/components/boutique/webhooks-manager';
 import { PaymentMethodsManager } from '@/components/boutique/payment-methods-manager';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
-import { getStoreTemplates } from '@/lib/boutique/store-templates';
 
 export const metadata: Metadata = { title: 'Réglages' };
 export const dynamic = 'force-dynamic';
@@ -29,7 +27,7 @@ export default async function BoutiqueSettingsPage() {
   // complète (activés et désactivés) pour cet écran de gestion.
   await getEnabledPaymentMethods(context.store.id);
 
-  const [domains, entitlements, apiKeys, webhooks, paymentMethods, templates] = await Promise.all([
+  const [domains, entitlements, apiKeys, webhooks, paymentMethods] = await Promise.all([
     prisma.storeDomain.findMany({
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'asc' },
@@ -60,7 +58,6 @@ export default async function BoutiqueSettingsPage() {
       where: { storeId: context.store.id },
       orderBy: { position: 'asc' },
     }),
-    getStoreTemplates(),
   ]);
 
   return (
@@ -79,11 +76,6 @@ export default async function BoutiqueSettingsPage() {
         />
         <LanguageSettingsPanel
           language={context.store.language}
-          canManage={context.permissions.has('settings:manage')}
-        />
-        <TemplateSettingsPanel
-          templates={templates}
-          currentTemplateKey={context.store.templateKey}
           canManage={context.permissions.has('settings:manage')}
         />
         <PaymentMethodsManager

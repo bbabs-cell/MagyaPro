@@ -129,6 +129,41 @@ export async function uploadImage(params: {
 }
 
 /**
+ * Même logique que `uploadImage` (Restaurant), pour une boutique — voir
+ * `/api/boutique/upload`. Préfixe de clé distinct (`stores/`) pour ne jamais
+ * entrer en collision avec un identifiant de restaurant qui partagerait
+ * accidentellement le même `cuid`.
+ */
+export async function uploadStoreImage(params: {
+  file: File;
+  storeId: string;
+  folder: 'logos' | 'covers';
+}): Promise<StoredFile> {
+  const { file, storeId, folder } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  const key = `stores/${storeId}/${folder}/${crypto.randomUUID()}.${EXTENSIONS[detected]}`;
+  return storage().put(key, buffer, detected);
+}
+
+/**
  * Vignette d'aperçu d'un template (plateforme, pas un tenant) : clé fixe par
  * template plutôt qu'un nom aléatoire, pour que téléverser une nouvelle
  * image écrase l'ancienne à la même URL — rien d'autre à mettre à jour.

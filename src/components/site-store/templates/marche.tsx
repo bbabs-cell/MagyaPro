@@ -8,9 +8,9 @@ import type { StoreHeroProps, StoreProductGridProps } from './types';
 export function MarcheHero({ store, categories, base, dict }: StoreHeroProps) {
   return (
     <>
-      <section className="border-b-4 border-amber-500 bg-amber-50">
+      <section className="border-b-4 border-[var(--brand)] bg-gray-50">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-          <p className="text-xs font-bold uppercase tracking-wide text-amber-700">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--brand)]">
             {dict.businessTypes[store.businessType] ?? dict.businessTypes.OTHER}
           </p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">{store.name}</h1>
@@ -25,7 +25,7 @@ export function MarcheHero({ store, categories, base, dict }: StoreHeroProps) {
           </div>
           <Link
             href={`${base}/produits`}
-            className="mt-5 inline-flex h-11 items-center rounded-lg bg-amber-500 px-6 text-sm font-bold text-white hover:bg-amber-600"
+            className="mt-5 inline-flex h-11 items-center rounded-lg bg-[var(--brand)] px-6 text-sm font-bold text-white hover:brightness-90"
           >
             {dict.viewCatalog}
           </Link>
@@ -39,7 +39,7 @@ export function MarcheHero({ store, categories, base, dict }: StoreHeroProps) {
               <Link
                 key={category.id}
                 href={`${base}/produits?categorie=${category.id}`}
-                className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-amber-100"
+                className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-[var(--brand)]/10"
               >
                 {category.name}
               </Link>
@@ -65,7 +65,7 @@ export function MarcheProductGrid({ store, products, base, dict }: StoreProductG
               <li key={product.id}>
                 <Link
                   href={`${base}/produits/${product.id}`}
-                  className="flex items-center gap-4 p-3 hover:bg-amber-50"
+                  className="flex items-center gap-4 p-3 hover:bg-[var(--brand)]/5"
                 >
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100">
                     {product.imageUrl ? (
@@ -83,7 +83,7 @@ export function MarcheProductGrid({ store, products, base, dict }: StoreProductG
                       <p className="text-xs text-gray-500">Vendu au {UNIT_LABELS[product.unit]}</p>
                     )}
                   </div>
-                  <p className="shrink-0 text-lg font-bold text-amber-700">
+                  <p className="shrink-0 text-lg font-bold text-[var(--brand)]">
                     {formatMoney(product.price, store.currency)}
                   </p>
                 </Link>

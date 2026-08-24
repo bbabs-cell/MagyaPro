@@ -204,6 +204,7 @@ function getNavSections(
       title: 'Boutique',
       items: [
         { href: '/boutique/dashboard/produits', label: 'Produits' },
+        { href: '/boutique/dashboard/apparence', label: 'Apparence' },
         { href: '/boutique/dashboard/achats', label: 'Achats' },
         { href: '/boutique/dashboard/lots', label: 'Lots' },
         { href: '/boutique/dashboard/clients', label: 'Clients' },

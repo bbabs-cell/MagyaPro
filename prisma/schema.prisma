@@ -1344,8 +1344,10 @@ model Store {
 
   logoUrl        String?
   coverUrl       String?
+  faviconUrl     String?
   primaryColor   String  @default("#b45309")
   secondaryColor String  @default("#12151a")
+  fontFamily     String  @default("Inter")
   /// Mise en page du site public — voir `StoreTemplate` et
   /// `src/components/site-store/templates/index.tsx`. Un choix par défaut
   /// est suggéré selon `businessType` à l'inscription, mais la boutique peut

@@ -23,7 +23,7 @@ export function CartLink({ host, locale }: { host: string; locale: string }) {
       </svg>
       {dict.cart}
       {count > 0 && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gray-900 px-1 text-xs font-medium text-white">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-xs font-medium text-white">
           {count}
         </span>
       )}

@@ -760,8 +760,15 @@ export const storeLanguageSchema = z.object({
   language: z.enum(['fr', 'en', 'ar']),
 });
 
-export const storeTemplateSchema = z.object({
+/** Identité visuelle du site public d'une boutique — équivalent de `restaurantAppearanceSchema`. */
+export const storeAppearanceSchema = z.object({
   templateKey: z.enum(['classic', 'mode', 'vitrine', 'marche']),
+  primaryColor: hexColorSchema,
+  secondaryColor: hexColorSchema,
+  fontFamily: z.enum(['Inter', 'Poppins', 'Playfair Display', 'DM Sans', 'Space Grotesk']),
+  logoUrl: urlSchema.nullable().optional(),
+  coverUrl: urlSchema.nullable().optional(),
+  faviconUrl: urlSchema.nullable().optional(),
 });
 
 export const storeExpenseSchema = z.object({

@@ -25,7 +25,7 @@ export function ModeHero({ store, categories, base, dict }: StoreHeroProps) {
           )}
           <Link
             href={`${base}/produits`}
-            className="mt-8 inline-flex h-12 items-center rounded-full border border-white/40 px-8 text-sm font-medium tracking-wide hover:bg-white hover:text-black"
+            className="mt-8 inline-flex h-12 items-center rounded-full border border-[var(--brand)] px-8 text-sm font-medium tracking-wide text-white hover:bg-[var(--brand)]"
           >
             {dict.viewCatalog}
           </Link>
@@ -36,7 +36,7 @@ export function ModeHero({ store, categories, base, dict }: StoreHeroProps) {
         <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap justify-center gap-6 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
             {categories.map((category) => (
-              <Link key={category.id} href={`${base}/produits?categorie=${category.id}`} className="hover:text-gray-900">
+              <Link key={category.id} href={`${base}/produits?categorie=${category.id}`} className="hover:text-[var(--brand)]">
                 {category.name}
               </Link>
             ))}
@@ -74,7 +74,7 @@ export function ModeProductGrid({ store, products, base, dict }: StoreProductGri
                   )}
                 </div>
                 <p className="mt-3 text-sm font-medium tracking-wide">{product.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--brand)]">
                   {formatMoney(product.price, store.currency)}
                   {product.unit !== 'UNIT' && <span> / {UNIT_LABELS[product.unit]}</span>}
                 </p>
@@ -85,7 +85,7 @@ export function ModeProductGrid({ store, products, base, dict }: StoreProductGri
             <div className="mt-10 text-center">
               <Link
                 href={`${base}/produits`}
-                className="inline-flex h-11 items-center border-b border-gray-900 text-sm font-medium tracking-wide"
+                className="inline-flex h-11 items-center border-b border-[var(--brand)] text-sm font-medium tracking-wide text-[var(--brand)]"
               >
                 {dict.viewFullCatalog}
               </Link>
