@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
 import { getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tenant';
+import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
 
@@ -30,9 +31,10 @@ export default async function BoutiqueDashboardLayout({
   }
 
   const memberships = context.isSupportAccess ? [] : await listStoreMemberships();
-  const unreadNotifications = await prisma.notification.count({
-    where: { storeId: context.store.id, readAt: null },
-  });
+  const [unreadNotifications, announcements] = await Promise.all([
+    prisma.notification.count({ where: { storeId: context.store.id, readAt: null } }),
+    getActiveAnnouncements('STORE'),
+  ]);
 
   return (
     <DashboardShell
@@ -46,6 +48,7 @@ export default async function BoutiqueDashboardLayout({
       userName={user.name}
       userEmail={user.email}
       isSupportAccess={context.isSupportAccess}
+      announcements={announcements}
     >
       {children}
     </DashboardShell>

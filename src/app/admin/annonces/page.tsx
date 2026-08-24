@@ -20,8 +20,9 @@ export default async function AdminAnnouncementsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Annonces plateforme</h1>
         <p className="mt-1 text-sm text-white/60">
-          Visibles dans le dashboard de tous les restaurants tant qu&apos;elles
-          ne sont pas expirées.
+          Visibles dans le dashboard des restaurants et/ou des boutiques
+          concernés (voir « Destinataires ») tant qu&apos;elles ne sont pas
+          expirées.
         </p>
       </div>
 
@@ -32,6 +33,7 @@ export default async function AdminAnnouncementsPage() {
             title: a.title,
             body: a.body,
             severity: a.severity,
+            audience: a.audience,
             publishedAt: a.publishedAt.toISOString(),
             expiresAt: a.expiresAt?.toISOString() ?? null,
           }))}

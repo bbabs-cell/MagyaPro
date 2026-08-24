@@ -1217,13 +1217,24 @@ enum AnnouncementSeverity {
   CRITICAL
 }
 
-/// Message publié par un Super Admin, visible dans le dashboard de tous les
-/// restaurants tant qu'il est dans sa fenêtre de publication.
+enum AnnouncementAudience {
+  RESTAURANT
+  STORE
+  ALL
+}
+
+/// Message publié par un Super Admin, visible dans le dashboard des
+/// restaurants et/ou des boutiques selon `audience`, tant qu'il est dans sa
+/// fenêtre de publication.
 model PlatformAnnouncement {
   id             String               @id @default(cuid())
   title          String
   body           String
   severity       AnnouncementSeverity @default(INFO)
+  /// À qui l'annonce s'adresse — les deux produits n'ont pas forcément la
+  /// même actualité (ex. une maintenance de la caisse ne concerne pas
+  /// Restaurant).
+  audience       AnnouncementAudience @default(ALL)
   /// Conservé même si le compte administrateur est supprimé.
   createdByEmail String
   publishedAt    DateTime             @default(now())

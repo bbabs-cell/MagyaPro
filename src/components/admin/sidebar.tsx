@@ -114,6 +114,18 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/analytics-boutique',
+    label: 'Analytics Boutique',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 20V10" />
+        <path d="M12 20V4" />
+        <path d="M20 20v-7" />
+        <path d="M17 3l2 2-2 2" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/annonces',
     label: 'Annonces',
     icon: (

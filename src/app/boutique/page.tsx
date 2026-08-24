@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import { boutiqueLandingAssetUrl } from '@/lib/storage';
+
+export const dynamic = 'force-dynamic';
+
 const FEATURES = [
   { title: 'Caisse (POS)', detail: 'Vente rapide, scan code-barres, plusieurs moyens de paiement.' },
   { title: 'Stock en temps réel', detail: 'Chaque mouvement tracé — entrées, sorties, transferts, ruptures.' },
@@ -10,9 +14,24 @@ const FEATURES = [
 ];
 
 export default function BoutiqueLandingPage() {
+  const logoUrl = boutiqueLandingAssetUrl('logo');
+  const coverUrl = boutiqueLandingAssetUrl('cover');
+
   return (
     <div className="container-page py-20 sm:py-28">
+      {coverUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
+        <img
+          src={coverUrl}
+          alt=""
+          className="mx-auto mb-10 h-56 w-full max-w-4xl rounded-3xl object-cover sm:h-72"
+        />
+      )}
       <div className="mx-auto max-w-2xl text-center">
+        {logoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
+          <img src={logoUrl} alt="MagyaPro Boutique" className="mx-auto mb-6 h-14 w-14 object-contain" />
+        )}
         <span className="inline-flex items-center gap-2 rounded-full border border-[#c9a227]/30 bg-[#c9a227]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-[#e0bd52]">
           Bientôt disponible
         </span>

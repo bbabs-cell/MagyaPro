@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 
 type Severity = 'INFO' | 'WARNING' | 'CRITICAL';
+type Audience = 'RESTAURANT' | 'STORE' | 'ALL';
 
 type Announcement = {
   id: string;
   title: string;
   body: string;
   severity: Severity;
+  audience: Audience;
   publishedAt: string;
   expiresAt: string | null;
 };
@@ -20,6 +22,12 @@ const SEVERITY_LABELS: Record<Severity, string> = {
   INFO: 'Information',
   WARNING: 'Avertissement',
   CRITICAL: 'Critique',
+};
+
+const AUDIENCE_LABELS: Record<Audience, string> = {
+  ALL: 'Restaurant + Boutique',
+  RESTAURANT: 'Restaurant uniquement',
+  STORE: 'Boutique uniquement',
 };
 
 const SEVERITY_STYLES: Record<Severity, string> = {
@@ -38,6 +46,7 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [severity, setSeverity] = useState<Severity>('INFO');
+  const [audience, setAudience] = useState<Audience>('ALL');
   const [expiresAt, setExpiresAt] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,12 +60,14 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
         title,
         body,
         severity,
+        audience,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       });
       setAnnouncements((current) => [result.announcement, ...current]);
       setTitle('');
       setBody('');
       setSeverity('INFO');
+      setAudience('ALL');
       setExpiresAt('');
       router.refresh();
     } catch (err) {
@@ -145,6 +156,22 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
           </select>
         </label>
 
+        <label className="block text-sm" htmlFor="ann-audience">
+          Destinataires
+          <select
+            id="ann-audience"
+            value={audience}
+            onChange={(event) => setAudience(event.target.value as Audience)}
+            className={`mt-1 ${inputStyle}`}
+          >
+            {Object.entries(AUDIENCE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="block text-sm" htmlFor="ann-expires">
           Expire le (facultatif)
           <span className="mt-1 block text-xs text-white/50">
@@ -183,6 +210,9 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[announcement.severity]}`}
                     >
                       {SEVERITY_LABELS[announcement.severity]}
+                    </span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                      {AUDIENCE_LABELS[announcement.audience]}
                     </span>
                     {!active && (
                       <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/50">

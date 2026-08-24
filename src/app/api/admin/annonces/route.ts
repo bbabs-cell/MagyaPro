@@ -9,6 +9,7 @@ const announcementSchema = z.object({
   title: z.string().trim().min(3, 'Titre trop court.').max(150),
   body: z.string().trim().min(3, 'Message trop court.').max(1000),
   severity: z.enum(['INFO', 'WARNING', 'CRITICAL']).default('INFO'),
+  audience: z.enum(['RESTAURANT', 'STORE', 'ALL']).default('ALL'),
   expiresAt: z.string().datetime().nullable().optional(),
 });
 
@@ -33,6 +34,7 @@ export const POST = route(async (request) => {
       title: input.title,
       body: input.body,
       severity: input.severity,
+      audience: input.audience,
       createdByEmail: admin.email,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
     },
@@ -45,7 +47,7 @@ export const POST = route(async (request) => {
     targetType: 'announcement',
     targetId: announcement.id,
     ip: await currentClientIp(),
-    metadata: { title: announcement.title, severity: announcement.severity },
+    metadata: { title: announcement.title, severity: announcement.severity, audience: announcement.audience },
   });
 
   return ok({ announcement }, 201);

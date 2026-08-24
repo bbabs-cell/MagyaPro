@@ -247,6 +247,47 @@ export function howItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
   return base ? `${base}/platform/how-it-works-${step}.jpg` : null;
 }
 
+/**
+ * Logo et image de couverture de la page d'accueil de MagyaPro Boutique
+ * (`/boutique`) — asset plateforme distinct du logo Magyapro général
+ * (`platform/logo.png`) et de celui d'une boutique individuelle
+ * (`Store.logoUrl`, propre à chaque tenant) : même logique de clé fixe.
+ */
+export async function uploadBoutiqueLandingAsset(params: {
+  file: File;
+  kind: 'logo' | 'cover';
+}): Promise<StoredFile> {
+  const { file, kind } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  const key = `platform/boutique-landing-${kind}.jpg`;
+  return storage().put(key, buffer, detected);
+}
+
+/** URL publique du logo/couverture de la page d'accueil de MagyaPro Boutique. */
+export function boutiqueLandingAssetUrl(kind: 'logo' | 'cover'): string | null {
+  if (env.storageDriver !== 's3') return null;
+  const base = env.s3PublicBaseUrl;
+  return base ? `${base}/platform/boutique-landing-${kind}.jpg` : null;
+}
+
 /** Formats acceptés pour un son de notification. */
 export const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg'] as const;
 

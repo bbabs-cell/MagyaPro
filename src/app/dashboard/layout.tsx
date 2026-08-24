@@ -47,7 +47,7 @@ export default async function DashboardLayout({
     countNewOrders(context.restaurant.id),
     countPendingAlerts(context.restaurant.id),
     getEntitlements(context.restaurant.id),
-    getActiveAnnouncements(),
+    getActiveAnnouncements('RESTAURANT'),
   ]);
 
   return (

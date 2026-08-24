@@ -10,6 +10,7 @@ import { api } from '@/lib/client/api';
 import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
 import { StoreSwitcher } from '@/components/boutique/store-switcher';
+import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 
 /**
  * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
@@ -239,6 +240,7 @@ export function DashboardShell({
   userName,
   userEmail,
   isSupportAccess = false,
+  announcements = [],
   children,
 }: {
   platformLogoUrl: string | null;
@@ -252,6 +254,7 @@ export function DashboardShell({
   userName: string;
   userEmail: string;
   isSupportAccess?: boolean;
+  announcements?: Array<{ id: string; title: string; body: string; severity: 'INFO' | 'WARNING' | 'CRITICAL' }>;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -355,6 +358,8 @@ export function DashboardShell({
           modifications sont bloquées.
         </div>
       )}
+
+      <AnnouncementBanner announcements={announcements} />
 
       <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
