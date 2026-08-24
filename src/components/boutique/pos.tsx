@@ -60,6 +60,7 @@ export function Pos({
   taxEnabled,
   taxRate,
   paymentMethods,
+  readOnly = false,
 }: {
   storeId: string;
   products: Product[];
@@ -70,6 +71,12 @@ export function Pos({
   taxRate: number;
   /** Moyens de paiement actifs de la boutique — voir `payment-methods.ts`. */
   paymentMethods: PaymentMethodOption[];
+  /**
+   * Visite guidée d'une boutique de démonstration (voir `getDemoTourContext`) :
+   * le panier reste explorable, mais l'encaissement est bloqué avant même
+   * d'appeler l'API — qui le refuserait de toute façon côté serveur.
+   */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -182,6 +189,10 @@ export function Pos({
 
   async function checkout() {
     if (cart.length === 0) return;
+    if (readOnly) {
+      setError('Encaissement désactivé en mode démonstration — explorez librement le panier et le catalogue.');
+      return;
+    }
     setPending(true);
     setError(null);
     setLastReceipt(null);
@@ -471,10 +482,10 @@ export function Pos({
           className="mt-4 w-full"
           size="lg"
           loading={pending}
-          disabled={!canCheckout}
+          disabled={!canCheckout || readOnly}
           onClick={checkout}
         >
-          Encaisser {formatMoney(total, currency)}
+          {readOnly ? 'Encaissement désactivé (démo)' : `Encaisser ${formatMoney(total, currency)}`}
         </Button>
       </Card>
     </div>

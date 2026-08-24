@@ -8,6 +8,7 @@ import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
 import { DEFAULT_LOCALE, dirFor, isLocale } from '@/lib/i18n/locales';
 import { CartProvider } from '@/components/site-store/cart-context';
 import { CartLink } from '@/components/site-store/cart-link';
+import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 
 /**
  * Racine du site public d'une boutique, atteinte soit via
@@ -59,9 +60,12 @@ export default async function StoreSiteLayout({
     <CartProvider storeId={store.id}>
       <div dir={dirFor(locale)} className="min-h-screen bg-white text-gray-900">
         {store.isDemo && (
-          <p className="bg-gray-900 px-4 py-2 text-center text-xs text-white">
-            Boutique de démonstration — les commandes passées ici sont fictives.
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-gray-900 px-4 py-2 text-center text-xs text-white">
+            <span>Boutique de démonstration — les commandes passées ici sont fictives.</span>
+            <DemoTourButton slug={store.slug} className="underline underline-offset-2 hover:text-gray-300">
+              Explorer le tableau de bord
+            </DemoTourButton>
+          </div>
         )}
 
         <header className="border-b border-gray-200">

@@ -178,6 +178,7 @@ function getNavSections(
   canViewAllStores: boolean,
   unreadNotifications: number,
   canManageApi: boolean,
+  isDemoTour: boolean,
 ): Array<{ title: string; items: NavItem[] }> {
   return [
     {
@@ -223,7 +224,9 @@ function getNavSections(
         { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
         ...(canManageApi ? [{ href: '/boutique/dashboard/api-docs', label: 'API' }] : []),
         { href: '/boutique/dashboard/parametres', label: 'Réglages' },
-        { href: '/boutique/dashboard/securite', label: 'Sécurité' },
+        // Réglage personnel du compte connecté — sans objet pour une visite
+        // guidée anonyme, et la page échouerait (elle exige une vraie session).
+        ...(isDemoTour ? [] : [{ href: '/boutique/dashboard/securite', label: 'Sécurité' }]),
       ],
     },
   ];
@@ -240,6 +243,7 @@ export function DashboardShell({
   userName,
   userEmail,
   isSupportAccess = false,
+  isDemoTour = false,
   announcements = [],
   children,
 }: {
@@ -254,6 +258,8 @@ export function DashboardShell({
   userName: string;
   userEmail: string;
   isSupportAccess?: boolean;
+  /** Visite guidée anonyme d'une boutique de démonstration — voir `getDemoTourContext`. */
+  isDemoTour?: boolean;
   announcements?: Array<{ id: string; title: string; body: string; severity: 'INFO' | 'WARNING' | 'CRITICAL' }>;
   children: React.ReactNode;
 }) {
@@ -262,11 +268,17 @@ export function DashboardShell({
   const [menuOpen, setMenuOpen] = useState(false);
   const canViewAllStores =
     stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
-  const navSections = getNavSections(canViewAllStores, unreadNotifications, canManageApi);
+  const navSections = getNavSections(canViewAllStores, unreadNotifications, canManageApi, isDemoTour);
 
   async function handleEndSupport() {
     await api.post('/api/admin/boutique-support-access/fin');
     router.replace('/admin');
+    router.refresh();
+  }
+
+  async function handleEndDemoTour() {
+    await api.delete('/api/public/boutique/demo-tour');
+    router.replace('/boutique');
     router.refresh();
   }
 
@@ -352,6 +364,16 @@ export function DashboardShell({
         </div>
       )}
 
+      {isDemoTour && (
+        <div className="bg-[#e0bd52] px-4 py-2 text-center text-sm font-medium text-[#1c1712]">
+          Visite guidée de « {storeName} » — consultation uniquement, aucune vente ni
+          modification n&apos;est enregistrée.{' '}
+          <button type="button" onClick={handleEndDemoTour} className="underline underline-offset-2">
+            Quitter la démonstration
+          </button>
+        </div>
+      )}
+
       {storeStatus === 'SUSPENDED' && (
         <div role="alert" className="bg-red-600 px-4 py-2 text-center text-sm text-white">
           Cette boutique est suspendue : son site public est hors ligne et les
@@ -414,10 +436,10 @@ export function DashboardShell({
         {navigation}
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={isDemoTour ? handleEndDemoTour : handleLogout}
           className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
         >
-          Se déconnecter
+          {isDemoTour ? 'Quitter la démonstration' : 'Se déconnecter'}
         </button>
       </div>
 
@@ -449,10 +471,10 @@ export function DashboardShell({
 
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={isDemoTour ? handleEndDemoTour : handleLogout}
                 className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
               >
-                Se déconnecter
+                {isDemoTour ? 'Quitter la démonstration' : 'Se déconnecter'}
               </button>
             </div>
           </div>

@@ -11,6 +11,7 @@ import {
 } from '@/lib/storage';
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 
 const SECTOR_LABELS: Record<string, string> = {
   CLOTHING: 'Habillement',
@@ -410,10 +411,9 @@ export default async function BoutiqueLandingPage() {
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {demos.map((demo) => (
-              <Link
+              <div
                 key={demo.slug}
-                href={`/s/${demo.slug}`}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-6 transition-all hover:-translate-y-1 hover:border-white/20"
+                className="rounded-2xl border border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20"
               >
                 <span
                   aria-hidden="true"
@@ -425,11 +425,21 @@ export default async function BoutiqueLandingPage() {
                 {demo.description && (
                   <p className="mt-1.5 line-clamp-2 text-sm text-[#f3ece1]/60">{demo.description}</p>
                 )}
-                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-[#e0bd52]">
-                  Voir la boutique
-                  <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
-                </p>
-              </Link>
+                <div className="mt-4 space-y-2">
+                  <Link
+                    href={`/s/${demo.slug}`}
+                    className="block rounded-lg border border-white/15 px-3 py-2 text-center text-sm font-medium text-[#f3ece1] transition-colors hover:bg-white/10"
+                  >
+                    Voir la boutique
+                  </Link>
+                  <DemoTourButton
+                    slug={demo.slug}
+                    className="block w-full rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-3 py-2 text-center text-sm font-semibold text-[#1c1712] transition-transform hover:scale-[1.02] disabled:opacity-60"
+                  >
+                    Explorer le tableau de bord
+                  </DemoTourButton>
+                </div>
+              </div>
             ))}
           </div>
         </section>

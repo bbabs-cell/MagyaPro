@@ -66,7 +66,10 @@ export default async function BoutiqueCaissePage() {
 
   return (
     <>
-      <PageHeader title="Caisse" description="Enregistrez une vente." />
+      <PageHeader
+        title="Caisse"
+        description={context.isDemoTour ? 'Consultation uniquement — encaissement désactivé en mode démonstration.' : 'Enregistrez une vente.'}
+      />
 
       <OfflineSyncBar storeId={context.store.id} />
 
@@ -91,6 +94,7 @@ export default async function BoutiqueCaissePage() {
           taxEnabled={context.store.taxEnabled}
           taxRate={context.store.taxRate}
           paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
+          readOnly={context.isDemoTour}
         />
       )}
     </>

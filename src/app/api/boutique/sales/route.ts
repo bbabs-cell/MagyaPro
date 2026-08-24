@@ -4,6 +4,7 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import { createSale } from '@/lib/boutique/sales-service';
 import { storeSaleSchema } from '@/lib/validation';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
+import { ForbiddenError } from '@/lib/errors';
 
 export const GET = route(async () => {
   const { store } = await requireStore('sales:view');
@@ -23,6 +24,14 @@ export const GET = route(async () => {
 
 export const POST = route(async (request) => {
   const context = await requireStore('pos:access');
+
+  // La visite guidée d'une boutique de démonstration donne accès en
+  // consultation à la caisse (voir `getDemoTourContext`), jamais à
+  // l'enregistrement d'une vente réelle.
+  if (context.isDemoTour) {
+    throw new ForbiddenError('Encaissement désactivé en mode démonstration.');
+  }
+
   await hit(`boutique-sales:${context.store.id}`, RATE_LIMITS.checkout);
 
   const input = parseOrThrow(storeSaleSchema, await readJson(request));

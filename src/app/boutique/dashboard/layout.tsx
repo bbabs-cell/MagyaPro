@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth/session';
-import { getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tenant';
+import { getDemoTourContext, getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tenant';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
@@ -20,7 +20,37 @@ export default async function BoutiqueDashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
-  if (!user) redirect('/boutique/connexion');
+
+  if (!user) {
+    // Aucune session : seule une visite guidée d'une boutique de
+    // démonstration est acceptée ici (voir `getDemoTourContext`) — tout
+    // autre visiteur anonyme repart vers la connexion.
+    const demoContext = await getDemoTourContext();
+    if (!demoContext) redirect('/boutique/connexion');
+
+    const unreadNotifications = await prisma.notification.count({
+      where: { storeId: demoContext.store.id, readAt: null },
+    });
+
+    return (
+      <DashboardShell
+        platformLogoUrl={platformLogoUrl()}
+        storeId={demoContext.store.id}
+        storeName={demoContext.store.name}
+        storeStatus={demoContext.store.status}
+        stores={[]}
+        unreadNotifications={unreadNotifications}
+        canManageApi={false}
+        userName={demoContext.user.name}
+        userEmail={demoContext.user.email}
+        isSupportAccess={false}
+        isDemoTour
+        announcements={[]}
+      >
+        {children}
+      </DashboardShell>
+    );
+  }
 
   // `getStoreContext`/`listStoreMemberships` sont mémorisées par requête
   // (`cache()`) et n'ont pas de dépendance l'une envers l'autre — les lancer
