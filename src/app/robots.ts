@@ -27,6 +27,13 @@ export default function robots(): MetadataRoute.Robots {
         // Les aperçus de sites sous /r/ dupliqueraient le contenu servi sur
         // les domaines propres des restaurants.
         '/r/',
+        '/boutique/dashboard',
+        '/boutique/connexion',
+        '/boutique/inscription',
+        '/boutique/bienvenue',
+        // Le site public d'une boutique a son propre robots.txt, servi sur son
+        // propre domaine/chemin — même logique que /r/ pour Restaurant.
+        '/s/',
       ],
     },
     sitemap: `${env.appUrl}/sitemap.xml`,

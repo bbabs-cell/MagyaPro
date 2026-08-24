@@ -1,18 +1,17 @@
 import Link from 'next/link';
 
+import { getCurrentUser } from '@/lib/auth/session';
+import { LinkButton } from '@/components/ui';
 import { Logo, LogoMark } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
 import { CookieConsent } from '@/components/site/cookie-consent';
 
-/**
- * Chrome minimal du hub (`/`) et des pages légales (`/mentions-legales`,
- * `/conditions-generales`, `/confidentialite`) — communes aux deux produits,
- * donc sans nav ni CTA propres à l'un ou l'autre. Chaque produit a sa propre
- * vitrine complète, avec sa propre identité visuelle et son propre en-tête :
- * `/restaurant` (voir `restaurant/layout.tsx`) et `/boutique`
- * (`src/app/boutique/layout.tsx`).
- */
-export default function HubLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await getCurrentUser();
   const logoUrl = platformLogoUrl();
 
   return (
@@ -22,9 +21,43 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
           className="container-page flex h-16 items-center justify-between"
           aria-label="Navigation principale"
         >
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/restaurant" className="flex items-center gap-2">
             <Logo src={logoUrl} />
           </Link>
+
+          <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
+            <Link href="/restaurant#fonctionnalites" className="hover:text-ink">Fonctionnalités</Link>
+            <Link href="/restaurant#fonctionnement" className="hover:text-ink">Fonctionnement</Link>
+            <Link href="/restaurant#templates" className="hover:text-ink">Templates</Link>
+            <Link href="/restaurant/tarifs" className="hover:text-ink">Tarifs</Link>
+            <Link href="/restaurant#faq" className="hover:text-ink">FAQ</Link>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/boutique"
+              className="hidden px-3 py-2 text-sm text-ink-muted hover:text-ink lg:block"
+            >
+              Vous gérez une boutique ?
+            </Link>
+            {user ? (
+              <LinkButton href="/dashboard" size="sm">
+                Mon tableau de bord
+              </LinkButton>
+            ) : (
+              <>
+                <Link
+                  href="/connexion"
+                  className="hidden px-3 py-2 text-sm text-ink-muted hover:text-ink sm:block"
+                >
+                  Se connecter
+                </Link>
+                <LinkButton href="/inscription" size="sm">
+                  Commencer
+                </LinkButton>
+              </>
+            )}
+          </div>
         </nav>
       </header>
 
@@ -46,12 +79,14 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
                 <p className="font-semibold">Magyapro</p>
               </span>
               <p className="mt-1 text-sm text-ink-muted">
-                Deux produits, une même plateforme : Restaurant et Boutique.
+                La présence en ligne des restaurants, sans complexité technique.
               </p>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
-              <Link href="/restaurant" className="hover:text-ink">MagyaPro Restaurant</Link>
-              <Link href="/boutique" className="hover:text-ink">MagyaPro Boutique</Link>
+              <Link href="/restaurant#fonctionnalites" className="hover:text-ink">Fonctionnalités</Link>
+              <Link href="/restaurant/tarifs" className="hover:text-ink">Tarifs</Link>
+              <Link href="/restaurant#faq" className="hover:text-ink">FAQ</Link>
+              <Link href="/connexion" className="hover:text-ink">Connexion</Link>
             </div>
           </div>
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

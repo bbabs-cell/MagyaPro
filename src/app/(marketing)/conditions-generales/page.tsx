@@ -39,7 +39,7 @@ export default function ConditionsGeneralesPage() {
               Chaque compte démarre par une période d&apos;essai. Au-delà,
               l&apos;accès aux fonctionnalités dépend du plan souscrit,
               payable selon les modalités indiquées sur la page{' '}
-              <a href="/tarifs" className="underline underline-offset-4">
+              <a href="/restaurant/tarifs" className="underline underline-offset-4">
                 Tarifs
               </a>
               . Le restaurateur peut changer de plan ou résilier à tout

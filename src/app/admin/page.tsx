@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformMetrics } from '@/lib/analytics';
+import { getPlatformStoreMetrics } from '@/lib/boutique/platform-analytics';
 import { formatMoney } from '@/lib/money';
 
 export const metadata: Metadata = { title: 'Administration' };
@@ -86,8 +87,9 @@ const STAT_ICONS = {
 export default async function AdminDashboardPage() {
   await requireSuperAdmin();
 
-  const [metrics, recentRestaurants, recentLogs] = await Promise.all([
+  const [metrics, storeMetrics, recentRestaurants, recentStores, recentLogs] = await Promise.all([
     getPlatformMetrics(),
+    getPlatformStoreMetrics(),
     prisma.restaurant.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
@@ -99,6 +101,19 @@ export default async function AdminDashboardPage() {
         createdAt: true,
         isDemo: true,
         _count: { select: { orders: true } },
+      },
+    }),
+    prisma.store.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        isDemo: true,
+        _count: { select: { sales: true } },
       },
     }),
     prisma.auditLog.findMany({
@@ -117,8 +132,10 @@ export default async function AdminDashboardPage() {
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
       <p className="mt-1 text-sm text-white/60">
-        État de la plateforme, tous restaurants confondus.
+        État de la plateforme — MagyaPro Restaurant et MagyaPro Boutique.
       </p>
+
+      <h2 className="mt-6 text-lg font-semibold tracking-tight">MagyaPro Restaurant</h2>
 
       <section
         aria-label="Indicateurs de la plateforme"
@@ -173,7 +190,111 @@ export default async function AdminDashboardPage() {
         abonnements.
       </p>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+      <h2 className="mt-10 text-lg font-semibold tracking-tight">MagyaPro Boutique</h2>
+      <p className="mt-1 text-sm text-white/60">État de la plateforme, toutes boutiques confondues.</p>
+
+      <section
+        aria-label="Indicateurs Boutique de la plateforme"
+        className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <AdminStat label="Boutiques" value={String(storeMetrics.stores)} icon={STAT_ICONS.restaurants} />
+        <AdminStat
+          label="Actives"
+          value={String(storeMetrics.activeStores)}
+          icon={STAT_ICONS.active}
+          tone="success"
+          hint={`${storeMetrics.suspendedStores} suspendue${storeMetrics.suspendedStores > 1 ? 's' : ''}`}
+        />
+        <AdminStat
+          label="Nouvelles (30 j)"
+          value={String(storeMetrics.newStores)}
+          icon={STAT_ICONS.new}
+          hint="Boutiques créées"
+        />
+        <AdminStat label="Ventes" value={String(storeMetrics.sales)} icon={STAT_ICONS.orders} />
+        <AdminStat
+          label="Volume traité"
+          value={formatMoney(storeMetrics.grossVolume, 'XOF')}
+          icon={STAT_ICONS.volume}
+          tone="success"
+          hint="Toutes ventes, hors annulées"
+        />
+        <AdminStat
+          label="Abonnements actifs"
+          icon={STAT_ICONS.active_subs}
+          tone="success"
+          value={String(
+            (storeMetrics.subscriptionsByStatus.ACTIVE ?? 0) +
+              (storeMetrics.subscriptionsByStatus.TRIALING ?? 0),
+          )}
+        />
+        <AdminStat
+          label="Abonnements expirés"
+          icon={STAT_ICONS.expired_subs}
+          tone="danger"
+          value={String(
+            (storeMetrics.subscriptionsByStatus.EXPIRED ?? 0) +
+              (storeMetrics.subscriptionsByStatus.CANCELLED ?? 0),
+          )}
+        />
+      </section>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="dernieres-boutiques">
+          <div className="flex items-center justify-between">
+            <h2 id="dernieres-boutiques" className="text-sm font-medium">
+              Dernières boutiques
+            </h2>
+            <Link
+              href="/admin/boutiques"
+              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+            >
+              Tout voir
+            </Link>
+          </div>
+
+          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+            {recentStores.length === 0 && (
+              <li className="p-3.5 text-sm text-white/50">Aucune boutique pour le moment.</li>
+            )}
+            {recentStores.map((store) => (
+              <li key={store.id}>
+                <Link
+                  href={`/admin/boutiques/${store.id}`}
+                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-white/5"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">
+                      {store.name}
+                      {store.isDemo && <span className="ml-2 text-xs text-white/40">démo</span>}
+                    </span>
+                    <span className="block truncate text-xs text-white/50">
+                      {store.slug} · {store._count.sales} vente{store._count.sales > 1 ? 's' : ''}
+                    </span>
+                  </span>
+                  <StatusPill status={store.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby="abonnements-boutique">
+          <h2 id="abonnements-boutique" className="text-sm font-medium">
+            Répartition des abonnements Boutique
+          </h2>
+          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
+            {Object.entries(SUBSCRIPTION_LABELS).map(([key, label]) => (
+              <li key={key} className="flex justify-between text-sm">
+                <span className="text-white/60">{label}</span>
+                <span className="font-medium">{storeMetrics.subscriptionsByStatus[key] ?? 0}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="mt-10 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="derniers-restaurants">
           <div className="flex items-center justify-between">
             <h2 id="derniers-restaurants" className="text-sm font-medium">
