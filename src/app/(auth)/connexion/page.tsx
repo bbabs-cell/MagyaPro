@@ -21,7 +21,7 @@ export default async function LoginPage() {
         Accédez à votre tableau de bord.
       </p>
 
-      <LoginForm turnstileSiteKey={env.turnstileSiteKey ?? null} />
+      <LoginForm turnstileSiteKey={env.turnstileSiteKey ?? null} product="restaurant" />
 
       <p className="mt-6 text-center text-sm text-ink-muted">
         Pas encore de compte ?{' '}

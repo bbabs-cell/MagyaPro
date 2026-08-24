@@ -106,6 +106,12 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Mot de passe requis.').max(200),
   turnstileToken: z.string().max(4000).optional(),
+  // Indique explicitement quelle page de connexion a été utilisée : l'en-tête
+  // Host seul ne suffit pas à le déduire, /boutique/connexion restant
+  // accessible aussi bien depuis boutique.magyapro.com que depuis le domaine
+  // racine (voir le middleware) — s'y fier aurait mené à la mauvaise
+  // destination selon l'hôte utilisé plutôt que la page réellement soumise.
+  product: z.enum(['restaurant', 'boutique']),
 });
 
 export const forgotPasswordSchema = z.object({ email: emailSchema });

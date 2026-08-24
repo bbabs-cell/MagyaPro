@@ -13,7 +13,7 @@ const TWO_FACTOR_PENDING_TTL_MINUTES = 5;
 export const POST = route(async (request) => {
   const headerList = await headers();
   const ip = clientIp(headerList) ?? 'inconnu';
-  const { turnstileToken, ...input } = parseOrThrow(loginSchema, await readJson(request));
+  const { turnstileToken, product, ...input } = parseOrThrow(loginSchema, await readJson(request));
 
   // Deux compteurs : par IP contre le balayage de comptes, par email contre le
   // bourrage ciblé d'un compte depuis plusieurs adresses.
@@ -26,17 +26,11 @@ export const POST = route(async (request) => {
   await reset(`login:ip:${ip}`);
   await reset(`login:email:${input.email}`);
 
-  // La destination dépend du produit d'où vient la connexion (l'hôte de la
-  // requête) : se fier à l'hôte plutôt qu'à la seule présence d'une adhésion
-  // Restaurant ou Boutique — un compte peut un jour posséder les deux, et
-  // c'est la page de connexion utilisée qui indique l'intention.
-  const host = (headerList.get('host') ?? '').split(':')[0]!.toLowerCase();
-
   // Calculé — et donc refusé s'il y a lieu — avant toute création de session
-  // ou de jeton 2FA : un compte sans adhésion sur le produit visé par cet
-  // hôte (ex. un compte Restaurant sur boutique.magyapro.com) ne doit jamais
-  // se retrouver avec une session ouverte pour un tableau de bord inexistant.
-  const redirectTo = await resolveLoginRedirect(user, host);
+  // ou de jeton 2FA : un compte sans adhésion sur le produit visé par la page
+  // de connexion soumise (`product`) ne doit jamais se retrouver avec une
+  // session ouverte pour un tableau de bord inexistant.
+  const redirectTo = await resolveLoginRedirect(user, product);
 
   // Mot de passe validé, mais pas de session tant que le second facteur
   // n'est pas passé : un jeton de courte durée porte la suite jusqu'à

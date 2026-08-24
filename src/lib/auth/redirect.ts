@@ -1,27 +1,29 @@
 import { prisma } from '@/lib/db';
-import { rootHostname } from '@/lib/env';
 import { ForbiddenError } from '@/lib/errors';
 import type { User } from '@prisma/client';
 
+export type LoginProduct = 'restaurant' | 'boutique';
+
 /**
- * Destination après connexion — dépend du produit d'où vient la requête
- * (l'hôte) et de l'état du compte sur ce produit. Partagée entre la
- * connexion directe (`/api/auth/login`) et la validation du second facteur
- * (`/api/auth/2fa/verify-login`), qui doivent aboutir exactement au même
- * endroit une fois l'utilisateur authentifié.
+ * Destination après connexion — dépend du produit dont la page de connexion
+ * a été soumise, indiqué explicitement par le client plutôt que déduit de
+ * l'en-tête Host : `/boutique/connexion` reste accessible aussi bien depuis
+ * boutique.magyapro.com que depuis le domaine racine (voir le middleware),
+ * donc l'hôte seul ne dit pas de façon fiable quelle page a servi. Partagée
+ * entre la connexion directe (`/api/auth/login`) et la validation du second
+ * facteur (`/api/auth/2fa/verify-login`), qui doivent aboutir exactement au
+ * même endroit une fois l'utilisateur authentifié.
  *
- * Un compte sans adhésion sur le produit visé par l'hôte (ex. un compte
- * Restaurant qui se connecte sur boutique.magyapro.com) est refusé ici plutôt
- * que renvoyé vers un tableau de bord vide : ce dashboard le redirigerait
+ * Un compte sans adhésion sur le produit visé (ex. un compte Restaurant
+ * soumis depuis la page de connexion Boutique) est refusé ici plutôt que
+ * renvoyé vers un tableau de bord vide : ce dashboard le redirigerait
  * lui-même vers l'onboarding, qui le renverrait vers la connexion — une
  * boucle infinie côté client, sans session valable pour en sortir.
  */
-export async function resolveLoginRedirect(user: User, host: string): Promise<string> {
-  const isBoutiqueHost = host === `boutique.${rootHostname()}`;
-
+export async function resolveLoginRedirect(user: User, product: LoginProduct): Promise<string> {
   if (user.platformRole === 'SUPER_ADMIN') return '/admin';
 
-  if (isBoutiqueHost) {
+  if (product === 'boutique') {
     const membership = await prisma.storeUser.findFirst({
       where: { userId: user.id },
       select: { store: { select: { onboardingCompletedAt: true } } },

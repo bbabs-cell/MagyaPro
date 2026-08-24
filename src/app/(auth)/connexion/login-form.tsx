@@ -7,7 +7,14 @@ import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
 import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 
-export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | null }) {
+export function LoginForm({
+  turnstileSiteKey,
+  product,
+}: {
+  turnstileSiteKey: string | null;
+  /** Quelle page de connexion c'est — voir la note dans `resolveLoginRedirect`. */
+  product: 'restaurant' | 'boutique';
+}) {
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -31,6 +38,7 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | nul
           email: String(formData.get('email') ?? ''),
           password: String(formData.get('password') ?? ''),
           turnstileToken: turnstileToken ?? undefined,
+          product,
         },
       );
       if (result.requiresTotp && result.pendingToken) {
@@ -63,6 +71,7 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | nul
       const result = await api.post<{ redirectTo: string }>('/api/auth/2fa/verify-login', {
         pendingToken,
         code,
+        product,
       });
       window.location.assign(result.redirectTo);
     } catch (error) {
