@@ -163,6 +163,120 @@ export async function addMember(
   return { user, membership };
 }
 
+export type TestStore = Awaited<ReturnType<typeof createTestStore>>;
+
+/**
+ * Crée une boutique complète : propriétaire, entrepôt par défaut, catégorie,
+ * produit avec une variante en stock, et un code promo. Décor minimal pour
+ * tester une vente de bout en bout (`createSale`).
+ */
+export async function createTestStore(options?: {
+  name?: string;
+  status?: 'DRAFT' | 'ACTIVE' | 'SUSPENDED';
+  currency?: string;
+  variantPrice?: number;
+  variantCost?: number;
+  initialStock?: number;
+  taxEnabled?: boolean;
+  taxRate?: number;
+}) {
+  const slug = unique('boutique');
+  const passwordHash = await hashPassword('MotDePasse!2345');
+
+  const owner = await prisma.user.create({
+    data: {
+      email: `${slug}@test.magyapro`,
+      name: `Propriétaire ${slug}`,
+      passwordHash,
+      emailVerifiedAt: new Date(),
+    },
+  });
+
+  const store = await prisma.store.create({
+    data: {
+      slug,
+      name: options?.name ?? `Boutique ${slug}`,
+      status: options?.status ?? 'ACTIVE',
+      currency: options?.currency ?? 'XOF',
+      taxEnabled: options?.taxEnabled ?? false,
+      taxRate: options?.taxRate ?? 0,
+      onboardingCompletedAt: new Date(),
+      members: { create: { userId: owner.id, role: 'OWNER' } },
+    },
+  });
+
+  const warehouse = await prisma.warehouse.create({
+    data: { storeId: store.id, name: 'Entrepôt principal', isDefault: true },
+  });
+
+  const category = await prisma.storeCategory.create({
+    data: { storeId: store.id, name: 'Catégorie test', position: 0 },
+  });
+
+  const product = await prisma.storeProduct.create({
+    data: {
+      storeId: store.id,
+      categoryId: category.id,
+      name: 'Produit test',
+      status: 'ACTIVE',
+      minStockAlert: 5,
+      variants: {
+        create: [
+          {
+            price: options?.variantPrice ?? 5000,
+            cost: options?.variantCost ?? 3000,
+            isActive: true,
+          },
+        ],
+      },
+    },
+    include: { variants: true },
+  });
+  const variant = product.variants[0]!;
+
+  await prisma.inventory.create({
+    data: {
+      productVariantId: variant.id,
+      warehouseId: warehouse.id,
+      quantity: options?.initialStock ?? 20,
+    },
+  });
+
+  const promotion = await prisma.storePromotion.create({
+    data: {
+      storeId: store.id,
+      code: 'TEST10',
+      type: 'PERCENT',
+      value: 10,
+      minCartAmount: 0,
+    },
+  });
+
+  return { store, owner, warehouse, category, product, variant, promotion };
+}
+
+/** Ajoute un membre à la boutique, avec le rôle et les permissions voulus. */
+export async function addStoreMember(
+  storeId: string,
+  role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'SALESPERSON' | 'STOCK_MANAGER' | 'ACCOUNTANT',
+  extraPermissions: string[] = [],
+) {
+  const slug = unique('membre-boutique');
+  const user = await prisma.user.create({
+    data: {
+      email: `${slug}@test.magyapro`,
+      name: `Membre ${slug}`,
+      passwordHash: await hashPassword('MotDePasse!2345'),
+    },
+  });
+
+  const membership = await prisma.storeUser.create({
+    data: { storeId, userId: user.id, role, extraPermissions },
+  });
+
+  return { user, membership };
+}
+
 /**
  * Vide toutes les tables.
  *
