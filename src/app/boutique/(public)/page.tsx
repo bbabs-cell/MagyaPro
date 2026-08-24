@@ -12,7 +12,7 @@ import {
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 
-const SECTOR_LABELS: Record<(typeof BOUTIQUE_SECTORS)[number], string> = {
+const SECTOR_LABELS: Record<string, string> = {
   CLOTHING: 'Habillement',
   ELECTRONICS: 'Électronique',
   COSMETICS: 'Cosmétique',
@@ -103,9 +103,14 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
 };
 
 export default async function BoutiqueLandingPage() {
-  const [plans, promo] = await Promise.all([
+  const [plans, promo, demos] = await Promise.all([
     prisma.plan.findMany({ where: { isActive: true, product: 'STORE' }, orderBy: { position: 'asc' } }),
     getActivePromo(),
+    prisma.store.findMany({
+      where: { isDemo: true, status: 'ACTIVE' },
+      select: { name: true, slug: true, description: true, businessType: true, primaryColor: true },
+      orderBy: { createdAt: 'asc' },
+    }),
   ]);
 
   const logoUrl = boutiqueLandingAssetUrl();
@@ -172,6 +177,14 @@ export default async function BoutiqueLandingPage() {
               >
                 Découvrir MagyaPro Boutique
               </Link>
+              {demos.length > 0 && (
+                <Link
+                  href={`/s/${demos[0]!.slug}`}
+                  className="inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-sm font-medium text-[#f3ece1]/70 underline underline-offset-4 transition-colors hover:text-[#f3ece1] sm:w-auto"
+                >
+                  Voir une démo
+                </Link>
+              )}
             </div>
             <p className="mt-5 text-xs text-[#f3ece1]/50">
               Sans carte bancaire · Sans engagement · Votre boutique en ligne en quelques minutes
@@ -381,6 +394,46 @@ export default async function BoutiqueLandingPage() {
           </div>
         </div>
       </section>
+
+      {/* --------------------------------------------------------- Démonstrations */}
+      {demos.length > 0 && (
+        <section className="container-page py-16 sm:py-24">
+          <div className="max-w-2xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Exemples</span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+              Voir MagyaPro Boutique en situation
+            </h2>
+            <p className="mt-3 text-[#f3ece1]/60">
+              Ces boutiques sont des exemples créés pour la démonstration. Elles fonctionnent
+              exactement comme la vôtre fonctionnera.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {demos.map((demo) => (
+              <Link
+                key={demo.slug}
+                href={`/s/${demo.slug}`}
+                className="group rounded-2xl border border-white/10 bg-white/5 p-6 transition-all hover:-translate-y-1 hover:border-white/20"
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-10 w-10 rounded-xl shadow-sm"
+                  style={{ backgroundColor: demo.primaryColor }}
+                />
+                <h3 className="mt-4 font-semibold text-[#f3ece1]">{demo.name}</h3>
+                <p className="mt-0.5 text-xs text-[#f3ece1]/50">{SECTOR_LABELS[demo.businessType] ?? demo.businessType}</p>
+                {demo.description && (
+                  <p className="mt-1.5 line-clamp-2 text-sm text-[#f3ece1]/60">{demo.description}</p>
+                )}
+                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-[#e0bd52]">
+                  Voir la boutique
+                  <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ---------------------------------------------------------------- Tarifs */}
       <section id="tarifs" className="border-y border-white/10 bg-black/20">

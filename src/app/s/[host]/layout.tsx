@@ -58,6 +58,12 @@ export default async function StoreSiteLayout({
   return (
     <CartProvider storeId={store.id}>
       <div dir={dirFor(locale)} className="min-h-screen bg-white text-gray-900">
+        {store.isDemo && (
+          <p className="bg-gray-900 px-4 py-2 text-center text-xs text-white">
+            Boutique de démonstration — les commandes passées ici sont fictives.
+          </p>
+        )}
+
         <header className="border-b border-gray-200">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <Link href={base || '/'} className="flex items-center gap-2.5">
