@@ -1,5 +1,5 @@
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
-import { dirname, join, normalize } from 'node:path';
+import { dirname, join, normalize, sep } from 'node:path';
 
 import { env } from '@/lib/env';
 import type { StorageDriver, StoredFile } from '@/lib/storage/types';
@@ -22,7 +22,10 @@ const PUBLIC_PREFIX = '/uploads';
 function safePath(key: string): string {
   const normalized = normalize(key).replace(/^(\.\.(\/|\\|$))+/, '');
   const resolved = join(UPLOAD_ROOT, normalized);
-  if (!resolved.startsWith(UPLOAD_ROOT)) {
+  // Comparaison bornée au séparateur de chemin, pas un simple préfixe de
+  // texte : sans cela, un répertoire frère comme `uploads-evil` passerait le
+  // contrôle puisqu'il « commence par » `.../uploads` en tant que chaîne.
+  if (resolved !== UPLOAD_ROOT && !resolved.startsWith(UPLOAD_ROOT + sep)) {
     throw new Error('Clé de stockage invalide.');
   }
   return resolved;

@@ -278,10 +278,17 @@ export async function disableTwoFactor(userId: string, password: string): Promis
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) throw new UnauthorizedError('Mot de passe incorrect.');
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { totpEnabled: false, totpSecret: null, totpBackupCodes: [] },
-  });
+  // Comme pour `resetPassword` : baisser la protection du compte doit
+  // invalider toute session déjà ouverte ailleurs (poste public oublié,
+  // appareil volé) — sans quoi une session existante conserverait un accès
+  // que le titulaire du compte vient précisément de vouloir restreindre.
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { totpEnabled: false, totpSecret: null, totpBackupCodes: [] },
+    }),
+    prisma.session.deleteMany({ where: { userId } }),
+  ]);
 
   await recordAudit({
     action: AUDIT_ACTIONS.USER_TWO_FACTOR_DISABLED,
