@@ -1021,6 +1021,26 @@ model Template {
   @@map("templates")
 }
 
+/// Registre des mises en page du site public MagyaPro Boutique — équivalent
+/// de `Template` (Restaurant), table séparée puisque les deux produits n'ont
+/// ni le même rendu ni le même cycle de vie de mise en page. Purement un
+/// registre d'affichage : le rendu réel vit dans le code
+/// (`src/components/site-store/templates/index.tsx`), jamais en base.
+model StoreTemplate {
+  id              String  @id @default(cuid())
+  key             String  @unique
+  name            String
+  description     String?
+  previewImageUrl String?
+  isActive        Boolean @default(true)
+  position        Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("store_templates")
+}
+
 enum DomainType {
   SUBDOMAIN
   CUSTOM
@@ -1326,6 +1346,11 @@ model Store {
   coverUrl       String?
   primaryColor   String  @default("#b45309")
   secondaryColor String  @default("#12151a")
+  /// Mise en page du site public — voir `StoreTemplate` et
+  /// `src/components/site-store/templates/index.tsx`. Un choix par défaut
+  /// est suggéré selon `businessType` à l'inscription, mais la boutique peut
+  /// en choisir un autre à tout moment depuis ses réglages.
+  templateKey    String  @default("classic")
 
   phone       String?
   email       String?

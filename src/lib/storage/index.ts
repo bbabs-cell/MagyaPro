@@ -172,6 +172,47 @@ export function templatePreviewUrl(templateKey: string): string | null {
 }
 
 /**
+ * Vignette d'aperçu d'un template MagyaPro Boutique — même logique que
+ * `uploadTemplatePreview`/`templatePreviewUrl` (Restaurant), namespace de
+ * clé distinct pour ne jamais entrer en collision avec un template
+ * Restaurant qui partagerait la même clé.
+ */
+export async function uploadStoreTemplatePreview(params: {
+  file: File;
+  templateKey: string;
+}): Promise<StoredFile> {
+  const { file, templateKey } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new ValidationError(
+      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectImageType(buffer);
+
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
+    throw new ValidationError(
+      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
+    );
+  }
+
+  const key = `store-templates/${templateKey}.jpg`;
+  return storage().put(key, buffer, detected);
+}
+
+/** URL publique de la vignette d'aperçu d'un template Boutique. */
+export function storeTemplatePreviewUrl(templateKey: string): string | null {
+  if (env.storageDriver !== 's3') return null;
+  const base = env.s3PublicBaseUrl;
+  return base ? `${base}/store-templates/${templateKey}.jpg` : null;
+}
+
+/**
  * Logo de la plateforme (pas d'un tenant) : même logique de clé fixe que les
  * vignettes de template, pour qu'un nouvel envoi écrase l'ancien à la même
  * URL sans rien recâbler ailleurs.

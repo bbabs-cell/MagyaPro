@@ -27,6 +27,7 @@ const storeSelect = {
   coverUrl: true,
   primaryColor: true,
   secondaryColor: true,
+  templateKey: true,
   phone: true,
   email: true,
   addressLine: true,

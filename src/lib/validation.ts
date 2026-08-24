@@ -754,6 +754,10 @@ export const storeLanguageSchema = z.object({
   language: z.enum(['fr', 'en', 'ar']),
 });
 
+export const storeTemplateSchema = z.object({
+  templateKey: z.enum(['classic', 'mode', 'vitrine', 'marche']),
+});
+
 export const storeExpenseSchema = z.object({
   label: z.string().trim().min(1, 'Indiquez un libellé.').max(200),
   amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),

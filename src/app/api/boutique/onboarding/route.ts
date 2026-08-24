@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { SUGGESTED_TEMPLATE_BY_SECTOR } from '@/lib/boutique/store-templates';
 
 const businessTypes = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'OTHER'] as const;
 
@@ -34,6 +35,9 @@ export const POST = route(async (request) => {
       addressLine: input.addressLine,
       city: input.city,
       currency: input.currency.toUpperCase(),
+      // Suggestion de départ selon le secteur — modifiable à tout moment
+      // depuis les réglages, jamais imposée.
+      templateKey: SUGGESTED_TEMPLATE_BY_SECTOR[input.businessType] ?? 'classic',
       onboardingStep: 1,
       onboardingCompletedAt: context.store.onboardingCompletedAt ?? new Date(),
     },
