@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StatusPill } from '@/app/admin/page';
+import { BoutiqueDemoPanel } from '@/components/admin/boutique-demo-panel';
 
 export const metadata: Metadata = { title: 'Boutiques' };
 export const dynamic = 'force-dynamic';
@@ -74,6 +75,7 @@ export default async function AdminBoutiquesPage({
     _sum: { total: true },
   });
   const revenueByStore = new Map(revenues.map((row) => [row.storeId, row._sum.total ?? 0]));
+  const demoCount = await prisma.store.count({ where: { isDemo: true } });
 
   return (
     <>
@@ -81,6 +83,8 @@ export default async function AdminBoutiquesPage({
       <p className="mt-1 text-sm text-white/60">
         {total} boutique{total > 1 ? 's' : ''} MagyaPro Boutique sur la plateforme.
       </p>
+
+      <BoutiqueDemoPanel demoCount={demoCount} />
 
       <form method="get" className="mt-6 flex flex-wrap gap-2">
         <label htmlFor="q" className="sr-only">
