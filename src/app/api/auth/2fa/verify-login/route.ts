@@ -25,11 +25,14 @@ export const POST = route(async (request) => {
   const user = await verifyTwoFactorLogin({ pendingToken, code, ip });
   await reset(`2fa:${pendingToken}`);
 
-  await createSession(user.id);
-  await pruneExpiredSessions();
-
+  // Calculé avant la session, comme dans /api/auth/login : un compte sans
+  // adhésion sur le produit visé par cet hôte est refusé ici plutôt que de
+  // recevoir une session pour un tableau de bord inexistant.
   const host = (headerList.get('host') ?? '').split(':')[0]!.toLowerCase();
   const redirectTo = await resolveLoginRedirect(user, host);
+
+  await createSession(user.id);
+  await pruneExpiredSessions();
 
   return ok({
     user: { id: user.id, email: user.email, name: user.name },

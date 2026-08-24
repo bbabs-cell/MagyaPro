@@ -13,7 +13,11 @@ export default async function BoutiqueOnboardingPage() {
   if (!user) redirect('/boutique/connexion');
 
   const context = await getStoreContext();
-  if (!context) redirect('/boutique/connexion');
+  // Un compte connecté mais sans boutique (ex. session existante d'un compte
+  // Restaurant) ne doit pas repartir vers `/boutique/connexion` : cette page
+  // renvoie aussitôt un utilisateur déjà connecté vers `/boutique/dashboard`,
+  // qui renvoie ici en l'absence de contexte — une boucle infinie.
+  if (!context) redirect('/boutique');
 
   // Déjà configurée : rien à faire ici, les mêmes réglages restent
   // modifiables depuis le tableau de bord.

@@ -32,6 +32,12 @@ export const POST = route(async (request) => {
   // c'est la page de connexion utilisée qui indique l'intention.
   const host = (headerList.get('host') ?? '').split(':')[0]!.toLowerCase();
 
+  // Calculé — et donc refusé s'il y a lieu — avant toute création de session
+  // ou de jeton 2FA : un compte sans adhésion sur le produit visé par cet
+  // hôte (ex. un compte Restaurant sur boutique.magyapro.com) ne doit jamais
+  // se retrouver avec une session ouverte pour un tableau de bord inexistant.
+  const redirectTo = await resolveLoginRedirect(user, host);
+
   // Mot de passe validé, mais pas de session tant que le second facteur
   // n'est pas passé : un jeton de courte durée porte la suite jusqu'à
   // /api/auth/2fa/verify-login.
@@ -51,8 +57,6 @@ export const POST = route(async (request) => {
   // (Cloudflare Workers) avant sa fin — et sur ce point précis, aussi
   // signalée comme une requête bloquée plutôt que silencieusement ignorée.
   await pruneExpiredSessions();
-
-  const redirectTo = await resolveLoginRedirect(user, host);
 
   return ok({
     user: { id: user.id, email: user.email, name: user.name },

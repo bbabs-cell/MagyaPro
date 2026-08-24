@@ -21,7 +21,11 @@ export default async function OnboardingPage() {
   if (requiresEmailVerification(user)) redirect('/verifier-email');
 
   const context = await getTenantContext();
-  if (!context) redirect('/dashboard');
+  // Un compte connecté mais sans restaurant (ex. session existante d'un
+  // compte Boutique) ne doit pas repartir vers `/dashboard` : ce tableau de
+  // bord renvoie en l'absence de contexte vers `/bienvenue`, qui renverrait
+  // ici à son tour — une boucle infinie.
+  if (!context) redirect('/');
 
   // L'onboarding déjà terminé n'a plus de raison d'être : les mêmes réglages
   // restent modifiables depuis le dashboard.

@@ -2,14 +2,12 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
 import { TurnstileWidget } from '@/components/auth/turnstile-widget';
 
 export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | null }) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -40,8 +38,12 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | nul
         setPending(false);
         return;
       }
-      router.replace(result.redirectTo!);
-      router.refresh();
+      // Navigation complète (pas le routeur client) : le cookie de session
+      // vient d'être posé par la réponse, et le cache de routage de Next.js
+      // peut avoir gardé en mémoire le rendu de cette page d'avant la
+      // connexion (ex. une redirection vers /connexion pour visiteur anonyme)
+      // — le servir tel quel laisse le bouton tourner sans jamais arriver.
+      window.location.assign(result.redirectTo!);
     } catch (error) {
       setFormError(
         error instanceof ApiError
@@ -62,8 +64,7 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string | nul
         pendingToken,
         code,
       });
-      router.replace(result.redirectTo);
-      router.refresh();
+      window.location.assign(result.redirectTo);
     } catch (error) {
       setFormError(
         error instanceof ApiError
