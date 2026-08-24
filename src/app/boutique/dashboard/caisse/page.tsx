@@ -15,16 +15,30 @@ export const dynamic = 'force-dynamic';
 export default async function BoutiqueCaissePage() {
   const context = await requireStore('pos:access');
 
-  const defaultWarehouse = await prisma.warehouse.findFirst({
-    where: { storeId: context.store.id, isDefault: true },
-    select: { id: true },
-  });
-
-  const customers = await prisma.storeCustomer.findMany({
-    where: { storeId: context.store.id },
-    orderBy: { name: 'asc' },
-    select: { id: true, name: true, phone: true, creditBalance: true, creditLimit: true },
-  });
+  // Ces quatre requêtes sont indépendantes entre elles (seule `variants`, plus
+  // bas, a besoin du résultat de `defaultWarehouse`) — les lancer en parallèle
+  // plutôt qu'en série réduit d'autant le nombre d'allers-retours base de
+  // données avant que la caisse ne s'affiche.
+  const [defaultWarehouse, customers, paymentMethods, session] = await Promise.all([
+    prisma.warehouse.findFirst({
+      where: { storeId: context.store.id, isDefault: true },
+      select: { id: true },
+    }),
+    prisma.storeCustomer.findMany({
+      where: { storeId: context.store.id },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, phone: true, creditBalance: true, creditLimit: true },
+    }),
+    getEnabledPaymentMethods(context.store.id),
+    prisma.cashSession.findFirst({
+      where: { storeId: context.store.id, status: 'OPEN' },
+      include: {
+        cashRegister: { select: { name: true } },
+        movements: { select: { type: true, amount: true } },
+        sales: { select: { payments: { select: { method: true, amount: true } } } },
+      },
+    }),
+  ]);
 
   const variants = await prisma.storeProductVariant.findMany({
     where: { product: { storeId: context.store.id, status: 'ACTIVE' }, isActive: true },
@@ -49,17 +63,6 @@ export default async function BoutiqueCaissePage() {
     barcode: variant.barcode,
     stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
   }));
-
-  const paymentMethods = await getEnabledPaymentMethods(context.store.id);
-
-  const session = await prisma.cashSession.findFirst({
-    where: { storeId: context.store.id, status: 'OPEN' },
-    include: {
-      cashRegister: { select: { name: true } },
-      movements: { select: { type: true, amount: true } },
-      sales: { select: { payments: { select: { method: true, amount: true } } } },
-    },
-  });
 
   return (
     <>

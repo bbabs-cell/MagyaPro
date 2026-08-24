@@ -22,7 +22,11 @@ export default async function BoutiqueDashboardLayout({
   const user = await getCurrentUser();
   if (!user) redirect('/boutique/connexion');
 
-  const context = await getStoreContext();
+  // `getStoreContext`/`listStoreMemberships` sont mémorisées par requête
+  // (`cache()`) et n'ont pas de dépendance l'une envers l'autre — les lancer
+  // en parallèle plutôt qu'en série évite un aller-retour base de données
+  // inutile à chaque navigation dans le tableau de bord.
+  const [context, allMemberships] = await Promise.all([getStoreContext(), listStoreMemberships()]);
   if (!context) redirect('/boutique/bienvenue');
 
   // L'onboarding inachevé reprend là où il s'est arrêté, sauf en accès support.
@@ -30,7 +34,7 @@ export default async function BoutiqueDashboardLayout({
     redirect('/boutique/bienvenue');
   }
 
-  const memberships = context.isSupportAccess ? [] : await listStoreMemberships();
+  const memberships = context.isSupportAccess ? [] : allMemberships;
   const [unreadNotifications, announcements] = await Promise.all([
     prisma.notification.count({ where: { storeId: context.store.id, readAt: null } }),
     getActiveAnnouncements('STORE'),
