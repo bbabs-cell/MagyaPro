@@ -7,7 +7,11 @@ import { getStoreContext, listStoreMemberships } from '@/lib/boutique/store-tena
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
 
-export const metadata: Metadata = { title: { template: '%s — MagyaPro Boutique', default: 'Tableau de bord' } };
+export const metadata: Metadata = {
+  title: { template: '%s — MagyaPro Boutique', default: 'Tableau de bord' },
+  manifest: '/boutique/dashboard/manifest.webmanifest',
+  appleWebApp: { capable: true, title: 'MagyaPro Boutique', statusBarStyle: 'default' },
+};
 
 export default async function BoutiqueDashboardLayout({
   children,

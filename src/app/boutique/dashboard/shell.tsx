@@ -366,35 +366,48 @@ export function DashboardShell({
         </div>
       </header>
 
-      {/* Menu mobile : recouvrement plein écran fixe (pas un dépliant qui
-          pousse le contenu) — évite l'état confus où le menu semble prendre
-          la page sans qu'on sache où se trouve le reste du contenu. */}
-      {menuOpen && (
-        <div
-          id="menu-mobile-boutique"
-          className="fixed inset-0 z-40 overflow-y-auto bg-navy p-4 text-white lg:hidden"
-        >
-          <div className="flex h-14 items-center justify-between">
-            <span className="truncate px-1 font-medium text-white">{storeName}</span>
-            <button
-              type="button"
-              onClick={() => setMenuOpen(false)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white"
-            >
-              <span className="sr-only">Fermer le menu</span>
-              <span aria-hidden="true" className="text-lg leading-none">✕</span>
-            </button>
-          </div>
-          {navigation}
+      {/* Menu mobile : tiroir qui glisse depuis la gauche (largeur fixe, comme
+          la barre latérale de bureau) plutôt qu'un recouvrement plein écran —
+          le reste de la page reste visible, assombri, derrière. Toujours
+          monté (jamais démonté) pour que la transition de glissement
+          s'anime dans les deux sens ; seul `aria-hidden`/`pointer-events`
+          empêche l'interaction quand il est fermé. */}
+      <div
+        aria-hidden={!menuOpen}
+        onClick={() => setMenuOpen(false)}
+        className={cx(
+          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden',
+          menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+      <div
+        id="menu-mobile-boutique"
+        aria-hidden={!menuOpen}
+        className={cx(
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-navy p-4 text-white transition-transform duration-200 ease-out lg:hidden',
+          menuOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+      >
+        <div className="flex h-14 items-center justify-between">
+          <span className="truncate px-1 font-medium text-white">{storeName}</span>
           <button
             type="button"
-            onClick={handleLogout}
-            className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+            onClick={() => setMenuOpen(false)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white"
           >
-            Se déconnecter
+            <span className="sr-only">Fermer le menu</span>
+            <span aria-hidden="true" className="text-lg leading-none">✕</span>
           </button>
         </div>
-      )}
+        {navigation}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+        >
+          Se déconnecter
+        </button>
+      </div>
 
       <div className="lg:flex">
         <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
