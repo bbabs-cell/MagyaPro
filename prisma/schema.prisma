@@ -46,6 +46,16 @@ model User {
   emailVerifiedAt DateTime?
   lastLoginAt     DateTime?
   isDemo          Boolean      @default(false)
+
+  /// Secret TOTP (base32) — présent dès le début d'un enrôlement, mais
+  /// `totpEnabled` ne passe à vrai qu'une fois le premier code confirmé :
+  /// un enrôlement abandonné en cours de route ne protège jamais la
+  /// connexion avec un secret que l'utilisateur n'a pas fini de vérifier.
+  totpSecret      String?
+  totpEnabled     Boolean      @default(false)
+  /// Empreintes (jamais les codes en clair) — chacune retirée dès son
+  /// utilisation, à usage unique.
+  totpBackupCodes String[]     @default([])
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -85,6 +95,9 @@ model Session {
 enum VerificationTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  /// Jeton de courte durée entre mot de passe validé et code TOTP saisi —
+  /// jamais une session complète tant que la seconde étape n'est pas passée.
+  TWO_FACTOR_LOGIN
 }
 
 model VerificationToken {

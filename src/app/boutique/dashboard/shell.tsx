@@ -165,6 +165,12 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.64a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
     </svg>
   ),
+  '/boutique/dashboard/securite': (
+    <svg {...ICON_PROPS}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
+      <path d="M9.5 12l1.8 1.8 3.2-3.6" />
+    </svg>
+  ),
 };
 
 function getNavSections(
@@ -216,6 +222,7 @@ function getNavSections(
         { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
         ...(canManageApi ? [{ href: '/boutique/dashboard/api-docs', label: 'API' }] : []),
         { href: '/boutique/dashboard/parametres', label: 'Réglages' },
+        { href: '/boutique/dashboard/securite', label: 'Sécurité' },
       ],
     },
   ];

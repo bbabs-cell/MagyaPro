@@ -18,6 +18,8 @@ export const AUDIT_ACTIONS = {
   USER_LOGOUT: 'user.logout',
   USER_PASSWORD_RESET: 'user.password_reset',
   USER_EMAIL_VERIFIED: 'user.email_verified',
+  USER_TWO_FACTOR_ENABLED: 'user.two_factor_enabled',
+  USER_TWO_FACTOR_DISABLED: 'user.two_factor_disabled',
   USER_SUSPENDED: 'user.suspended',
   USER_REACTIVATED: 'user.reactivated',
 

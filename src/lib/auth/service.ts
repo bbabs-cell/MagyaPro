@@ -8,6 +8,14 @@ import {
   generateToken,
   hashToken,
 } from '@/lib/auth/tokens';
+import {
+  buildTotpUri,
+  generateBackupCodes,
+  generateTotpSecret,
+  normalizeBackupCode,
+  verifyTotpCode,
+} from '@/lib/auth/totp';
+import { generateQrDataUrl } from '@/lib/qrcode';
 import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/mail';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { uniqueRestaurantSlug } from '@/lib/slug';
@@ -215,13 +223,154 @@ export async function authenticate(input: {
 }
 
 /**
+ * Démarre un enrôlement 2FA : génère un secret, le persiste (mais
+ * `totpEnabled` reste faux tant que le premier code n'est pas confirmé —
+ * voir `confirmTwoFactorEnrollment`), et renvoie de quoi l'afficher
+ * (QR code + secret en clair, pour une saisie manuelle si le scan échoue).
+ */
+export async function beginTwoFactorEnrollment(
+  userId: string,
+  email: string,
+): Promise<{ secret: string; qrDataUrl: string }> {
+  const secret = generateTotpSecret();
+  await prisma.user.update({ where: { id: userId }, data: { totpSecret: secret, totpEnabled: false } });
+
+  const uri = buildTotpUri(email, secret);
+  const qrDataUrl = await generateQrDataUrl(uri);
+  return { secret, qrDataUrl };
+}
+
+/**
+ * Confirme l'enrôlement avec un premier code valide, active la 2FA et
+ * génère les codes de secours — montrés une seule fois à l'appelant, seule
+ * leur empreinte est conservée.
+ */
+export async function confirmTwoFactorEnrollment(userId: string, code: string): Promise<string[]> {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  if (!user.totpSecret) {
+    throw new ValidationError("Aucun enrôlement en cours. Recommencez depuis Sécurité.");
+  }
+
+  const valid = await verifyTotpCode(user.totpSecret, code);
+  if (!valid) {
+    throw new ValidationError('Code invalide.', { code: 'Code invalide.' });
+  }
+
+  const backupCodes = generateBackupCodes();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpEnabled: true, totpBackupCodes: backupCodes.map(hashToken) },
+  });
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.USER_TWO_FACTOR_ENABLED,
+    actorUserId: user.id,
+    actorEmail: user.email,
+  });
+
+  return backupCodes;
+}
+
+/** Désactive la 2FA — exige le mot de passe : un accès de session seul ne doit pas suffire à baisser sa propre protection. */
+export async function disableTwoFactor(userId: string, password: string): Promise<void> {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  const valid = await verifyPassword(password, user.passwordHash);
+  if (!valid) throw new UnauthorizedError('Mot de passe incorrect.');
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpEnabled: false, totpSecret: null, totpBackupCodes: [] },
+  });
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.USER_TWO_FACTOR_DISABLED,
+    actorUserId: user.id,
+    actorEmail: user.email,
+  });
+}
+
+/**
+ * Seconde étape de connexion pour un compte protégé par 2FA : vérifie le
+ * code TOTP (ou, à défaut, un code de secours) contre le jeton temporaire
+ * émis juste après le mot de passe validé — jamais de session tant que
+ * cette étape n'a pas réussi.
+ */
+export async function verifyTwoFactorLogin(input: {
+  pendingToken: string;
+  code: string;
+  ip?: string | null;
+}) {
+  const record = await prisma.verificationToken.findUnique({
+    where: { tokenHash: hashToken(input.pendingToken) },
+    include: { user: true },
+  });
+
+  if (
+    !record ||
+    record.type !== 'TWO_FACTOR_LOGIN' ||
+    record.consumedAt !== null ||
+    record.expiresAt < new Date()
+  ) {
+    throw new UnauthorizedError('Session de connexion expirée. Reconnectez-vous.');
+  }
+
+  const user = record.user;
+  const code = input.code.trim();
+
+  let usedBackupCode: string | null = null;
+  let valid = user.totpSecret ? await verifyTotpCode(user.totpSecret, code) : false;
+  if (!valid) {
+    const normalized = normalizeBackupCode(code);
+    const hashedBackup = hashToken(normalized);
+    if (user.totpBackupCodes.includes(hashedBackup)) {
+      valid = true;
+      usedBackupCode = hashedBackup;
+    }
+  }
+
+  if (!valid) {
+    await recordAudit({
+      action: AUDIT_ACTIONS.USER_LOGIN_FAILED,
+      actorUserId: user.id,
+      actorEmail: user.email,
+      ip: input.ip,
+      metadata: { reason: 'bad_totp' },
+    });
+    throw new UnauthorizedError('Code invalide.');
+  }
+
+  await prisma.$transaction([
+    prisma.verificationToken.update({ where: { id: record.id }, data: { consumedAt: new Date() } }),
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
+    ...(usedBackupCode
+      ? [
+          prisma.user.update({
+            where: { id: user.id },
+            data: { totpBackupCodes: user.totpBackupCodes.filter((c) => c !== usedBackupCode) },
+          }),
+        ]
+      : []),
+  ]);
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.USER_LOGIN,
+    actorUserId: user.id,
+    actorEmail: user.email,
+    ip: input.ip,
+  });
+
+  return user;
+}
+
+/**
  * Émet un jeton à usage unique et invalide les précédents du même type.
  * Exportée : mécanique Core générique (`User`/`VerificationToken`), réutilisée
  * telle quelle par MagyaPro Boutique (`src/lib/boutique/auth.ts`).
  */
 export async function issueVerificationToken(
   userId: string,
-  type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET',
+  type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET' | 'TWO_FACTOR_LOGIN',
   amount: number,
   unit: 'minutes' | 'hours',
 ): Promise<string> {
