@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
+import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
 import { CashSessionBar } from '@/components/boutique/cash-session-bar';
@@ -49,6 +50,8 @@ export default async function BoutiqueCaissePage() {
     stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
   }));
 
+  const paymentMethods = await getEnabledPaymentMethods(context.store.id);
+
   const session = await prisma.cashSession.findFirst({
     where: { storeId: context.store.id, status: 'OPEN' },
     include: {
@@ -84,6 +87,7 @@ export default async function BoutiqueCaissePage() {
           currency={context.store.currency}
           taxEnabled={context.store.taxEnabled}
           taxRate={context.store.taxRate}
+          paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
         />
       )}
     </>

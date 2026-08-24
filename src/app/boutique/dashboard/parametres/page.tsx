@@ -11,6 +11,8 @@ import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
 import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
 import { WebhooksManager } from '@/components/boutique/webhooks-manager';
+import { PaymentMethodsManager } from '@/components/boutique/payment-methods-manager';
+import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
 
 export const metadata: Metadata = { title: 'Réglages' };
 export const dynamic = 'force-dynamic';
@@ -20,7 +22,12 @@ export default async function BoutiqueSettingsPage() {
 
   const canManageApi = context.permissions.has('api:manage');
 
-  const [domains, entitlements, apiKeys, webhooks] = await Promise.all([
+  // Sème les moyens de paiement par défaut si la boutique n'a encore rien
+  // configuré (voir `getEnabledPaymentMethods`), avant de lire la liste
+  // complète (activés et désactivés) pour cet écran de gestion.
+  await getEnabledPaymentMethods(context.store.id);
+
+  const [domains, entitlements, apiKeys, webhooks, paymentMethods] = await Promise.all([
     prisma.storeDomain.findMany({
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'asc' },
@@ -47,6 +54,10 @@ export default async function BoutiqueSettingsPage() {
           select: { id: true, url: true, events: true, isActive: true, createdAt: true },
         })
       : Promise.resolve([]),
+    prisma.storePaymentMethod.findMany({
+      where: { storeId: context.store.id },
+      orderBy: { position: 'asc' },
+    }),
   ]);
 
   return (
@@ -65,6 +76,10 @@ export default async function BoutiqueSettingsPage() {
         />
         <LanguageSettingsPanel
           language={context.store.language}
+          canManage={context.permissions.has('settings:manage')}
+        />
+        <PaymentMethodsManager
+          methods={paymentMethods}
           canManage={context.permissions.has('settings:manage')}
         />
         <DomainsManager

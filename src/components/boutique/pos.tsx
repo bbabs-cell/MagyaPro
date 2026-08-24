@@ -50,14 +50,7 @@ type CartLine = {
 };
 
 type PaymentLine = { method: string; amount: string };
-
-const PAYMENT_METHODS = [
-  { value: 'cash', label: 'Espèces' },
-  { value: 'orange_money', label: 'Orange Money' },
-  { value: 'moov_money', label: 'Moov Money' },
-  { value: 'card', label: 'Carte' },
-  { value: 'wave', label: 'Wave' },
-];
+type PaymentMethodOption = { value: string; label: string };
 
 export function Pos({
   storeId,
@@ -66,6 +59,7 @@ export function Pos({
   currency,
   taxEnabled,
   taxRate,
+  paymentMethods,
 }: {
   storeId: string;
   products: Product[];
@@ -74,12 +68,16 @@ export function Pos({
   /** TVA de la boutique — voir `Store.taxEnabled`/`taxRate` (dixièmes de %). */
   taxEnabled: boolean;
   taxRate: number;
+  /** Moyens de paiement actifs de la boutique — voir `payment-methods.ts`. */
+  paymentMethods: PaymentMethodOption[];
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState('');
-  const [payments, setPayments] = useState<PaymentLine[]>([{ method: 'cash', amount: '' }]);
+  const [payments, setPayments] = useState<PaymentLine[]>([
+    { method: paymentMethods[0]?.value ?? 'cash', amount: '' },
+  ]);
   const [customerId, setCustomerId] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [pending, setPending] = useState(false);
@@ -167,7 +165,10 @@ export function Pos({
 
   function addPaymentLine() {
     const usedMethods = new Set(payments.map((p) => p.method));
-    const nextMethod = PAYMENT_METHODS.find((m) => !usedMethods.has(m.value))?.value ?? 'cash';
+    const nextMethod =
+      paymentMethods.find((m) => !usedMethods.has(m.value))?.value ??
+      paymentMethods[0]?.value ??
+      'cash';
     setPayments((current) => [...current, { method: nextMethod, amount: String(remaining || '') }]);
   }
 
@@ -200,7 +201,7 @@ export function Pos({
       setCart([]);
       setDiscount('');
       setPromoCode('');
-      setPayments([{ method: 'cash', amount: '' }]);
+      setPayments([{ method: paymentMethods[0]?.value ?? 'cash', amount: '' }]);
     }
 
     try {
@@ -411,7 +412,7 @@ export function Pos({
                   onChange={(event) => updatePaymentLine(index, { method: event.target.value })}
                   className={cx(inputClass, 'flex-1')}
                 >
-                  {PAYMENT_METHODS.map((method) => (
+                  {paymentMethods.map((method) => (
                     <option key={method.value} value={method.value}>
                       {method.label}
                     </option>
@@ -439,7 +440,7 @@ export function Pos({
             ))}
           </div>
 
-          {payments.length < PAYMENT_METHODS.length && (
+          {payments.length < paymentMethods.length && (
             <button
               type="button"
               onClick={addPaymentLine}

@@ -1360,6 +1360,7 @@ model Store {
   supportAccessLogs    StoreSupportAccess[]
   apiKeys              StoreApiKey[]
   webhooks             StoreWebhook[]
+  paymentMethods       StorePaymentMethod[]
 
   @@index([status])
   @@map("stores")
@@ -2079,6 +2080,8 @@ model StorePaymentMethod {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([storeId, method])
   @@index([storeId])
