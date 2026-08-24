@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS, isDecimalUnit, quantityStep } from '@/lib/boutique/units';
+import { enqueueSale } from '@/lib/boutique/offline-queue';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
@@ -59,12 +60,14 @@ const PAYMENT_METHODS = [
 ];
 
 export function Pos({
+  storeId,
   products,
   customers,
   currency,
   taxEnabled,
   taxRate,
 }: {
+  storeId: string;
   products: Product[];
   customers: Customer[];
   currency: string;
@@ -82,6 +85,7 @@ export function Pos({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<{ number: number; total: number } | null>(null);
+  const [queuedOffline, setQueuedOffline] = useState(false);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -180,28 +184,45 @@ export function Pos({
     setPending(true);
     setError(null);
     setLastReceipt(null);
+    setQueuedOffline(false);
 
-    try {
-      const { sale } = await api.post<{ sale: { number: number; total: number } }>(
-        '/api/boutique/sales',
-        {
-          items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
-          customerId: customerId || undefined,
-          discount: discountAmount,
-          promoCode: promoCode.trim() || undefined,
-          payments: payments
-            .filter((p) => Number(p.amount) > 0)
-            .map((p) => ({ method: p.method, amount: Number(p.amount) })),
-        },
-      );
-      setLastReceipt({ number: sale.number, total: sale.total });
+    const payload = {
+      items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
+      customerId: customerId || undefined,
+      discount: discountAmount,
+      promoCode: promoCode.trim() || undefined,
+      payments: payments
+        .filter((p) => Number(p.amount) > 0)
+        .map((p) => ({ method: p.method, amount: Number(p.amount) })),
+    };
+
+    function resetCart() {
       setCart([]);
       setDiscount('');
       setPromoCode('');
       setPayments([{ method: 'cash', amount: '' }]);
+    }
+
+    try {
+      const { sale } = await api.post<{ sale: { number: number; total: number } }>(
+        '/api/boutique/sales',
+        payload,
+      );
+      setLastReceipt({ number: sale.number, total: sale.total });
+      resetCart();
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La vente n'a pas pu être enregistrée.");
+      // Panne réseau : la vente est mise en attente localement plutôt que
+      // perdue — voir `offline-queue.ts`. Toute autre erreur (stock
+      // insuffisant, client invalide...) reste affichée immédiatement, elle
+      // n'a rien à voir avec la connexion.
+      if (err instanceof ApiError && err.code === 'NETWORK_ERROR') {
+        enqueueSale(storeId, payload);
+        setQueuedOffline(true);
+        resetCart();
+      } else {
+        setError(err instanceof ApiError ? err.message : "La vente n'a pas pu être enregistrée.");
+      }
     } finally {
       setPending(false);
     }
@@ -262,6 +283,13 @@ export function Pos({
         {lastReceipt && (
           <div role="status" className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             Vente n°{lastReceipt.number} enregistrée — {formatMoney(lastReceipt.total, currency)}
+          </div>
+        )}
+
+        {queuedOffline && (
+          <div role="status" className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Pas de connexion — vente enregistrée localement, elle sera envoyée automatiquement dès le
+            retour du réseau.
           </div>
         )}
 

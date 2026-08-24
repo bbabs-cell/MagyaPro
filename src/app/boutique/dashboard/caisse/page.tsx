@@ -6,6 +6,7 @@ import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
 import { CashSessionBar } from '@/components/boutique/cash-session-bar';
+import { OfflineSyncBar } from '@/components/boutique/offline-sync-bar';
 
 export const metadata: Metadata = { title: 'Caisse' };
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,8 @@ export default async function BoutiqueCaissePage() {
     <>
       <PageHeader title="Caisse" description="Enregistrez une vente." />
 
+      <OfflineSyncBar storeId={context.store.id} />
+
       <CashSessionBar session={session} currency={context.store.currency} />
 
       {products.length === 0 ? (
@@ -75,6 +78,7 @@ export default async function BoutiqueCaissePage() {
         />
       ) : (
         <Pos
+          storeId={context.store.id}
           products={products}
           customers={customers}
           currency={context.store.currency}
