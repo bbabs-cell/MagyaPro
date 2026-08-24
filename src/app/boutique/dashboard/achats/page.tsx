@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function BoutiquePurchasesPage() {
   const context = await requireStore('purchases:view');
 
-  const [suppliers, variants, orders] = await Promise.all([
+  const [suppliers, variants, orders, warehouses] = await Promise.all([
     prisma.supplier.findMany({
       where: { storeId: context.store.id },
       orderBy: { name: 'asc' },
@@ -27,9 +27,23 @@ export default async function BoutiquePurchasesPage() {
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'desc' },
       include: {
-        supplier: { select: { name: true } },
-        items: { select: { id: true, quantityOrdered: true, quantityReceived: true, unitCost: true } },
+        supplier: { select: { id: true, name: true } },
+        items: {
+          select: {
+            id: true,
+            quantityOrdered: true,
+            quantityReceived: true,
+            unitCost: true,
+            discount: true,
+            productVariant: { select: { product: { select: { name: true } } } },
+          },
+        },
       },
+    }),
+    prisma.warehouse.findMany({
+      where: { storeId: context.store.id },
+      orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
+      select: { id: true, name: true, isDefault: true },
     }),
   ]);
 
@@ -40,13 +54,22 @@ export default async function BoutiquePurchasesPage() {
         initialSuppliers={suppliers}
         initialProducts={variants.map((v) => ({ variantId: v.id, name: v.product.name }))}
         initialOrders={orders.map((order) => ({
-          ...order,
+          id: order.id,
+          reference: order.reference,
+          status: order.status,
+          extraFees: order.extraFees,
+          expectedAt: order.expectedAt?.toISOString() ?? null,
+          supplier: order.supplier,
           items: order.items.map((item) => ({
-            ...item,
+            id: item.id,
+            productName: item.productVariant.product.name,
             quantityOrdered: toQty(item.quantityOrdered),
             quantityReceived: toQty(item.quantityReceived),
+            unitCost: item.unitCost,
+            discount: item.discount,
           })),
         }))}
+        warehouses={warehouses}
         currency={context.store.currency}
         canManage={context.permissions.has('purchases:manage')}
       />

@@ -1887,17 +1887,23 @@ model SupplierPayment {
   id         String   @id @default(cuid())
   storeId    String
   supplierId String
+  /// Facultatif : un paiement peut solder la dette globale du fournisseur
+  /// sans viser une commande précise (règlement groupé), ou être rattaché à
+  /// une commande donnée pour un suivi ligne à ligne.
+  purchaseOrderId String?
   amount     Int
   paidAt     DateTime @default(now())
   note       String?
 
   createdAt DateTime @default(now())
 
-  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  supplier      Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
 
   @@index([storeId])
   @@index([supplierId, paidAt])
+  @@index([purchaseOrderId])
   @@map("boutique_supplier_payments")
 }
 
@@ -1919,6 +1925,9 @@ model PurchaseOrder {
   /// affichés séparément, jamais fondus silencieusement dans les prix.
   extraFees  Int                 @default(0)
   note       String?
+  /// Date de livraison attendue, communiquée par le fournisseur — purement
+  /// indicative, ne bloque rien.
+  expectedAt DateTime?
   orderedAt  DateTime?
   receivedAt DateTime?
 
@@ -1928,6 +1937,7 @@ model PurchaseOrder {
   store    Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   items    PurchaseOrderItem[]
+  payments SupplierPayment[]
 
   @@unique([storeId, reference])
   @@index([storeId, status])

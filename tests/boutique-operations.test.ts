@@ -2,7 +2,12 @@ import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 
 import { prisma, createTestStore, resetDatabase, type TestStore } from './helpers';
 import { createSale } from '@/lib/boutique/sales-service';
-import { createPurchaseOrder, receivePurchaseOrder } from '@/lib/boutique/purchases-service';
+import {
+  cancelPurchaseOrder,
+  confirmPurchaseOrder,
+  createPurchaseOrder,
+  receivePurchaseOrder,
+} from '@/lib/boutique/purchases-service';
 import { createReturn } from '@/lib/boutique/returns-service';
 import { openCashSession, closeCashSession } from '@/lib/boutique/cash-service';
 
@@ -34,12 +39,38 @@ describe('Achats', () => {
       userEmail: shop.owner.email,
       input: {
         supplierId: supplier.id,
-        items: [{ productVariantId: shop.variant.id, quantity: 10, unitCost: 2500 }],
+        extraFees: 0,
+        confirm: true,
+        items: [{ productVariantId: shop.variant.id, quantity: 10, unitCost: 2500, discount: 0 }],
       },
     });
 
     expect(order.reference).toBe('PO-0001');
     expect(order.status).toBe('ORDERED');
+  });
+
+  it('enregistre un brouillon sans le commander', async () => {
+    const order = await createPurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      input: {
+        supplierId: supplier.id,
+        extraFees: 0,
+        confirm: false,
+        items: [{ productVariantId: shop.variant.id, quantity: 5, unitCost: 2000, discount: 0 }],
+      },
+    });
+
+    expect(order.status).toBe('DRAFT');
+
+    const confirmed = await confirmPurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      purchaseOrderId: order.id,
+    });
+    expect(confirmed.status).toBe('ORDERED');
   });
 
   it("refuse une commande pour le fournisseur d'une autre boutique", async () => {
@@ -55,20 +86,24 @@ describe('Achats', () => {
         userEmail: shop.owner.email,
         input: {
           supplierId: otherSupplier.id,
-          items: [{ productVariantId: shop.variant.id, quantity: 1, unitCost: 1000 }],
+          extraFees: 0,
+          confirm: true,
+          items: [{ productVariantId: shop.variant.id, quantity: 1, unitCost: 1000, discount: 0 }],
         },
       }),
     ).rejects.toThrow(/fournisseur introuvable/i);
   });
 
-  it('la réception augmente le stock, met à jour le coût et la dette fournisseur', async () => {
+  it('la réception augmente le stock, pondère le coût et incrémente la dette fournisseur', async () => {
     const order = await createPurchaseOrder({
       storeId: shop.store.id,
       userId: shop.owner.id,
       userEmail: shop.owner.email,
       input: {
         supplierId: supplier.id,
-        items: [{ productVariantId: shop.variant.id, quantity: 10, unitCost: 2500 }],
+        extraFees: 0,
+        confirm: true,
+        items: [{ productVariantId: shop.variant.id, quantity: 10, unitCost: 2500, discount: 0 }],
       },
     });
 
@@ -76,43 +111,90 @@ describe('Achats', () => {
       where: { productVariantId: shop.variant.id, warehouseId: shop.warehouse.id },
     });
 
-    const { totalCost } = await receivePurchaseOrder({
+    const { receivedCost } = await receivePurchaseOrder({
       storeId: shop.store.id,
       userId: shop.owner.id,
       userEmail: shop.owner.email,
       purchaseOrderId: order.id,
+      input: {
+        warehouseId: shop.warehouse.id,
+        items: [{ purchaseOrderItemId: order.items[0]!.id, quantity: 10 }],
+      },
     });
 
-    expect(totalCost).toBe(25_000);
+    expect(receivedCost).toBe(25_000);
 
     const stockAfter = await prisma.inventory.findFirst({
       where: { productVariantId: shop.variant.id, warehouseId: shop.warehouse.id },
     });
     expect(Number(stockAfter!.quantity)).toBe(Number(stockBefore!.quantity) + 10);
 
+    // Moyenne pondérée : 5 en stock à 3000 (coût initial de `createTestStore`)
+    // + 10 reçus à 2500 → (5×3000 + 10×2500) / 15 = 2667 (arrondi).
     const variant = await prisma.storeProductVariant.findUnique({ where: { id: shop.variant.id } });
-    expect(variant!.cost).toBe(2500);
+    expect(variant!.cost).toBe(2667);
 
     const updatedSupplier = await prisma.supplier.findUnique({ where: { id: supplier.id } });
     expect(updatedSupplier!.debtBalance).toBe(25_000);
   });
 
-  it('refuse de réceptionner deux fois la même commande', async () => {
+  it('permet une réception partielle, puis complète la commande au second passage', async () => {
     const order = await createPurchaseOrder({
       storeId: shop.store.id,
       userId: shop.owner.id,
       userEmail: shop.owner.email,
       input: {
         supplierId: supplier.id,
-        items: [{ productVariantId: shop.variant.id, quantity: 1, unitCost: 1000 }],
+        extraFees: 0,
+        confirm: true,
+        items: [{ productVariantId: shop.variant.id, quantity: 10, unitCost: 1000, discount: 0 }],
       },
     });
+    const itemId = order.items[0]!.id;
 
     await receivePurchaseOrder({
       storeId: shop.store.id,
       userId: shop.owner.id,
       userEmail: shop.owner.email,
       purchaseOrderId: order.id,
+      input: { warehouseId: shop.warehouse.id, items: [{ purchaseOrderItemId: itemId, quantity: 4 }] },
+    });
+
+    let updated = await prisma.purchaseOrder.findUniqueOrThrow({ where: { id: order.id } });
+    expect(updated.status).toBe('PARTIALLY_RECEIVED');
+
+    await receivePurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      purchaseOrderId: order.id,
+      input: { warehouseId: shop.warehouse.id, items: [{ purchaseOrderItemId: itemId, quantity: 6 }] },
+    });
+
+    updated = await prisma.purchaseOrder.findUniqueOrThrow({ where: { id: order.id } });
+    expect(updated.status).toBe('RECEIVED');
+  });
+
+  it('refuse de réceptionner une commande déjà intégralement reçue', async () => {
+    const order = await createPurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      input: {
+        supplierId: supplier.id,
+        extraFees: 0,
+        confirm: true,
+        items: [{ productVariantId: shop.variant.id, quantity: 1, unitCost: 1000, discount: 0 }],
+      },
+    });
+    const itemId = order.items[0]!.id;
+
+    await receivePurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      purchaseOrderId: order.id,
+      input: { warehouseId: shop.warehouse.id, items: [{ purchaseOrderItemId: itemId, quantity: 1 }] },
     });
 
     await expect(
@@ -121,8 +203,41 @@ describe('Achats', () => {
         userId: shop.owner.id,
         userEmail: shop.owner.email,
         purchaseOrderId: order.id,
+        input: { warehouseId: shop.warehouse.id, items: [{ purchaseOrderItemId: itemId, quantity: 1 }] },
       }),
-    ).rejects.toThrow(/déjà été réceptionnée/i);
+    ).rejects.toThrow(/réceptionnée/i);
+  });
+
+  it("refuse d'annuler une commande dont une ligne a déjà été reçue", async () => {
+    const order = await createPurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      input: {
+        supplierId: supplier.id,
+        extraFees: 0,
+        confirm: true,
+        items: [{ productVariantId: shop.variant.id, quantity: 2, unitCost: 1000, discount: 0 }],
+      },
+    });
+    const itemId = order.items[0]!.id;
+
+    await receivePurchaseOrder({
+      storeId: shop.store.id,
+      userId: shop.owner.id,
+      userEmail: shop.owner.email,
+      purchaseOrderId: order.id,
+      input: { warehouseId: shop.warehouse.id, items: [{ purchaseOrderItemId: itemId, quantity: 1 }] },
+    });
+
+    await expect(
+      cancelPurchaseOrder({
+        storeId: shop.store.id,
+        userId: shop.owner.id,
+        userEmail: shop.owner.email,
+        purchaseOrderId: order.id,
+      }),
+    ).rejects.toThrow(/déjà des lignes reçues/i);
   });
 });
 

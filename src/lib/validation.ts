@@ -586,10 +586,11 @@ export const storeSupplierSchema = z.object({
 });
 
 /**
- * Commande d'achat — première version : réception complète uniquement (pas
- * de réception partielle), un seul entrepôt (celui par défaut). Les coûts
- * saisis ici deviennent le nouveau coût d'achat des variantes concernées à
- * la réception, pour que la marge affichée reste à jour.
+ * Commande d'achat — réception partielle possible sur plusieurs passages,
+ * entrepôt de réception choisi à chaque réception (voir
+ * `purchases-service.ts`). Les coûts saisis ici pondèrent le coût d'achat
+ * courant des variantes à la réception, pour que la marge affichée reste à
+ * jour sans écraser brutalement un stock déjà en rayon.
  */
 export const storePurchaseOrderSchema = z.object({
   supplierId: z.string().min(1),
@@ -599,11 +600,38 @@ export const storePurchaseOrderSchema = z.object({
         productVariantId: z.string().min(1),
         quantity: quantitySchema(100_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
         unitCost: amountSchema,
+        discount: amountSchema.optional().default(0),
       }),
     )
     .min(1, 'Ajoutez au moins un produit.')
     .max(200),
   note: optionalText(500),
+  extraFees: amountSchema.optional().default(0),
+  expectedAt: z.coerce.date().optional(),
+  /** `true` = commande confirmée immédiatement (`ORDERED`), `false` = brouillon modifiable. */
+  confirm: z.boolean().optional().default(true),
+});
+
+/** Réception (totale ou partielle) d'une commande d'achat. */
+export const storePurchaseOrderReceiveSchema = z.object({
+  warehouseId: z.string().min(1),
+  /** Date de péremption commune au lot reçu, facultative (denrées, cosmétiques...). */
+  expiryDate: z.coerce.date().optional(),
+  items: z
+    .array(
+      z.object({
+        purchaseOrderItemId: z.string().min(1),
+        quantity: quantitySchema(100_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
+      }),
+    )
+    .min(1, 'Indiquez au moins une ligne à réceptionner.')
+    .max(200),
+});
+
+export const storeSupplierPaymentSchema = z.object({
+  amount: amountSchema.refine((v) => v > 0, 'Le montant doit être supérieur à zéro.'),
+  purchaseOrderId: z.string().min(1).optional(),
+  note: optionalText(300),
 });
 
 export const openCashSessionSchema = z.object({
