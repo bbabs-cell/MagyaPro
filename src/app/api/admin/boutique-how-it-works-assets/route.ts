@@ -1,9 +1,13 @@
+import { z } from 'zod';
+
 import { fail, ok, route } from '@/lib/api';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { ValidationError } from '@/lib/errors';
-import { uploadBoutiqueLandingAsset } from '@/lib/storage';
+import { uploadBoutiqueHowItWorksImage } from '@/lib/storage';
 
-/** Logo de la page d'accueil de MagyaPro Boutique — asset plateforme. */
+const stepSchema = z.coerce.number().int().min(1).max(4);
+
+/** Illustrations « Comment ça fonctionne » de la page d'accueil MagyaPro Boutique — asset de plateforme. */
 export const POST = route(async (request) => {
   await requireSuperAdmin();
 
@@ -17,6 +21,14 @@ export const POST = route(async (request) => {
     throw new ValidationError('Aucun fichier reçu.');
   }
 
-  const stored = await uploadBoutiqueLandingAsset({ file });
+  const stepResult = stepSchema.safeParse(formData.get('step'));
+  if (!stepResult.success) {
+    throw new ValidationError('Étape invalide.');
+  }
+
+  const stored = await uploadBoutiqueHowItWorksImage({
+    file,
+    step: stepResult.data as 1 | 2 | 3 | 4,
+  });
   return ok({ url: stored.url }, 201);
 });

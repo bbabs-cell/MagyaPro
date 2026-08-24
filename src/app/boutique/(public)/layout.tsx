@@ -11,7 +11,7 @@ import { CookieConsent } from '@/components/site/cookie-consent';
  * tableau de bord gardent leur propre en-tête.
  */
 export default function BoutiquePublicLayout({ children }: { children: React.ReactNode }) {
-  const logoUrl = boutiqueLandingAssetUrl('logo');
+  const logoUrl = boutiqueLandingAssetUrl();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -38,6 +38,7 @@ export default function BoutiquePublicLayout({ children }: { children: React.Rea
           <div className="hidden items-center gap-7 text-sm text-[#f3ece1]/65 md:flex">
             <Link href="/boutique#fonctionnalites" className="hover:text-[#f3ece1]">Fonctionnalités</Link>
             <Link href="/boutique#fonctionnement" className="hover:text-[#f3ece1]">Fonctionnement</Link>
+            <Link href="/boutique#secteurs" className="hover:text-[#f3ece1]">Secteurs</Link>
             <Link href="/boutique/tarifs" className="hover:text-[#f3ece1]">Tarifs</Link>
             <Link href="/boutique#faq" className="hover:text-[#f3ece1]">FAQ</Link>
           </div>

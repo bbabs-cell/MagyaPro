@@ -6,19 +6,11 @@ import { useRouter } from 'next/navigation';
 import { ApiError, uploadFile } from '@/lib/client/api';
 
 /**
- * Envoi du logo ou de l'image de couverture de la page d'accueil de
- * MagyaPro Boutique (`/boutique`) — même logique de clé fixe que
- * `PlatformLogoUpload` : un nouvel envoi écrase l'ancien à la même URL.
+ * Envoi du logo de la page d'accueil de MagyaPro Boutique (`/boutique`) —
+ * même logique de clé fixe que `PlatformLogoUpload` : un nouvel envoi
+ * écrase l'ancien à la même URL.
  */
-export function BoutiqueLandingUpload({
-  kind,
-  label,
-  imageUrl,
-}: {
-  kind: 'logo' | 'cover';
-  label: string;
-  imageUrl: string | null;
-}) {
+export function BoutiqueLandingUpload({ imageUrl }: { imageUrl: string | null }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -31,7 +23,6 @@ export function BoutiqueLandingUpload({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('kind', kind);
       await uploadFile('/api/admin/boutique-landing-assets', formData);
       router.refresh();
     } catch (err) {
@@ -56,7 +47,7 @@ export function BoutiqueLandingUpload({
           aria-hidden="true"
           className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-white/20 text-xs text-white/40"
         >
-          Aucune
+          Aucun logo
         </span>
       )}
 
@@ -66,17 +57,17 @@ export function BoutiqueLandingUpload({
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
           className="sr-only"
-          id={`boutique-landing-${kind}`}
+          id="boutique-landing-logo"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void handleFile(file);
           }}
         />
         <label
-          htmlFor={`boutique-landing-${kind}`}
+          htmlFor="boutique-landing-logo"
           className="inline-flex cursor-pointer items-center rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
         >
-          {uploading ? 'Envoi…' : imageUrl ? `Remplacer ${label.toLowerCase()}` : `Envoyer ${label.toLowerCase()}`}
+          {uploading ? 'Envoi…' : imageUrl ? 'Remplacer le logo' : 'Envoyer le logo'}
         </label>
         {error && <p role="alert" className="mt-1.5 text-xs text-red-400">{error}</p>}
       </div>

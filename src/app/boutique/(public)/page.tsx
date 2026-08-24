@@ -3,9 +3,21 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { getActivePromo } from '@/lib/platform-settings';
-import { boutiqueLandingAssetUrl } from '@/lib/storage';
+import {
+  BOUTIQUE_SECTORS,
+  boutiqueHowItWorksImageUrl,
+  boutiqueLandingAssetUrl,
+  boutiqueSectorImageUrl,
+} from '@/lib/storage';
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+
+const SECTOR_LABELS: Record<(typeof BOUTIQUE_SECTORS)[number], string> = {
+  CLOTHING: 'Habillement',
+  ELECTRONICS: 'Électronique',
+  COSMETICS: 'Cosmétique',
+  GROCERY: 'Alimentation',
+};
 
 export const metadata: Metadata = {
   title: 'MagyaPro Boutique — Gestion de boutiques et commerces',
@@ -96,8 +108,7 @@ export default async function BoutiqueLandingPage() {
     getActivePromo(),
   ]);
 
-  const logoUrl = boutiqueLandingAssetUrl('logo');
-  const coverUrl = boutiqueLandingAssetUrl('cover');
+  const logoUrl = boutiqueLandingAssetUrl();
 
   return (
     <>
@@ -171,15 +182,6 @@ export default async function BoutiqueLandingPage() {
               </div>
             )}
           </div>
-
-          {coverUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
-            <img
-              src={coverUrl}
-              alt=""
-              className="mx-auto mt-14 h-56 w-full max-w-4xl rounded-3xl object-cover shadow-2xl sm:h-72"
-            />
-          )}
         </div>
       </section>
 
@@ -261,26 +263,43 @@ export default async function BoutiqueLandingPage() {
           </div>
           <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { step: 1, title: 'Créez votre compte', detail: 'Nom, email, mot de passe. Rien de plus.' },
-              { step: 2, title: 'Configurez votre boutique', detail: 'Secteur d\'activité, devise, taxe, langue.' },
-              { step: 3, title: 'Ajoutez vos produits', detail: 'Catégories, variantes, prix, stock de départ.' },
-              { step: 4, title: 'Vendez', detail: 'Caisse ouverte, votre boutique est prête à encaisser.' },
-            ].map((item) => (
-              <li
-                key={item.step}
-                className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
-              >
-                <div className="relative h-24 w-full bg-gradient-to-br from-[#c2603d]/50 to-[#e0bd52]/30">
-                  <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] text-sm font-bold text-[#1c1712] shadow-lg">
-                    {item.step}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-[#f3ece1]">{item.title}</h3>
-                  <p className="mt-1 text-sm text-[#f3ece1]/55">{item.detail}</p>
-                </div>
-              </li>
-            ))}
+              { step: 1 as const, title: 'Créez votre compte', detail: 'Nom, email, mot de passe. Rien de plus.' },
+              { step: 2 as const, title: 'Configurez votre boutique', detail: 'Secteur d\'activité, devise, taxe, langue.' },
+              { step: 3 as const, title: 'Ajoutez vos produits', detail: 'Catégories, variantes, prix, stock de départ.' },
+              { step: 4 as const, title: 'Vendez', detail: 'Caisse ouverte, votre boutique est prête à encaisser.' },
+            ].map((item) => {
+              const imageUrl = boutiqueHowItWorksImageUrl(item.step);
+              return (
+                <li
+                  key={item.step}
+                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
+                >
+                  <div className="relative h-40 w-full">
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#c2603d]/50 to-[#e0bd52]/30" />
+                    )}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
+                    />
+                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] text-sm font-bold text-[#1c1712] shadow-lg">
+                      {item.step}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-semibold text-[#f3ece1]">{item.title}</h3>
+                    <p className="mt-1 text-sm text-[#f3ece1]/55">{item.detail}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
@@ -317,6 +336,49 @@ export default async function BoutiqueLandingPage() {
               <p className="mt-1.5 text-sm text-[#f3ece1]/60">{feature.detail}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- Secteurs */}
+      <section id="secteurs" className="border-y border-white/10 bg-black/20">
+        <div className="container-page py-16 sm:py-24">
+          <div className="max-w-2xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Secteurs</span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+              Pensé pour votre activité
+            </h2>
+            <p className="mt-3 text-[#f3ece1]/60">
+              Habillement, électronique, cosmétique, alimentation — le même outil s&apos;adapte à
+              votre catalogue.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {BOUTIQUE_SECTORS.map((sector) => {
+              const imageUrl = boutiqueSectorImageUrl(sector);
+              return (
+                <div
+                  key={sector}
+                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
+                >
+                  <div className="relative h-32 w-full">
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#c2603d]/50 to-[#e0bd52]/30" />
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-[#f3ece1]">{SECTOR_LABELS[sector]}</h3>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

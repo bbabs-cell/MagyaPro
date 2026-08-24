@@ -250,24 +250,25 @@ export function AdminSidebar({
         )}
       </header>
 
-      <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+      <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen">
         <div className="flex h-full flex-col p-4">
-          <div className="flex items-center justify-between gap-2 px-2 py-2">
-            <Link href="/admin" className="flex items-center gap-2">
-              <Logo src={logoUrl} className="h-8 w-8" />
-            </Link>
-            <ThemeToggle
-              theme={theme}
-              onToggle={onToggleTheme}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
-            />
+          <div className="shrink-0 px-2 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <Link href="/admin" className="flex items-center gap-2">
+                <Logo src={logoUrl} className="h-8 w-8" />
+              </Link>
+              <ThemeToggle
+                theme={theme}
+                onToggle={onToggleTheme}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+              />
+            </div>
+            <p className="mt-4 truncate text-xs text-white/40">{userEmail}</p>
           </div>
 
-          <p className="mt-4 truncate px-2 text-xs text-white/40">{userEmail}</p>
+          <div className="mt-6 flex-1 overflow-y-auto">{navigation}</div>
 
-          <div className="mt-6 flex-1">{navigation}</div>
-
-          <div className="mt-6 space-y-1 border-t border-white/10 pt-4">
+          <div className="mt-6 shrink-0 space-y-1 border-t border-white/10 pt-4">
             <Link
               href="/dashboard"
               className="block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
