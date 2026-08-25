@@ -7,6 +7,7 @@ import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { currentClientIp } from '@/lib/auth/session';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { PREMIUM_TEMPLATE_KEYS } from '@/lib/templates/registry';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 export const PATCH = route(async (request) => {
   const context = await requireTenant('restaurant:update');
@@ -60,6 +61,13 @@ export const PATCH = route(async (request) => {
     targetId: restaurant.id,
     ip: await currentClientIp(),
     metadata: { section: 'apparence', templateKey: input.templateKey },
+  });
+
+  await notifySettingsChanged({
+    restaurantId: restaurant.id,
+    section: 'Apparence',
+    actorName: context.user.name,
+    href: '/dashboard/apparence',
   });
 
   return ok({ restaurant });

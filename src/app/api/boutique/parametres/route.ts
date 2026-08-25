@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { storeTaxSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 /** Réglages avancés d'une boutique — pour l'instant, uniquement la TVA appliquée en caisse. */
 export const PATCH = route(async (request) => {
@@ -23,6 +24,13 @@ export const PATCH = route(async (request) => {
     targetType: 'store',
     targetId: context.store.id,
     metadata: { taxEnabled: input.taxEnabled, taxRate: input.taxRate },
+  });
+
+  await notifySettingsChanged({
+    storeId: context.store.id,
+    section: 'Taxes',
+    actorName: context.user.name,
+    href: '/boutique/dashboard/parametres',
   });
 
   return ok({ store });

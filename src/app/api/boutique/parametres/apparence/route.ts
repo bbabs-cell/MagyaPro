@@ -4,6 +4,7 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import { storeAppearanceSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { currentClientIp } from '@/lib/auth/session';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 /**
  * Identité visuelle du site public de la boutique — template, couleurs,
@@ -35,6 +36,13 @@ export const PATCH = route(async (request) => {
     targetId: context.store.id,
     ip: await currentClientIp(),
     metadata: { section: 'apparence', templateKey: input.templateKey },
+  });
+
+  await notifySettingsChanged({
+    storeId: context.store.id,
+    section: 'Apparence',
+    actorName: context.user.name,
+    href: '/boutique/dashboard/apparence',
   });
 
   return ok({ store });

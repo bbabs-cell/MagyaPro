@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
-import { requireStore } from '@/lib/boutique/store-tenant';
+import { requireTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/ui';
 import { NotificationsPanel } from '@/components/account/notifications-panel';
 
 export const metadata: Metadata = { title: 'Notifications' };
 export const dynamic = 'force-dynamic';
 
-export default async function BoutiqueNotificationsPage() {
-  const context = await requireStore('store:view');
+export default async function RestaurantNotificationsPage() {
+  const context = await requireTenant('restaurant:view');
 
   const notifications = await prisma.notification.findMany({
-    where: { storeId: context.store.id },
+    where: { restaurantId: context.restaurant.id },
     orderBy: { createdAt: 'desc' },
     take: 100,
   });
@@ -21,10 +21,10 @@ export default async function BoutiqueNotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="Commandes, stock faible ou en rupture, paiements reçus, abonnement."
+        description="Réservations, preuves de paiement, changements de réglages, abonnement."
       />
       <NotificationsPanel
-        endpoint="/api/boutique/notifications"
+        endpoint="/api/restaurant/notifications"
         notifications={notifications.map((n) => ({
           id: n.id,
           title: n.title,

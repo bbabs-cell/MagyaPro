@@ -11,6 +11,7 @@ import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
 import { StoreSwitcher } from '@/components/boutique/store-switcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
+import { NotificationWatcher } from '@/components/account/notification-watcher';
 
 /**
  * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
@@ -349,6 +350,10 @@ export function DashboardShell({
     // ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
     // bord (clair, ink/surface) quasi invisibles sur leur fond clair.
     <div className="min-h-screen bg-surface-sunken text-ink">
+      {/* Aucun son en visite guidée : un visiteur anonyme n'a aucune raison
+          d'être notifié de l'activité réelle de la boutique qu'il explore. */}
+      {!isDemoTour && <NotificationWatcher endpoint="/api/boutique/notifications" />}
+
       {/* Bandeau d'accès support : impossible à manquer, pour que
           l'administrateur sache qu'il agit dans l'espace d'un client. */}
       {isSupportAccess && (

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { api } from '@/lib/client/api';
+import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card } from '@/components/ui';
 
 type NotificationItem = {
@@ -16,17 +16,32 @@ type NotificationItem = {
   createdAt: string;
 };
 
-export function NotificationsPanel({ notifications }: { notifications: NotificationItem[] }) {
+/**
+ * Liste des notifications — Core, partagé entre Restaurant et Boutique
+ * (`/api/restaurant/notifications`, `/api/boutique/notifications`, même
+ * forme des deux côtés). Seul l'`endpoint` diffère par produit.
+ */
+export function NotificationsPanel({
+  notifications,
+  endpoint,
+}: {
+  notifications: NotificationItem[];
+  endpoint: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   async function markRead(id: string) {
     setPending(id);
+    setError(null);
     try {
-      await api.patch('/api/boutique/notifications', { id });
+      await api.patch(endpoint, { id });
       router.refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Impossible de marquer cette notification comme lue.');
     } finally {
       setPending(null);
     }
@@ -34,9 +49,12 @@ export function NotificationsPanel({ notifications }: { notifications: Notificat
 
   async function markAllRead() {
     setPending('all');
+    setError(null);
     try {
-      await api.patch('/api/boutique/notifications', { markAll: true });
+      await api.patch(endpoint, { markAll: true });
       router.refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Impossible de marquer les notifications comme lues.');
     } finally {
       setPending(null);
     }
@@ -52,6 +70,12 @@ export function NotificationsPanel({ notifications }: { notifications: Notificat
 
   return (
     <div>
+      {error && (
+        <p role="alert" className="mb-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      )}
+
       {unreadCount > 0 && (
         <div className="mb-3 flex justify-end">
           <Button size="sm" variant="secondary" loading={pending === 'all'} onClick={markAllRead}>

@@ -7,6 +7,7 @@ import { ConflictError, ValidationError } from '@/lib/errors';
 import { generateToken } from '@/lib/auth/tokens';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { rootHostname } from '@/lib/env';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 /** Domaines personnalisés d'une boutique — miroir de `/api/domaines` (Restaurant). */
 export const GET = route(async () => {
@@ -72,6 +73,13 @@ export const POST = route(async (request) => {
     targetType: 'store_domain',
     targetId: domain.id,
     metadata: { hostname },
+  });
+
+  await notifySettingsChanged({
+    storeId: context.store.id,
+    section: 'Domaine personnalisé',
+    actorName: context.user.name,
+    href: '/boutique/dashboard/parametres',
   });
 
   return ok({ domain }, 201);

@@ -4,6 +4,7 @@ import { requireTenant } from '@/lib/tenant';
 import { restaurantSettingsSchema, restaurantSeoSchema } from '@/lib/validation';
 import { ValidationError } from '@/lib/errors';
 import { getProvider } from '@/lib/payments/registry';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 export const PATCH = route(async (request) => {
   const context = await requireTenant('settings:manage');
@@ -82,6 +83,13 @@ export const PATCH = route(async (request) => {
       notificationEmail: input.notificationEmail ?? null,
       reservationGraceMinutes: input.reservationGraceMinutes,
     },
+  });
+
+  await notifySettingsChanged({
+    restaurantId: context.restaurant.id,
+    section: 'Commandes et paiements',
+    actorName: context.user.name,
+    href: '/dashboard/parametres',
   });
 
   return ok({ settings });

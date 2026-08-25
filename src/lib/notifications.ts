@@ -156,6 +156,33 @@ export async function notifyNewReservation(
   });
 }
 
+/**
+ * Notifie l'équipe (pas seulement l'auteur) qu'un réglage important vient
+ * de changer — utile dès qu'un compte a plusieurs membres : un changement
+ * de tarif, d'apparence ou de moyen de paiement peut avoir des
+ * conséquences que le reste de l'équipe doit connaître, même si ce n'est
+ * pas elle qui l'a fait. Volontairement limité aux réglages qui affectent
+ * réellement l'activité (apparence, taxes, moyens de paiement, domaine,
+ * horaires) — pas à chaque champ modifiable de l'application, ce qui
+ * noierait le signal utile sous des alertes sans conséquence.
+ */
+export async function notifySettingsChanged(params: {
+  restaurantId?: string | null;
+  storeId?: string | null;
+  section: string;
+  actorName: string;
+  href: string;
+}): Promise<void> {
+  await createNotification({
+    restaurantId: params.restaurantId ?? null,
+    storeId: params.storeId ?? null,
+    type: 'SETTINGS_CHANGED',
+    title: `Réglages modifiés — ${params.section}`,
+    body: `${params.actorName} a modifié les réglages « ${params.section} ».`,
+    href: params.href,
+  });
+}
+
 export async function markNotificationRead(
   restaurantId: string,
   notificationId: string,

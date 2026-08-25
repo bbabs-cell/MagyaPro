@@ -8,6 +8,7 @@ import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
+import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import type { Permission } from '@/lib/rbac';
 
@@ -198,6 +199,12 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none" />
     </svg>
   ),
+  '/dashboard/notifications': (
+    <svg {...ICON_PROPS}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" />
+      <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
+    </svg>
+  ),
 };
 
 const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
@@ -206,6 +213,7 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { href: '/dashboard', label: 'Vue d\'ensemble', exact: true },
       { href: '/dashboard/alertes', label: 'Alertes', permission: 'orders:view' },
+      { href: '/dashboard/notifications', label: 'Notifications' },
       { href: '/dashboard/commandes', label: 'Commandes', permission: 'orders:view' },
       { href: '/dashboard/cuisine', label: 'Cuisine', permission: 'orders:update_status' },
       { href: '/dashboard/livraisons', label: 'Mes livraisons', permission: 'deliveries:drive' },
@@ -251,6 +259,7 @@ export function DashboardShell({
   permissions,
   unreadCount,
   alertCount,
+  notificationCount,
   subscription,
   isSupportAccess,
   announcements,
@@ -271,6 +280,7 @@ export function DashboardShell({
   permissions: string[];
   unreadCount: number;
   alertCount: number;
+  notificationCount: number;
   subscription: { planName: string; status: string; isActive: boolean };
   isSupportAccess: boolean;
   announcements: Array<{
@@ -395,6 +405,11 @@ export function DashboardShell({
                       {alertCount}
                     </span>
                   )}
+                  {item.href === '/dashboard/notifications' && notificationCount > 0 && (
+                    <span className="ml-auto shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
+                      {notificationCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -409,6 +424,7 @@ export function DashboardShell({
       className="min-h-screen bg-surface-sunken"
     >
       {allowed.has('orders:view') && <AlertWatcher />}
+      <NotificationWatcher endpoint="/api/restaurant/notifications" skipTypesForSound={['ORDER_CREATED']} />
 
       {/* Bandeau d'accès support : impossible à manquer, pour que
           l'administrateur sache qu'il agit dans l'espace d'un client. */}

@@ -1090,6 +1090,7 @@ enum NotificationType {
   LOW_STOCK
   OUT_OF_STOCK
   PAYMENT_RECEIVED
+  SETTINGS_CHANGED
 }
 
 model Notification {

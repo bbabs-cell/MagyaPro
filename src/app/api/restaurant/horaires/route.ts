@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { openingHoursSchema } from '@/lib/validation';
 import { ValidationError } from '@/lib/errors';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 export const GET = route(async () => {
   const { restaurant } = await requireTenant('restaurant:view');
@@ -50,6 +51,13 @@ export const PUT = route(async (request) => {
       }),
     ),
   );
+
+  await notifySettingsChanged({
+    restaurantId: context.restaurant.id,
+    section: 'Horaires',
+    actorName: context.user.name,
+    href: '/dashboard/parametres',
+  });
 
   return ok({ hours });
 });

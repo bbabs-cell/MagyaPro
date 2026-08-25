@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getCurrentUser, requiresEmailVerification } from '@/lib/auth/session';
 import { getTenantContext, listMemberships } from '@/lib/tenant';
 import { countNewOrders, countPendingAlerts } from '@/lib/alerts';
+import { countUnreadNotifications } from '@/lib/notifications';
 import { getEntitlements } from '@/lib/entitlements';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
@@ -42,13 +43,15 @@ export default async function DashboardLayout({
     redirect('/bienvenue');
   }
 
-  const [memberships, unreadCount, alertCount, entitlements, announcements] = await Promise.all([
-    listMemberships(),
-    countNewOrders(context.restaurant.id),
-    countPendingAlerts(context.restaurant.id),
-    getEntitlements(context.restaurant.id),
-    getActiveAnnouncements('RESTAURANT'),
-  ]);
+  const [memberships, unreadCount, alertCount, notificationCount, entitlements, announcements] =
+    await Promise.all([
+      listMemberships(),
+      countNewOrders(context.restaurant.id),
+      countPendingAlerts(context.restaurant.id),
+      countUnreadNotifications(context.restaurant.id),
+      getEntitlements(context.restaurant.id),
+      getActiveAnnouncements('RESTAURANT'),
+    ]);
 
   return (
     <ToastProvider>
@@ -71,6 +74,7 @@ export default async function DashboardLayout({
         permissions={[...context.permissions]}
         unreadCount={unreadCount}
         alertCount={alertCount}
+        notificationCount={notificationCount}
         subscription={{
           planName: entitlements.planName,
           status: entitlements.status,

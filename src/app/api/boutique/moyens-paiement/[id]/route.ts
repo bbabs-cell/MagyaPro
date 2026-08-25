@@ -4,6 +4,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { NotFoundError, ValidationError } from '@/lib/errors';
+import { notifySettingsChanged } from '@/lib/notifications';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -31,6 +32,13 @@ export const PATCH = route(async (request, { params }: Params) => {
   const updated = await prisma.storePaymentMethod.update({
     where: { id: method.id },
     data: { isEnabled },
+  });
+
+  await notifySettingsChanged({
+    storeId: context.store.id,
+    section: 'Moyens de paiement',
+    actorName: context.user.name,
+    href: '/boutique/dashboard/parametres',
   });
 
   return ok({ method: updated });
