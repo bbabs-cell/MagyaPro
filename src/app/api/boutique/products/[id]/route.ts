@@ -1,25 +1,13 @@
-import { z } from 'zod';
-
 import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore, findStoreScopedOrThrow } from '@/lib/boutique/store-tenant';
-import { nameSchema, optionalText, quantitySchema, urlSchema } from '@/lib/validation';
+import { storeProductUpdateSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
+import { ValidationError } from '@/lib/errors';
 import type { StoreProduct } from '@prisma/client';
 
 type Params = { params: Promise<{ id: string }> };
-
-const updateSchema = z.object({
-  name: nameSchema,
-  description: optionalText(1000),
-  categoryId: z.string().min(1).nullable().optional(),
-  brandId: z.string().min(1).nullable().optional(),
-  imageUrl: urlSchema.nullable().optional(),
-  status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
-  minStockAlert: quantitySchema(1_000_000),
-  unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']),
-});
 
 export const PATCH = route(async (request, { params }: Params) => {
   const context = await requireStore('products:manage');
@@ -27,21 +15,54 @@ export const PATCH = route(async (request, { params }: Params) => {
   const { id } = await params;
 
   await findStoreScopedOrThrow<StoreProduct>('storeProduct', context.store.id, id);
-  const input = parseOrThrow(updateSchema, await readJson(request));
+  const input = parseOrThrow(storeProductUpdateSchema, await readJson(request));
 
-  const product = await prisma.storeProduct.update({
-    where: { id },
-    data: {
-      name: input.name,
-      description: input.description ?? null,
-      categoryId: input.categoryId ?? null,
-      brandId: input.brandId ?? null,
-      imageUrl: input.imageUrl ?? null,
-      status: input.status,
-      minStockAlert: input.minStockAlert,
-      unit: input.unit,
-    },
+  if (input.price < input.cost) {
+    throw new ValidationError('Le prix de vente est inférieur au coût.', {
+      price: 'Doit être au moins égal au coût.',
+    });
+  }
+
+  // Modèle mono-variante en pratique aujourd'hui (une seule créée à la
+  // fiche produit, voir `POST /api/boutique/products`) : la modification
+  // porte donc sur cette première variante, jamais sur un identifiant de
+  // variante fourni par le client.
+  const defaultVariant = await prisma.storeProductVariant.findFirst({
+    where: { productId: id },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
   });
+
+  const [product] = await prisma.$transaction([
+    prisma.storeProduct.update({
+      where: { id },
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        categoryId: input.categoryId ?? null,
+        brandId: input.brandId ?? null,
+        supplierId: input.supplierId ?? null,
+        imageUrl: input.imageUrl ?? null,
+        status: input.status,
+        minStockAlert: input.minStockAlert,
+        unit: input.unit,
+      },
+    }),
+    ...(defaultVariant
+      ? [
+          prisma.storeProductVariant.update({
+            where: { id: defaultVariant.id },
+            data: {
+              sku: input.sku ?? null,
+              barcode: input.barcode ?? null,
+              cost: input.cost,
+              price: input.price,
+              attributes: input.attributes,
+            },
+          }),
+        ]
+      : []),
+  ]);
 
   await recordAudit({
     action: AUDIT_ACTIONS.STORE_PRODUCT_UPDATED,

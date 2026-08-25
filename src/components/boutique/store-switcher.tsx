@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { api } from '@/lib/client/api';
+import { ApiError, api } from '@/lib/client/api';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import type { StoreRole } from '@prisma/client';
 import { cx } from '@/components/ui';
@@ -27,6 +27,7 @@ export function StoreSwitcher({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,13 +54,20 @@ export function StoreSwitcher({
       return;
     }
     setPending(true);
+    setError(null);
     try {
       await api.post('/api/boutique/switch-store', { storeId });
       router.push('/boutique/dashboard');
       router.refresh();
+      setOpen(false);
+    } catch (err) {
+      // Échec explicite plutôt que silencieux : sans ce message, l'écran se
+      // referme et l'utilisateur reste sur la mauvaise boutique sans le
+      // savoir — risque réel de vente ou commande enregistrée au mauvais
+      // endroit.
+      setError(err instanceof ApiError ? err.message : 'Impossible de changer de boutique. Réessayez.');
     } finally {
       setPending(false);
-      setOpen(false);
     }
   }
 
@@ -82,6 +90,12 @@ export function StoreSwitcher({
           </span>
         </span>
       </button>
+
+      {error && (
+        <p role="alert" className="mt-1.5 text-xs text-red-400">
+          {error}
+        </p>
+      )}
 
       {open && (
         <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-navy p-1 shadow-lg">

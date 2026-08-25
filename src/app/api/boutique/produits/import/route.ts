@@ -104,10 +104,11 @@ export const POST = route(async (request) => {
 
       updated++;
     } catch (error) {
-      errors.push({
-        row: rowNumber,
-        message: error instanceof Error ? error.message : 'Échec de la mise à jour.',
-      });
+      // Le détail technique (contrainte, colonne) reste côté serveur — le
+      // client ne doit jamais recevoir un message d'erreur brut de la base
+      // de données, même pour une ligne d'import individuelle.
+      console.error(`Import Excel : échec ligne ${rowNumber} (variante ${variant.id})`, error);
+      errors.push({ row: rowNumber, message: 'Échec de la mise à jour.' });
     }
   }
 

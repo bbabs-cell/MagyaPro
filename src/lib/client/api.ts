@@ -79,13 +79,32 @@ export const api = {
 
 /** Téléversement multipart — `fetch` doit fixer lui-même le Content-Type. */
 export async function uploadFile<T>(url: string, formData: FormData): Promise<T> {
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-    credentials: 'same-origin',
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin',
+    });
+  } catch {
+    throw new ApiError(
+      'Connexion impossible. Vérifiez votre connexion internet et réessayez.',
+      0,
+      'NETWORK_ERROR',
+    );
+  }
 
-  const payload = (await response.json()) as ApiResponse<T>;
+  let payload: ApiResponse<T>;
+  try {
+    payload = (await response.json()) as ApiResponse<T>;
+  } catch {
+    throw new ApiError(
+      "Réponse inattendue du serveur. Réessayez dans un instant.",
+      response.status,
+      'BAD_RESPONSE',
+    );
+  }
+
   if (!payload.ok) {
     throw new ApiError(
       payload.error.message,

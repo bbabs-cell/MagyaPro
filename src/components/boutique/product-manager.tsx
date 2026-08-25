@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
-import { formatMoney, toMinor } from '@/lib/money';
+import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 /**
@@ -92,6 +92,7 @@ export function ProductManager({
   const [brands] = useState(initialBrands);
   const [products] = useState(initialProducts);
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showBrandForm, setShowBrandForm] = useState(false);
 
@@ -163,6 +164,21 @@ export function ProductManager({
         />
       )}
 
+      {editingProduct && (
+        <ProductForm
+          product={editingProduct}
+          categories={categories}
+          brands={brands}
+          currency={currency}
+          businessType={businessType}
+          onDone={() => {
+            setEditingProduct(null);
+            router.refresh();
+          }}
+          onCancel={() => setEditingProduct(null)}
+        />
+      )}
+
       {products.length === 0 ? (
         <EmptyState
           title="Aucun produit pour le moment"
@@ -186,6 +202,7 @@ export function ProductManager({
                 <th className="px-4 py-3 text-right font-medium">Prix</th>
                 <th className="px-4 py-3 text-right font-medium">Stock</th>
                 <th className="px-4 py-3 font-medium">Statut</th>
+                {canManage && <th className="px-4 py-3 font-medium">&nbsp;</th>}
               </tr>
             </thead>
             <tbody>
@@ -227,6 +244,13 @@ export function ProductManager({
                         {STATUS_LABELS[product.status]}
                       </Badge>
                     </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-right">
+                        <Button size="sm" variant="ghost" onClick={() => setEditingProduct(product)}>
+                          Modifier
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -295,6 +319,7 @@ function QuickAddForm({
 }
 
 function ProductForm({
+  product,
   categories,
   brands,
   currency,
@@ -302,6 +327,8 @@ function ProductForm({
   onDone,
   onCancel,
 }: {
+  /** Présent pour une modification, absent pour une création. */
+  product?: Product;
   categories: Category[];
   brands: BrandRow[];
   currency: string;
@@ -309,6 +336,8 @@ function ProductForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const isEdit = Boolean(product);
+  const variant = product?.variants[0];
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -331,20 +360,35 @@ function ProductForm({
     if (attr2Value) attributes[attr2Label] = attr2Value;
 
     try {
-      await api.post('/api/boutique/products', {
-        name: String(formData.get('name') ?? ''),
-        categoryId: categoryId || null,
-        brandId: brandId || null,
-        status: String(formData.get('status') ?? 'DRAFT'),
-        minStockAlert: Number(formData.get('minStockAlert') ?? 0),
-        unit: String(formData.get('unit') ?? 'UNIT'),
-        sku: String(formData.get('sku') ?? '') || undefined,
-        cost: toMinor(String(formData.get('cost') ?? '0'), currency),
-        price: toMinor(String(formData.get('price') ?? '0'), currency),
-        attributes,
-        initialStock: Number(formData.get('initialStock') ?? 0),
-        initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
-      });
+      if (isEdit && product) {
+        await api.patch(`/api/boutique/products/${product.id}`, {
+          name: String(formData.get('name') ?? ''),
+          categoryId: categoryId || null,
+          brandId: brandId || null,
+          status: String(formData.get('status') ?? 'DRAFT'),
+          minStockAlert: Number(formData.get('minStockAlert') ?? 0),
+          unit: String(formData.get('unit') ?? 'UNIT'),
+          sku: String(formData.get('sku') ?? '') || undefined,
+          cost: toMinor(String(formData.get('cost') ?? '0'), currency),
+          price: toMinor(String(formData.get('price') ?? '0'), currency),
+          attributes,
+        });
+      } else {
+        await api.post('/api/boutique/products', {
+          name: String(formData.get('name') ?? ''),
+          categoryId: categoryId || null,
+          brandId: brandId || null,
+          status: String(formData.get('status') ?? 'DRAFT'),
+          minStockAlert: Number(formData.get('minStockAlert') ?? 0),
+          unit: String(formData.get('unit') ?? 'UNIT'),
+          sku: String(formData.get('sku') ?? '') || undefined,
+          cost: toMinor(String(formData.get('cost') ?? '0'), currency),
+          price: toMinor(String(formData.get('price') ?? '0'), currency),
+          attributes,
+          initialStock: Number(formData.get('initialStock') ?? 0),
+          initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
+        });
+      }
       onDone();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -359,7 +403,7 @@ function ProductForm({
 
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-medium">Nouveau produit</h2>
+      <h2 className="text-lg font-medium">{isEdit ? `Modifier « ${product!.name} »` : 'Nouveau produit'}</h2>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
         {error && (
@@ -369,12 +413,12 @@ function ProductForm({
         )}
 
         <Field label="Nom" htmlFor="name" required error={fieldErrors.name}>
-          <input id="name" name="name" required className={inputClass} placeholder="T-shirt col rond" />
+          <input id="name" name="name" required className={inputClass} placeholder="T-shirt col rond" defaultValue={product?.name} />
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Catégorie" htmlFor="categoryId">
-            <select id="categoryId" name="categoryId" className={inputClass}>
+            <select id="categoryId" name="categoryId" className={inputClass} defaultValue={product?.category?.id ?? ''}>
               <option value="">Aucune</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -384,7 +428,7 @@ function ProductForm({
             </select>
           </Field>
           <Field label="Marque" htmlFor="brandId">
-            <select id="brandId" name="brandId" className={inputClass}>
+            <select id="brandId" name="brandId" className={inputClass} defaultValue={product?.brand?.id ?? ''}>
               <option value="">Aucune</option>
               {brands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
@@ -405,7 +449,7 @@ function ProductForm({
               step="0.01"
               required
               className={inputClass}
-              defaultValue="0"
+              defaultValue={variant ? toMajor(variant.cost, currency) : '0'}
             />
           </Field>
           <Field label={`Prix de vente (${currency})`} htmlFor="price" required error={fieldErrors.price}>
@@ -417,26 +461,12 @@ function ProductForm({
               step="0.01"
               required
               className={inputClass}
+              defaultValue={variant ? toMajor(variant.price, currency) : undefined}
             />
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Stock initial"
-            htmlFor="initialStock"
-            hint="Quantité déjà en votre possession. Décimale pour un produit vendu au poids/volume."
-          >
-            <input
-              id="initialStock"
-              name="initialStock"
-              type="number"
-              min="0"
-              step="0.001"
-              className={inputClass}
-              defaultValue="0"
-            />
-          </Field>
+        {isEdit ? (
           <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
             <input
               id="minStockAlert"
@@ -445,30 +475,61 @@ function ProductForm({
               min="0"
               step="0.001"
               className={inputClass}
-              defaultValue="0"
+              defaultValue={product!.minStockAlert}
             />
           </Field>
-        </div>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Stock initial"
+                htmlFor="initialStock"
+                hint="Quantité déjà en votre possession. Décimale pour un produit vendu au poids/volume."
+              >
+                <input
+                  id="initialStock"
+                  name="initialStock"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  className={inputClass}
+                  defaultValue="0"
+                />
+              </Field>
+              <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
+                <input
+                  id="minStockAlert"
+                  name="minStockAlert"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  className={inputClass}
+                  defaultValue="0"
+                />
+              </Field>
+            </div>
 
-        <Field
-          label="Date de péremption du stock initial (facultatif)"
-          htmlFor="initialStockExpiryDate"
-          hint="Pour les denrées ou cosmétiques — laisser vide sinon."
-        >
-          <input
-            id="initialStockExpiryDate"
-            name="initialStockExpiryDate"
-            type="date"
-            className={inputClass}
-          />
-        </Field>
+            <Field
+              label="Date de péremption du stock initial (facultatif)"
+              htmlFor="initialStockExpiryDate"
+              hint="Pour les denrées ou cosmétiques — laisser vide sinon."
+            >
+              <input
+                id="initialStockExpiryDate"
+                name="initialStockExpiryDate"
+                type="date"
+                className={inputClass}
+              />
+            </Field>
+          </>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Référence / SKU (facultatif)" htmlFor="sku">
-            <input id="sku" name="sku" className={inputClass} placeholder="TSH-001" />
+            <input id="sku" name="sku" className={inputClass} placeholder="TSH-001" defaultValue={variant?.sku ?? undefined} />
           </Field>
           <Field label="Unité" htmlFor="unit" hint="Détermine comment le stock s'affiche.">
-            <select id="unit" name="unit" className={inputClass} defaultValue="UNIT">
+            <select id="unit" name="unit" className={inputClass} defaultValue={product?.unit ?? 'UNIT'}>
               {Object.entries(UNIT_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
@@ -482,18 +543,19 @@ function ProductForm({
           <legend className="text-sm font-medium">Attributs (facultatif)</legend>
           <div className="mt-2 grid gap-4 sm:grid-cols-2">
             <Field label={attr1Label} htmlFor="attr1">
-              <input id="attr1" name="attr1" className={inputClass} />
+              <input id="attr1" name="attr1" className={inputClass} defaultValue={variant?.attributes[attr1Label] ?? undefined} />
             </Field>
             <Field label={attr2Label} htmlFor="attr2">
-              <input id="attr2" name="attr2" className={inputClass} />
+              <input id="attr2" name="attr2" className={inputClass} defaultValue={variant?.attributes[attr2Label] ?? undefined} />
             </Field>
           </div>
         </fieldset>
 
         <Field label="Statut" htmlFor="status">
-          <select id="status" name="status" className={inputClass} defaultValue="DRAFT">
+          <select id="status" name="status" className={inputClass} defaultValue={product?.status ?? 'DRAFT'}>
             <option value="DRAFT">Brouillon</option>
             <option value="ACTIVE">Actif</option>
+            {isEdit && <option value="ARCHIVED">Archivé</option>}
           </select>
         </Field>
 

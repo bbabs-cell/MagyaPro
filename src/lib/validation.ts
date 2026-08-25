@@ -582,6 +582,28 @@ export const storeProductSchema = z.object({
   initialStockExpiryDate: z.coerce.date().optional(),
 });
 
+/**
+ * Modification d'un produit existant — mêmes champs que la création à
+ * l'exclusion du stock initial (un mouvement de stock séparé, jamais
+ * modifié en même temps que la fiche produit).
+ */
+export const storeProductUpdateSchema = z.object({
+  name: nameSchema,
+  description: optionalText(1000),
+  categoryId: z.string().min(1).nullable().optional(),
+  brandId: z.string().min(1).nullable().optional(),
+  supplierId: z.string().min(1).nullable().optional(),
+  imageUrl: urlSchema.nullable().optional(),
+  status: z.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  minStockAlert: quantitySchema(1_000_000),
+  unit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER', 'MILLILITER', 'PACK']),
+  sku: optionalText(60),
+  barcode: optionalText(60),
+  cost: amountSchema,
+  price: amountSchema,
+  attributes: variantAttributesSchema,
+});
+
 export const storeSupplierSchema = z.object({
   name: nameSchema,
   contactName: optionalText(120),

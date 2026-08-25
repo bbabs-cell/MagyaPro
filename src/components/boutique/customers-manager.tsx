@@ -11,6 +11,9 @@ type Customer = {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
   salesCount: number;
   totalSpent: number;
   creditBalance: number;
@@ -31,6 +34,7 @@ export function CustomersManager({
   const router = useRouter();
   const [customers] = useState(initialCustomers);
   const [showForm, setShowForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
 
   return (
@@ -48,6 +52,17 @@ export function CustomersManager({
             router.refresh();
           }}
           onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {editingCustomer && (
+        <CustomerForm
+          customer={editingCustomer}
+          onDone={() => {
+            setEditingCustomer(null);
+            router.refresh();
+          }}
+          onCancel={() => setEditingCustomer(null)}
         />
       )}
 
@@ -87,15 +102,22 @@ export function CustomersManager({
                     )}
                   </td>
                   <td data-label="" className="px-4 py-3 text-right">
-                    {canManageCredit && customer.creditBalance > 0 && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setPayingId(customer.id)}
-                      >
-                        Encaisser
-                      </Button>
-                    )}
+                    <div className="flex justify-end gap-2">
+                      {canManageCredit && customer.creditBalance > 0 && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setPayingId(customer.id)}
+                        >
+                          Encaisser
+                        </Button>
+                      )}
+                      {canManage && (
+                        <Button size="sm" variant="ghost" onClick={() => setEditingCustomer(customer)}>
+                          Modifier
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -119,7 +141,17 @@ export function CustomersManager({
   );
 }
 
-function CustomerForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+function CustomerForm({
+  customer,
+  onDone,
+  onCancel,
+}: {
+  /** Présent pour une modification, absent pour une création. */
+  customer?: Customer;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const isEdit = Boolean(customer);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -131,12 +163,21 @@ function CustomerForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
     setFieldErrors({});
     const formData = new FormData(event.currentTarget);
 
+    const payload = {
+      name: String(formData.get('name') ?? ''),
+      phone: String(formData.get('phone') ?? ''),
+      email: String(formData.get('email') ?? '') || undefined,
+      address: String(formData.get('address') ?? '') || undefined,
+      notes: String(formData.get('notes') ?? '') || undefined,
+      creditLimit: Number(formData.get('creditLimit') ?? 0),
+    };
+
     try {
-      await api.post('/api/boutique/customers', {
-        name: String(formData.get('name') ?? ''),
-        phone: String(formData.get('phone') ?? ''),
-        creditLimit: Number(formData.get('creditLimit') ?? 0),
-      });
+      if (isEdit && customer) {
+        await api.patch(`/api/boutique/customers/${customer.id}`, payload);
+      } else {
+        await api.post('/api/boutique/customers', payload);
+      }
       onDone();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -151,7 +192,7 @@ function CustomerForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
 
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-medium">Nouveau client</h2>
+      <h2 className="text-lg font-medium">{isEdit ? `Modifier « ${customer!.name} »` : 'Nouveau client'}</h2>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
         {error && (
           <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -159,10 +200,19 @@ function CustomerForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
           </div>
         )}
         <Field label="Nom" htmlFor="customerName" required error={fieldErrors.name}>
-          <input id="customerName" name="name" required className={inputClass} />
+          <input id="customerName" name="name" required className={inputClass} defaultValue={customer?.name} />
         </Field>
         <Field label="Téléphone" htmlFor="customerPhone" required error={fieldErrors.phone}>
-          <input id="customerPhone" name="phone" required className={inputClass} />
+          <input id="customerPhone" name="phone" required className={inputClass} defaultValue={customer?.phone} />
+        </Field>
+        <Field label="Email (facultatif)" htmlFor="customerEmail" error={fieldErrors.email}>
+          <input id="customerEmail" name="email" type="email" className={inputClass} defaultValue={customer?.email ?? undefined} />
+        </Field>
+        <Field label="Adresse (facultatif)" htmlFor="customerAddress">
+          <input id="customerAddress" name="address" className={inputClass} defaultValue={customer?.address ?? undefined} />
+        </Field>
+        <Field label="Notes (facultatif)" htmlFor="customerNotes">
+          <textarea id="customerNotes" name="notes" rows={3} className={inputClass} defaultValue={customer?.notes ?? undefined} />
         </Field>
         <Field
           label="Limite de crédit"
@@ -175,7 +225,7 @@ function CustomerForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
             type="number"
             min={0}
             className={inputClass}
-            defaultValue={0}
+            defaultValue={customer?.creditLimit ?? 0}
           />
         </Field>
         <div className="flex gap-2 pt-2">
