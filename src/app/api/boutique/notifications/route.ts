@@ -15,7 +15,7 @@ export const GET = route(async () => {
     take: 100,
   });
 
-  return ok({ notifications });
+  return ok({ notifications, notificationSoundUrl: store.notificationSoundUrl });
 });
 
 const markReadSchema = z.object({

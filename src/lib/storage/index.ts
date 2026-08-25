@@ -504,3 +504,30 @@ export async function uploadNotificationSound(params: {
   const key = `${restaurantId}/sounds/${crypto.randomUUID()}.${AUDIO_EXTENSIONS[detected]}`;
   return storage().put(key, buffer, detected);
 }
+
+/** Même logique que `uploadNotificationSound` (Restaurant), pour une boutique. */
+export async function uploadStoreNotificationSound(params: {
+  file: File;
+  storeId: string;
+}): Promise<StoredFile> {
+  const { file, storeId } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_AUDIO_BYTES) {
+    throw new ValidationError(
+      `Le son ne doit pas dépasser ${Math.round(MAX_AUDIO_BYTES / 1024)} Ko.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectAudioType(buffer);
+
+  if (!detected || !ALLOWED_AUDIO_TYPES.includes(detected as never)) {
+    throw new ValidationError('Format non pris en charge. Utilisez un fichier MP3, WAV ou OGG.');
+  }
+
+  const key = `stores/${storeId}/sounds/${crypto.randomUUID()}.${AUDIO_EXTENSIONS[detected]}`;
+  return storage().put(key, buffer, detected);
+}

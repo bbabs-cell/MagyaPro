@@ -8,7 +8,7 @@ import { toMajor, toMinor } from '@/lib/money';
 import { DAY_NAMES } from '@/lib/site/hours';
 import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
-import { SoundUploadField } from '@/components/dashboard/sound-upload';
+import { SoundUploadField } from '@/components/account/sound-upload';
 
 /**
  * Réglages du restaurant, regroupés par sujet.
@@ -600,7 +600,11 @@ export function SettingsPanels({
               />
             </Field>
 
-            <SoundUploadField value={notificationSoundUrl} onChange={setNotificationSoundUrl} />
+            <SoundUploadField
+              endpoint="/api/restaurant/notification-sound"
+              value={notificationSoundUrl}
+              onChange={setNotificationSoundUrl}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field

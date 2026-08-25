@@ -14,13 +14,19 @@ import { NotFoundError } from '@/lib/errors';
 export const GET = route(async () => {
   const { restaurant } = await requireTenant('restaurant:view');
 
-  const notifications = await prisma.notification.findMany({
-    where: { restaurantId: restaurant.id },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
+  const [notifications, settings] = await Promise.all([
+    prisma.notification.findMany({
+      where: { restaurantId: restaurant.id },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+      select: { notificationSoundUrl: true },
+    }),
+  ]);
 
-  return ok({ notifications });
+  return ok({ notifications, notificationSoundUrl: settings?.notificationSoundUrl ?? null });
 });
 
 const markReadSchema = z.object({

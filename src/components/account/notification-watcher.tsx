@@ -9,10 +9,12 @@ import { api } from '@/lib/client/api';
  * Fait sonner une notification à l'arrivée de tout nouvel événement non lu
  * (commande, changement de réglages, stock, paiement, réservation…) — Core,
  * partagé entre Restaurant et Boutique, monté dans les deux ossatures de
- * tableau de bord. Un simple bip généré par le navigateur (Web Audio API) :
- * pas de son personnalisé ici (Restaurant en a un pour les commandes, géré
- * séparément par `AlertWatcher`, qu'on évite de faire sonner deux fois via
- * `skipTypesForSound`).
+ * tableau de bord. Joue le son personnalisé du tenant s'il en a téléversé un
+ * (`notificationSoundUrl`, renvoyé par l'endpoint interrogé), sinon un bip
+ * généré par le navigateur (Web Audio API). Pour Restaurant, les commandes
+ * sont déjà signalées séparément par `AlertWatcher` (son + rappel toutes les
+ * 2 min) — ce composant les ignore via `skipTypesForSound` pour ne pas
+ * sonner deux fois pour le même événement.
  */
 
 const POLL_INTERVAL_MS = 15_000;
@@ -36,6 +38,21 @@ function beep(): void {
   } catch {
     // Contexte audio indisponible (autoplay bloqué avant interaction) : le
     // badge de navigation reste le signal visuel de secours.
+  }
+}
+
+/** Joue le son personnalisé du tenant, ou le bip par défaut à défaut. */
+function playSound(customSoundUrl: string | null): void {
+  if (!customSoundUrl) {
+    beep();
+    return;
+  }
+  try {
+    const audio = new Audio(customSoundUrl);
+    audio.volume = 0.6;
+    void audio.play().catch(() => beep());
+  } catch {
+    beep();
   }
 }
 
@@ -66,7 +83,10 @@ export function NotificationWatcher({
 
     async function poll() {
       try {
-        const data = await api.get<{ notifications: NotificationRow[] }>(endpoint);
+        const data = await api.get<{
+          notifications: NotificationRow[];
+          notificationSoundUrl?: string | null;
+        }>(endpoint);
         if (cancelled) return;
 
         const currentIds = new Set(data.notifications.map((n) => n.id));
@@ -77,7 +97,7 @@ export function NotificationWatcher({
             (n) => !knownIds.current!.has(n.id) && !n.readAt && !skipSet.has(n.type),
           );
           if (hasNewSoundworthy) {
-            beep();
+            playSound(data.notificationSoundUrl ?? null);
             router.refresh();
           }
         }

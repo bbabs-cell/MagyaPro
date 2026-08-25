@@ -1371,6 +1371,12 @@ model Store {
   /// Taux en dixièmes de pourcent (ex. 185 = 18,5 %), pour rester en entier.
   taxRate    Int     @default(0)
 
+  /// Son personnalisé joué à l'arrivée d'une notification (commande, rupture
+  /// de stock…) dans le tableau de bord — équivalent de
+  /// `RestaurantSettings.notificationSoundUrl`. Sans fichier, un bip par
+  /// défaut est utilisé (voir `NotificationWatcher`).
+  notificationSoundUrl String?
+
   onboardingStep        Int       @default(0)
   onboardingCompletedAt DateTime?
 

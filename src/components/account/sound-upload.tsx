@@ -6,17 +6,20 @@ import { ApiError, api, uploadFile } from '@/lib/client/api';
 import { Button } from '@/components/ui';
 
 /**
- * Son de notification personnalisé, joué à l'arrivée d'une commande.
+ * Son de notification personnalisé — Core, partagé entre Restaurant et
+ * Boutique (`/api/restaurant/notification-sound`,
+ * `/api/boutique/notification-sound`, même comportement des deux côtés).
  *
- * Le fichier part vers `/api/restaurant/notification-sound`, qui le valide,
- * le range et l'enregistre directement sur les réglages du restaurant — pas
- * besoin de cliquer sur « Enregistrer » séparément, un envoi = un réglage
- * appliqué.
+ * Le fichier part vers `endpoint`, qui le valide, le range et l'enregistre
+ * directement sur les réglages du tenant — pas besoin de cliquer sur
+ * « Enregistrer » séparément, un envoi = un réglage appliqué.
  */
 export function SoundUploadField({
+  endpoint,
   value,
   onChange,
 }: {
+  endpoint: string;
   value: string | null;
   onChange: (url: string | null) => void;
 }) {
@@ -32,7 +35,7 @@ export function SoundUploadField({
       const formData = new FormData();
       formData.append('file', file);
       const result = await uploadFile<{ url: string }>(
-        '/api/restaurant/notification-sound',
+        endpoint,
         formData,
       );
       onChange(result.url);
@@ -50,7 +53,7 @@ export function SoundUploadField({
     setUploading(true);
     setError(null);
     try {
-      await api.delete('/api/restaurant/notification-sound');
+      await api.delete(endpoint);
       onChange(null);
     } catch {
       setError("La suppression a échoué. Réessayez.");
