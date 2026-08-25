@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
       "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: https:${storageHost ? ` https://${storageHost}` : ''}`,
+      // Sans cette directive, `media-src` retombe sur `default-src 'self'` et
+      // bloque silencieusement la lecture du son de notification personnalisé
+      // (hébergé sur le stockage objet, jamais sur ce domaine) — l'audio
+      // affiche alors 0:00 / 0:00 sans jamais charger, malgré un
+      // téléversement réussi côté serveur.
+      `media-src 'self'${storageHost ? ` https://${storageHost}` : ''}`,
       "font-src 'self' data:",
       "frame-src https://challenges.cloudflare.com",
       "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com",
