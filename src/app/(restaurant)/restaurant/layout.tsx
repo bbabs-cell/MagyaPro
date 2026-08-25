@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { LinkButton } from '@/components/ui';
 import { Logo, LogoMark } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
+import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
 
 export default async function MarketingLayout({
@@ -102,7 +103,7 @@ export default async function MarketingLayout({
         </div>
       </footer>
 
-      <CookieConsent />
+      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
     </div>
   );
 }

@@ -37,11 +37,15 @@ export default function ConfidentialitePage() {
           heading: 'Cookies',
           body: (
             <p>
-              Magyapro utilise uniquement des cookies strictement
-              nécessaires : maintien de la session de connexion et mémoire
-              des préférences d&apos;affichage (thème clair/sombre, langue).
-              Aucun cookie de mesure d&apos;audience ni de publicité
-              n&apos;est déposé à ce jour.
+              Magyapro dépose des cookies strictement nécessaires (maintien
+              de la session de connexion, mémoire des préférences
+              d&apos;affichage) sans que votre accord ne soit requis. Avec
+              votre consentement explicite (bandeau affiché en bas de page),
+              des cookies de mesure d&apos;audience (Google Analytics) et
+              publicitaires (Meta) peuvent aussi être déposés, pour
+              comprendre l&apos;usage du site et mesurer nos campagnes. Vous
+              pouvez à tout moment refuser ces derniers ou revenir sur votre
+              choix en effaçant les cookies de votre navigateur.
             </p>
           ),
         },
@@ -50,9 +54,8 @@ export default function ConfidentialitePage() {
           body: (
             <p>
               Vous pouvez demander l&apos;accès, la correction ou la
-              suppression de vos données en écrivant à [email de contact à
-              compléter]. [Délai de réponse et procédure détaillée à
-              préciser.]
+              suppression de vos données en écrivant à contact@magyapro.com.
+              [Délai de réponse et procédure détaillée à préciser.]
             </p>
           ),
         },

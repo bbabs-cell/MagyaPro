@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
+import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
 
 /**
@@ -70,7 +71,7 @@ export default function AuthLayout({
         </main>
       </div>
 
-      <CookieConsent />
+      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
     </div>
   );
 }

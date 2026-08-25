@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { boutiqueLandingAssetUrl } from '@/lib/storage';
+import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
 
 /**
@@ -99,7 +100,7 @@ export default function BoutiquePublicLayout({ children }: { children: React.Rea
         </div>
       </footer>
 
-      <CookieConsent />
+      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
     </div>
   );
 }

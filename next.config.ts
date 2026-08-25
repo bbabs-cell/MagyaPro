@@ -33,12 +33,17 @@ const nextConfig: NextConfig = {
       // scripts injectés/inline au chargement : les interdire casserait
       // l'hydratation et la vérification anti-robot. `object-src`/`base-uri`
       // restent verrouillés, ce qui couvre l'essentiel du risque XSS.
-      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+      // googletagmanager.com/connect.facebook.net : chargement conditionnel
+      // (après consentement) du Meta Pixel et Google Analytics — voir
+      // `cookie-consent.tsx` — utilisés à la fois par le site vitrine
+      // MagyaPro et par les réglages d'analytics propres à chaque tenant
+      // (`googleAnalyticsId`/`metaPixelId` sur les sites publics r/[host]).
+      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: https:${storageHost ? ` https://${storageHost}` : ''}`,
       "font-src 'self' data:",
       "frame-src https://challenges.cloudflare.com",
-      "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+      "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com",
       "object-src 'none'",
       "base-uri 'self'",
       "frame-ancestors 'self'",

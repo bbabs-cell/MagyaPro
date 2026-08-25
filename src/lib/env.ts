@@ -77,6 +77,17 @@ export const env = {
   /// clé secrète Turnstile.
   sentryDsn: process.env.SENTRY_DSN,
 
+  /// Mesure d'audience et publicité du site vitrine MagyaPro lui-même
+  /// (jamais des sites publics des tenants, qui ont leurs propres réglages
+  /// `googleAnalyticsId`/`metaPixelId` par restaurant/boutique). Non
+  /// sensibles par nature (identifiants visibles dans le code source de
+  /// n'importe quel site qui les utilise), mais transmis en props depuis un
+  /// composant serveur plutôt que préfixés `NEXT_PUBLIC_`, par cohérence
+  /// avec `turnstileSiteKey` — et chargés seulement après consentement
+  /// explicite (voir `cookie-consent.tsx`).
+  metaPixelId: process.env.META_PIXEL_ID,
+  gaMeasurementId: process.env.GA_MEASUREMENT_ID,
+
   /// SMS transactionnels (confirmation/statut de commande, alerte
   /// d'abonnement) via Africa's Talking. Fonctionnalité désactivée si
   /// absent — comme Turnstile, un manque de clés ne bloque rien.
