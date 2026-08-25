@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import type { Prisma, StockMovementType } from '@prisma/client';
+import { Prisma, type StockMovementType } from '@prisma/client';
 import { toQty } from '@/lib/boutique/quantity';
 import { createNotification } from '@/lib/notifications';
 import { triggerWebhooks } from '@/lib/boutique/webhooks';
@@ -35,38 +35,70 @@ export async function recordStockMovement(
   },
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
-  const existing = await tx.inventory.findUnique({
-    where: {
-      productVariantId_warehouseId: {
-        productVariantId: params.productVariantId,
-        warehouseId: params.warehouseId,
+  // Écriture atomique et conditionnelle : deux mouvements simultanés sur la
+  // même ligne (deux caisses, deux onglets) ne doivent jamais tous les deux
+  // réussir sur la base d'une même lecture périmée — sans quoi le stock
+  // affiché diverge silencieusement du stock réel (vente en double du
+  // dernier article). Le `where` combine l'identifiant unique et, pour une
+  // sortie, la condition de suffisance : Prisma échoue avec P2025 si la
+  // ligne n'existe pas OU si la condition n'est plus vraie au moment de
+  // l'écriture — jamais un calcul fait sur une lecture antérieure.
+  const key = {
+    productVariantId: params.productVariantId,
+    warehouseId: params.warehouseId,
+  };
+
+  let quantityAfter: number;
+  try {
+    const updated = await tx.inventory.update({
+      where: {
+        productVariantId_warehouseId: key,
+        ...(params.quantityChange < 0 ? { quantity: { gte: -params.quantityChange } } : {}),
       },
-    },
-  });
+      data: { quantity: { increment: params.quantityChange } },
+    });
+    quantityAfter = toQty(updated.quantity);
+  } catch (error) {
+    const isMissingRecord =
+      error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
+    if (!isMissingRecord) throw error;
 
-  const quantityBefore = existing ? toQty(existing.quantity) : 0;
-  const quantityAfter = quantityBefore + params.quantityChange;
+    if (params.quantityChange < 0) {
+      // Sortie sur une ligne absente ou insuffisante — dans les deux cas,
+      // le stock disponible ne couvre pas la demande. Lecture ponctuelle,
+      // seulement pour un message d'erreur informatif (jamais utilisée pour
+      // décider si l'opération doit réussir, décidé plus haut de façon
+      // atomique).
+      const current = await tx.inventory.findUnique({ where: { productVariantId_warehouseId: key } });
+      const available = current ? toQty(current.quantity) : 0;
+      throw new Error(
+        `Stock insuffisant : ${available} en stock, ${Math.abs(params.quantityChange)} demandés.`,
+      );
+    }
 
-  if (quantityAfter < 0) {
-    throw new Error(
-      `Stock insuffisant : ${quantityBefore} en stock, ${Math.abs(params.quantityChange)} demandés.`,
-    );
+    // Aucune ligne n'existe encore pour ce couple variante/entrepôt (premier
+    // mouvement) : on la crée. Si une autre création concurrente l'a créée
+    // entre-temps (P2002), l'incrément se rejoue en toute sécurité via le
+    // même chemin atomique.
+    try {
+      const created = await tx.inventory.create({
+        data: { ...key, quantity: params.quantityChange },
+      });
+      quantityAfter = toQty(created.quantity);
+    } catch (createError) {
+      const isDuplicate =
+        createError instanceof Prisma.PrismaClientKnownRequestError && createError.code === 'P2002';
+      if (!isDuplicate) throw createError;
+
+      const updated = await tx.inventory.update({
+        where: { productVariantId_warehouseId: key },
+        data: { quantity: { increment: params.quantityChange } },
+      });
+      quantityAfter = toQty(updated.quantity);
+    }
   }
 
-  await tx.inventory.upsert({
-    where: {
-      productVariantId_warehouseId: {
-        productVariantId: params.productVariantId,
-        warehouseId: params.warehouseId,
-      },
-    },
-    create: {
-      productVariantId: params.productVariantId,
-      warehouseId: params.warehouseId,
-      quantity: quantityAfter,
-    },
-    update: { quantity: quantityAfter },
-  });
+  const quantityBefore = quantityAfter - params.quantityChange;
 
   await tx.inventoryMovement.create({
     data: {

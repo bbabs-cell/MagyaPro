@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/db';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
@@ -21,21 +23,45 @@ export async function openCashSession(params: {
 }) {
   const { storeId, userId, userEmail, openingBalance } = params;
 
-  const alreadyOpen = await prisma.cashSession.findFirst({ where: { storeId, status: 'OPEN' } });
-  if (alreadyOpen) {
-    throw new ValidationError('Une session de caisse est déjà ouverte.');
-  }
+  // Vérification puis création enveloppées dans une transaction sérialisable
+  // plutôt qu'un simple `findFirst` suivi d'un `create` : deux ouvertures
+  // lancées au même instant (double-clic, deux onglets) liraient sinon
+  // toutes les deux « aucune session ouverte » avant que l'une n'écrive,
+  // créant deux sessions ouvertes en parallèle. Sous isolation sérialisable,
+  // Postgres détecte le conflit et fait échouer l'une des deux transactions
+  // (`P2034`), qu'on traduit alors en la même erreur métier que le cas
+  // normal — jamais une seconde session créée en silence.
+  let session;
+  try {
+    session = await prisma.$transaction(
+      async (tx) => {
+        const alreadyOpen = await tx.cashSession.findFirst({ where: { storeId, status: 'OPEN' } });
+        if (alreadyOpen) {
+          throw new ValidationError('Une session de caisse est déjà ouverte.');
+        }
 
-  // La caisse principale est créée à l'inscription ; ce filet de sécurité
-  // couvre les comptes créés avant l'introduction de cette fonctionnalité.
-  let register = await prisma.cashRegister.findFirst({ where: { storeId, isActive: true } });
-  if (!register) {
-    register = await prisma.cashRegister.create({ data: { storeId, name: 'Caisse principale' } });
-  }
+        // La caisse principale est créée à l'inscription ; ce filet de
+        // sécurité couvre les comptes créés avant l'introduction de cette
+        // fonctionnalité.
+        let register = await tx.cashRegister.findFirst({ where: { storeId, isActive: true } });
+        if (!register) {
+          register = await tx.cashRegister.create({ data: { storeId, name: 'Caisse principale' } });
+        }
 
-  const session = await prisma.cashSession.create({
-    data: { storeId, cashRegisterId: register.id, userId, openingBalance },
-  });
+        return tx.cashSession.create({
+          data: { storeId, cashRegisterId: register.id, userId, openingBalance },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  } catch (error) {
+    const isSerializationConflict =
+      error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+    if (isSerializationConflict) {
+      throw new ValidationError('Une session de caisse est déjà ouverte.');
+    }
+    throw error;
+  }
 
   await recordAudit({
     action: AUDIT_ACTIONS.CASH_SESSION_OPENED,

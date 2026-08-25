@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { toQty } from '@/lib/boutique/quantity';
@@ -206,13 +208,43 @@ export async function receivePurchaseOrder(params: {
   await prisma.$transaction(async (tx) => {
     for (const line of input.items) {
       const item = itemById.get(line.purchaseOrderItemId)!;
-      const remaining = toQty(item.quantityOrdered) - toQty(item.quantityReceived);
-      if (remaining <= 0) continue;
-      // Ne jamais recevoir plus que ce qu'il reste à recevoir sur cette
-      // ligne, même si la quantité saisie est plus élevée — un écart de
-      // réception se corrige en ajustant la commande, pas en la dépassant
-      // silencieusement.
-      const quantity = Math.min(line.quantity, remaining);
+      const orderedQty = toQty(item.quantityOrdered);
+
+      // `quantityReceived` doit être relu puis écrit de façon atomique et
+      // conditionnelle : deux réceptions concurrentes de la même commande
+      // (deux onglets) basées sur une lecture faite avant l'ouverture de la
+      // transaction pourraient sinon dépasser `quantityOrdered` — chacune
+      // clampant sur un `remaining` déjà périmé. La condition d'égalité
+      // dans le `where` agit comme un verrou optimiste : si une autre
+      // réception a déjà écrit entre la lecture et l'écriture, Prisma lève
+      // P2025 et on relit puis retente sur l'état à jour, jusqu'à ce que la
+      // ligne soit épuisée ou que l'écriture aboutisse.
+      let quantity = 0;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const freshItem = await tx.purchaseOrderItem.findUniqueOrThrow({
+          where: { id: line.purchaseOrderItemId },
+        });
+        const remaining = orderedQty - toQty(freshItem.quantityReceived);
+        if (remaining <= 0) {
+          quantity = 0;
+          break;
+        }
+        quantity = Math.min(line.quantity, remaining);
+        if (quantity <= 0) break;
+
+        try {
+          await tx.purchaseOrderItem.update({
+            where: { id: freshItem.id, quantityReceived: freshItem.quantityReceived },
+            data: { quantityReceived: { increment: quantity } },
+          });
+          break;
+        } catch (error) {
+          const isStale =
+            error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
+          if (!isStale) throw error;
+          quantity = 0; // une autre réception a gagné cette tentative — on relit au tour suivant
+        }
+      }
       if (quantity <= 0) continue;
 
       // Moyenne pondérée : le coût de la variante reflète le mélange du
@@ -257,10 +289,8 @@ export async function receivePurchaseOrder(params: {
         data: { cost: newCost },
       });
 
-      await tx.purchaseOrderItem.update({
-        where: { id: item.id },
-        data: { quantityReceived: { increment: quantity } },
-      });
+      // `quantityReceived` a déjà été incrémenté de façon atomique plus
+      // haut, avant que le coût pondéré ne soit calculé sur sa base.
 
       receivedCost += incomingValue;
     }
