@@ -72,6 +72,7 @@ const ATTRIBUTE_SUGGESTIONS: Record<string, [string, string]> = {
   COSMETICS: ['Contenance', 'Teinte / Parfum'],
   ELECTRONICS: ['Numéro de série', 'Garantie'],
   GROCERY: ['Origine', 'Conservation'],
+  MERCERIE: ['Couleur', 'Matière'],
   OTHER: ['Attribut 1', 'Attribut 2'],
 };
 

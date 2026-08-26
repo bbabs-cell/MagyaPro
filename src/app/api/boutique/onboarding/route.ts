@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { SUGGESTED_TEMPLATE_BY_SECTOR } from '@/lib/boutique/store-templates';
 
-const businessTypes = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'OTHER'] as const;
+const businessTypes = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'MERCERIE', 'OTHER'] as const;
 
 const schema = z.object({
   businessType: z.enum(businessTypes),

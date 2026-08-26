@@ -14,6 +14,7 @@ export const SUGGESTED_TEMPLATE_BY_SECTOR: Record<string, string> = {
   ELECTRONICS: 'vitrine',
   COSMETICS: 'mode',
   GROCERY: 'marche',
+  MERCERIE: 'vitrine',
   OTHER: 'classic',
 };
 

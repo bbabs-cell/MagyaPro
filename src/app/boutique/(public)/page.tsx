@@ -18,6 +18,7 @@ const SECTOR_LABELS: Record<string, string> = {
   ELECTRONICS: 'Électronique',
   COSMETICS: 'Cosmétique',
   GROCERY: 'Alimentation',
+  MERCERIE: 'Mercerie',
 };
 
 export const metadata: Metadata = {

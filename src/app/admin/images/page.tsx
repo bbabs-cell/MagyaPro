@@ -34,6 +34,7 @@ const BOUTIQUE_SECTOR_LABELS: Record<(typeof BOUTIQUE_SECTORS)[number], string> 
   ELECTRONICS: 'Électronique',
   COSMETICS: 'Cosmétique',
   GROCERY: 'Alimentation',
+  MERCERIE: 'Mercerie',
 };
 
 export const metadata: Metadata = { title: 'Images' };

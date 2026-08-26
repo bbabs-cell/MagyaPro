@@ -11,6 +11,7 @@ const BUSINESS_TYPES = [
   { value: 'ELECTRONICS', label: 'Électronique' },
   { value: 'COSMETICS', label: 'Cosmétique & beauté' },
   { value: 'GROCERY', label: 'Alimentation & épicerie' },
+  { value: 'MERCERIE', label: 'Mercerie' },
   { value: 'OTHER', label: 'Autre commerce' },
 ] as const;
 

@@ -16,6 +16,7 @@ const BUSINESS_TYPE_LABELS: Record<string, string> = {
   ELECTRONICS: 'Électronique',
   COSMETICS: 'Cosmétique',
   GROCERY: 'Alimentation',
+  MERCERIE: 'Mercerie',
   OTHER: 'Autre',
 };
 

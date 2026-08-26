@@ -403,7 +403,7 @@ export function boutiqueHowItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
 }
 
 /** Secteurs d'activité illustrables sur la page d'accueil Boutique — mêmes valeurs que `StoreBusinessType`. */
-export const BOUTIQUE_SECTORS = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY'] as const;
+export const BOUTIQUE_SECTORS = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'MERCERIE'] as const;
 export type BoutiqueSector = (typeof BOUTIQUE_SECTORS)[number];
 
 /**

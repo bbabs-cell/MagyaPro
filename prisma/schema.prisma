@@ -1330,6 +1330,7 @@ enum StoreBusinessType {
   ELECTRONICS
   COSMETICS
   GROCERY
+  MERCERIE
   OTHER
 }
 
