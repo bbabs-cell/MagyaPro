@@ -1706,6 +1706,15 @@ model StoreProductVariant {
   salePrice  Int?
   imageUrl   String?
   isActive   Boolean @default(true)
+  /// Nombre d'unités de base contenues dans un carton (ex. 20 bouteilles par
+  /// carton) — `null` si ce produit ne se vend/achète pas par carton. Le
+  /// stock (`Inventory.quantity`) reste toujours compté en unités de base ;
+  /// vendre un carton déduit `packSize` unités d'un coup (voir `createSale`).
+  packSize   Int?
+  /// Coût d'achat du carton complet, en unité mineure.
+  packCost   Int?
+  /// Prix de vente du carton complet, en unité mineure.
+  packPrice  Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2099,8 +2108,17 @@ model Sale {
   @@map("boutique_sales")
 }
 
+/// Vendu à l'unité de base, ou par carton complet (voir
+/// `StoreProductVariant.packSize`) — détermine à la fois le prix appliqué
+/// (`price` vs `packPrice`) et combien d'unités de base sont déduites du
+/// stock pour cette ligne.
+enum SaleUnit {
+  UNIT
+  PACK
+}
+
 model SaleItem {
-  id               String  @id @default(cuid())
+  id               String   @id @default(cuid())
   saleId           String
   productVariantId String
   /// Nom et attributs figés au moment de la vente : une fiche produit
@@ -2108,9 +2126,10 @@ model SaleItem {
   /// des ventes déjà réalisées.
   productName      String
   variantLabel     String?
-  quantity         Decimal @db.Decimal(14, 3)
+  saleUnit         SaleUnit @default(UNIT)
+  quantity         Decimal  @db.Decimal(14, 3)
   unitPrice        Int
-  discount         Int     @default(0)
+  discount         Int      @default(0)
   total            Int
 
   sale           Sale                @relation(fields: [saleId], references: [id], onDelete: Cascade)

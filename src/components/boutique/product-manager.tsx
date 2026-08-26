@@ -24,6 +24,9 @@ type Variant = {
   cost: number;
   price: number;
   attributes: Record<string, string>;
+  packSize: number | null;
+  packCost: number | null;
+  packPrice: number | null;
 };
 type Product = {
   id: string;
@@ -229,6 +232,11 @@ export function ProductManager({
                     </td>
                     <td data-label="Prix" className="px-4 py-3 text-right font-medium">
                       {variant ? formatMoney(variant.price, currency) : '—'}
+                      {variant?.packSize && variant.packPrice ? (
+                        <p className="mt-0.5 text-xs font-normal text-ink-faint">
+                          Carton ×{variant.packSize} : {formatMoney(variant.packPrice, currency)}
+                        </p>
+                      ) : null}
                     </td>
                     <td
                       data-label="Stock"
@@ -342,6 +350,11 @@ function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [attr1Label, attr2Label] = ATTRIBUTE_SUGGESTIONS[businessType] ?? ATTRIBUTE_SUGGESTIONS.OTHER!;
+  // Contrôlé uniquement pour afficher/masquer les champs de stock initial en
+  // cartons ci-dessous — la valeur réellement envoyée vient toujours de
+  // `formData` à la soumission, jamais de cet état.
+  const [packSizeText, setPackSizeText] = useState(variant?.packSize ? String(variant.packSize) : '');
+  const packSizeNum = Number(packSizeText) || 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -359,6 +372,13 @@ function ProductForm({
     if (attr1Value) attributes[attr1Label] = attr1Value;
     if (attr2Value) attributes[attr2Label] = attr2Value;
 
+    const packSizeRaw = String(formData.get('packSize') ?? '').trim();
+    const packCostRaw = String(formData.get('packCost') ?? '').trim();
+    const packPriceRaw = String(formData.get('packPrice') ?? '').trim();
+    const packSize = packSizeRaw ? Number(packSizeRaw) : null;
+    const packCost = packSize && packCostRaw ? toMinor(packCostRaw, currency) : null;
+    const packPrice = packSize && packPriceRaw ? toMinor(packPriceRaw, currency) : null;
+
     try {
       if (isEdit && product) {
         await api.patch(`/api/boutique/products/${product.id}`, {
@@ -372,8 +392,17 @@ function ProductForm({
           cost: toMinor(String(formData.get('cost') ?? '0'), currency),
           price: toMinor(String(formData.get('price') ?? '0'), currency),
           attributes,
+          packSize,
+          packCost,
+          packPrice,
         });
       } else {
+        const cartons = Number(formData.get('initialStockCartons') ?? 0);
+        const extraUnits = Number(formData.get('initialStockUnits') ?? 0);
+        const initialStock = packSize
+          ? cartons * packSize + extraUnits
+          : Number(formData.get('initialStock') ?? 0);
+
         await api.post('/api/boutique/products', {
           name: String(formData.get('name') ?? ''),
           categoryId: categoryId || null,
@@ -385,7 +414,10 @@ function ProductForm({
           cost: toMinor(String(formData.get('cost') ?? '0'), currency),
           price: toMinor(String(formData.get('price') ?? '0'), currency),
           attributes,
-          initialStock: Number(formData.get('initialStock') ?? 0),
+          packSize,
+          packCost,
+          packPrice,
+          initialStock,
           initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
         });
       }
@@ -466,6 +498,51 @@ function ProductForm({
           </Field>
         </div>
 
+        <fieldset>
+          <legend className="text-sm font-medium">Vente par carton (facultatif)</legend>
+          <p className="mt-0.5 text-xs text-ink-faint">
+            Ex. un carton de 20 bouteilles d&apos;eau — le stock reste toujours compté à l&apos;unité,
+            mais la caisse pourra vendre au carton complet en plus de l&apos;unité.
+          </p>
+          <div className="mt-2 grid gap-4 sm:grid-cols-3">
+            <Field label="Unités par carton" htmlFor="packSize" error={fieldErrors.packSize}>
+              <input
+                id="packSize"
+                name="packSize"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="20"
+                className={inputClass}
+                value={packSizeText}
+                onChange={(event) => setPackSizeText(event.target.value)}
+              />
+            </Field>
+            <Field label={`Coût d'achat carton (${currency})`} htmlFor="packCost">
+              <input
+                id="packCost"
+                name="packCost"
+                type="number"
+                min="0"
+                step="0.01"
+                className={inputClass}
+                defaultValue={variant?.packCost ? toMajor(variant.packCost, currency) : undefined}
+              />
+            </Field>
+            <Field label={`Prix de vente carton (${currency})`} htmlFor="packPrice" error={fieldErrors.packPrice}>
+              <input
+                id="packPrice"
+                name="packPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                className={inputClass}
+                defaultValue={variant?.packPrice ? toMajor(variant.packPrice, currency) : undefined}
+              />
+            </Field>
+          </div>
+        </fieldset>
+
         {isEdit ? (
           <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
             <input
@@ -480,34 +557,76 @@ function ProductForm({
           </Field>
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Stock initial"
-                htmlFor="initialStock"
-                hint="Quantité déjà en votre possession. Décimale pour un produit vendu au poids/volume."
-              >
-                <input
-                  id="initialStock"
-                  name="initialStock"
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  className={inputClass}
-                  defaultValue="0"
-                />
-              </Field>
-              <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
-                <input
-                  id="minStockAlert"
-                  name="minStockAlert"
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  className={inputClass}
-                  defaultValue="0"
-                />
-              </Field>
-            </div>
+            {packSizeNum > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Field
+                  label="Cartons en stock"
+                  htmlFor="initialStockCartons"
+                  hint={`Chaque carton contient ${packSizeNum} unité(s).`}
+                >
+                  <input
+                    id="initialStockCartons"
+                    name="initialStockCartons"
+                    type="number"
+                    min="0"
+                    step="1"
+                    className={inputClass}
+                    defaultValue="0"
+                  />
+                </Field>
+                <Field label="Unités hors carton" htmlFor="initialStockUnits">
+                  <input
+                    id="initialStockUnits"
+                    name="initialStockUnits"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    className={inputClass}
+                    defaultValue="0"
+                  />
+                </Field>
+                <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
+                  <input
+                    id="minStockAlert"
+                    name="minStockAlert"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    className={inputClass}
+                    defaultValue="0"
+                  />
+                </Field>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  label="Stock initial"
+                  htmlFor="initialStock"
+                  hint="Quantité déjà en votre possession. Décimale pour un produit vendu au poids/volume."
+                >
+                  <input
+                    id="initialStock"
+                    name="initialStock"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    className={inputClass}
+                    defaultValue="0"
+                  />
+                </Field>
+                <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
+                  <input
+                    id="minStockAlert"
+                    name="minStockAlert"
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    className={inputClass}
+                    defaultValue="0"
+                  />
+                </Field>
+              </div>
+            )}
 
             <Field
               label="Date de péremption du stock initial (facultatif)"

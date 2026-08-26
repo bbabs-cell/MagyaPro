@@ -45,6 +45,8 @@ export default async function BoutiqueCaissePage() {
     select: {
       id: true,
       price: true,
+      packSize: true,
+      packPrice: true,
       barcode: true,
       product: { select: { name: true, unit: true } },
       inventory: defaultWarehouse
@@ -59,6 +61,8 @@ export default async function BoutiqueCaissePage() {
     variantId: variant.id,
     name: variant.product.name,
     price: variant.price,
+    packSize: variant.packSize,
+    packPrice: variant.packPrice,
     unit: variant.product.unit,
     barcode: variant.barcode,
     stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,

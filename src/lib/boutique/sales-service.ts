@@ -56,14 +56,20 @@ export async function createSale(params: {
   let subtotal = 0;
   const lines = input.items.map((item) => {
     const variant = variantById.get(item.productVariantId)!;
-    const lineTotal = variant.price * item.quantity;
+    const isPack = item.saleUnit === 'PACK';
+    if (isPack && (!variant.packSize || !variant.packPrice)) {
+      throw new ValidationError(`${variant.product.name} ne se vend pas au carton.`);
+    }
+    const unitPrice = isPack ? variant.packPrice! : variant.price;
+    const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
     return {
       productVariantId: variant.id,
       productName: variant.product.name,
-      variantLabel: variant.sku,
+      variantLabel: isPack ? `Carton de ${variant.packSize}` : variant.sku,
+      saleUnit: item.saleUnit,
       quantity: item.quantity,
-      unitPrice: variant.price,
+      unitPrice,
       total: lineTotal,
     };
   });
@@ -190,13 +196,17 @@ export async function createSale(params: {
     // demandée dépasse le stock disponible, ce qui annule toute la
     // transaction — aucune vente partielle possible.
     for (const item of input.items) {
+      const variant = variantById.get(item.productVariantId)!;
+      // Le stock est toujours compté en unités de base — vendre un carton
+      // déduit `packSize` fois la quantité de cartons vendus d'un coup.
+      const baseQuantity = item.saleUnit === 'PACK' ? item.quantity * variant.packSize! : item.quantity;
       await recordStockMovement(
         {
           storeId,
           productVariantId: item.productVariantId,
           warehouseId: defaultWarehouse.id,
           type: 'SALE',
-          quantityChange: -item.quantity,
+          quantityChange: -baseQuantity,
           userId,
           referenceType: 'sale',
           referenceId: created.id,

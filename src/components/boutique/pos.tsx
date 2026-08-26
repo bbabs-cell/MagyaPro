@@ -27,10 +27,16 @@ type Product = {
   name: string;
   variantId: string;
   price: number;
+  /** Nombre d'unités de base par carton, `null` si ce produit ne se vend
+   *  pas au carton — voir `StoreProductVariant.packSize`. */
+  packSize: number | null;
+  packPrice: number | null;
   stock: number;
   unit: string;
   barcode: string | null;
 };
+
+type SaleUnit = 'UNIT' | 'PACK';
 
 type Customer = {
   id: string;
@@ -42,9 +48,13 @@ type Customer = {
 
 type CartLine = {
   variantId: string;
+  /** Vendu à l'unité de base ou par carton complet — deux lignes distinctes
+   *  du même produit peuvent coexister dans le panier (une par mode). */
+  saleUnit: SaleUnit;
   name: string;
   unitPrice: number;
   quantity: number;
+  /** Quantité maximale exprimée dans l'unité vendue (cartons ou unités). */
   maxStock: number;
   unit: string;
 };
@@ -111,30 +121,34 @@ export function Pos({
   const remaining = Math.max(total - paymentsTotal, 0);
   const customer = customers.find((c) => c.id === customerId) ?? null;
 
-  function addToCart(product: Product) {
+  function addToCart(product: Product, saleUnit: SaleUnit = 'UNIT') {
     setError(null);
+    const isPack = saleUnit === 'PACK';
+    if (isPack && (!product.packSize || !product.packPrice)) return;
+    const step = isPack ? 1 : quantityStep(product.unit);
+    // Le stock (`product.stock`) est toujours compté en unités de base —
+    // converti ici en nombre de cartons complets disponibles pour une ligne
+    // vendue au carton.
+    const maxStock = isPack ? Math.floor(product.stock / product.packSize!) : product.stock;
+    const unitPrice = isPack ? product.packPrice! : product.price;
+    const name = isPack ? `${product.name} — carton ×${product.packSize}` : product.name;
+
     setCart((current) => {
-      const existing = current.find((line) => line.variantId === product.variantId);
-      const step = quantityStep(product.unit);
+      const existing = current.find(
+        (line) => line.variantId === product.variantId && line.saleUnit === saleUnit,
+      );
       if (existing) {
-        if (existing.quantity >= product.stock) return current;
+        if (existing.quantity >= maxStock) return current;
         return current.map((line) =>
-          line.variantId === product.variantId
+          line.variantId === product.variantId && line.saleUnit === saleUnit
             ? { ...line, quantity: Math.min(line.quantity + step, line.maxStock) }
             : line,
         );
       }
-      if (product.stock <= 0) return current;
+      if (maxStock <= 0) return current;
       return [
         ...current,
-        {
-          variantId: product.variantId,
-          name: product.name,
-          unitPrice: product.price,
-          quantity: step,
-          maxStock: product.stock,
-          unit: product.unit,
-        },
+        { variantId: product.variantId, saleUnit, name, unitPrice, quantity: step, maxStock, unit: product.unit },
       ];
     });
   }
@@ -154,20 +168,26 @@ export function Pos({
     setQuery('');
   }
 
-  function updateQuantity(variantId: string, quantity: number) {
+  function updateQuantity(variantId: string, saleUnit: SaleUnit, quantity: number) {
     setCart((current) =>
       current
         .map((line) =>
-          line.variantId === variantId
-            ? { ...line, quantity: Math.max(quantityStep(line.unit), Math.min(quantity, line.maxStock)) }
+          line.variantId === variantId && line.saleUnit === saleUnit
+            ? {
+                ...line,
+                quantity: Math.max(
+                  saleUnit === 'PACK' ? 1 : quantityStep(line.unit),
+                  Math.min(quantity, line.maxStock),
+                ),
+              }
             : line,
         )
         .filter((line) => line.quantity > 0),
     );
   }
 
-  function removeLine(variantId: string) {
-    setCart((current) => current.filter((line) => line.variantId !== variantId));
+  function removeLine(variantId: string, saleUnit: SaleUnit) {
+    setCart((current) => current.filter((line) => !(line.variantId === variantId && line.saleUnit === saleUnit)));
   }
 
   function addPaymentLine() {
@@ -199,7 +219,11 @@ export function Pos({
     setQueuedOffline(false);
 
     const payload = {
-      items: cart.map((line) => ({ productVariantId: line.variantId, quantity: line.quantity })),
+      items: cart.map((line) => ({
+        productVariantId: line.variantId,
+        quantity: line.quantity,
+        saleUnit: line.saleUnit,
+      })),
       customerId: customerId || undefined,
       discount: discountAmount,
       promoCode: promoCode.trim() || undefined,
@@ -259,26 +283,46 @@ export function Pos({
           <p className="text-sm text-ink-muted">Aucun produit ne correspond à cette recherche.</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((product) => (
-              <button
-                key={product.variantId}
-                type="button"
-                onClick={() => addToCart(product)}
-                disabled={product.stock <= 0}
-                className="card flex flex-col items-start gap-1 p-4 text-left transition-shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span className="font-medium text-ink">{product.name}</span>
-                <span className="text-sm text-ink-muted">
-                  {formatMoney(product.price, currency)}
-                  {product.unit !== 'UNIT' && ` / ${UNIT_LABELS[product.unit]}`}
-                </span>
-                <Badge tone={product.stock > 0 ? 'neutral' : 'danger'}>
-                  {product.stock > 0
-                    ? `${product.stock} ${UNIT_LABELS[product.unit]} en stock`
-                    : 'Rupture'}
-                </Badge>
-              </button>
-            ))}
+            {filtered.map((product) => {
+              const canSellPack = Boolean(product.packSize && product.packPrice);
+              return (
+                <div
+                  key={product.variantId}
+                  className="card flex flex-col items-start gap-1 p-4 text-left transition-shadow hover:shadow-md"
+                >
+                  <span className="font-medium text-ink">{product.name}</span>
+                  <Badge tone={product.stock > 0 ? 'neutral' : 'danger'}>
+                    {product.stock > 0
+                      ? `${product.stock} ${UNIT_LABELS[product.unit]} en stock`
+                      : 'Rupture'}
+                  </Badge>
+                  <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => addToCart(product, 'UNIT')}
+                      disabled={product.stock <= 0}
+                      className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Unité
+                      <br />
+                      {formatMoney(product.price, currency)}
+                    </button>
+                    {canSellPack && (
+                      <button
+                        type="button"
+                        onClick={() => addToCart(product, 'PACK')}
+                        disabled={product.stock < product.packSize!}
+                        className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Carton ×{product.packSize}
+                        <br />
+                        {formatMoney(product.packPrice!, currency)}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -309,34 +353,40 @@ export function Pos({
           <p className="mt-3 text-sm text-ink-muted">Ajoutez des produits pour commencer une vente.</p>
         ) : (
           <ul className="mt-3 space-y-3">
-            {cart.map((line) => (
-              <li key={line.variantId} className="flex items-center gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{line.name}</p>
-                  <p className="text-xs text-ink-muted">{formatMoney(line.unitPrice, currency)}</p>
-                </div>
-                <input
-                  type="number"
-                  min={quantityStep(line.unit)}
-                  max={line.maxStock}
-                  step={quantityStep(line.unit)}
-                  value={line.quantity}
-                  onChange={(event) => updateQuantity(line.variantId, Number(event.target.value))}
-                  className="w-16 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
-                />
-                {isDecimalUnit(line.unit) && (
-                  <span className="text-xs text-ink-faint">{UNIT_LABELS[line.unit]}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => removeLine(line.variantId)}
-                  aria-label={`Retirer ${line.name}`}
-                  className="shrink-0 text-ink-faint hover:text-red-600"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
+            {cart.map((line) => {
+              const step = line.saleUnit === 'PACK' ? 1 : quantityStep(line.unit);
+              return (
+                <li key={`${line.variantId}:${line.saleUnit}`} className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{line.name}</p>
+                    <p className="text-xs text-ink-muted">{formatMoney(line.unitPrice, currency)}</p>
+                  </div>
+                  <input
+                    type="number"
+                    min={step}
+                    max={line.maxStock}
+                    step={step}
+                    value={line.quantity}
+                    onChange={(event) =>
+                      updateQuantity(line.variantId, line.saleUnit, Number(event.target.value))
+                    }
+                    className="w-16 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
+                  />
+                  {line.saleUnit === 'UNIT' && isDecimalUnit(line.unit) && (
+                    <span className="text-xs text-ink-faint">{UNIT_LABELS[line.unit]}</span>
+                  )}
+                  {line.saleUnit === 'PACK' && <span className="text-xs text-ink-faint">carton(s)</span>}
+                  <button
+                    type="button"
+                    onClick={() => removeLine(line.variantId, line.saleUnit)}
+                    aria-label={`Retirer ${line.name}`}
+                    className="shrink-0 text-ink-faint hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
 

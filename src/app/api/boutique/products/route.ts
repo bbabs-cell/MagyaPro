@@ -41,6 +41,16 @@ export const POST = route(async (request) => {
       price: 'Doit être au moins égal au coût.',
     });
   }
+  if (input.packSize && !input.packPrice) {
+    throw new ValidationError('Le prix du carton est requis quand une taille de carton est définie.', {
+      packPrice: 'Requis.',
+    });
+  }
+  if (input.packPrice != null && input.packCost != null && input.packPrice < input.packCost) {
+    throw new ValidationError('Le prix du carton est inférieur à son coût.', {
+      packPrice: 'Doit être au moins égal au coût du carton.',
+    });
+  }
 
   const defaultWarehouse = await prisma.warehouse.findFirst({
     where: { storeId: context.store.id, isDefault: true },
@@ -69,6 +79,9 @@ export const POST = route(async (request) => {
             cost: input.cost,
             price: input.price,
             attributes: input.attributes,
+            packSize: input.packSize ?? null,
+            packCost: input.packCost ?? null,
+            packPrice: input.packPrice ?? null,
           },
         },
       },

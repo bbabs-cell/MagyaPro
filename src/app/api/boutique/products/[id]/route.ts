@@ -22,6 +22,16 @@ export const PATCH = route(async (request, { params }: Params) => {
       price: 'Doit être au moins égal au coût.',
     });
   }
+  if (input.packSize && !input.packPrice) {
+    throw new ValidationError('Le prix du carton est requis quand une taille de carton est définie.', {
+      packPrice: 'Requis.',
+    });
+  }
+  if (input.packPrice != null && input.packCost != null && input.packPrice < input.packCost) {
+    throw new ValidationError('Le prix du carton est inférieur à son coût.', {
+      packPrice: 'Doit être au moins égal au coût du carton.',
+    });
+  }
 
   // Modèle mono-variante en pratique aujourd'hui (une seule créée à la
   // fiche produit, voir `POST /api/boutique/products`) : la modification
@@ -58,6 +68,9 @@ export const PATCH = route(async (request, { params }: Params) => {
               cost: input.cost,
               price: input.price,
               attributes: input.attributes,
+              packSize: input.packSize,
+              packCost: input.packCost,
+              packPrice: input.packPrice,
             },
           }),
         ]

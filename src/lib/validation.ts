@@ -580,6 +580,11 @@ export const storeProductSchema = z.object({
   initialStock: quantitySchema(1_000_000).default(0),
   /** Date de péremption du stock initial, facultative — crée un lot suivi séparément. */
   initialStockExpiryDate: z.coerce.date().optional(),
+  /** Nombre d'unités de base par carton — `null`/absent si le produit ne se
+   *  vend/achète pas par carton (voir `StoreProductVariant.packSize`). */
+  packSize: z.number().int().min(1).max(100_000).nullable().optional(),
+  packCost: amountSchema.nullable().optional(),
+  packPrice: amountSchema.nullable().optional(),
 });
 
 /**
@@ -602,6 +607,9 @@ export const storeProductUpdateSchema = z.object({
   cost: amountSchema,
   price: amountSchema,
   attributes: variantAttributesSchema,
+  packSize: z.number().int().min(1).max(100_000).nullable(),
+  packCost: amountSchema.nullable(),
+  packPrice: amountSchema.nullable(),
 });
 
 export const storeSupplierSchema = z.object({
@@ -840,6 +848,8 @@ export const storeSaleSchema = z.object({
       z.object({
         productVariantId: z.string().min(1),
         quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
+        /** Vendu à l'unité de base ou par carton complet (voir `SaleUnit`). */
+        saleUnit: z.enum(['UNIT', 'PACK']).default('UNIT'),
       }),
     )
     .min(1, 'Le panier est vide.')
