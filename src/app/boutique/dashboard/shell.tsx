@@ -173,6 +173,13 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M9.5 12l1.8 1.8 3.2-3.6" />
     </svg>
   ),
+  '/boutique/dashboard/aide': (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7" />
+      <circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  ),
 };
 
 function getNavSections(
@@ -229,6 +236,7 @@ function getNavSections(
         // Réglage personnel du compte connecté — sans objet pour une visite
         // guidée anonyme, et la page échouerait (elle exige une vraie session).
         ...(isDemoTour ? [] : [{ href: '/boutique/dashboard/securite', label: 'Sécurité' }]),
+        { href: '/boutique/dashboard/aide', label: "Centre d'aide" },
       ],
     },
   ];
