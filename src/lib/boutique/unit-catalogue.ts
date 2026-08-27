@@ -114,6 +114,57 @@ export function sectorLabel(sector: string): string {
   return SECTOR_LABELS[sector] ?? sector;
 }
 
+/**
+ * Axes de déclinaison suggérés à la création d'un produit, selon le secteur.
+ * Pré-remplissage seulement : le commerçant reste libre de les renommer, d'en
+ * ajouter ou de n'en garder aucun. C'est ce qui fait qu'une boutique de
+ * chaussures parle de pointures là où une mercerie ne propose rien —
+ * sans que le moteur, lui, connaisse la moindre différence.
+ */
+export const SECTOR_VARIANT_AXES: Record<string, Array<{ name: string; values: string[] }>> = {
+  CLOTHING: [
+    { name: 'Taille', values: ['S', 'M', 'L', 'XL', 'XXL'] },
+    { name: 'Couleur', values: [] },
+  ],
+  SHOES: [
+    { name: 'Pointure', values: ['39', '40', '41', '42', '43'] },
+    { name: 'Couleur', values: [] },
+  ],
+  COSMETICS: [{ name: 'Contenance', values: [] }],
+  ELECTRONICS: [
+    { name: 'Capacité', values: [] },
+    { name: 'Couleur', values: [] },
+  ],
+  MERCERIE: [{ name: 'Couleur', values: [] }],
+  HARDWARE: [{ name: 'Dimension', values: [] }],
+  CONSTRUCTION: [{ name: 'Dimension', values: [] }],
+  PHARMACY: [{ name: 'Dosage', values: [] }],
+};
+
+/**
+ * Libellés d'attributs libres proposés selon le secteur — deux champs
+ * génériques de la fiche produit, nommés pour le métier plutôt que
+ * « Attribut 1 / Attribut 2 ».
+ */
+export const SECTOR_ATTRIBUTE_SUGGESTIONS: Record<string, [string, string]> = {
+  CLOTHING: ['Matière', 'Coupe'],
+  SHOES: ['Matière', 'Usage'],
+  COSMETICS: ['Contenance', 'Teinte / Parfum'],
+  ELECTRONICS: ['Numéro de série', 'Garantie'],
+  GROCERY: ['Origine', 'Conservation'],
+  MERCERIE: ['Couleur', 'Matière'],
+  HARDWARE: ['Matière', 'Dimension'],
+  CONSTRUCTION: ['Qualité', 'Provenance'],
+  HOUSEHOLD: ['Contenance', 'Parfum'],
+  PHARMACY: ['Dosage', 'Péremption'],
+  GENERAL: ['Attribut 1', 'Attribut 2'],
+  OTHER: ['Attribut 1', 'Attribut 2'],
+};
+
+export function attributeSuggestionsFor(sector: string): [string, string] {
+  return SECTOR_ATTRIBUTE_SUGGESTIONS[sector] ?? SECTOR_ATTRIBUTE_SUGGESTIONS.OTHER!;
+}
+
 /** Unités d'une boutique dont le secteur n'est pas (ou plus) reconnu. */
 export const FALLBACK_UNIT_CODES = SECTOR_UNITS.OTHER!;
 

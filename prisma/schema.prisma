@@ -1689,6 +1689,16 @@ model StoreUnit {
   /// proposée à la saisie. Une unité n'est jamais supprimée tant qu'une
   /// vente ou un mouvement la cite.
   isActive    Boolean @default(true)
+  /// Conversion habituelle dans cette boutique (« chez moi, un plateau fait
+  /// toujours 30 »), pré-remplie à l'ajout de l'unité sur une fiche produit.
+  /// Purement indicatif : la conversion qui fait foi reste celle de la fiche
+  /// (`StoreVariantUnit.factor`), parce qu'un carton ne contient pas le même
+  /// nombre d'unités d'un produit à l'autre.
+  defaultFactor Decimal? @db.Decimal(18, 6)
+  /// Créée par le commerçant plutôt qu'issue du catalogue — seule une unité
+  /// personnalisée peut être renommée librement ou supprimée si rien ne la
+  /// référence.
+  isCustom    Boolean @default(false)
   position    Int     @default(0)
 
   createdAt DateTime @default(now())

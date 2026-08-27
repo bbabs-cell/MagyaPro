@@ -7,6 +7,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
+import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 /**
@@ -26,6 +27,8 @@ type StoreUnit = {
   label: string;
   labelPlural: string;
   isDecimal: boolean;
+  /** Conversion habituelle dans cette boutique — pré-remplissage seulement. */
+  defaultFactor: number | null;
 };
 
 /** Conditionnement déclaré sur une variante : conversion + prix propres. */
@@ -110,21 +113,6 @@ const UNIT_LABELS: Record<string, string> = {
   LITER: 'L',
   MILLILITER: 'mL',
   PACK: 'pack(s)',
-};
-
-/**
- * Libellés d'attributs suggérés selon le type de commerce de la boutique —
- * même mécanisme d'attributs libres (`attributes` en JSON) pour tous, mais
- * l'interface propose des exemples pertinents au métier plutôt que des
- * champs génériques « Attribut 1 / Attribut 2 ».
- */
-const ATTRIBUTE_SUGGESTIONS: Record<string, [string, string]> = {
-  CLOTHING: ['Taille', 'Couleur'],
-  COSMETICS: ['Contenance', 'Teinte / Parfum'],
-  ELECTRONICS: ['Numéro de série', 'Garantie'],
-  GROCERY: ['Origine', 'Conservation'],
-  MERCERIE: ['Couleur', 'Matière'],
-  OTHER: ['Attribut 1', 'Attribut 2'],
 };
 
 export function ProductManager({
@@ -478,7 +466,9 @@ function ProductForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [attr1Label, attr2Label] = ATTRIBUTE_SUGGESTIONS[businessType] ?? ATTRIBUTE_SUGGESTIONS.OTHER!;
+  const [attr1Label, attr2Label] = attributeSuggestionsFor(businessType);
+  /** Axes typiques du métier — proposés en un clic, jamais imposés. */
+  const suggestedAxes = SECTOR_VARIANT_AXES[businessType] ?? [];
 
   const [baseUnitId, setBaseUnitId] = useState(product?.baseUnitId ?? storeUnits[0]?.id ?? '');
   const [unitDrafts, setUnitDrafts] = useState<UnitDraft[]>(() =>
@@ -561,13 +551,32 @@ function ProductForm({
     if (!next) return;
     setUnitDrafts((current) => [
       ...current,
-      { key: newDraftKey(), unitId: next.id, factor: '', price: '', cost: '' },
+      {
+        key: newDraftKey(),
+        unitId: next.id,
+        // Conversion habituelle de la boutique, si elle en a déclaré une
+        // (Réglages → Secteur et unités). Simple gain de saisie : c'est la
+        // valeur de cette fiche qui fera foi.
+        factor: next.defaultFactor ? String(next.defaultFactor) : '',
+        price: '',
+        cost: '',
+      },
     ]);
   }
 
   function updateUnitDraft(key: string, patch: Partial<UnitDraft>) {
     setUnitDrafts((current) =>
-      current.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)),
+      current.map((draft) => {
+        if (draft.key !== key) return draft;
+        const next = { ...draft, ...patch };
+        // Changer d'unité sur une ligne encore vierge reprend la conversion
+        // habituelle de la nouvelle unité.
+        if (patch.unitId && !draft.factor) {
+          const unit = storeUnits.find((candidate) => candidate.id === patch.unitId);
+          if (unit?.defaultFactor) next.factor = String(unit.defaultFactor);
+        }
+        return next;
+      }),
     );
   }
 
@@ -808,6 +817,16 @@ function ProductForm({
           )}
 
           <div className="mt-3 flex flex-wrap gap-2">
+            {axes.length === 0 && suggestedAxes.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setAxes(suggestedAxes.map((axis) => ({ ...axis })))}
+              >
+                Utiliser {suggestedAxes.map((axis) => axis.name.toLowerCase()).join(' et ')}
+              </Button>
+            )}
             {axes.length < 3 && (
               <Button
                 type="button"

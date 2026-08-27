@@ -10,6 +10,9 @@ import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
 import { StockSettingsPanel } from '@/components/boutique/stock-settings-panel';
+import { SectorSettingsPanel } from '@/components/boutique/sector-settings-panel';
+import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
+import { toQty } from '@/lib/boutique/quantity';
 import { NotificationSoundPanel } from '@/components/boutique/notification-sound-panel';
 import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
 import { WebhooksManager } from '@/components/boutique/webhooks-manager';
@@ -28,6 +31,15 @@ export default async function BoutiqueSettingsPage() {
   // configuré (voir `getEnabledPaymentMethods`), avant de lire la liste
   // complète (activés et désactivés) pour cet écran de gestion.
   await getEnabledPaymentMethods(context.store.id);
+
+  // Sème les unités du secteur si ce n'est pas déjà fait — sans quoi la
+  // liste ci-dessous s'afficherait vide sur une boutique qui n'a pas encore
+  // ouvert ses écrans Produits ou Caisse.
+  await ensureStoreUnitsReady(context.store.id, context.store.businessType);
+  const units = await prisma.storeUnit.findMany({
+    where: { storeId: context.store.id },
+    orderBy: [{ isActive: 'desc' }, { position: 'asc' }],
+  });
 
   const [domains, entitlements, apiKeys, webhooks, paymentMethods] = await Promise.all([
     prisma.storeDomain.findMany({
@@ -78,6 +90,14 @@ export default async function BoutiqueSettingsPage() {
         />
         <LanguageSettingsPanel
           language={context.store.language}
+          canManage={context.permissions.has('settings:manage')}
+        />
+        <SectorSettingsPanel
+          businessType={context.store.businessType}
+          units={units.map((unit) => ({
+            ...unit,
+            defaultFactor: unit.defaultFactor ? toQty(unit.defaultFactor) : null,
+          }))}
           canManage={context.permissions.has('settings:manage')}
         />
         <StockSettingsPanel

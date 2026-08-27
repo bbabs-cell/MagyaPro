@@ -67,7 +67,14 @@ export default async function BoutiqueProductsPage() {
   const storeUnits = await prisma.storeUnit.findMany({
     where: { storeId: context.store.id, isActive: true },
     orderBy: { position: 'asc' },
-    select: { id: true, code: true, label: true, labelPlural: true, isDecimal: true },
+    select: {
+      id: true,
+      code: true,
+      label: true,
+      labelPlural: true,
+      isDecimal: true,
+      defaultFactor: true,
+    },
   });
 
   return (
@@ -105,6 +112,7 @@ export default async function BoutiqueProductsPage() {
         storeUnits={storeUnits.map((unit) => ({
           ...unit,
           labelPlural: unit.labelPlural ?? unit.label,
+          defaultFactor: unit.defaultFactor ? toQty(unit.defaultFactor) : null,
         }))}
         currency={context.store.currency}
         canManage={context.permissions.has('products:manage')}
