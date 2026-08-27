@@ -7,9 +7,12 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import {
   UNIT_LABELS,
+  STOCK_RAIL,
+  STOCK_TONE,
   formatCompositeStock,
   quantityStep,
   stepForUnit,
+  stockState,
   unitLabelFor,
   type UnitOption,
 } from '@/lib/boutique/units';
@@ -388,11 +391,19 @@ export function Pos({
                   ? formatCompositeStock(variant.stock, variant.units)
                   : `${variant.stock} ${UNIT_LABELS[product.unit] ?? ''}`.trim()
                 : null;
+              // Sans déclinaison choisie, l'état porte sur le produit entier :
+              // il reste vendable tant qu'une seule déclinaison a du stock.
+              const state = stockState(
+                variant ? variant.stock : product.variants.reduce((sum, v) => sum + v.stock, 0),
+              );
 
               return (
                 <div
                   key={product.id}
-                  className="card flex flex-col items-start gap-1 p-4 text-left transition-shadow hover:shadow-md"
+                  // Rail coloré à gauche : l'état du stock se lit à la
+                  // couleur avant même d'être lu au texte.
+                  style={{ ['--rail' as string]: STOCK_RAIL[state] }}
+                  className="card card-interactive state-rail flex flex-col items-start gap-1 p-4 pl-5 text-left"
                 >
                   <span className="font-medium text-ink">{product.name}</span>
 
@@ -434,7 +445,7 @@ export function Pos({
                   {variant ? (
                     <>
                       <span className="mt-1.5">
-                        <Badge tone={variant.stock > 0 ? 'neutral' : 'danger'}>
+                        <Badge tone={STOCK_TONE[state]}>
                           {variant.stock > 0 ? `${stockLabel} en stock` : 'Rupture'}
                         </Badge>
                       </span>
@@ -485,19 +496,19 @@ export function Pos({
         <h2 className="font-semibold text-ink">Panier</h2>
 
         {error && (
-          <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}
 
         {lastReceipt && (
-          <div role="status" className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div role="status" className="mt-3 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
             Vente n°{lastReceipt.number} enregistrée — {formatMoney(lastReceipt.total, currency)}
           </div>
         )}
 
         {queuedOffline && (
-          <div role="status" className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div role="status" className="mt-3 rounded-xl bg-state-warn-soft px-4 py-3 text-sm text-state-warn">
             Pas de connexion — vente enregistrée localement, elle sera envoyée automatiquement dès le
             retour du réseau.
           </div>
@@ -536,7 +547,7 @@ export function Pos({
                     type="button"
                     onClick={() => removeLine(key)}
                     aria-label={`Retirer ${line.name}`}
-                    className="shrink-0 text-ink-faint hover:text-red-600"
+                    className="shrink-0 text-ink-faint hover:text-state-bad"
                   >
                     ✕
                   </button>
@@ -648,7 +659,7 @@ export function Pos({
                     type="button"
                     onClick={() => removePaymentLine(index)}
                     aria-label="Retirer ce paiement"
-                    className="shrink-0 text-ink-faint hover:text-red-600"
+                    className="shrink-0 text-ink-faint hover:text-state-bad"
                   >
                     ✕
                   </button>

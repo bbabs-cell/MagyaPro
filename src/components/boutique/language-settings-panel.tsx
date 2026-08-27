@@ -48,12 +48,12 @@ export function LanguageSettingsPanel({
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
       {saved && (
-        <div role="status" className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div role="status" className="mt-3 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           Réglage enregistré.
         </div>
       )}

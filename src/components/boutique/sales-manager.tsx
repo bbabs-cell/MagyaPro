@@ -98,7 +98,7 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
 
         <form onSubmit={submitReturn} className="mt-5 space-y-4" noValidate>
           {error && (
-            <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+            <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
               {error}
             </div>
           )}

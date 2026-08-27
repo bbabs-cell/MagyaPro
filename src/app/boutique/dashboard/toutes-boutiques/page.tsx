@@ -97,7 +97,7 @@ export default async function ToutesLesBoutiquesPage() {
                     {formatMoney(row.metrics.revenue, row.store.currency)} · {row.metrics.salesCount} vente
                     {row.metrics.salesCount > 1 ? 's' : ''}
                     {row.lowStock > 0 && (
-                      <span className="text-amber-700"> · {row.lowStock} article(s) à stock bas</span>
+                      <span className="text-state-warn"> · {row.lowStock} article(s) à stock bas</span>
                     )}
                   </p>
                 </div>

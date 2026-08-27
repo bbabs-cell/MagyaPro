@@ -71,20 +71,32 @@ export default async function BoutiqueDashboardLayout({
   ]);
 
   return (
-    <DashboardShell
-      platformLogoUrl={platformLogoUrl()}
-      storeId={context.store.id}
-      storeName={context.store.name}
-      storeStatus={context.store.status}
-      stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
-      unreadNotifications={unreadNotifications}
-      canManageApi={context.permissions.has('api:manage')}
-      userName={user.name}
-      userEmail={user.email}
-      isSupportAccess={context.isSupportAccess}
-      announcements={announcements}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      {/* Applique le thème mémorisé avant le premier rendu : sans ça, une
+          boutique en thème sombre verrait un éclair clair à chaque
+          chargement de page. Le composant `useBoutiqueTheme` reprend ensuite
+          la main, et retire l'attribut en quittant le tableau de bord. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "try{var t=localStorage.getItem('magyapro:boutique-theme');document.documentElement.dataset.boutiqueTheme=t==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.boutiqueTheme='light'}",
+        }}
+      />
+      <DashboardShell
+        platformLogoUrl={platformLogoUrl()}
+        storeId={context.store.id}
+        storeName={context.store.name}
+        storeStatus={context.store.status}
+        stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
+        unreadNotifications={unreadNotifications}
+        canManageApi={context.permissions.has('api:manage')}
+        userName={user.name}
+        userEmail={user.email}
+        isSupportAccess={context.isSupportAccess}
+        announcements={announcements}
+      >
+        {children}
+      </DashboardShell>
+    </>
   );
 }

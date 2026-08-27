@@ -81,7 +81,7 @@ export function OrdersManager({ orders, currency }: { orders: Order[]; currency:
   return (
     <div className="space-y-3">
       {error && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}

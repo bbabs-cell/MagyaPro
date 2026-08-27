@@ -129,12 +129,12 @@ export function SectorSettingsPanel({
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
       {saved && (
-        <div role="status" className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div role="status" className="mt-3 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           {saved}
         </div>
       )}
@@ -204,7 +204,7 @@ export function SectorSettingsPanel({
                   onClick={() => removeUnit(unit)}
                   disabled={busyUnitId === unit.id}
                   aria-label={`Supprimer ${unit.label}`}
-                  className="shrink-0 text-ink-faint hover:text-red-600 disabled:opacity-40"
+                  className="shrink-0 text-ink-faint hover:text-state-bad disabled:opacity-40"
                 >
                   ✕
                 </button>

@@ -113,7 +113,7 @@ export function ImageUploadField({
       </div>
 
       {error && (
-        <p role="alert" className="text-xs font-medium text-red-600">
+        <p role="alert" className="text-xs font-medium text-state-bad">
           {error}
         </p>
       )}

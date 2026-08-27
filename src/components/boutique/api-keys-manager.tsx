@@ -72,15 +72,15 @@ export function ApiKeysManager({ apiKeys, canManage }: { apiKeys: ApiKey[]; canM
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
 
       {revealedKey && (
-        <div role="status" className="mt-3 space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div role="status" className="mt-3 space-y-1.5 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           <p className="font-medium">Clé créée — copiez-la maintenant, elle ne sera plus jamais affichée :</p>
-          <p className="break-all rounded-lg bg-white px-3 py-2 font-mono text-xs">{revealedKey}</p>
+          <p className="break-all rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs">{revealedKey}</p>
         </div>
       )}
 

@@ -41,7 +41,7 @@ export function StoreSwitcher({
 
   if (stores.length <= 1) {
     return (
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className="mt-4 rounded-xl border border-white/10 bg-surface-raised/5 p-3">
         <p className="truncate text-sm font-medium">{currentStoreName}</p>
         <p className="mt-0.5 truncate text-xs text-white/40">MagyaPro Boutique</p>
       </div>
@@ -78,7 +78,7 @@ export function StoreSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         disabled={pending}
-        className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition-colors hover:bg-white/10"
+        className="w-full rounded-xl border border-white/10 bg-surface-raised/5 p-3 text-left transition-colors hover:bg-white/10"
       >
         <span className="flex items-center justify-between gap-2">
           <span className="min-w-0">
@@ -106,7 +106,7 @@ export function StoreSwitcher({
                 onClick={() => switchTo(store.id)}
                 className={cx(
                   'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm',
-                  store.id === currentStoreId ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white',
+                  store.id === currentStoreId ? 'bg-surface-raised/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white',
                 )}
               >
                 <span className="truncate">{store.name}</span>

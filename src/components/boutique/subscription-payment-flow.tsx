@@ -161,7 +161,7 @@ export function StoreSubscriptionPaymentFlow({
         </p>
 
         {activePayment.proofImageUrl ? (
-          <p className="mt-3 text-sm text-emerald-700">Preuve déposée, en attente de validation.</p>
+          <p className="mt-3 text-sm text-state-ok">Preuve déposée, en attente de validation.</p>
         ) : uploading ? (
           <p className="mt-4 text-sm text-ink-muted">Envoi de la preuve…</p>
         ) : (
@@ -186,7 +186,7 @@ export function StoreSubscriptionPaymentFlow({
           </div>
         )}
 
-        {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-state-bad">{error}</p>}
       </Card>
     );
   }
@@ -194,12 +194,12 @@ export function StoreSubscriptionPaymentFlow({
   return (
     <div>
       {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mb-4 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
       {message && (
-        <div role="status" className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div role="status" className="mb-4 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           {message}
         </div>
       )}

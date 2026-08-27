@@ -93,7 +93,7 @@ export function DomainsManager({
       <h2 className="text-sm font-medium">Domaines</h2>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
@@ -169,7 +169,7 @@ export function DomainsManager({
           </Button>
         </form>
       ) : (
-        <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mt-5 rounded-xl bg-state-warn-soft px-4 py-3 text-sm text-state-warn">
           Les domaines personnalisés sont inclus dans les plans supérieurs. Votre adresse
           Magyapro reste disponible et fonctionnelle.
         </p>

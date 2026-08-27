@@ -251,11 +251,19 @@ export function ErrorState({
 
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'brand';
 
+/**
+ * Les tons d'état passent par des variables CSS (voir `globals.css`) plutôt
+ * que par des couleurs Tailwind fixes : le tableau de bord Boutique les
+ * redéfinit pour son thème sombre, sans qu'un badge devienne un rectangle
+ * clair posé sur une carte foncée. Les valeurs par défaut reprennent
+ * exactement les couleurs précédentes — Restaurant, les sites publics et
+ * l'administration sont inchangés.
+ */
 const BADGE_TONES: Record<BadgeTone, string> = {
   neutral: 'bg-surface-sunken text-ink-muted',
-  success: 'bg-emerald-50 text-emerald-700',
-  warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-700',
+  success: 'bg-state-ok-soft text-state-ok',
+  warning: 'bg-state-warn-soft text-state-warn',
+  danger: 'bg-state-bad-soft text-state-bad',
   info: 'bg-sky-50 text-sky-700',
   brand: 'bg-brand-soft text-brand',
 };

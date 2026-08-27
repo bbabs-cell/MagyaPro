@@ -74,7 +74,7 @@ export function PaymentMethodsManager({
       <p className="mt-1 text-sm text-ink-muted">Proposés à la caisse, dans cet ordre.</p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}

@@ -94,15 +94,15 @@ export function WebhooksManager({ webhooks, canManage }: { webhooks: Webhook[]; 
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
 
       {revealedSecret && (
-        <div role="status" className="mt-3 space-y-1.5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div role="status" className="mt-3 space-y-1.5 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           <p className="font-medium">Webhook créé — copiez le secret maintenant, il ne sera plus jamais affiché :</p>
-          <p className="break-all rounded-lg bg-white px-3 py-2 font-mono text-xs">{revealedSecret}</p>
+          <p className="break-all rounded-lg bg-surface-raised px-3 py-2 font-mono text-xs">{revealedSecret}</p>
         </div>
       )}
 

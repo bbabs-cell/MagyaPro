@@ -76,16 +76,16 @@ export function ExcelImportExport({ canImport }: { canImport: boolean }) {
       </div>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
 
       {result && (
-        <div role="status" className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div role="status" className="mt-3 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           <p>{result.updated} article(s) mis à jour.</p>
           {result.errors.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-red-800">
+            <ul className="mt-2 space-y-0.5 text-state-bad">
               {result.errors.map((e) => (
                 <li key={e.row}>
                   Ligne {e.row} : {e.message}

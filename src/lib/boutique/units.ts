@@ -110,6 +110,35 @@ function roundDisplay(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
 }
 
+/**
+ * État d'un stock, pour un affichage lisible d'un coup d'œil : la couleur
+ * dit l'état avant même que le chiffre soit lu.
+ *
+ * Trois états seulement — au-delà, la couleur cesse d'être un signal et
+ * redevient de la décoration.
+ */
+export type StockState = 'ok' | 'low' | 'out';
+
+export function stockState(quantity: number, minStockAlert = 0): StockState {
+  if (quantity <= 0) return 'out';
+  if (minStockAlert > 0 && quantity <= minStockAlert) return 'low';
+  return 'ok';
+}
+
+/** Couleur du rail de statut (voir `.state-rail` dans `globals.css`). */
+export const STOCK_RAIL: Record<StockState, string> = {
+  ok: 'var(--state-ok)',
+  low: 'var(--state-warn)',
+  out: 'var(--state-bad)',
+};
+
+/** Ton du badge correspondant — même vocabulaire que `Badge`. */
+export const STOCK_TONE: Record<StockState, 'success' | 'warning' | 'danger'> = {
+  ok: 'success',
+  low: 'warning',
+  out: 'danger',
+};
+
 /** Rendu texte de `splitIntoUnits` — « 13 cartons + 17 bouteilles ». */
 export function formatCompositeStock(baseQuantity: number, units: UnitOption[]): string {
   return splitIntoUnits(baseQuantity, units)

@@ -94,7 +94,7 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
         </div>
         {mode === 'open' ? (
           <form onSubmit={openSession} className="flex flex-wrap items-end gap-2">
-            {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
+            {error && <p role="alert" className="w-full text-sm text-state-bad">{error}</p>}
             <Field label={`Fond de caisse initial (${currency})`} htmlFor="openingBalance">
               <input
                 id="openingBalance"
@@ -153,7 +153,7 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 text-sm text-red-600">
+        <p role="alert" className="mt-3 text-sm text-state-bad">
           {error}
         </p>
       )}

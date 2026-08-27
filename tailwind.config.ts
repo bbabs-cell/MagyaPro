@@ -29,7 +29,40 @@ const config: Config = {
           DEFAULT: 'var(--surface, #faf8f4)',
           sunken: 'var(--surface-sunken, #f1ede4)',
           border: 'var(--surface-border, #e3ddd0)',
+          // Surface légèrement surélevée au-dessus d'une carte (en-tête de
+          // tableau, ligne survolée) — la profondeur vient d'un empilement de
+          // valeurs, pas d'une ombre seule.
+          raised: 'var(--surface-raised, #ffffff)',
         },
+        // Barre latérale et menu du tableau de bord Boutique. Séparés de
+        // `surface` parce qu'ils restent foncés dans les deux thèmes : la
+        // navigation doit rester un repère stable quand le contenu, lui,
+        // s'éclaircit ou s'assombrit.
+        nav: {
+          DEFAULT: 'var(--nav, #2a2118)',
+          raised: 'var(--nav-raised, #35291d)',
+          ink: 'var(--nav-ink, #f5efe3)',
+          muted: 'var(--nav-muted, #b3a894)',
+          border: 'var(--nav-border, rgba(245,239,227,0.10))',
+        },
+        // Couleurs sémantiques, indépendantes de l'accent de marque : elles
+        // disent un état (stock sain, seuil franchi, rupture), jamais une
+        // identité. Le brief demande explicitement des états de stock
+        // lisibles d'un coup d'œil.
+        state: {
+          ok: 'var(--state-ok, #047857)',
+          'ok-soft': 'var(--state-ok-soft, #ecfdf5)',
+          warn: 'var(--state-warn, #b45309)',
+          'warn-soft': 'var(--state-warn-soft, #fffbeb)',
+          bad: 'var(--state-bad, #b91c1c)',
+          'bad-soft': 'var(--state-bad-soft, #fef2f2)',
+        },
+      },
+      boxShadow: {
+        // Deux couches : un contact net et proche, une diffusion large et
+        // douce. Une ombre unique donne un rendu plat et « collé ».
+        elev1: 'var(--elev-1, 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18))',
+        elev2: 'var(--elev-2, 0 2px 4px rgba(33,29,22,.07), 0 16px 32px -18px rgba(33,29,22,.26))',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],

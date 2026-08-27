@@ -99,7 +99,7 @@ export function OfflineSyncBar({ storeId }: { storeId: string }) {
       {failed.length > 0 && (
         <ul className="mt-3 space-y-2">
           {failed.map((item) => (
-            <li key={item.id} className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">
+            <li key={item.id} className="rounded-lg bg-state-bad-soft px-3 py-2 text-xs text-state-bad">
               <p>{item.error}</p>
               <button
                 type="button"

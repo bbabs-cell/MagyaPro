@@ -68,7 +68,7 @@ export function PublishPanel({
         <span className="font-mono">boutique.magyapro.com/s/{slug}</span>
       </p>
 
-      {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm text-state-bad">{error}</p>}
 
       {canPublish && status !== 'SUSPENDED' && (
         <div className="mt-5">

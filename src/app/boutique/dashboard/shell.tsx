@@ -12,6 +12,8 @@ import { Logo } from '@/components/ui/logo';
 import { StoreSwitcher } from '@/components/boutique/store-switcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useBoutiqueTheme } from '@/components/boutique/use-boutique-theme';
 
 /**
  * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
@@ -276,6 +278,7 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useBoutiqueTheme();
   const canViewAllStores =
     stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
   const navSections = getNavSections(canViewAllStores, unreadNotifications, canManageApi, isDemoTour);
@@ -318,7 +321,7 @@ export function DashboardShell({
     <nav className="space-y-6" aria-label="Navigation du tableau de bord">
       {navSections.map((section) => (
         <div key={section.title}>
-          <p className="px-3 text-xs font-medium uppercase tracking-wide text-white/35">
+          <p className="px-3 text-xs font-medium uppercase tracking-wide text-nav-muted/70">
             {section.title}
           </p>
           <ul className="mt-2 space-y-0.5">
@@ -331,8 +334,8 @@ export function DashboardShell({
                   className={cx(
                     'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                     isActive(item)
-                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white',
+                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-elev1'
+                      : 'text-nav-muted hover:bg-nav-raised hover:text-nav-ink',
                   )}
                 >
                   <span className="shrink-0">{NAV_ICONS[item.href]}</span>
@@ -432,16 +435,16 @@ export function DashboardShell({
         id="menu-mobile-boutique"
         aria-hidden={!menuOpen}
         className={cx(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-navy p-4 text-white transition-transform duration-200 ease-out lg:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-nav p-4 text-nav-ink transition-transform duration-200 ease-out lg:hidden',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex h-14 items-center justify-between">
-          <span className="truncate px-1 font-medium text-white">{storeName}</span>
+          <span className="truncate px-1 font-medium text-nav-ink">{storeName}</span>
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-nav-border text-nav-ink"
           >
             <span className="sr-only">Fermer le menu</span>
             <span aria-hidden="true" className="text-lg leading-none">✕</span>
@@ -451,14 +454,14 @@ export function DashboardShell({
         <button
           type="button"
           onClick={isDemoTour ? handleEndDemoTour : handleLogout}
-          className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+          className="mt-6 w-full rounded-lg px-3 py-2 text-left text-sm text-nav-muted transition-colors hover:bg-nav-raised hover:text-nav-ink"
         >
           {isDemoTour ? 'Quitter la démonstration' : 'Se déconnecter'}
         </button>
       </div>
 
       <div className="lg:flex">
-        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-nav text-nav-ink lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
@@ -472,21 +475,26 @@ export function DashboardShell({
 
             <div className="mt-6 flex-1">{navigation}</div>
 
-            <div className="mt-6 border-t border-white/10 pt-4">
+            <div className="mt-6 border-t border-nav-border pt-4">
               <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff9a4d] to-[#ff5e2e] text-xs font-bold text-white">
                   {userName.charAt(0).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{userName}</span>
-                  <span className="block truncate text-xs text-white/40">{userEmail}</span>
+                  <span className="block truncate text-xs text-nav-muted/70">{userEmail}</span>
                 </span>
+                <ThemeToggle
+                  theme={theme}
+                  onToggle={toggleTheme}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-nav-border text-nav-muted transition-colors hover:bg-nav-raised hover:text-nav-ink"
+                />
               </div>
 
               <button
                 type="button"
                 onClick={isDemoTour ? handleEndDemoTour : handleLogout}
-                className="w-full rounded-lg px-3 py-2 text-left text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                className="w-full rounded-lg px-3 py-2 text-left text-sm text-nav-muted transition-colors hover:bg-nav-raised hover:text-nav-ink"
               >
                 {isDemoTour ? 'Quitter la démonstration' : 'Se déconnecter'}
               </button>

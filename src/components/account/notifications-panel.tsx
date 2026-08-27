@@ -71,7 +71,7 @@ export function NotificationsPanel({
   return (
     <div>
       {error && (
-        <p role="alert" className="mb-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p role="alert" className="mb-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}

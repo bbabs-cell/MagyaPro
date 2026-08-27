@@ -105,14 +105,14 @@ export function TwoFactorPanel({ enabled: initialEnabled }: { enabled: boolean }
       </p>
 
       {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
 
       {enabled && step === 'idle' && (
         <form onSubmit={disable} className="mt-4 space-y-3">
-          <p className="text-sm font-medium text-emerald-700">Activée sur ce compte.</p>
+          <p className="text-sm font-medium text-state-ok">Activée sur ce compte.</p>
           <label htmlFor="disable-password" className="block text-sm font-medium text-ink">
             Mot de passe (pour désactiver)
           </label>

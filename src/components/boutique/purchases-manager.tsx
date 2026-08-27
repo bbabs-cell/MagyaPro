@@ -107,7 +107,7 @@ export function PurchasesManager({
   return (
     <div className="space-y-6">
       {error && (
-        <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
@@ -173,7 +173,7 @@ export function PurchasesManager({
               <li key={supplier.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                 <span>{supplier.name}</span>
                 <span className="flex items-center gap-3">
-                  <span className={cx(supplier.debtBalance > 0 && 'font-medium text-amber-700')}>
+                  <span className={cx(supplier.debtBalance > 0 && 'font-medium text-state-warn')}>
                     {supplier.debtBalance > 0
                       ? `Dette : ${formatMoney(supplier.debtBalance, currency)}`
                       : 'Aucune dette'}
@@ -312,7 +312,7 @@ function SupplierForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
   return (
     <Card className="p-4">
       <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
-        {error && <p role="alert" className="w-full text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className="w-full text-sm text-state-bad">{error}</p>}
         <div className="min-w-48 flex-1">
           <Field label="Nom du fournisseur" htmlFor="supplierName">
             <input id="supplierName" name="name" required className={inputClass} placeholder="Grossiste Plateau" />
@@ -395,7 +395,7 @@ function OrderForm({
         noValidate
       >
         {error && (
-          <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}
@@ -461,7 +461,7 @@ function OrderForm({
                 <button
                   type="button"
                   onClick={() => setLines((current) => current.filter((_, i) => i !== index))}
-                  className="text-ink-faint hover:text-red-600"
+                  className="text-ink-faint hover:text-state-bad"
                   aria-label="Retirer cette ligne"
                 >
                   ✕
@@ -562,7 +562,7 @@ function ReceiveForm({
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
         {error && (
-          <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}
@@ -677,7 +677,7 @@ function SupplierPaymentForm({
       </p>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
         {error && (
-          <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}

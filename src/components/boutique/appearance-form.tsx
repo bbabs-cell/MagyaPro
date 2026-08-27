@@ -99,12 +99,12 @@ export function AppearanceForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       {error && (
-        <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
           {error}
         </div>
       )}
       {saved && (
-        <div role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div role="status" className="rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
           Apparence enregistrée.{' '}
           <Link href={`/s/${store.slug}`} target="_blank" rel="noopener" className="font-medium underline underline-offset-4">
             Voir le résultat

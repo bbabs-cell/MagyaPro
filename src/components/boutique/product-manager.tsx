@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
+import {
+  STOCK_RAIL,
+  formatCompositeStock,
+  stockState,
+  type UnitOption,
+} from '@/lib/boutique/units';
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
@@ -312,8 +317,16 @@ export function ProductManager({
                 const variant = product.variants[0];
                 const activeVariants = product.variants.filter((v) => v.isActive);
                 const stock = totalStock(product);
+                const state = stockState(stock, product.minStockAlert);
                 return (
-                  <tr key={product.id} className="border-b border-surface-border last:border-0">
+                  <tr
+                    key={product.id}
+                    // Rail de statut : sur une longue liste, la couleur repère
+                    // les ruptures et les seuils franchis sans avoir à lire
+                    // chaque chiffre.
+                    style={{ ['--rail' as string]: STOCK_RAIL[state] }}
+                    className="state-rail border-b border-surface-border last:border-0"
+                  >
                     <td data-label="Produit" className="px-4 py-3 font-medium">
                       {product.name}
                       {product.variantAxes.length > 0 ? (
@@ -354,8 +367,9 @@ export function ProductManager({
                     <td
                       data-label="Stock"
                       className={cx(
-                        'px-4 py-3 text-right',
-                        stock <= product.minStockAlert && 'font-medium text-amber-700',
+                        'px-4 py-3 text-right tabular-nums',
+                        state === 'low' && 'font-medium text-state-warn',
+                        state === 'out' && 'font-medium text-state-bad',
                       )}
                     >
                       {/* Stock affiché dans les unités du produit — « 13 cartons
@@ -421,7 +435,7 @@ function QuickAddForm({
     <Card className="p-4">
       <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
         {error && (
-          <p role="alert" className="w-full text-sm text-red-600">
+          <p role="alert" className="w-full text-sm text-state-bad">
             {error}
           </p>
         )}
@@ -706,7 +720,7 @@ function ProductForm({
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
         {error && (
-          <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}
@@ -807,7 +821,7 @@ function ProductForm({
                     type="button"
                     onClick={() => setAxes((current) => current.filter((_, i) => i !== index))}
                     aria-label="Retirer cet axe"
-                    className="self-end px-2 pb-2.5 text-ink-faint hover:text-red-600"
+                    className="self-end px-2 pb-2.5 text-ink-faint hover:text-state-bad"
                   >
                     ✕
                   </button>
@@ -911,7 +925,7 @@ function ProductForm({
                           type="button"
                           onClick={() => removeDeclination(draft.key)}
                           aria-label="Retirer cette déclinaison"
-                          className="text-ink-faint hover:text-red-600"
+                          className="text-ink-faint hover:text-state-bad"
                         >
                           ✕
                         </button>
@@ -1005,7 +1019,7 @@ function ProductForm({
                       type="button"
                       onClick={() => removeUnitDraft(draft.key)}
                       aria-label="Retirer ce conditionnement"
-                      className="self-end px-2 pb-2.5 text-ink-faint hover:text-red-600"
+                      className="self-end px-2 pb-2.5 text-ink-faint hover:text-state-bad"
                     >
                       ✕
                     </button>

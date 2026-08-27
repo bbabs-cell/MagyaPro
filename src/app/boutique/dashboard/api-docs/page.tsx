@@ -16,7 +16,7 @@ export default async function BoutiqueApiDocsPage() {
         title="Documentation de l'API"
         description="Créez une clé d'API dans Réglages, puis testez les requêtes directement ici."
       />
-      <div className="rounded-2xl bg-white p-2">
+      <div className="rounded-2xl bg-surface-raised p-2">
         <ApiDocs />
       </div>
     </>

@@ -6,6 +6,17 @@
   :root {
     --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
       Roboto, 'Helvetica Neue', sans-serif;
+
+    /* Couleurs sémantiques par défaut — exactement les valeurs Tailwind
+       utilisées jusqu'ici (emerald/amber/red 50 et 700), pour que Restaurant,
+       les sites publics et l'administration restent au pixel près ce qu'ils
+       étaient. Seul le tableau de bord Boutique les redéfinit, plus bas. */
+    --state-ok: #047857;
+    --state-ok-soft: #ecfdf5;
+    --state-warn: #b45309;
+    --state-warn-soft: #fffbeb;
+    --state-bad: #b91c1c;
+    --state-bad-soft: #fef2f2;
   }
 
   * {
@@ -203,6 +214,121 @@
 }
 [data-admin-theme='light'] .accent-white {
   accent-color: #12151a;
+}
+
+/* ------------------------------------------------------------------
+   Thèmes du tableau de bord Boutique.
+
+   Portés par un attribut posé sur `<html>` par le tableau de bord Boutique
+   uniquement (voir `boutique/dashboard/shell.tsx`, qui le retire en
+   quittant) : le reste du produit — Restaurant, sites publics, admin —
+   garde son thème clair unique et n'est pas concerné.
+
+   Rien à repeindre écran par écran : les composants Boutique utilisent déjà
+   `bg-surface`, `text-ink`, `border-surface-border`, qui lisent ces
+   variables. Redéfinir les variables suffit à faire basculer l'ensemble.
+   ------------------------------------------------------------------ */
+
+/* Clair — « Comptoir » : sable profond et crème, barre latérale brun
+   torréfié accordée à l'ambre de la marque plutôt qu'au bleu nuit. */
+[data-boutique-theme='light'] {
+  color-scheme: light;
+
+  --surface: #fbf8f2;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ece5d8;
+  --surface-border: #ddd3c1;
+
+  --ink: #211d16;
+  --ink-muted: #6a6153;
+  --ink-faint: #948b7b;
+
+  --nav: #2a2118;
+  --nav-raised: #35291d;
+  --nav-ink: #f5efe3;
+  --nav-muted: #b3a894;
+  --nav-border: rgba(245, 239, 227, 0.1);
+
+  --state-ok: #2f6b4a;
+  --state-ok-soft: #dcece2;
+  --state-warn: #a8700f;
+  --state-warn-soft: #f9edd6;
+  --state-bad: #a8322f;
+  --state-bad-soft: #f8e0de;
+
+  --elev-1: 0 1px 2px rgba(33, 29, 22, 0.06), 0 6px 16px -10px rgba(33, 29, 22, 0.18);
+  --elev-2: 0 2px 4px rgba(33, 29, 22, 0.07), 0 16px 32px -18px rgba(33, 29, 22, 0.26);
+}
+
+/* Sombre — « Atelier » : graphite chaud, jamais un noir neutre. Les états
+   de stock remontent en luminosité pour rester lisibles sur fond foncé. */
+[data-boutique-theme='dark'] {
+  color-scheme: dark;
+
+  --surface: #1e1a14;
+  --surface-raised: #262118;
+  --surface-sunken: #14120d;
+  --surface-border: #322c22;
+
+  --ink: #f0e9dc;
+  --ink-muted: #b5ac9c;
+  --ink-faint: #857d6f;
+
+  --nav: #0f0d09;
+  --nav-raised: #1a1610;
+  --nav-ink: #f0e9dc;
+  --nav-muted: #9a9081;
+  --nav-border: rgba(240, 233, 220, 0.08);
+
+  --state-ok: #74c298;
+  --state-ok-soft: #1a2c22;
+  --state-warn: #e0ad55;
+  --state-warn-soft: #302516;
+  --state-bad: #ef7d78;
+  --state-bad-soft: #341d1d;
+
+  /* Une ombre noire est presque invisible sur un fond déjà sombre : la
+     profondeur vient surtout d'un liseré clair au sommet de la carte, qui
+     imite une arête éclairée par le haut. */
+  --elev-1: 0 1px 0 rgba(240, 233, 220, 0.04) inset, 0 8px 20px -12px rgba(0, 0, 0, 0.8);
+  --elev-2: 0 1px 0 rgba(240, 233, 220, 0.06) inset, 0 18px 40px -20px rgba(0, 0, 0, 0.9);
+}
+
+/* Cartes du tableau de bord Boutique : coins un peu moins arrondis que la
+   valeur par défaut du produit et vraie élévation, pour un rendu
+   d'instrument plutôt que de page marketing. */
+[data-boutique-theme] .card {
+  @apply rounded-2xl bg-surface shadow-elev1;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Micro-interaction : une carte cliquable se soulève au survol. Discret,
+   jamais un déplacement qui ferait « sauter » la grille sous le curseur. */
+[data-boutique-theme] .card-interactive:hover {
+  @apply shadow-elev2;
+  border-color: var(--ink-faint);
+}
+
+/* `<Card hover>` utilise `hover-glow-sm`, une lueur orange pensée pour les
+   fonds sombres du site marketing. Dans le tableau de bord Boutique, on lui
+   substitue la même élévation que les autres cartes : la profondeur y vient
+   de l'ombre, pas d'une couleur. */
+[data-boutique-theme] .hover-glow-sm:hover {
+  @apply shadow-elev2;
+}
+
+/* Rail de statut à gauche d'une carte ou d'une ligne — l'état du stock se
+   lit à la couleur avant même d'être lu au texte. */
+.state-rail {
+  position: relative;
+  overflow: hidden;
+}
+.state-rail::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--rail, transparent);
 }
 
 /* Masque visuellement sans retirer du flux d'accessibilité. */

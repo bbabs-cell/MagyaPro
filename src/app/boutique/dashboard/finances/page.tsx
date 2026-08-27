@@ -90,7 +90,7 @@ export default async function BoutiqueFinancesPage({
           <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Bénéfice net</p>
           <p
             className={`mt-2 text-2xl font-semibold tracking-tight ${
-              netResult >= 0 ? 'text-emerald-700' : 'text-red-700'
+              netResult >= 0 ? 'text-state-ok' : 'text-state-bad'
             }`}
           >
             {formatMoney(netResult, currency)}
@@ -105,7 +105,7 @@ export default async function BoutiqueFinancesPage({
           </p>
           <p
             className={`mt-2 text-2xl font-semibold tracking-tight ${
-              cashFlow.net >= 0 ? 'text-emerald-700' : 'text-red-700'
+              cashFlow.net >= 0 ? 'text-state-ok' : 'text-state-bad'
             }`}
           >
             {formatMoney(cashFlow.net, currency)}
@@ -141,7 +141,7 @@ export default async function BoutiqueFinancesPage({
                     <td className="py-2 pr-3 text-right">{formatMoney(product.price, currency)}</td>
                     <td className="py-2 pr-3 text-right">{formatMoney(product.costPrice, currency)}</td>
                     <td
-                      className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-emerald-700' : 'text-red-700'}`}
+                      className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-state-ok' : 'text-state-bad'}`}
                     >
                       {formatMoney(product.margin, currency)} ({product.marginPercent} %)
                     </td>

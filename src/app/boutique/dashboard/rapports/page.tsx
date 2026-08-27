@@ -324,7 +324,7 @@ async function VentesReport({
                   <td data-label="Paiement" className="px-4 py-3 text-ink-muted">
                     {sale.payments.map((p) => PAYMENT_LABELS[p.method] ?? p.method).join(', ') || '—'}
                     {sale.creditAmount > 0 && (
-                      <span className="text-amber-700">{sale.payments.length > 0 ? ' + ' : ''}crédit</span>
+                      <span className="text-state-warn">{sale.payments.length > 0 ? ' + ' : ''}crédit</span>
                     )}
                   </td>
                   <td data-label="Statut" className="px-4 py-3">
@@ -453,7 +453,7 @@ async function StockReport({
                   </td>
                   <td className="px-4 py-3">{m.productName}</td>
                   <td className="px-4 py-3 text-ink-muted">{MOVEMENT_TYPE_LABELS[m.type] ?? m.type}</td>
-                  <td className={`px-4 py-3 text-right font-medium ${m.quantityChange >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                  <td className={`px-4 py-3 text-right font-medium ${m.quantityChange >= 0 ? 'text-state-ok' : 'text-state-bad'}`}>
                     {m.quantityChange >= 0 ? '+' : ''}
                     {formatQty(m.quantityChange)}
                   </td>
@@ -505,7 +505,7 @@ async function ClientsReport({ storeId, currency }: { storeId: string; currency:
                 </td>
                 <td className="px-4 py-3 text-right">{customer.salesCount}</td>
                 <td className="px-4 py-3 text-right font-medium">{formatMoney(customer.totalSpent, currency)}</td>
-                <td className={`px-4 py-3 text-right ${customer.creditBalance > 0 ? 'text-amber-700' : ''}`}>
+                <td className={`px-4 py-3 text-right ${customer.creditBalance > 0 ? 'text-state-warn' : ''}`}>
                   {formatMoney(customer.creditBalance, currency)}
                 </td>
                 <td className="px-4 py-3 text-ink-muted">
@@ -552,7 +552,7 @@ async function FournisseursReport({ storeId, currency }: { storeId: string; curr
                 </td>
                 <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPurchased, currency)}</td>
                 <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPaid, currency)}</td>
-                <td className={`px-4 py-3 text-right font-medium ${supplier.debtBalance > 0 ? 'text-amber-700' : ''}`}>
+                <td className={`px-4 py-3 text-right font-medium ${supplier.debtBalance > 0 ? 'text-state-warn' : ''}`}>
                   {formatMoney(supplier.debtBalance, currency)}
                 </td>
               </tr>
