@@ -12,6 +12,14 @@ import { createContext, useContext, useEffect, useReducer, type ReactNode } from
 
 export type CartLine = {
   productId: string;
+  /**
+   * Déclinaison choisie (taille, couleur…). Absente sur les paniers créés
+   * avant les déclinaisons, et sur les produits qui n'en ont pas : le serveur
+   * retombe alors sur la première déclinaison active du produit.
+   */
+  variantId?: string;
+  /** « M · Noir », figé à l'ajout pour l'affichage du panier. */
+  variantLabel?: string;
   name: string;
   unitPrice: number;
   quantity: number;
@@ -20,12 +28,20 @@ export type CartLine = {
   imageUrl: string | null;
 };
 
+/**
+ * Deux tailles du même t-shirt sont deux lignes distinctes du panier : la clé
+ * est donc le couple produit + déclinaison, jamais le produit seul.
+ */
+export function cartLineKey(line: Pick<CartLine, 'productId' | 'variantId'>): string {
+  return `${line.productId}:${line.variantId ?? 'default'}`;
+}
+
 type CartState = { lines: CartLine[] };
 
 type CartAction =
   | { type: 'ADD'; line: Omit<CartLine, 'quantity'>; quantity: number }
-  | { type: 'SET_QUANTITY'; productId: string; quantity: number }
-  | { type: 'REMOVE'; productId: string }
+  | { type: 'SET_QUANTITY'; key: string; quantity: number }
+  | { type: 'REMOVE'; key: string }
   | { type: 'CLEAR' }
   | { type: 'HYDRATE'; lines: CartLine[] };
 
@@ -34,13 +50,12 @@ function reducer(state: CartState, action: CartAction): CartState {
     case 'HYDRATE':
       return { lines: action.lines };
     case 'ADD': {
-      const existing = state.lines.find((l) => l.productId === action.line.productId);
+      const key = cartLineKey(action.line);
+      const existing = state.lines.find((l) => cartLineKey(l) === key);
       if (existing) {
         const quantity = Math.min(existing.quantity + action.quantity, existing.maxStock);
         return {
-          lines: state.lines.map((l) =>
-            l.productId === action.line.productId ? { ...l, quantity } : l,
-          ),
+          lines: state.lines.map((l) => (cartLineKey(l) === key ? { ...l, quantity } : l)),
         };
       }
       const quantity = Math.min(action.quantity, action.line.maxStock);
@@ -52,15 +67,13 @@ function reducer(state: CartState, action: CartAction): CartState {
       return {
         lines: state.lines
           .map((l) =>
-            l.productId === action.productId
-              ? { ...l, quantity: Math.min(quantity, l.maxStock) }
-              : l,
+            cartLineKey(l) === action.key ? { ...l, quantity: Math.min(quantity, l.maxStock) } : l,
           )
           .filter((l) => l.quantity > 0),
       };
     }
     case 'REMOVE':
-      return { lines: state.lines.filter((l) => l.productId !== action.productId) };
+      return { lines: state.lines.filter((l) => cartLineKey(l) !== action.key) };
     case 'CLEAR':
       return { lines: [] };
     default:
@@ -72,8 +85,8 @@ type CartContextValue = {
   lines: CartLine[];
   total: number;
   addLine: (line: Omit<CartLine, 'quantity'>, quantity: number) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  removeLine: (productId: string) => void;
+  setQuantity: (key: string, quantity: number) => void;
+  removeLine: (key: string) => void;
   clear: () => void;
 };
 
@@ -109,8 +122,8 @@ export function CartProvider({ storeId, children }: { storeId: string; children:
     lines: state.lines,
     total,
     addLine: (line, quantity) => dispatch({ type: 'ADD', line, quantity }),
-    setQuantity: (productId, quantity) => dispatch({ type: 'SET_QUANTITY', productId, quantity }),
-    removeLine: (productId) => dispatch({ type: 'REMOVE', productId }),
+    setQuantity: (key, quantity) => dispatch({ type: 'SET_QUANTITY', key, quantity }),
+    removeLine: (key) => dispatch({ type: 'REMOVE', key }),
     clear: () => dispatch({ type: 'CLEAR' }),
   };
 

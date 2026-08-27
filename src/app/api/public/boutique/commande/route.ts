@@ -7,6 +7,7 @@ import { publicStoreOrderSchema } from '@/lib/validation';
 import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { toQty } from '@/lib/boutique/quantity';
+import { parseVariantAxes, variantLabel } from '@/lib/boutique/variants';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { notifyCustomerOrderEvent } from '@/lib/boutique/order-notifications';
@@ -43,10 +44,17 @@ export const POST = route(async (request) => {
     select: {
       id: true,
       name: true,
+      variantAxes: true,
       variants: {
         where: { isActive: true },
-        take: 1,
-        select: { id: true, price: true, salePrice: true, inventory: { select: { quantity: true } } },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          price: true,
+          salePrice: true,
+          attributes: true,
+          inventory: { select: { quantity: true } },
+        },
       },
     },
   });
@@ -60,17 +68,29 @@ export const POST = route(async (request) => {
   let subtotal = 0;
   const lines = input.items.map((item) => {
     const product = productById.get(item.productId)!;
-    const variant = product.variants[0];
+
+    // La déclinaison demandée est cherchée parmi celles de CE produit : un
+    // identifiant venu du navigateur ne peut donc pas désigner l'article
+    // d'une autre fiche, ni d'une autre boutique. Sans déclinaison précisée
+    // (panier ancien, produit sans taille), la première active fait foi.
+    const variant = item.variantId
+      ? product.variants.find((candidate) => candidate.id === item.variantId)
+      : product.variants[0];
+
     if (!variant) {
       throw new ValidationError(`« ${product.name} » n'est plus disponible.`, {
         productId: 'Produit indisponible.',
       });
     }
 
+    const axes = parseVariantAxes(product.variantAxes);
+    const label = variantLabel((variant.attributes ?? {}) as Record<string, string>, axes);
+    const displayName = label ? `${product.name} — ${label}` : product.name;
+
     const stock = variant.inventory.reduce((sum, inv) => sum + toQty(inv.quantity), 0);
     if (item.quantity > stock) {
       throw new ValidationError(
-        `Stock insuffisant pour « ${product.name} » (${stock} disponible${stock > 1 ? 's' : ''}).`,
+        `Stock insuffisant pour « ${displayName} » (${stock} disponible${stock > 1 ? 's' : ''}).`,
         { productId: 'Quantité indisponible.' },
       );
     }
@@ -81,7 +101,9 @@ export const POST = route(async (request) => {
 
     return {
       productVariantId: variant.id,
-      productName: product.name,
+      // Nom figé à la commande, déclinaison comprise : la boutique doit
+      // savoir quelle taille préparer, même si la fiche change ensuite.
+      productName: displayName,
       quantity: item.quantity,
       unitPrice,
       total: lineTotal,

@@ -8,7 +8,7 @@ import { formatMoney } from '@/lib/money';
 import { UNIT_LABELS, quantityStep } from '@/lib/boutique/units';
 import { sitePathBase } from '@/lib/boutique/site/base-path';
 import { getBoutiqueSiteDictionary } from '@/lib/i18n/boutique-site';
-import { useCart } from '@/components/site-store/cart-context';
+import { cartLineKey, useCart } from '@/components/site-store/cart-context';
 
 /**
  * Panier + coordonnées, en une seule page — pas d'étape de paiement : la
@@ -49,7 +49,13 @@ export function CheckoutFlow({
         customerPhone: phone,
         customerEmail: email || undefined,
         notes: notes || undefined,
-        items: lines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
+        items: lines.map((line) => ({
+          productId: line.productId,
+          // Déclinaison choisie ; absente sur un panier antérieur aux
+          // déclinaisons, le serveur retombe alors sur la première active.
+          variantId: line.variantId,
+          quantity: line.quantity,
+        })),
       });
       clear();
       router.push(`${sitePathBase(host)}/commande/${order.id}`);
@@ -78,7 +84,7 @@ export function CheckoutFlow({
       <div>
         <ul className="divide-y divide-gray-100">
           {lines.map((line) => (
-            <li key={line.productId} className="flex items-center gap-3 py-4">
+            <li key={cartLineKey(line)} className="flex items-center gap-3 py-4">
               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
                 {line.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- image déposée par le tenant
@@ -90,7 +96,12 @@ export function CheckoutFlow({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{line.name}</p>
+                <p className="truncate text-sm font-medium">
+                  {line.name}
+                  {line.variantLabel && (
+                    <span className="font-normal text-gray-500"> — {line.variantLabel}</span>
+                  )}
+                </p>
                 <p className="text-xs text-gray-500">
                   {formatMoney(line.unitPrice, currency)}
                   {line.unit !== 'UNIT' && ` / ${UNIT_LABELS[line.unit]}`}
@@ -102,12 +113,12 @@ export function CheckoutFlow({
                 max={line.maxStock}
                 step={quantityStep(line.unit)}
                 value={line.quantity}
-                onChange={(event) => setQuantity(line.productId, Number(event.target.value))}
+                onChange={(event) => setQuantity(cartLineKey(line), Number(event.target.value))}
                 className="h-10 w-20 rounded-lg border border-gray-300 px-2 text-center text-sm"
               />
               <button
                 type="button"
-                onClick={() => removeLine(line.productId)}
+                onClick={() => removeLine(cartLineKey(line))}
                 aria-label={`Retirer ${line.name}`}
                 className="shrink-0 text-gray-400 hover:text-red-600"
               >

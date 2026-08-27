@@ -76,6 +76,9 @@ export default async function StoreProductPage({
           {product.brand && <p className="mt-1 text-sm text-gray-500">{product.brand.name}</p>}
 
           <p className="mt-4 flex items-baseline gap-2">
+            {/* Les déclinaisons peuvent avoir des prix différents : annoncer
+                « à partir de » évite de laisser croire à un prix unique. */}
+            {product.priceVaries && <span className="text-sm text-gray-500">à partir de</span>}
             <span className="text-2xl font-semibold">
               {formatMoney(product.price, store.currency)}
             </span>
@@ -117,6 +120,8 @@ export default async function StoreProductPage({
                 unit: product.unit,
                 price: product.price,
                 stock: product.stock,
+                axes: product.axes,
+                variants: product.variants,
               }}
               host={host}
               locale={store.language}

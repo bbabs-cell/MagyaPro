@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db';
 import { rootHostname } from '@/lib/env';
 import { toQty } from '@/lib/boutique/quantity';
+import { parseVariantAxes } from '@/lib/boutique/variants';
 
 /**
  * Résolution d'un hôte public en boutique — équivalent de
@@ -81,7 +82,14 @@ export const loadPublicCategories = cache(async (storeId: string) => {
 
 export type PublicProduct = Awaited<ReturnType<typeof loadPublicProducts>>[number];
 
-/** Produits visibles publiquement, avec le prix et le stock agrégé de leur variante par défaut. */
+/**
+ * Produits visibles publiquement.
+ *
+ * Le stock affiché agrège toutes les déclinaisons actives : sur la grille, il
+ * ne répond qu'à « ce produit est-il disponible ? ». Le choix d'une taille
+ * précise, et le stock qui lui correspond, se font sur la fiche — sans quoi
+ * un t-shirt disponible en XL seulement s'annoncerait en rupture.
+ */
 export const loadPublicProducts = cache(async (storeId: string, categoryId?: string) => {
   const products = await prisma.storeProduct.findMany({
     where: { storeId, status: 'ACTIVE', ...(categoryId ? { categoryId } : {}) },
@@ -92,10 +100,11 @@ export const loadPublicProducts = cache(async (storeId: string, categoryId?: str
       description: true,
       imageUrl: true,
       unit: true,
+      variantAxes: true,
       category: { select: { id: true, name: true } },
       variants: {
         where: { isActive: true },
-        take: 1,
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           price: true,
@@ -110,8 +119,16 @@ export const loadPublicProducts = cache(async (storeId: string, categoryId?: str
   return products
     .filter((product) => product.variants.length > 0)
     .map((product) => {
-      const variant = product.variants[0]!;
-      const stock = variant.inventory.reduce((sum, inv) => sum + toQty(inv.quantity), 0);
+      const stock = product.variants.reduce(
+        (sum, variant) =>
+          sum + variant.inventory.reduce((vSum, inv) => vSum + toQty(inv.quantity), 0),
+        0,
+      );
+      const prices = product.variants.map((variant) => variant.salePrice ?? variant.price);
+      const cheapest = product.variants.reduce((best, variant) =>
+        (variant.salePrice ?? variant.price) < (best.salePrice ?? best.price) ? variant : best,
+      );
+
       return {
         id: product.id,
         name: product.name,
@@ -119,10 +136,15 @@ export const loadPublicProducts = cache(async (storeId: string, categoryId?: str
         imageUrl: product.imageUrl,
         unit: product.unit,
         category: product.category,
-        variantId: variant.id,
-        price: variant.salePrice ?? variant.price,
-        compareAtPrice: variant.salePrice ? variant.price : null,
-        attributes: (variant.attributes ?? {}) as Record<string, string>,
+        /** Déclinaison la moins chère — celle dont le prix s'affiche sur la grille. */
+        variantId: cheapest.id,
+        price: cheapest.salePrice ?? cheapest.price,
+        compareAtPrice: cheapest.salePrice ? cheapest.price : null,
+        /** Vrai quand les déclinaisons n'ont pas toutes le même prix : la
+         *  grille annonce alors « à partir de ». */
+        priceVaries: new Set(prices).size > 1,
+        hasDeclinations: parseVariantAxes(product.variantAxes).length > 0,
+        attributes: (cheapest.attributes ?? {}) as Record<string, string>,
         stock,
       };
     });
@@ -139,9 +161,10 @@ export const loadPublicProduct = cache(async (storeId: string, productId: string
       unit: true,
       category: { select: { id: true, name: true } },
       brand: { select: { name: true } },
+      variantAxes: true,
       variants: {
         where: { isActive: true },
-        take: 1,
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           price: true,
@@ -154,8 +177,19 @@ export const loadPublicProduct = cache(async (storeId: string, productId: string
   });
   if (!product || product.variants.length === 0) return null;
 
-  const variant = product.variants[0]!;
-  const stock = variant.inventory.reduce((sum, inv) => sum + toQty(inv.quantity), 0);
+  const axes = parseVariantAxes(product.variantAxes);
+  const variants = product.variants.map((variant) => ({
+    id: variant.id,
+    price: variant.salePrice ?? variant.price,
+    compareAtPrice: variant.salePrice ? variant.price : null,
+    attributes: (variant.attributes ?? {}) as Record<string, string>,
+    stock: variant.inventory.reduce((sum, inv) => sum + toQty(inv.quantity), 0),
+  }));
+
+  // Prix d'appel de la fiche : celui de la déclinaison la moins chère, comme
+  // sur la grille, pour qu'un visiteur ne découvre pas un prix différent en
+  // ouvrant le produit.
+  const cheapest = variants.reduce((best, variant) => (variant.price < best.price ? variant : best));
 
   return {
     id: product.id,
@@ -165,9 +199,12 @@ export const loadPublicProduct = cache(async (storeId: string, productId: string
     unit: product.unit,
     category: product.category,
     brand: product.brand,
-    price: variant.salePrice ?? variant.price,
-    compareAtPrice: variant.salePrice ? variant.price : null,
-    attributes: (variant.attributes ?? {}) as Record<string, string>,
-    stock,
+    axes,
+    variants,
+    price: cheapest.price,
+    compareAtPrice: cheapest.compareAtPrice,
+    priceVaries: new Set(variants.map((variant) => variant.price)).size > 1,
+    attributes: cheapest.attributes,
+    stock: variants.reduce((sum, variant) => sum + variant.stock, 0),
   };
 });

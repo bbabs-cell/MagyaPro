@@ -819,6 +819,12 @@ export const publicStoreOrderSchema = z.object({
     .array(
       z.object({
         productId: z.string().min(1),
+        /**
+         * Déclinaison choisie (taille, couleur…). Absente sur un panier
+         * antérieur aux déclinaisons ou sur un produit qui n'en a pas : le
+         * serveur retombe alors sur la première déclinaison active.
+         */
+        variantId: z.string().min(1).optional(),
         quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
       }),
     )

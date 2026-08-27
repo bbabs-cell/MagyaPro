@@ -16,6 +16,8 @@ type Product = {
   price: number;
   compareAtPrice: number | null;
   stock: number;
+  /** Les déclinaisons n'ont pas toutes le même prix — voir `loadPublicProducts`. */
+  priceVaries?: boolean;
 };
 
 /**
@@ -80,6 +82,9 @@ export function ProductGrid({
               </div>
               <p className="mt-2 truncate text-sm font-medium">{product.name}</p>
               <p className="text-sm text-gray-600">
+                {/* Prix de la déclinaison la moins chère quand elles diffèrent :
+                    le prix exact se fixe en choisissant la taille sur la fiche. */}
+                {product.priceVaries && <span className="text-gray-400">à partir de </span>}
                 {formatMoney(product.price, currency)}
                 {product.unit !== 'UNIT' && (
                   <span className="text-gray-400"> / {UNIT_LABELS[product.unit]}</span>
