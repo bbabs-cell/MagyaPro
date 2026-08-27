@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
+import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 /**
@@ -43,8 +44,22 @@ type Variant = {
   barcode: string | null;
   cost: number;
   price: number;
+  isActive: boolean;
   attributes: Record<string, string>;
   units: VariantUnit[];
+};
+
+/** Ligne de l'éditeur de déclinaisons — valeurs en saisie, donc en texte. */
+type DeclinationDraft = {
+  key: string;
+  /** Absent = déclinaison à créer. */
+  id?: string;
+  attributes: Record<string, string>;
+  sku: string;
+  barcode: string;
+  cost: string;
+  price: string;
+  initialStock: string;
 };
 type Product = {
   id: string;
@@ -54,6 +69,8 @@ type Product = {
   minStockAlert: number;
   unit: string;
   baseUnitId: string | null;
+  /** Axes de déclinaison — vide pour un produit simple. */
+  variantAxes: VariantAxis[];
   category: { id: string; name: string } | null;
   brand: { id: string; name: string } | null;
   variants: Array<Variant & { inventory: Array<{ quantity: number; warehouseId: string }> }>;
@@ -305,17 +322,27 @@ export function ProductManager({
             <tbody>
               {products.map((product) => {
                 const variant = product.variants[0];
+                const activeVariants = product.variants.filter((v) => v.isActive);
                 const stock = totalStock(product);
                 return (
                   <tr key={product.id} className="border-b border-surface-border last:border-0">
                     <td data-label="Produit" className="px-4 py-3 font-medium">
                       {product.name}
-                      {variant && Object.keys(variant.attributes).length > 0 && (
+                      {product.variantAxes.length > 0 ? (
                         <p className="mt-0.5 text-xs font-normal text-ink-faint">
-                          {Object.entries(variant.attributes)
-                            .map(([key, value]) => `${key} : ${value}`)
-                            .join(' · ')}
+                          {activeVariants.length} déclinaison
+                          {activeVariants.length > 1 ? 's' : ''} ·{' '}
+                          {product.variantAxes.map((axis) => axis.name).join(' × ')}
                         </p>
+                      ) : (
+                        variant &&
+                        Object.keys(variant.attributes).length > 0 && (
+                          <p className="mt-0.5 text-xs font-normal text-ink-faint">
+                            {Object.entries(variant.attributes)
+                              .map(([key, value]) => `${key} : ${value}`)
+                              .join(' · ')}
+                          </p>
+                        )
                       )}
                     </td>
                     <td data-label="Catégorie" className="px-4 py-3 text-ink-muted">
@@ -464,6 +491,65 @@ function ProductForm({
     })),
   );
 
+  // — Déclinaisons —
+  const [axes, setAxes] = useState<VariantAxis[]>(product?.variantAxes ?? []);
+  const [declinations, setDeclinations] = useState<DeclinationDraft[]>(() =>
+    (product?.variants ?? [])
+      .filter((v) => v.isActive)
+      .map((v) => ({
+        key: newDraftKey(),
+        id: v.id,
+        attributes: v.attributes,
+        sku: v.sku ?? '',
+        barcode: v.barcode ?? '',
+        cost: String(toMajor(v.cost, currency)),
+        price: String(toMajor(v.price, currency)),
+        initialStock: '0',
+      })),
+  );
+  const hasAxes = axes.length > 0;
+
+  function updateAxis(index: number, patch: Partial<VariantAxis>) {
+    setAxes((current) => current.map((axis, i) => (i === index ? { ...axis, ...patch } : axis)));
+  }
+
+  /**
+   * (Re)génère la matrice complète des combinaisons. Les déclinaisons déjà
+   * saisies sont conservées telles quelles — prix, stock et identifiant — et
+   * seules les combinaisons manquantes sont ajoutées : régénérer après avoir
+   * ajouté une taille ne doit pas effacer le travail déjà fait.
+   */
+  function generateMatrix() {
+    const usable = axes.filter((axis) => axis.name.trim() && axis.values.length > 0);
+    if (usable.length === 0) return;
+
+    setDeclinations((current) => {
+      const byKey = new Map(current.map((draft) => [combinationKey(draft.attributes, usable), draft]));
+      return buildCombinations(usable).map(
+        (attributes) =>
+          byKey.get(combinationKey(attributes, usable)) ?? {
+            key: newDraftKey(),
+            attributes,
+            sku: '',
+            barcode: '',
+            cost: '',
+            price: '',
+            initialStock: '0',
+          },
+      );
+    });
+  }
+
+  function updateDeclination(key: string, patch: Partial<DeclinationDraft>) {
+    setDeclinations((current) =>
+      current.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)),
+    );
+  }
+
+  function removeDeclination(key: string) {
+    setDeclinations((current) => current.filter((draft) => draft.key !== key));
+  }
+
   const baseUnit = storeUnits.find((unit) => unit.id === baseUnitId) ?? null;
   // L'unité de base ne peut pas être aussi un conditionnement : sa conversion
   // vaut 1 par définition (voir `validateVariantUnits`).
@@ -529,6 +615,34 @@ function ProductForm({
       isPurchasable: true,
     }));
 
+    // Axes réellement renseignés — une ligne vide laissée à l'écran ne doit
+    // pas générer d'axe sans nom.
+    const cleanAxes = axes
+      .map((axis) => ({
+        name: axis.name.trim(),
+        values: axis.values.map((value) => value.trim()).filter(Boolean),
+      }))
+      .filter((axis) => axis.name && axis.values.length > 0);
+
+    const cleanDeclinations = cleanAxes.length
+      ? declinations.map((draft) => ({
+          ...(draft.id ? { id: draft.id } : {}),
+          attributes: draft.attributes,
+          sku: draft.sku.trim() || undefined,
+          barcode: draft.barcode.trim() || undefined,
+          // Une déclinaison laissée sans prix hérite de celui de la fiche :
+          // le cas courant, où seule la taille change, pas le tarif.
+          cost: draft.cost.trim()
+            ? toMinor(draft.cost, currency)
+            : toMinor(String(formData.get('cost') ?? '0'), currency),
+          price: draft.price.trim()
+            ? toMinor(draft.price, currency)
+            : toMinor(String(formData.get('price') ?? '0'), currency),
+          isActive: true,
+          initialStock: Number(draft.initialStock) || 0,
+        }))
+      : [];
+
     const shared = {
       name: String(formData.get('name') ?? ''),
       categoryId: categoryId || null,
@@ -542,6 +656,8 @@ function ProductForm({
       attributes,
       baseUnitId: baseUnitId || null,
       units,
+      variantAxes: cleanAxes,
+      variants: cleanDeclinations,
     };
 
     try {
@@ -641,6 +757,162 @@ function ProductForm({
         </div>
 
         <fieldset className="rounded-xl border border-surface-border p-4">
+          <legend className="px-1 text-sm font-medium">Déclinaisons (facultatif)</legend>
+          <p className="text-xs text-ink-faint">
+            Tailles, pointures, couleurs… Chaque combinaison a son propre stock et peut avoir son
+            propre prix. Laissez vide pour un produit sans déclinaison.
+          </p>
+
+          {axes.length > 0 && (
+            <ul className="mt-4 space-y-3">
+              {axes.map((axis, index) => (
+                <li key={index} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-ink-muted">Nom de l&apos;axe</span>
+                    <input
+                      value={axis.name}
+                      onChange={(event) => updateAxis(index, { name: event.target.value })}
+                      placeholder="Taille"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-ink-muted">
+                      Valeurs, séparées par une virgule
+                    </span>
+                    <input
+                      defaultValue={axis.values.join(', ')}
+                      onBlur={(event) =>
+                        updateAxis(index, {
+                          values: event.target.value
+                            .split(',')
+                            .map((value) => value.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      placeholder="S, M, L, XL"
+                      className={inputClass}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setAxes((current) => current.filter((_, i) => i !== index))}
+                    aria-label="Retirer cet axe"
+                    className="self-end px-2 pb-2.5 text-ink-faint hover:text-red-600"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {axes.length < 3 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setAxes((current) => [...current, { name: '', values: [] }])}
+              >
+                + Ajouter un axe
+              </Button>
+            )}
+            {hasAxes && (
+              <Button type="button" size="sm" variant="secondary" onClick={generateMatrix}>
+                Générer les combinaisons
+              </Button>
+            )}
+          </div>
+
+          {declinations.length > 0 && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
+                    <th className="py-2 pr-3 font-medium">Déclinaison</th>
+                    <th className="py-2 pr-3 font-medium">Réf.</th>
+                    <th className="py-2 pr-3 font-medium">Code-barres</th>
+                    <th className="py-2 pr-3 font-medium">Prix</th>
+                    {!isEdit && <th className="py-2 pr-3 font-medium">Stock</th>}
+                    <th className="py-2 font-medium">&nbsp;</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {declinations.map((draft) => (
+                    <tr key={draft.key} className="border-b border-surface-border last:border-0">
+                      <td className="py-2 pr-3 font-medium">
+                        {Object.values(draft.attributes).filter(Boolean).join(' · ') || '—'}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <input
+                          value={draft.sku}
+                          onChange={(event) => updateDeclination(draft.key, { sku: event.target.value })}
+                          className={cx(inputClass, 'w-28')}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
+                        <input
+                          value={draft.barcode}
+                          onChange={(event) =>
+                            updateDeclination(draft.key, { barcode: event.target.value })
+                          }
+                          className={cx(inputClass, 'w-32')}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={draft.price}
+                          onChange={(event) =>
+                            updateDeclination(draft.key, { price: event.target.value })
+                          }
+                          placeholder="prix fiche"
+                          className={cx(inputClass, 'w-24')}
+                        />
+                      </td>
+                      {!isEdit && (
+                        <td className="py-2 pr-3">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={draft.initialStock}
+                            onChange={(event) =>
+                              updateDeclination(draft.key, { initialStock: event.target.value })
+                            }
+                            className={cx(inputClass, 'w-20')}
+                          />
+                        </td>
+                      )}
+                      <td className="py-2">
+                        <button
+                          type="button"
+                          onClick={() => removeDeclination(draft.key)}
+                          aria-label="Retirer cette déclinaison"
+                          className="text-ink-faint hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {isEdit && (
+                <p className="mt-2 text-xs text-ink-faint">
+                  Le stock des déclinaisons se modifie depuis les mouvements de stock, pas ici.
+                  Une déclinaison retirée est désactivée, jamais supprimée : ses ventes passées la
+                  référencent toujours.
+                </p>
+              )}
+            </div>
+          )}
+        </fieldset>
+
+        <fieldset className="rounded-xl border border-surface-border p-4">
           <legend className="px-1 text-sm font-medium">Conditionnements (facultatif)</legend>
           <p className="text-xs text-ink-faint">
             Un carton, une palette, un rouleau… Le stock reste toujours compté en{' '}
@@ -737,8 +1009,16 @@ function ProductForm({
           )}
         </fieldset>
 
-        {isEdit ? (
-          <Field label="Seuil d'alerte stock bas" htmlFor="minStockAlert">
+        {isEdit || hasAxes ? (
+          <Field
+            label="Seuil d'alerte stock bas"
+            htmlFor="minStockAlert"
+            hint={
+              hasAxes && !isEdit
+                ? 'Le stock initial se saisit par déclinaison, dans le tableau ci-dessus.'
+                : undefined
+            }
+          >
             <input
               id="minStockAlert"
               name="minStockAlert"
@@ -746,7 +1026,7 @@ function ProductForm({
               min="0"
               step="0.001"
               className={inputClass}
-              defaultValue={product!.minStockAlert}
+              defaultValue={product?.minStockAlert ?? 0}
             />
           </Field>
         ) : (

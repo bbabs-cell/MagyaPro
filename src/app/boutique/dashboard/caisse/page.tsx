@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady, resolveVariantUnitsBulk } from '@/lib/boutique/units-engine';
+import { parseVariantAxes, type VariantAxis } from '@/lib/boutique/variants';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
@@ -52,29 +53,68 @@ export default async function BoutiqueCaissePage() {
       id: true,
       price: true,
       barcode: true,
-      product: { select: { name: true, unit: true } },
+      attributes: true,
+      productId: true,
+      product: { select: { name: true, unit: true, variantAxes: true } },
       inventory: defaultWarehouse
         ? { where: { warehouseId: defaultWarehouse.id }, select: { quantity: true } }
         : false,
     },
-    orderBy: { product: { name: 'asc' } },
+    orderBy: [{ product: { name: 'asc' } }, { createdAt: 'asc' }],
   });
 
   const unitsByVariant = await resolveVariantUnitsBulk(variants.map((variant) => variant.id));
 
-  const products = variants.map((variant) => {
-    const resolved = unitsByVariant.get(variant.id) ?? [];
-    return {
-      id: variant.id,
+  // Une carte par PRODUIT, pas par variante : un t-shirt en 4 tailles × 3
+  // couleurs occuperait sinon 12 cartes dans la grille. Les déclinaisons
+  // deviennent des pastilles à l'intérieur de la carte.
+  const byProduct = new Map<string, (typeof products)[number]>();
+  const products: Array<{
+    id: string;
+    name: string;
+    unit: string;
+    axes: VariantAxis[];
+    variants: Array<{
+      variantId: string;
+      attributes: Record<string, string>;
+      barcode: string | null;
+      price: number;
+      stock: number;
+      units: Array<{
+        unitId: string;
+        label: string;
+        labelPlural: string;
+        isDecimal: boolean;
+        factor: number;
+        price: number | null;
+        isBase: boolean;
+      }>;
+    }>;
+  }> = [];
+
+  for (const variant of variants) {
+    let entry = byProduct.get(variant.productId);
+    if (!entry) {
+      entry = {
+        id: variant.productId,
+        name: variant.product.name,
+        unit: variant.product.unit,
+        axes: parseVariantAxes(variant.product.variantAxes),
+        variants: [],
+      };
+      byProduct.set(variant.productId, entry);
+      products.push(entry);
+    }
+
+    entry.variants.push({
       variantId: variant.id,
-      name: variant.product.name,
-      price: variant.price,
-      unit: variant.product.unit,
+      attributes: (variant.attributes ?? {}) as Record<string, string>,
       barcode: variant.barcode,
+      price: variant.price,
       // Toujours en unité de base — la caisse convertit à l'affichage et à
       // l'ajout au panier, jamais l'inverse.
       stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
-      units: resolved
+      units: (unitsByVariant.get(variant.id) ?? [])
         .filter((unit) => unit.isSellable && unit.price !== null)
         .map((unit) => ({
           unitId: unit.unitId,
@@ -85,8 +125,8 @@ export default async function BoutiqueCaissePage() {
           price: unit.price,
           isBase: unit.isBase,
         })),
-    };
-  });
+    });
+  }
 
   return (
     <>

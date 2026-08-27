@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { resolveRequestedBaseUnit, validateVariantUnits } from '@/lib/boutique/units-engine';
+import { assertVariantsMatchAxes } from '@/lib/boutique/variants';
 import { requireStoreWithinLimit } from '@/lib/boutique/entitlements';
 import { storeProductSchema } from '@/lib/validation';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
@@ -52,6 +53,26 @@ export const POST = route(async (request) => {
     throw new ValidationError("Aucun entrepôt par défaut n'est configuré pour cette boutique.");
   }
 
+  // Produit sans déclinaison : une variante unique, construite depuis les
+  // champs de la fiche — le cas de l'immense majorité des produits, et celui
+  // de toutes les fiches créées avant les déclinaisons.
+  const declinations =
+    input.variants.length > 0
+      ? input.variants
+      : [
+          {
+            attributes: input.attributes,
+            sku: input.sku,
+            barcode: input.barcode,
+            cost: input.cost,
+            price: input.price,
+            isActive: true,
+            initialStock: input.initialStock,
+          },
+        ];
+
+  assertVariantsMatchAxes(input.variantAxes, declinations);
+
   const product = await prisma.$transaction(async (tx) => {
     const created = await tx.storeProduct.create({
       data: {
@@ -66,33 +87,37 @@ export const POST = route(async (request) => {
         minStockAlert: input.minStockAlert,
         unit: input.unit,
         baseUnitId,
+        variantAxes: input.variantAxes,
         variants: {
-          create: {
-            sku: input.sku ?? null,
-            barcode: input.barcode ?? null,
-            cost: input.cost,
-            price: input.price,
-            attributes: input.attributes,
-            // Les conditionnements (carton, palette…) sont créés juste après,
-            // via `StoreVariantUnit` — l'unité de base porte déjà `cost` et
-            // `price` ci-dessus.
+          create: declinations.map((declination) => ({
+            sku: declination.sku ?? null,
+            barcode: declination.barcode ?? null,
+            cost: declination.cost,
+            price: declination.price,
+            attributes: declination.attributes,
+            isActive: declination.isActive,
+            // Les conditionnements sont les mêmes pour toutes les
+            // déclinaisons : un carton de t-shirts en contient autant en S
+            // qu'en XL. Le modèle autorise une divergence par variante, la
+            // fiche ne la propose simplement pas encore.
             units: { create: unitRows },
-          },
+          })),
         },
       },
-      include: { variants: true },
+      include: { variants: { orderBy: { createdAt: 'asc' } } },
     });
 
-    const variant = created.variants[0]!;
-
-    if (input.initialStock > 0) {
+    // Le stock initial est propre à chaque déclinaison : 5 en S, 12 en M.
+    for (const [index, declination] of declinations.entries()) {
+      if (declination.initialStock <= 0) continue;
+      const variant = created.variants[index]!;
       await recordStockMovement(
         {
           storeId: context.store.id,
           productVariantId: variant.id,
           warehouseId: defaultWarehouse.id,
           type: 'INITIAL',
-          quantityChange: input.initialStock,
+          quantityChange: declination.initialStock,
           userId: context.user.id,
           reason: 'Stock initial à la création du produit',
           referenceType: 'store_product',

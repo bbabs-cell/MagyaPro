@@ -548,13 +548,6 @@ export const variantAttributesSchema = z
   .default({});
 
 /**
- * Quantité Boutique — décimale à 3 décimales (vente au poids/volume : kg, g,
- * L, mL). Arrondie plutôt que rejetée par une précision excessive : le
- * client ne doit pas voir une erreur pour un troisième chiffre après la
- * virgule saisi par accident, la colonne en base est de toute façon limitée
- * à cette précision.
- */
-/**
  * Quantité décimale — arrondie à 6 décimales, la précision de stockage
  * (`Decimal(18,6)`). Arrondir plus tôt ici ferait disparaître silencieusement
  * les fractions fines d'une unité de base large (0,5 g d'un produit stocké au
@@ -583,6 +576,50 @@ export const storeVariantUnitSchema = z.object({
   cost: amountSchema.nullable().optional(),
   isSellable: z.boolean().default(true),
   isPurchasable: z.boolean().default(true),
+});
+
+/**
+ * Axes de déclinaison d'un produit — « Taille : S, M, L » puis « Couleur :
+ * Noir, Blanc ». Bornés à 3 axes et 40 valeurs : au-delà, le nombre de
+ * combinaisons générées deviendrait ingérable à l'écran comme en stock
+ * (3 × 40³ dépasse déjà toute réalité de boutique).
+ */
+export const variantAxesSchema = z
+  .array(
+    z.object({
+      name: z.string().trim().min(1).max(40),
+      values: z.array(z.string().trim().min(1).max(60)).min(1).max(40),
+    }),
+  )
+  .max(3)
+  .default([])
+  .refine(
+    (axes) => new Set(axes.map((axis) => axis.name.toLowerCase())).size === axes.length,
+    'Deux axes portent le même nom.',
+  )
+  .refine(
+    (axes) =>
+      axes.every(
+        (axis) => new Set(axis.values.map((v) => v.toLowerCase())).size === axis.values.length,
+      ),
+    'Un axe contient deux fois la même valeur.',
+  );
+
+/**
+ * Une déclinaison concrète — une combinaison d'axes avec son propre stock et
+ * son propre prix. `id` absent = nouvelle déclinaison à créer.
+ */
+export const storeProductVariantSchema = z.object({
+  id: z.string().min(1).optional(),
+  /** Une valeur par axe : `{ "Taille": "M", "Couleur": "Noir" }`. */
+  attributes: variantAttributesSchema,
+  sku: optionalText(60),
+  barcode: optionalText(60),
+  cost: amountSchema,
+  price: amountSchema,
+  isActive: z.boolean().default(true),
+  /** Uniquement à la création d'une déclinaison — mouvement `INITIAL`. */
+  initialStock: quantitySchema(1_000_000).default(0),
 });
 
 export const storeProductSchema = z.object({
@@ -615,6 +652,12 @@ export const storeProductSchema = z.object({
    * prix et le coût de la fiche.
    */
   units: z.array(storeVariantUnitSchema).max(8).default([]),
+  variantAxes: variantAxesSchema,
+  /**
+   * Déclinaisons du produit. Vide = produit simple : une variante unique est
+   * créée à partir des champs `sku`/`cost`/`price` ci-dessus, comme avant.
+   */
+  variants: z.array(storeProductVariantSchema).max(200).default([]),
 });
 
 /**
@@ -639,6 +682,8 @@ export const storeProductUpdateSchema = z.object({
   attributes: variantAttributesSchema,
   baseUnitId: z.string().min(1).nullable().optional(),
   units: z.array(storeVariantUnitSchema).max(8).default([]),
+  variantAxes: variantAxesSchema,
+  variants: z.array(storeProductVariantSchema).max(200).default([]),
 });
 
 export const storeSupplierSchema = z.object({

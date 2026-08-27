@@ -1758,6 +1758,16 @@ model StoreProduct {
   /// garantie) — jamais utilisé pour du contenu qui doit être filtrable ou
   /// requêté : ces attributs-là méritent leur propre colonne.
   attributes    Json               @default("{}")
+  /// Axes de déclinaison du produit, dans l'ordre d'affichage :
+  /// `[{ "name": "Taille", "values": ["S","M","L"] }, { "name": "Couleur",
+  /// "values": ["Noir","Blanc"] }]`. Chaque variante choisit une valeur par
+  /// axe dans son propre `attributes`.
+  ///
+  /// Déclaré ici et pas déduit des variantes : sans liste d'axes, la caisse
+  /// ne saurait pas quelles pastilles proposer, ni dans quel ordre, ni
+  /// distinguer une taille jamais mise en stock d'une taille inexistante.
+  /// Tableau vide = produit sans déclinaison (le cas courant).
+  variantAxes   Json               @default("[]")
   status        StoreProductStatus @default(DRAFT)
   minStockAlert Decimal            @default(0) @db.Decimal(18, 6)
   /// Unité héritée, conservée pour les fiches antérieures au moteur d'unités

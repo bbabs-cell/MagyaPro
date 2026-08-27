@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
+import { parseVariantAxes } from '@/lib/boutique/variants';
 import { PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
 import { ExcelImportExport } from '@/components/boutique/excel-import-export';
@@ -43,6 +44,7 @@ export default async function BoutiqueProductsPage() {
             barcode: true,
             cost: true,
             price: true,
+            isActive: true,
             attributes: true,
             units: {
               orderBy: { position: 'asc' },
@@ -89,6 +91,7 @@ export default async function BoutiqueProductsPage() {
         initialProducts={products.map((product) => ({
           ...product,
           minStockAlert: toQty(product.minStockAlert),
+          variantAxes: parseVariantAxes(product.variantAxes),
           variants: product.variants.map((variant) => ({
             ...variant,
             attributes: (variant.attributes ?? {}) as Record<string, string>,

@@ -29,22 +29,33 @@ import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
  * panier plutôt que de simplement filtrer la liste.
  */
 
-type Product = {
-  id: string;
-  name: string;
+type VariantAxis = { name: string; values: string[] };
+
+/** Une déclinaison concrète — c'est elle qui porte le stock et le prix. */
+type Variant = {
   variantId: string;
+  /** Une valeur par axe : `{ "Taille": "M", "Couleur": "Noir" }`. */
+  attributes: Record<string, string>;
+  barcode: string | null;
   price: number;
   /** TOUJOURS en unité de base — la conversion se fait ici, à l'affichage
    *  et à l'ajout au panier. */
   stock: number;
-  unit: string;
-  barcode: string | null;
   /**
-   * Unités vendables du produit, la base en premier (voir
-   * `resolveVariantUnitsBulk`). Vide pour une fiche pas encore reprise par le
-   * moteur d'unités : la caisse retombe alors sur le prix de la fiche.
+   * Unités vendables, la base en premier (voir `resolveVariantUnitsBulk`).
+   * Vide pour une fiche pas encore reprise par le moteur d'unités : la caisse
+   * retombe alors sur le prix de la variante.
    */
   units: UnitOption[];
+};
+
+type Product = {
+  id: string;
+  name: string;
+  unit: string;
+  /** Vide pour un produit sans déclinaison — le cas courant. */
+  axes: VariantAxis[];
+  variants: Variant[];
 };
 
 type Customer = {
@@ -116,6 +127,8 @@ export function Pos({
     { method: paymentMethods[0]?.value ?? 'cash', amount: '' },
   ]);
   const [customerId, setCustomerId] = useState('');
+  /** Valeur retenue par axe, pour chaque produit à déclinaisons. */
+  const [selection, setSelection] = useState<Record<string, Record<string, string>>>({});
   const [promoCode, setPromoCode] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,9 +139,40 @@ export function Pos({
     const needle = query.trim().toLowerCase();
     if (!needle) return products;
     return products.filter(
-      (p) => p.name.toLowerCase().includes(needle) || p.barcode?.toLowerCase() === needle,
+      (p) =>
+        p.name.toLowerCase().includes(needle) ||
+        p.variants.some((variant) => variant.barcode?.toLowerCase() === needle),
     );
   }, [products, query]);
+
+  /**
+   * Déclinaison retenue pour un produit. Sans axe, il n'y en a qu'une. Avec
+   * axes, tant que le caissier n'a pas choisi une valeur sur chaque axe, il
+   * n'y a pas de déclinaison — donc rien à ajouter au panier.
+   */
+  function selectedVariant(product: Product): Variant | null {
+    if (product.axes.length === 0) return product.variants[0] ?? null;
+    const chosen = selection[product.id] ?? {};
+    if (!product.axes.every((axis) => chosen[axis.name])) return null;
+    return (
+      product.variants.find((variant) =>
+        product.axes.every((axis) => variant.attributes[axis.name] === chosen[axis.name]),
+      ) ?? null
+    );
+  }
+
+  function chooseAxisValue(productId: string, axisName: string, value: string) {
+    setSelection((current) => {
+      const chosen = current[productId] ?? {};
+      // Recliquer sur la pastille active la désélectionne — plus rapide que
+      // de chercher un bouton « effacer » entre deux clients.
+      const next = chosen[axisName] === value ? undefined : value;
+      return {
+        ...current,
+        [productId]: { ...chosen, [axisName]: next ?? '' },
+      };
+    });
+  }
 
   const subtotal = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   const discountAmount = Math.min(Math.max(Number(discount) || 0, 0), subtotal);
@@ -141,23 +185,34 @@ export function Pos({
   const remaining = Math.max(total - paymentsTotal, 0);
   const customer = customers.find((c) => c.id === customerId) ?? null;
 
-  function addToCart(product: Product, option?: UnitOption) {
+  function addToCart(product: Product, variant: Variant, option?: UnitOption) {
     setError(null);
 
     // Fiche pas encore reprise par le moteur d'unités : on vend à l'unité de
     // la fiche, exactement comme avant.
-    const unit = option ?? product.units.find((candidate) => candidate.isBase) ?? null;
+    const unit = option ?? variant.units.find((candidate) => candidate.isBase) ?? null;
     const factor = unit?.factor ?? 1;
-    const unitPrice = unit?.price ?? product.price;
+    const unitPrice = unit?.price ?? variant.price;
     const step = unit ? stepForUnit(unit) : quantityStep(product.unit);
 
     // Le stock est compté en unité de base : converti ici en nombre d'unités
     // entières disponibles pour cette ligne (277 bouteilles → 13 cartons).
-    const maxStock = unit && !unit.isBase ? Math.floor(product.stock / factor) : product.stock;
+    const maxStock = unit && !unit.isBase ? Math.floor(variant.stock / factor) : variant.stock;
 
-    const key = lineKey(product.variantId, unit?.unitId ?? null);
+    const key = lineKey(variant.variantId, unit?.unitId ?? null);
     const label = unit?.label ?? '';
-    const name = unit && !unit.isBase ? `${product.name} — ${unit.label} ×${factor}` : product.name;
+    const declination = product.axes
+      .map((axis) => variant.attributes[axis.name])
+      .filter(Boolean)
+      .join(' · ');
+
+    const name = [
+      product.name,
+      declination && `(${declination})`,
+      unit && !unit.isBase && `— ${unit.label} ×${factor}`,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     setCart((current) => {
       const existing = current.find((line) => lineKey(line.variantId, line.unitId) === key);
@@ -173,7 +228,7 @@ export function Pos({
       return [
         ...current,
         {
-          variantId: product.variantId,
+          variantId: variant.variantId,
           unitId: unit?.unitId ?? null,
           unitLabel: label,
           unitLabelPlural: unit?.labelPlural ?? label,
@@ -193,15 +248,21 @@ export function Pos({
     if (event.key !== 'Enter') return;
     const needle = query.trim().toLowerCase();
     if (!needle) return;
-    const match = products.find((p) => p.barcode?.toLowerCase() === needle);
-    if (!match) return;
-    event.preventDefault();
-    if (match.stock <= 0) {
-      setError(`${match.name} : rupture de stock.`);
+
+    // Le code-barres identifie une déclinaison précise (un t-shirt en M noir),
+    // pas seulement un produit : le scan ajoute donc directement la bonne.
+    for (const product of products) {
+      const variant = product.variants.find((v) => v.barcode?.toLowerCase() === needle);
+      if (!variant) continue;
+      event.preventDefault();
+      if (variant.stock <= 0) {
+        setError(`${product.name} : rupture de stock.`);
+        return;
+      }
+      addToCart(product, variant);
+      setQuery('');
       return;
     }
-    addToCart(match);
-    setQuery('');
   }
 
   function updateQuantity(key: string, quantity: number) {
@@ -317,52 +378,102 @@ export function Pos({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((product) => {
+              const variant = selectedVariant(product);
+              const chosen = selection[product.id] ?? {};
               // Stock affiché dans les unités du produit : « 13 cartons +
               // 17 bouteilles » plutôt que « 277 ». Purement décoratif, le
               // stock reste compté en unité de base.
-              const stockLabel =
-                product.units.length > 0
-                  ? formatCompositeStock(product.stock, product.units)
-                  : `${product.stock} ${UNIT_LABELS[product.unit] ?? ''}`.trim();
+              const stockLabel = variant
+                ? variant.units.length > 0
+                  ? formatCompositeStock(variant.stock, variant.units)
+                  : `${variant.stock} ${UNIT_LABELS[product.unit] ?? ''}`.trim()
+                : null;
 
               return (
                 <div
-                  key={product.variantId}
+                  key={product.id}
                   className="card flex flex-col items-start gap-1 p-4 text-left transition-shadow hover:shadow-md"
                 >
                   <span className="font-medium text-ink">{product.name}</span>
-                  <Badge tone={product.stock > 0 ? 'neutral' : 'danger'}>
-                    {product.stock > 0 ? `${stockLabel} en stock` : 'Rupture'}
-                  </Badge>
 
-                  <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
-                    {product.units.length > 0 ? (
-                      product.units.map((unit) => (
-                        <button
-                          key={unit.unitId}
-                          type="button"
-                          onClick={() => addToCart(product, unit)}
-                          disabled={product.stock < unit.factor}
-                          className="min-w-[46%] flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {unit.isBase ? unit.label : `${unit.label} ×${unit.factor}`}
-                          <br />
-                          {unit.price === null ? '—' : formatMoney(unit.price, currency)}
-                        </button>
-                      ))
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => addToCart(product)}
-                        disabled={product.stock <= 0}
-                        className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {UNIT_LABELS[product.unit] ?? 'Unité'}
-                        <br />
-                        {formatMoney(product.price, currency)}
-                      </button>
-                    )}
-                  </div>
+                  {product.axes.map((axis) => (
+                    <div key={axis.name} className="mt-1.5 w-full">
+                      <span className="block text-xs text-ink-faint">{axis.name}</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {axis.values.map((value) => {
+                          const active = chosen[axis.name] === value;
+                          // Une valeur dont aucune déclinaison n'a de stock
+                          // reste visible mais grisée : le caissier voit que
+                          // la taille existe et qu'elle est épuisée, plutôt
+                          // que de la croire inexistante.
+                          const inStock = product.variants.some(
+                            (v) => v.attributes[axis.name] === value && v.stock > 0,
+                          );
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => chooseAxisValue(product.id, axis.name, value)}
+                              className={cx(
+                                'rounded-lg border px-2 py-1 text-xs font-medium transition-colors',
+                                active
+                                  ? 'border-ink bg-ink text-white'
+                                  : 'border-surface-border text-ink hover:bg-surface-sunken',
+                                !inStock && !active && 'opacity-40',
+                              )}
+                            >
+                              {value}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {variant ? (
+                    <>
+                      <span className="mt-1.5">
+                        <Badge tone={variant.stock > 0 ? 'neutral' : 'danger'}>
+                          {variant.stock > 0 ? `${stockLabel} en stock` : 'Rupture'}
+                        </Badge>
+                      </span>
+
+                      <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
+                        {variant.units.length > 0 ? (
+                          variant.units.map((unit) => (
+                            <button
+                              key={unit.unitId}
+                              type="button"
+                              onClick={() => addToCart(product, variant, unit)}
+                              disabled={variant.stock < unit.factor}
+                              className="min-w-[46%] flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {unit.isBase ? unit.label : `${unit.label} ×${unit.factor}`}
+                              <br />
+                              {unit.price === null ? '—' : formatMoney(unit.price, currency)}
+                            </button>
+                          ))
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => addToCart(product, variant)}
+                            disabled={variant.stock <= 0}
+                            className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {UNIT_LABELS[product.unit] ?? 'Unité'}
+                            <br />
+                            {formatMoney(variant.price, currency)}
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-2 text-xs text-ink-faint">
+                      Choisissez {product.axes.map((axis) => axis.name.toLowerCase()).join(' et ')}{' '}
+                      pour ajouter au panier.
+                    </p>
+                  )}
                 </div>
               );
             })}
