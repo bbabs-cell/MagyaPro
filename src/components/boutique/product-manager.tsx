@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
+import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 /**
@@ -17,6 +18,25 @@ import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/compon
 
 type Category = { id: string; name: string; productCount: number };
 type BrandRow = { id: string; name: string; productCount: number };
+/** Unité de la boutique, telle que proposée dans les sélecteurs de la fiche. */
+type StoreUnit = {
+  id: string;
+  code: string;
+  label: string;
+  labelPlural: string;
+  isDecimal: boolean;
+};
+
+/** Conditionnement déclaré sur une variante : conversion + prix propres. */
+type VariantUnit = {
+  unitId: string;
+  factor: number;
+  price: number | null;
+  cost: number | null;
+  isSellable: boolean;
+  isPurchasable: boolean;
+};
+
 type Variant = {
   id: string;
   sku: string | null;
@@ -24,9 +44,7 @@ type Variant = {
   cost: number;
   price: number;
   attributes: Record<string, string>;
-  packSize: number | null;
-  packCost: number | null;
-  packPrice: number | null;
+  units: VariantUnit[];
 };
 type Product = {
   id: string;
@@ -35,10 +53,26 @@ type Product = {
   status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
   minStockAlert: number;
   unit: string;
+  baseUnitId: string | null;
   category: { id: string; name: string } | null;
   brand: { id: string; name: string } | null;
   variants: Array<Variant & { inventory: Array<{ quantity: number; warehouseId: string }> }>;
 };
+
+/** Ligne de l'éditeur de conditionnements — valeurs en saisie, donc en texte. */
+type UnitDraft = {
+  key: string;
+  unitId: string;
+  factor: string;
+  price: string;
+  cost: string;
+};
+
+let draftCounter = 0;
+function newDraftKey(): string {
+  draftCounter += 1;
+  return `draft-${draftCounter}`;
+}
 
 const STATUS_LABELS: Record<Product['status'], string> = {
   ACTIVE: 'Actif',
@@ -80,6 +114,7 @@ export function ProductManager({
   initialCategories,
   initialBrands,
   initialProducts,
+  storeUnits,
   currency,
   canManage,
   businessType,
@@ -87,6 +122,8 @@ export function ProductManager({
   initialCategories: Category[];
   initialBrands: BrandRow[];
   initialProducts: Product[];
+  /** Unités actives de la boutique — voir `StoreUnit`. */
+  storeUnits: StoreUnit[];
   currency: string;
   canManage: boolean;
   businessType: string;
@@ -106,6 +143,60 @@ export function ProductManager({
         sum + variant.inventory.reduce((vSum, inv) => vSum + inv.quantity, 0),
       0,
     );
+  }
+
+  const unitById = new Map(storeUnits.map((unit) => [unit.id, unit]));
+  const unitLabelById = new Map(storeUnits.map((unit) => [unit.id, unit.label]));
+
+  /**
+   * Unités d'un produit au format attendu par `formatCompositeStock` — l'unité
+   * de base d'abord, puis ses conditionnements. Vide tant que la fiche n'a pas
+   * d'unité de base : l'affichage retombe alors sur l'unité héritée.
+   */
+  function unitOptionsFor(product: Product): UnitOption[] {
+    const base = product.baseUnitId ? unitById.get(product.baseUnitId) : null;
+    if (!base) {
+      const legacy = UNIT_LABELS[product.unit] ?? '';
+      return [
+        {
+          unitId: 'legacy',
+          label: legacy,
+          labelPlural: legacy,
+          isDecimal: false,
+          factor: 1,
+          price: null,
+          isBase: true,
+        },
+      ];
+    }
+
+    const options: UnitOption[] = [
+      {
+        unitId: base.id,
+        label: base.label,
+        labelPlural: base.labelPlural,
+        isDecimal: base.isDecimal,
+        factor: 1,
+        price: null,
+        isBase: true,
+      },
+    ];
+
+    for (const unit of product.variants[0]?.units ?? []) {
+      const definition = unitById.get(unit.unitId);
+      if (!definition) continue;
+      options.push({
+        unitId: definition.id,
+        label: definition.label,
+        labelPlural: definition.labelPlural,
+        isDecimal: definition.isDecimal,
+        factor: unit.factor,
+        price: unit.price,
+        isBase: false,
+      });
+    }
+
+    return options;
   }
 
   return (
@@ -158,6 +249,7 @@ export function ProductManager({
         <ProductForm
           categories={categories}
           brands={brands}
+          storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
           onDone={() => {
@@ -173,6 +265,7 @@ export function ProductManager({
           product={editingProduct}
           categories={categories}
           brands={brands}
+          storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
           onDone={() => {
@@ -233,11 +326,15 @@ export function ProductManager({
                     </td>
                     <td data-label="Prix" className="px-4 py-3 text-right font-medium">
                       {variant ? formatMoney(variant.price, currency) : '—'}
-                      {variant?.packSize && variant.packPrice ? (
-                        <p className="mt-0.5 text-xs font-normal text-ink-faint">
-                          Carton ×{variant.packSize} : {formatMoney(variant.packPrice, currency)}
-                        </p>
-                      ) : null}
+                      {variant?.units.map((unit) => {
+                        const label = unitLabelById.get(unit.unitId);
+                        if (!label || unit.price === null) return null;
+                        return (
+                          <p key={unit.unitId} className="mt-0.5 text-xs font-normal text-ink-faint">
+                            {label} ×{unit.factor} : {formatMoney(unit.price, currency)}
+                          </p>
+                        );
+                      })}
                     </td>
                     <td
                       data-label="Stock"
@@ -246,7 +343,9 @@ export function ProductManager({
                         stock <= product.minStockAlert && 'font-medium text-amber-700',
                       )}
                     >
-                      {stock} {product.unit !== 'UNIT' && UNIT_LABELS[product.unit]}
+                      {/* Stock affiché dans les unités du produit — « 13 cartons
+                          + 17 bouteilles ». Recalculé, jamais stocké ainsi. */}
+                      {formatCompositeStock(stock, unitOptionsFor(product))}
                     </td>
                     <td data-label="Statut" className="px-4 py-3">
                       <Badge tone={STATUS_TONES[product.status]}>
@@ -331,6 +430,7 @@ function ProductForm({
   product,
   categories,
   brands,
+  storeUnits,
   currency,
   businessType,
   onDone,
@@ -340,6 +440,7 @@ function ProductForm({
   product?: Product;
   categories: Category[];
   brands: BrandRow[];
+  storeUnits: StoreUnit[];
   currency: string;
   businessType: string;
   onDone: () => void;
@@ -351,11 +452,55 @@ function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [attr1Label, attr2Label] = ATTRIBUTE_SUGGESTIONS[businessType] ?? ATTRIBUTE_SUGGESTIONS.OTHER!;
-  // Contrôlé uniquement pour afficher/masquer les champs de stock initial en
-  // cartons ci-dessous — la valeur réellement envoyée vient toujours de
-  // `formData` à la soumission, jamais de cet état.
-  const [packSizeText, setPackSizeText] = useState(variant?.packSize ? String(variant.packSize) : '');
-  const packSizeNum = Number(packSizeText) || 0;
+
+  const [baseUnitId, setBaseUnitId] = useState(product?.baseUnitId ?? storeUnits[0]?.id ?? '');
+  const [unitDrafts, setUnitDrafts] = useState<UnitDraft[]>(() =>
+    (variant?.units ?? []).map((unit) => ({
+      key: newDraftKey(),
+      unitId: unit.unitId,
+      factor: String(unit.factor),
+      price: unit.price === null ? '' : String(toMajor(unit.price, currency)),
+      cost: unit.cost === null ? '' : String(toMajor(unit.cost, currency)),
+    })),
+  );
+
+  const baseUnit = storeUnits.find((unit) => unit.id === baseUnitId) ?? null;
+  // L'unité de base ne peut pas être aussi un conditionnement : sa conversion
+  // vaut 1 par définition (voir `validateVariantUnits`).
+  const availableUnits = storeUnits.filter((unit) => unit.id !== baseUnitId);
+
+  function addUnitDraft() {
+    const taken = new Set(unitDrafts.map((draft) => draft.unitId));
+    const next = availableUnits.find((unit) => !taken.has(unit.id));
+    if (!next) return;
+    setUnitDrafts((current) => [
+      ...current,
+      { key: newDraftKey(), unitId: next.id, factor: '', price: '', cost: '' },
+    ]);
+  }
+
+  function updateUnitDraft(key: string, patch: Partial<UnitDraft>) {
+    setUnitDrafts((current) =>
+      current.map((draft) => (draft.key === key ? { ...draft, ...patch } : draft)),
+    );
+  }
+
+  function removeUnitDraft(key: string) {
+    setUnitDrafts((current) => current.filter((draft) => draft.key !== key));
+  }
+
+  /** Conditionnements réellement saisis — une ligne sans conversion est ignorée. */
+  const filledDrafts = unitDrafts.filter((draft) => Number(draft.factor) > 0);
+  // Le plus grand conditionnement sert de saisie du stock initial (« 15
+  // cartons »), converti en unité de base à l'envoi.
+  const largestDraft = filledDrafts.reduce<UnitDraft | null>(
+    (best, draft) => (!best || Number(draft.factor) > Number(best.factor) ? draft : best),
+    null,
+  );
+  const largestUnit = largestDraft
+    ? (storeUnits.find((unit) => unit.id === largestDraft.unitId) ?? null)
+    : null;
+  const largestFactor = largestDraft ? Number(largestDraft.factor) : 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -373,51 +518,47 @@ function ProductForm({
     if (attr1Value) attributes[attr1Label] = attr1Value;
     if (attr2Value) attributes[attr2Label] = attr2Value;
 
-    const packSizeRaw = String(formData.get('packSize') ?? '').trim();
-    const packCostRaw = String(formData.get('packCost') ?? '').trim();
-    const packPriceRaw = String(formData.get('packPrice') ?? '').trim();
-    const packSize = packSizeRaw ? Number(packSizeRaw) : null;
-    const packCost = packSize && packCostRaw ? toMinor(packCostRaw, currency) : null;
-    const packPrice = packSize && packPriceRaw ? toMinor(packPriceRaw, currency) : null;
+    // Chaque conditionnement porte son propre prix : jamais déduit du facteur,
+    // un carton peut être vendu moins cher que son contenu à l'unité.
+    const units = filledDrafts.map((draft) => ({
+      unitId: draft.unitId,
+      factor: Number(draft.factor),
+      price: draft.price.trim() ? toMinor(draft.price, currency) : null,
+      cost: draft.cost.trim() ? toMinor(draft.cost, currency) : null,
+      isSellable: Boolean(draft.price.trim()),
+      isPurchasable: true,
+    }));
+
+    const shared = {
+      name: String(formData.get('name') ?? ''),
+      categoryId: categoryId || null,
+      brandId: brandId || null,
+      status: String(formData.get('status') ?? 'DRAFT'),
+      minStockAlert: Number(formData.get('minStockAlert') ?? 0),
+      unit: String(formData.get('unit') ?? 'UNIT'),
+      sku: String(formData.get('sku') ?? '') || undefined,
+      cost: toMinor(String(formData.get('cost') ?? '0'), currency),
+      price: toMinor(String(formData.get('price') ?? '0'), currency),
+      attributes,
+      baseUnitId: baseUnitId || null,
+      units,
+    };
 
     try {
       if (isEdit && product) {
-        await api.patch(`/api/boutique/products/${product.id}`, {
-          name: String(formData.get('name') ?? ''),
-          categoryId: categoryId || null,
-          brandId: brandId || null,
-          status: String(formData.get('status') ?? 'DRAFT'),
-          minStockAlert: Number(formData.get('minStockAlert') ?? 0),
-          unit: String(formData.get('unit') ?? 'UNIT'),
-          sku: String(formData.get('sku') ?? '') || undefined,
-          cost: toMinor(String(formData.get('cost') ?? '0'), currency),
-          price: toMinor(String(formData.get('price') ?? '0'), currency),
-          attributes,
-          packSize,
-          packCost,
-          packPrice,
-        });
+        await api.patch(`/api/boutique/products/${product.id}`, shared);
       } else {
-        const cartons = Number(formData.get('initialStockCartons') ?? 0);
+        // Le stock initial peut être saisi dans le plus grand conditionnement
+        // (« 15 cartons + 3 bouteilles ») : converti ici en unité de base,
+        // la seule dans laquelle le stock est enregistré.
+        const packs = Number(formData.get('initialStockPacks') ?? 0);
         const extraUnits = Number(formData.get('initialStockUnits') ?? 0);
-        const initialStock = packSize
-          ? cartons * packSize + extraUnits
+        const initialStock = largestFactor
+          ? packs * largestFactor + extraUnits
           : Number(formData.get('initialStock') ?? 0);
 
         await api.post('/api/boutique/products', {
-          name: String(formData.get('name') ?? ''),
-          categoryId: categoryId || null,
-          brandId: brandId || null,
-          status: String(formData.get('status') ?? 'DRAFT'),
-          minStockAlert: Number(formData.get('minStockAlert') ?? 0),
-          unit: String(formData.get('unit') ?? 'UNIT'),
-          sku: String(formData.get('sku') ?? '') || undefined,
-          cost: toMinor(String(formData.get('cost') ?? '0'), currency),
-          price: toMinor(String(formData.get('price') ?? '0'), currency),
-          attributes,
-          packSize,
-          packCost,
-          packPrice,
+          ...shared,
           initialStock,
           initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
         });
@@ -499,49 +640,101 @@ function ProductForm({
           </Field>
         </div>
 
-        <fieldset>
-          <legend className="text-sm font-medium">Vente par carton (facultatif)</legend>
-          <p className="mt-0.5 text-xs text-ink-faint">
-            Ex. un carton de 20 bouteilles d&apos;eau — le stock reste toujours compté à l&apos;unité,
-            mais la caisse pourra vendre au carton complet en plus de l&apos;unité.
+        <fieldset className="rounded-xl border border-surface-border p-4">
+          <legend className="px-1 text-sm font-medium">Conditionnements (facultatif)</legend>
+          <p className="text-xs text-ink-faint">
+            Un carton, une palette, un rouleau… Le stock reste toujours compté en{' '}
+            <strong>{baseUnit?.labelPlural ?? 'unités de base'}</strong> ; ces unités servent à
+            acheter, vendre et afficher. Chaque conditionnement a son propre prix — un carton peut
+            coûter moins cher que son contenu vendu à l&apos;unité.
           </p>
-          <div className="mt-2 grid gap-4 sm:grid-cols-3">
-            <Field label="Unités par carton" htmlFor="packSize" error={fieldErrors.packSize}>
-              <input
-                id="packSize"
-                name="packSize"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="20"
-                className={inputClass}
-                value={packSizeText}
-                onChange={(event) => setPackSizeText(event.target.value)}
-              />
-            </Field>
-            <Field label={`Coût d'achat carton (${currency})`} htmlFor="packCost">
-              <input
-                id="packCost"
-                name="packCost"
-                type="number"
-                min="0"
-                step="0.01"
-                className={inputClass}
-                defaultValue={variant?.packCost ? toMajor(variant.packCost, currency) : undefined}
-              />
-            </Field>
-            <Field label={`Prix de vente carton (${currency})`} htmlFor="packPrice" error={fieldErrors.packPrice}>
-              <input
-                id="packPrice"
-                name="packPrice"
-                type="number"
-                min="0"
-                step="0.01"
-                className={inputClass}
-                defaultValue={variant?.packPrice ? toMajor(variant.packPrice, currency) : undefined}
-              />
-            </Field>
-          </div>
+
+          {unitDrafts.length > 0 && (
+            <ul className="mt-4 space-y-3">
+              {unitDrafts.map((draft) => {
+                const taken = new Set(
+                  unitDrafts.filter((d) => d.key !== draft.key).map((d) => d.unitId),
+                );
+                const options = availableUnits.filter(
+                  (unit) => unit.id === draft.unitId || !taken.has(unit.id),
+                );
+                return (
+                  <li key={draft.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+                    <label className="block">
+                      <span className="mb-1 block text-xs text-ink-muted">Unité</span>
+                      <select
+                        value={draft.unitId}
+                        onChange={(event) => updateUnitDraft(draft.key, { unitId: event.target.value })}
+                        className={inputClass}
+                      >
+                        {options.map((unit) => (
+                          <option key={unit.id} value={unit.id}>
+                            {unit.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs text-ink-muted">
+                        Contient ({baseUnit?.labelPlural ?? 'unités'})
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="20"
+                        value={draft.factor}
+                        onChange={(event) => updateUnitDraft(draft.key, { factor: event.target.value })}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs text-ink-muted">Prix vente ({currency})</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={draft.price}
+                        onChange={(event) => updateUnitDraft(draft.key, { price: event.target.value })}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs text-ink-muted">Coût achat ({currency})</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={draft.cost}
+                        onChange={(event) => updateUnitDraft(draft.key, { cost: event.target.value })}
+                        className={inputClass}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeUnitDraft(draft.key)}
+                      aria-label="Retirer ce conditionnement"
+                      className="self-end px-2 pb-2.5 text-ink-faint hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {availableUnits.length > unitDrafts.length ? (
+            <Button type="button" size="sm" variant="secondary" className="mt-3" onClick={addUnitDraft}>
+              + Ajouter un conditionnement
+            </Button>
+          ) : (
+            availableUnits.length === 0 && (
+              <p className="mt-3 text-xs text-ink-faint">
+                Aucune autre unité disponible dans cette boutique.
+              </p>
+            )
+          )}
         </fieldset>
 
         {isEdit ? (
@@ -558,16 +751,16 @@ function ProductForm({
           </Field>
         ) : (
           <>
-            {packSizeNum > 0 ? (
+            {largestUnit && largestFactor > 0 ? (
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field
-                  label="Cartons en stock"
-                  htmlFor="initialStockCartons"
-                  hint={`Chaque carton contient ${packSizeNum} unité(s).`}
+                  label={`${largestUnit.labelPlural} en stock`}
+                  htmlFor="initialStockPacks"
+                  hint={`Chaque ${largestUnit.label} contient ${largestFactor} ${baseUnit?.labelPlural ?? ''}.`}
                 >
                   <input
-                    id="initialStockCartons"
-                    name="initialStockCartons"
+                    id="initialStockPacks"
+                    name="initialStockPacks"
                     type="number"
                     min="0"
                     step="1"
@@ -575,13 +768,13 @@ function ProductForm({
                     defaultValue="0"
                   />
                 </Field>
-                <Field label="Unités hors carton" htmlFor="initialStockUnits">
+                <Field label={`${baseUnit?.labelPlural ?? 'Unités'} en plus`} htmlFor="initialStockUnits">
                   <input
                     id="initialStockUnits"
                     name="initialStockUnits"
                     type="number"
                     min="0"
-                    step="0.001"
+                    step={baseUnit?.isDecimal ? '0.000001' : '1'}
                     className={inputClass}
                     defaultValue="0"
                   />
@@ -648,16 +841,35 @@ function ProductForm({
           <Field label="Référence / SKU (facultatif)" htmlFor="sku">
             <input id="sku" name="sku" className={inputClass} placeholder="TSH-001" defaultValue={variant?.sku ?? undefined} />
           </Field>
-          <Field label="Unité" htmlFor="unit" hint="Détermine comment le stock s'affiche.">
-            <select id="unit" name="unit" className={inputClass} defaultValue={product?.unit ?? 'UNIT'}>
-              {Object.entries(UNIT_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+          <Field
+            label="Unité de stock"
+            htmlFor="baseUnitId"
+            error={fieldErrors.baseUnitId}
+            hint={
+              isEdit
+                ? "Non modifiable dès qu'un mouvement de stock existe."
+                : 'La plus petite unité que vous vendez : la bouteille, le mètre, la pièce.'
+            }
+          >
+            <select
+              id="baseUnitId"
+              name="baseUnitId"
+              className={inputClass}
+              value={baseUnitId}
+              onChange={(event) => setBaseUnitId(event.target.value)}
+            >
+              {storeUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.label}
                 </option>
               ))}
             </select>
           </Field>
         </div>
+
+        {/* Champ hérité : conservé pour le libellé du site public tant que
+            celui-ci n'est pas passé au moteur d'unités. */}
+        <input type="hidden" name="unit" value={product?.unit ?? 'UNIT'} />
 
         <fieldset>
           <legend className="text-sm font-medium">Attributs (facultatif)</legend>

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { toQty } from '@/lib/boutique/quantity';
+import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import type { z } from 'zod';
@@ -45,6 +46,40 @@ export async function createPurchaseOrder(params: {
   const reference = await nextPurchaseOrderReference(storeId);
   const status = input.confirm ? 'ORDERED' : 'DRAFT';
 
+  // Unités d'achat de chaque variante, relues depuis la fiche produit — le
+  // client n'envoie qu'un identifiant, jamais un facteur.
+  const unitsByVariant = new Map(
+    await Promise.all(
+      [...new Set(variantIds)].map(
+        async (id) => [id, await resolveVariantUnits({ storeId, productVariantId: id })] as const,
+      ),
+    ),
+  );
+
+  const lines = input.items.map((item) => {
+    const available = unitsByVariant.get(item.productVariantId)!;
+    const unit = item.unitId
+      ? available.find((candidate) => candidate.unitId === item.unitId)
+      : available.find((candidate) => candidate.isBase);
+
+    if (!unit) throw new ValidationError("Unité d'achat inconnue pour ce produit.");
+    if (!unit.isPurchasable) {
+      throw new ValidationError(`Ce produit ne s'achète pas en ${unit.label}.`);
+    }
+
+    return {
+      productVariantId: item.productVariantId,
+      // Commandé en cartons, enregistré en unités de base : la réception et
+      // son verrou optimiste raisonnent dans la même unité que le stock.
+      quantityOrdered: toBaseQuantity(item.quantity, unit.factor),
+      unitId: unit.unitId,
+      unitLabel: unit.label,
+      unitFactor: unit.factor,
+      unitCost: item.unitCost,
+      discount: item.discount,
+    };
+  });
+
   const purchaseOrder = await prisma.purchaseOrder.create({
     data: {
       storeId,
@@ -55,14 +90,7 @@ export async function createPurchaseOrder(params: {
       expectedAt: input.expectedAt ?? null,
       orderedAt: input.confirm ? new Date() : null,
       note: input.note ?? null,
-      items: {
-        create: input.items.map((item) => ({
-          productVariantId: item.productVariantId,
-          quantityOrdered: item.quantity,
-          unitCost: item.unitCost,
-          discount: item.discount,
-        })),
-      },
+      items: { create: lines },
     },
     include: { items: true, supplier: { select: { name: true } } },
   });
@@ -262,12 +290,18 @@ export async function receivePurchaseOrder(params: {
         select: { cost: true },
       });
       const existingValue = existingQty * variant.cost;
+      // `unitCost` est le coût d'une unité d'ACHAT (un carton), tandis que
+      // `quantity` est en unités de base. Le montant réellement dépensé est
+      // donc le coût du carton multiplié par le nombre de cartons reçus.
+      // Diviser d'abord `unitCost` par le facteur perdrait des francs à
+      // l'arrondi (22 000 / 12 × 12 ≠ 22 000).
+      const purchaseFactor = toQty(item.unitFactor) || 1;
       const incomingUnitCost = Math.max(0, item.unitCost - item.discount);
-      const incomingValue = quantity * incomingUnitCost;
+      const incomingValue = Math.round((quantity / purchaseFactor) * incomingUnitCost);
       const newCost =
         existingQty + quantity > 0
           ? Math.round((existingValue + incomingValue) / (existingQty + quantity))
-          : incomingUnitCost;
+          : Math.round(incomingUnitCost / purchaseFactor);
 
       await recordStockMovement(
         {

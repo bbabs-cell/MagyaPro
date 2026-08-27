@@ -9,6 +9,7 @@ import { PublishPanel } from '@/components/boutique/publish-panel';
 import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
+import { StockSettingsPanel } from '@/components/boutique/stock-settings-panel';
 import { NotificationSoundPanel } from '@/components/boutique/notification-sound-panel';
 import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
 import { WebhooksManager } from '@/components/boutique/webhooks-manager';
@@ -77,6 +78,10 @@ export default async function BoutiqueSettingsPage() {
         />
         <LanguageSettingsPanel
           language={context.store.language}
+          canManage={context.permissions.has('settings:manage')}
+        />
+        <StockSettingsPanel
+          allowNegativeStock={context.store.allowNegativeStock}
           canManage={context.permissions.has('settings:manage')}
         />
         <NotificationSoundPanel

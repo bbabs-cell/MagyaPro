@@ -402,8 +402,23 @@ export function boutiqueHowItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
   return base ? `${base}/platform/boutique-how-it-works-${step}.jpg` : null;
 }
 
-/** Secteurs d'activité illustrables sur la page d'accueil Boutique — mêmes valeurs que `StoreBusinessType`. */
-export const BOUTIQUE_SECTORS = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'MERCERIE'] as const;
+/**
+ * Secteurs illustrés par une image sur la page d'accueil Boutique. Sous-liste
+ * choisie de `StoreBusinessType` : la vitrine met en avant quelques métiers
+ * représentatifs, elle n'a pas à énumérer les douze secteurs proposés à
+ * l'inscription. Ajouter une valeur ici crée un emplacement d'image de plus
+ * dans l'espace admin.
+ */
+export const BOUTIQUE_SECTORS = [
+  'MERCERIE',
+  'GROCERY',
+  'CLOTHING',
+  'SHOES',
+  'COSMETICS',
+  'ELECTRONICS',
+  'HARDWARE',
+  'CONSTRUCTION',
+] as const;
 export type BoutiqueSector = (typeof BOUTIQUE_SECTORS)[number];
 
 /**

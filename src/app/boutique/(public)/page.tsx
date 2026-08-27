@@ -12,14 +12,7 @@ import {
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
-
-const SECTOR_LABELS: Record<string, string> = {
-  CLOTHING: 'Habillement',
-  ELECTRONICS: 'Électronique',
-  COSMETICS: 'Cosmétique',
-  GROCERY: 'Alimentation',
-  MERCERIE: 'Mercerie',
-};
+import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
 export const metadata: Metadata = {
   title: 'MagyaPro Boutique — Gestion de boutiques et commerces',

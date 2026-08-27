@@ -4,8 +4,22 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { SUGGESTED_TEMPLATE_BY_SECTOR } from '@/lib/boutique/store-templates';
+import { seedStoreUnits } from '@/lib/boutique/units-engine';
 
-const businessTypes = ['CLOTHING', 'ELECTRONICS', 'COSMETICS', 'GROCERY', 'MERCERIE', 'OTHER'] as const;
+const businessTypes = [
+  'CLOTHING',
+  'SHOES',
+  'ELECTRONICS',
+  'COSMETICS',
+  'GROCERY',
+  'MERCERIE',
+  'HARDWARE',
+  'CONSTRUCTION',
+  'HOUSEHOLD',
+  'PHARMACY',
+  'GENERAL',
+  'OTHER',
+] as const;
 
 const schema = z.object({
   businessType: z.enum(businessTypes),
@@ -43,6 +57,12 @@ export const POST = route(async (request) => {
     },
     select: { onboardingCompletedAt: true },
   });
+
+  // Complète le jeu d'unités avec celles du secteur retenu (le mètre et le
+  // rouleau pour une mercerie, la bouteille et le carton pour une épicerie).
+  // Purement additif : les unités déjà présentes, y compris renommées ou
+  // désactivées par le commerçant, ne sont jamais touchées.
+  await seedStoreUnits(context.store.id, input.businessType);
 
   return ok({ store });
 });

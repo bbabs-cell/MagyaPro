@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
-import { UNIT_LABELS, isDecimalUnit, quantityStep } from '@/lib/boutique/units';
+import {
+  UNIT_LABELS,
+  formatCompositeStock,
+  quantityStep,
+  stepForUnit,
+  unitLabelFor,
+  type UnitOption,
+} from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
@@ -27,16 +34,18 @@ type Product = {
   name: string;
   variantId: string;
   price: number;
-  /** Nombre d'unités de base par carton, `null` si ce produit ne se vend
-   *  pas au carton — voir `StoreProductVariant.packSize`. */
-  packSize: number | null;
-  packPrice: number | null;
+  /** TOUJOURS en unité de base — la conversion se fait ici, à l'affichage
+   *  et à l'ajout au panier. */
   stock: number;
   unit: string;
   barcode: string | null;
+  /**
+   * Unités vendables du produit, la base en premier (voir
+   * `resolveVariantUnitsBulk`). Vide pour une fiche pas encore reprise par le
+   * moteur d'unités : la caisse retombe alors sur le prix de la fiche.
+   */
+  units: UnitOption[];
 };
-
-type SaleUnit = 'UNIT' | 'PACK';
 
 type Customer = {
   id: string;
@@ -48,16 +57,27 @@ type Customer = {
 
 type CartLine = {
   variantId: string;
-  /** Vendu à l'unité de base ou par carton complet — deux lignes distinctes
-   *  du même produit peuvent coexister dans le panier (une par mode). */
-  saleUnit: SaleUnit;
+  /** Unité choisie — deux lignes du même produit peuvent coexister dans le
+   *  panier, une par unité (3 bouteilles + 1 carton). */
+  unitId: string | null;
+  unitLabel: string;
+  unitLabelPlural: string;
+  /** Unités de base contenues dans une unité de cette ligne. */
+  factor: number;
+  step: number;
   name: string;
   unitPrice: number;
+  /** Quantité exprimée dans l'unité de la ligne, pas en unité de base. */
   quantity: number;
-  /** Quantité maximale exprimée dans l'unité vendue (cartons ou unités). */
+  /** Plafond, exprimé lui aussi dans l'unité de la ligne. */
   maxStock: number;
   unit: string;
 };
+
+/** Clé d'identité d'une ligne : un produit peut figurer plusieurs fois, une fois par unité. */
+function lineKey(variantId: string, unitId: string | null): string {
+  return `${variantId}:${unitId ?? 'base'}`;
+}
 
 type PaymentLine = { method: string; amount: string };
 type PaymentMethodOption = { value: string; label: string };
@@ -121,26 +141,30 @@ export function Pos({
   const remaining = Math.max(total - paymentsTotal, 0);
   const customer = customers.find((c) => c.id === customerId) ?? null;
 
-  function addToCart(product: Product, saleUnit: SaleUnit = 'UNIT') {
+  function addToCart(product: Product, option?: UnitOption) {
     setError(null);
-    const isPack = saleUnit === 'PACK';
-    if (isPack && (!product.packSize || !product.packPrice)) return;
-    const step = isPack ? 1 : quantityStep(product.unit);
-    // Le stock (`product.stock`) est toujours compté en unités de base —
-    // converti ici en nombre de cartons complets disponibles pour une ligne
-    // vendue au carton.
-    const maxStock = isPack ? Math.floor(product.stock / product.packSize!) : product.stock;
-    const unitPrice = isPack ? product.packPrice! : product.price;
-    const name = isPack ? `${product.name} — carton ×${product.packSize}` : product.name;
+
+    // Fiche pas encore reprise par le moteur d'unités : on vend à l'unité de
+    // la fiche, exactement comme avant.
+    const unit = option ?? product.units.find((candidate) => candidate.isBase) ?? null;
+    const factor = unit?.factor ?? 1;
+    const unitPrice = unit?.price ?? product.price;
+    const step = unit ? stepForUnit(unit) : quantityStep(product.unit);
+
+    // Le stock est compté en unité de base : converti ici en nombre d'unités
+    // entières disponibles pour cette ligne (277 bouteilles → 13 cartons).
+    const maxStock = unit && !unit.isBase ? Math.floor(product.stock / factor) : product.stock;
+
+    const key = lineKey(product.variantId, unit?.unitId ?? null);
+    const label = unit?.label ?? '';
+    const name = unit && !unit.isBase ? `${product.name} — ${unit.label} ×${factor}` : product.name;
 
     setCart((current) => {
-      const existing = current.find(
-        (line) => line.variantId === product.variantId && line.saleUnit === saleUnit,
-      );
+      const existing = current.find((line) => lineKey(line.variantId, line.unitId) === key);
       if (existing) {
         if (existing.quantity >= maxStock) return current;
         return current.map((line) =>
-          line.variantId === product.variantId && line.saleUnit === saleUnit
+          lineKey(line.variantId, line.unitId) === key
             ? { ...line, quantity: Math.min(line.quantity + step, line.maxStock) }
             : line,
         );
@@ -148,7 +172,19 @@ export function Pos({
       if (maxStock <= 0) return current;
       return [
         ...current,
-        { variantId: product.variantId, saleUnit, name, unitPrice, quantity: step, maxStock, unit: product.unit },
+        {
+          variantId: product.variantId,
+          unitId: unit?.unitId ?? null,
+          unitLabel: label,
+          unitLabelPlural: unit?.labelPlural ?? label,
+          factor,
+          step,
+          name,
+          unitPrice,
+          quantity: step,
+          maxStock,
+          unit: product.unit,
+        },
       ];
     });
   }
@@ -168,26 +204,20 @@ export function Pos({
     setQuery('');
   }
 
-  function updateQuantity(variantId: string, saleUnit: SaleUnit, quantity: number) {
+  function updateQuantity(key: string, quantity: number) {
     setCart((current) =>
       current
         .map((line) =>
-          line.variantId === variantId && line.saleUnit === saleUnit
-            ? {
-                ...line,
-                quantity: Math.max(
-                  saleUnit === 'PACK' ? 1 : quantityStep(line.unit),
-                  Math.min(quantity, line.maxStock),
-                ),
-              }
+          lineKey(line.variantId, line.unitId) === key
+            ? { ...line, quantity: Math.max(line.step, Math.min(quantity, line.maxStock)) }
             : line,
         )
         .filter((line) => line.quantity > 0),
     );
   }
 
-  function removeLine(variantId: string, saleUnit: SaleUnit) {
-    setCart((current) => current.filter((line) => !(line.variantId === variantId && line.saleUnit === saleUnit)));
+  function removeLine(key: string) {
+    setCart((current) => current.filter((line) => lineKey(line.variantId, line.unitId) !== key));
   }
 
   function addPaymentLine() {
@@ -219,10 +249,13 @@ export function Pos({
     setQueuedOffline(false);
 
     const payload = {
+      // La quantité part dans l'unité de la ligne ; le serveur relit le
+      // facteur depuis la fiche produit et convertit lui-même — jamais de
+      // facteur ni de prix envoyés par la caisse.
       items: cart.map((line) => ({
         productVariantId: line.variantId,
         quantity: line.quantity,
-        saleUnit: line.saleUnit,
+        ...(line.unitId ? { unitId: line.unitId } : {}),
       })),
       customerId: customerId || undefined,
       discount: discountAmount,
@@ -284,7 +317,14 @@ export function Pos({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((product) => {
-              const canSellPack = Boolean(product.packSize && product.packPrice);
+              // Stock affiché dans les unités du produit : « 13 cartons +
+              // 17 bouteilles » plutôt que « 277 ». Purement décoratif, le
+              // stock reste compté en unité de base.
+              const stockLabel =
+                product.units.length > 0
+                  ? formatCompositeStock(product.stock, product.units)
+                  : `${product.stock} ${UNIT_LABELS[product.unit] ?? ''}`.trim();
+
               return (
                 <div
                   key={product.variantId}
@@ -292,31 +332,34 @@ export function Pos({
                 >
                   <span className="font-medium text-ink">{product.name}</span>
                   <Badge tone={product.stock > 0 ? 'neutral' : 'danger'}>
-                    {product.stock > 0
-                      ? `${product.stock} ${UNIT_LABELS[product.unit]} en stock`
-                      : 'Rupture'}
+                    {product.stock > 0 ? `${stockLabel} en stock` : 'Rupture'}
                   </Badge>
+
                   <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => addToCart(product, 'UNIT')}
-                      disabled={product.stock <= 0}
-                      className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Unité
-                      <br />
-                      {formatMoney(product.price, currency)}
-                    </button>
-                    {canSellPack && (
+                    {product.units.length > 0 ? (
+                      product.units.map((unit) => (
+                        <button
+                          key={unit.unitId}
+                          type="button"
+                          onClick={() => addToCart(product, unit)}
+                          disabled={product.stock < unit.factor}
+                          className="min-w-[46%] flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {unit.isBase ? unit.label : `${unit.label} ×${unit.factor}`}
+                          <br />
+                          {unit.price === null ? '—' : formatMoney(unit.price, currency)}
+                        </button>
+                      ))
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => addToCart(product, 'PACK')}
-                        disabled={product.stock < product.packSize!}
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock <= 0}
                         className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Carton ×{product.packSize}
+                        {UNIT_LABELS[product.unit] ?? 'Unité'}
                         <br />
-                        {formatMoney(product.packPrice!, currency)}
+                        {formatMoney(product.price, currency)}
                       </button>
                     )}
                   </div>
@@ -354,31 +397,33 @@ export function Pos({
         ) : (
           <ul className="mt-3 space-y-3">
             {cart.map((line) => {
-              const step = line.saleUnit === 'PACK' ? 1 : quantityStep(line.unit);
+              const key = lineKey(line.variantId, line.unitId);
+              const label = line.unitLabel
+                ? unitLabelFor({ label: line.unitLabel, labelPlural: line.unitLabelPlural }, line.quantity)
+                : (UNIT_LABELS[line.unit] ?? '');
+
               return (
-                <li key={`${line.variantId}:${line.saleUnit}`} className="flex items-center gap-2">
+                <li key={key} className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{line.name}</p>
-                    <p className="text-xs text-ink-muted">{formatMoney(line.unitPrice, currency)}</p>
+                    <p className="text-xs text-ink-muted">
+                      {formatMoney(line.unitPrice, currency)}
+                      {label && ` / ${line.unitLabel}`}
+                    </p>
                   </div>
                   <input
                     type="number"
-                    min={step}
+                    min={line.step}
                     max={line.maxStock}
-                    step={step}
+                    step={line.step}
                     value={line.quantity}
-                    onChange={(event) =>
-                      updateQuantity(line.variantId, line.saleUnit, Number(event.target.value))
-                    }
+                    onChange={(event) => updateQuantity(key, Number(event.target.value))}
                     className="w-16 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
                   />
-                  {line.saleUnit === 'UNIT' && isDecimalUnit(line.unit) && (
-                    <span className="text-xs text-ink-faint">{UNIT_LABELS[line.unit]}</span>
-                  )}
-                  {line.saleUnit === 'PACK' && <span className="text-xs text-ink-faint">carton(s)</span>}
+                  <span className="w-16 shrink-0 truncate text-xs text-ink-faint">{label}</span>
                   <button
                     type="button"
-                    onClick={() => removeLine(line.variantId, line.saleUnit)}
+                    onClick={() => removeLine(key)}
                     aria-label={`Retirer ${line.name}`}
                     className="shrink-0 text-ink-faint hover:text-red-600"
                   >

@@ -1325,12 +1325,23 @@ enum StoreStatus {
   SUSPENDED
 }
 
+/// Secteur d'activité de la boutique. Ne pilote aucune branche de code : il
+/// sélectionne un profil déclaratif (unités semées, attributs suggérés,
+/// présentation de la caisse — voir `src/lib/boutique/unit-catalogue.ts`).
+/// Ajouter un métier revient donc à ajouter une valeur ici et une entrée de
+/// profil, jamais à dupliquer la logique de stock.
 enum StoreBusinessType {
   CLOTHING
+  SHOES
   ELECTRONICS
   COSMETICS
   GROCERY
   MERCERIE
+  HARDWARE
+  CONSTRUCTION
+  HOUSEHOLD
+  PHARMACY
+  GENERAL
   OTHER
 }
 
@@ -1372,6 +1383,13 @@ model Store {
   /// Taux en dixièmes de pourcent (ex. 185 = 18,5 %), pour rester en entier.
   taxRate    Int     @default(0)
 
+  /// Autorise une sortie de stock supérieure au disponible (le stock passe
+  /// négatif) — utile quand le stock informatique est en retard sur le stock
+  /// réel. Désactivé par défaut : le blocage anti-survente reste la règle.
+  /// Ne relâche jamais l'atomicité de l'écriture, seulement la condition de
+  /// suffisance (voir `recordStockMovement`).
+  allowNegativeStock Boolean @default(false)
+
   /// Son personnalisé joué à l'arrivée d'une notification (commande, rupture
   /// de stock…) dans le tableau de bord — équivalent de
   /// `RestaurantSettings.notificationSoundUrl`. Sans fichier, un bip par
@@ -1397,6 +1415,7 @@ model Store {
   domains              StoreDomain[]
   brands               Brand[]
   categories           StoreCategory[]
+  units                StoreUnit[]
   products             StoreProduct[]
   warehouses           Warehouse[]
   inventoryMovements   InventoryMovement[]
@@ -1637,10 +1656,10 @@ enum StoreProductStatus {
   ARCHIVED
 }
 
-/// Unité d'affichage du produit — détermine le pas des quantités saisies
-/// (voir `src/lib/boutique/units.ts`) : KG/GRAM/LITER/MILLILITER acceptent
-/// une quantité décimale (pesée/volume fractionné), UNIT/PACK restent
-/// pensés pour un compte entier.
+/// Unité d'affichage héritée, conservée pour compatibilité : les fiches
+/// créées avant le moteur d'unités (`StoreUnit`) la portent encore, et le
+/// site public s'en sert comme libellé de repli. Toute nouvelle logique
+/// passe par `StoreProduct.baseUnit` — cet enum n'est plus étendu.
 enum ProductUnit {
   UNIT
   KG
@@ -1648,6 +1667,77 @@ enum ProductUnit {
   LITER
   MILLILITER
   PACK
+}
+
+/// Unité de mesure appartenant à une boutique — jamais une liste figée dans
+/// le code : chaque commerce reçoit un jeu de départ selon son secteur
+/// (voir `src/lib/boutique/sector-profiles.ts`) puis crée, renomme ou
+/// désactive librement les siennes (« Plateau », « Bobine », « Botte »).
+model StoreUnit {
+  id          String  @id @default(cuid())
+  storeId     String
+  /// Code stable, unique par boutique — sert de clé technique, jamais
+  /// affiché : le commerçant peut renommer `label` sans rien casser.
+  code        String
+  label       String
+  labelPlural String?
+  /// Une quantité fractionnaire a-t-elle un sens dans cette unité ? Le kilo
+  /// et le mètre oui (1,5 kg), la bouteille et la pièce non — pilote le pas
+  /// de saisie des champs numériques.
+  isDecimal   Boolean @default(false)
+  /// Désactivée : conservée pour l'historique qui la référence, mais plus
+  /// proposée à la saisie. Une unité n'est jamais supprimée tant qu'une
+  /// vente ou un mouvement la cite.
+  isActive    Boolean @default(true)
+  position    Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  baseOf       StoreProduct[]        @relation("ProductBaseUnit")
+  variantUnits StoreVariantUnit[]
+
+  @@unique([storeId, code])
+  @@index([storeId, isActive])
+  @@map("boutique_units")
+}
+
+/// Une unité dans laquelle une variante s'achète, se stocke ou se vend, avec
+/// sa conversion vers l'unité de base et ses propres prix.
+///
+/// Le prix n'est jamais déduit du facteur : un carton de 12 bouteilles d'huile
+/// peut valoir 22 000 alors que la bouteille vaut 2 000 (24 000 en cumulé) —
+/// l'écart est le prix de gros, voulu par le commerçant. Chaque unité porte
+/// donc son prix et son coût propres.
+///
+/// Porté par la variante et non par le produit parce que le prix l'est déjà :
+/// un t-shirt XL peut coûter plus cher qu'un S, et l'unité en hérite.
+model StoreVariantUnit {
+  id               String  @id @default(cuid())
+  productVariantId String
+  unitId           String
+  /// Nombre d'unités de base contenues dans une unité de celle-ci — 20 pour
+  /// « 1 carton = 20 bouteilles », 1 pour l'unité de base elle-même.
+  /// Toujours strictement positif.
+  factor           Decimal @db.Decimal(18, 6)
+  /// Prix de vente et coût d'achat pour UNE unité de cette taille, en unité
+  /// mineure. `null` = non tarifé dans cette unité.
+  price            Int?
+  cost             Int?
+  isSellable       Boolean @default(true)
+  isPurchasable    Boolean @default(true)
+  position         Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  unit           StoreUnit           @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@unique([productVariantId, unitId])
+  @@index([unitId])
+  @@map("boutique_variant_units")
 }
 
 /// Une fiche produit. Le stock, le prix et le code-barres réels vivent
@@ -1669,11 +1759,17 @@ model StoreProduct {
   /// requêté : ces attributs-là méritent leur propre colonne.
   attributes    Json               @default("{}")
   status        StoreProductStatus @default(DRAFT)
-  minStockAlert Decimal            @default(0) @db.Decimal(14, 3)
-  /// Unité dans laquelle le produit se vend et se stocke — un article
-  /// (vêtement, appareil) se compte en unités entières, une denrée en poids
-  /// ou volume. Détermine si les quantités saisies acceptent des décimales.
+  minStockAlert Decimal            @default(0) @db.Decimal(18, 6)
+  /// Unité héritée, conservée pour les fiches antérieures au moteur d'unités
+  /// et comme libellé de repli sur le site public. `baseUnit` fait autorité
+  /// dès qu'il est renseigné.
   unit          ProductUnit        @default(UNIT)
+  /// Unité dans laquelle le stock de ce produit est TOUJOURS compté (la
+  /// bouteille, jamais le carton). Toutes les autres unités du produit s'y
+  /// convertissent via `StoreVariantUnit.factor`. Nullable le temps que les
+  /// fiches antérieures soient reprises — `resolveBaseUnit` retombe alors sur
+  /// `unit`.
+  baseUnitId    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1682,8 +1778,10 @@ model StoreProduct {
   category StoreCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   brand    Brand?                @relation(fields: [brandId], references: [id], onDelete: SetNull)
   supplier Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  baseUnit StoreUnit?            @relation("ProductBaseUnit", fields: [baseUnitId], references: [id], onDelete: Restrict)
   variants StoreProductVariant[]
 
+  @@index([baseUnitId])
   @@index([storeId, status])
   @@index([categoryId])
   @@index([brandId])
@@ -1721,6 +1819,7 @@ model StoreProductVariant {
   updatedAt DateTime @updatedAt
 
   product            StoreProduct        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  units              StoreVariantUnit[]
   inventory          Inventory[]
   inventoryMovements InventoryMovement[]
   saleItems          SaleItem[]
@@ -1770,13 +1869,21 @@ model Inventory {
   id               String  @id @default(cuid())
   productVariantId String
   warehouseId      String
-  /// Décimal (3 décimales) : un article compté en unités y stocke un entier
-  /// comme n'importe quel autre nombre, une denrée vendue au poids/volume
-  /// (voir `StoreProduct.unit`) y stocke une valeur fractionnaire (1,5 kg).
-  quantity         Decimal @default(0) @db.Decimal(14, 3)
+  /// TOUJOURS exprimée dans l'unité de base du produit
+  /// (`StoreProduct.baseUnit`) — jamais en carton, palette ou rouleau. Ces
+  /// unités-là ne sont que des façons de saisir et d'afficher une quantité,
+  /// converties à l'écriture et recalculées à l'affichage (voir
+  /// `src/lib/boutique/units-engine.ts`). Sans cette règle, corriger une
+  /// conversion réécrirait rétroactivement tout l'historique.
+  ///
+  /// 6 décimales : l'unité de base peut être grande (le kilo, le mètre) et
+  /// une vente peut porter sur une fraction fine (0,5 g, 2 mm) — 3 décimales
+  /// arrondissaient ces ventes à zéro, faisant disparaître du stock en
+  /// silence.
+  quantity         Decimal @default(0) @db.Decimal(18, 6)
   /// Quantité retenue par des ventes non finalisées (panier en cours) — ne
   /// réduit pas `quantity`, mais réduit le disponible réel à la vente.
-  reservedQuantity Decimal @default(0) @db.Decimal(14, 3)
+  reservedQuantity Decimal @default(0) @db.Decimal(18, 6)
 
   updatedAt DateTime @updatedAt
 
@@ -1808,9 +1915,9 @@ model InventoryMovement {
   warehouseId      String
   type             StockMovementType
   /// Négatif pour une sortie, positif pour une entrée.
-  quantityChange   Decimal           @db.Decimal(14, 3)
-  quantityBefore   Decimal           @db.Decimal(14, 3)
-  quantityAfter    Decimal           @db.Decimal(14, 3)
+  quantityChange   Decimal           @db.Decimal(18, 6)
+  quantityBefore   Decimal           @db.Decimal(18, 6)
+  quantityAfter    Decimal           @db.Decimal(18, 6)
   userId           String?
   reason           String?
   /// Référence de l'opération à l'origine du mouvement (ex. id de vente,
@@ -1841,8 +1948,8 @@ model StockBatch {
   storeId           String
   productVariantId  String
   warehouseId       String
-  quantity          Decimal  @db.Decimal(14, 3)
-  remainingQuantity Decimal  @db.Decimal(14, 3)
+  quantity          Decimal  @db.Decimal(18, 6)
+  remainingQuantity Decimal  @db.Decimal(18, 6)
   expiryDate        DateTime
   receivedAt        DateTime @default(now())
 
@@ -1890,7 +1997,7 @@ model StockTransferItem {
   id               String  @id @default(cuid())
   transferId       String
   productVariantId String
-  quantity         Decimal @db.Decimal(14, 3)
+  quantity         Decimal @db.Decimal(18, 6)
 
   transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
 
@@ -1992,10 +2099,23 @@ model PurchaseOrderItem {
   id               String  @id @default(cuid())
   purchaseOrderId  String
   productVariantId String
-  quantityOrdered  Decimal @db.Decimal(14, 3)
+  /// TOUJOURS en unité de base, comme le stock qu'elles alimentent — commander
+  /// 5 cartons de 12 enregistre 60. La réception partielle et son verrou
+  /// optimiste raisonnent donc dans la même unité que `Inventory`, sans
+  /// conversion intermédiaire.
+  quantityOrdered  Decimal @db.Decimal(18, 6)
   /// Cumul reçu — une réception partielle incrémente ce champ sans jamais le
   /// dépasser `quantityOrdered` (contrôlé côté application).
-  quantityReceived Decimal @default(0) @db.Decimal(14, 3)
+  quantityReceived Decimal @default(0) @db.Decimal(18, 6)
+  /// Unité d'achat choisie, figée à la commande (voir `SaleItem.unitId` pour
+  /// le même principe côté vente).
+  unitId           String?
+  unitLabel        String?
+  unitFactor       Decimal @default(1) @db.Decimal(18, 6)
+  /// Coût d'UNE unité achetée (le prix du carton). Le montant de la ligne
+  /// vaut `unitCost × quantityOrdered / unitFactor` — jamais un coût unitaire
+  /// de base réarrondi, qui ferait perdre des francs à chaque aller-retour
+  /// (22 000 / 12 × 12 ≠ 22 000).
   unitCost         Int
   discount         Int     @default(0)
 
@@ -2127,8 +2247,25 @@ model SaleItem {
   /// des ventes déjà réalisées.
   productName      String
   variantLabel     String?
+  /// Conservé pour les tickets antérieurs au moteur d'unités. Renseigné à
+  /// PACK dès que `unitFactor > 1`, pour que l'historique reste lisible par
+  /// l'ancien code comme par le nouveau.
   saleUnit         SaleUnit @default(UNIT)
-  quantity         Decimal  @db.Decimal(14, 3)
+  /// TOUJOURS en unité de base — 20 pour un carton de 20 bouteilles. C'est
+  /// cette quantité qui sort du stock, et c'est elle qui rend les volumes
+  /// vendus comparables d'une unité à l'autre dans les rapports.
+  quantity         Decimal  @db.Decimal(18, 6)
+  /// Unité réellement choisie à la caisse, figée au moment de la vente :
+  /// modifier la conversion du produit plus tard ne doit jamais réécrire un
+  /// ticket déjà encaissé. `unitFactor = 1` pour une vente à l'unité de base
+  /// (et pour tout l'historique antérieur au moteur d'unités).
+  unitId           String?
+  unitLabel        String?
+  unitFactor       Decimal  @default(1) @db.Decimal(18, 6)
+  /// Prix d'UNE unité de la taille vendue (le prix du carton, pas de la
+  /// bouteille). Le total vaut donc `unitPrice × quantity / unitFactor` —
+  /// formule qui redonne exactement `unitPrice × quantity` sur l'historique,
+  /// où `unitFactor` vaut 1.
   unitPrice        Int
   discount         Int      @default(0)
   total            Int
@@ -2223,7 +2360,7 @@ model StoreReturnItem {
   id               String  @id @default(cuid())
   returnId         String
   productVariantId String
-  quantity         Decimal @db.Decimal(14, 3)
+  quantity         Decimal @db.Decimal(18, 6)
   unitPrice        Int
 
   return         StoreReturn         @relation(fields: [returnId], references: [id], onDelete: Cascade)
@@ -2285,7 +2422,7 @@ model StoreOrderItem {
   /// Nom figé au moment de la commande : une fiche produit modifiée ou
   /// supprimée plus tard ne doit jamais réécrire l'historique.
   productName      String
-  quantity         Decimal @db.Decimal(14, 3)
+  quantity         Decimal @db.Decimal(18, 6)
   unitPrice        Int
   total            Int
 

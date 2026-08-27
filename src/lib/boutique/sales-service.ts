@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
+import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
 import { triggerWebhooks } from '@/lib/boutique/webhooks';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
@@ -53,23 +54,57 @@ export async function createSale(params: {
 
   const variantById = new Map(variants.map((v) => [v.id, v]));
 
+  // Unités vendables de chaque variante, relues depuis la fiche produit — le
+  // client n'envoie qu'un identifiant d'unité, jamais un facteur ni un prix.
+  const unitsByVariant = new Map(
+    await Promise.all(
+      [...new Set(variantIds)].map(
+        async (id) => [id, await resolveVariantUnits({ storeId, productVariantId: id })] as const,
+      ),
+    ),
+  );
+
   let subtotal = 0;
   const lines = input.items.map((item) => {
     const variant = variantById.get(item.productVariantId)!;
-    const isPack = item.saleUnit === 'PACK';
-    if (isPack && (!variant.packSize || !variant.packPrice)) {
-      throw new ValidationError(`${variant.product.name} ne se vend pas au carton.`);
+    const available = unitsByVariant.get(item.productVariantId)!;
+
+    const unit = item.unitId
+      ? available.find((candidate) => candidate.unitId === item.unitId)
+      : available.find((candidate) => candidate.isBase);
+
+    if (!unit) {
+      throw new ValidationError(`Unité de vente inconnue pour ${variant.product.name}.`);
     }
-    const unitPrice = isPack ? variant.packPrice! : variant.price;
-    const lineTotal = unitPrice * item.quantity;
+    if (!unit.isSellable) {
+      throw new ValidationError(
+        `${variant.product.name} ne se vend pas en ${unit.label}.`,
+      );
+    }
+    if (unit.price === null) {
+      throw new ValidationError(
+        `Aucun prix de vente en ${unit.label} pour ${variant.product.name}.`,
+      );
+    }
+
+    // La quantité part en base de données dans l'unité de base : c'est elle
+    // qui sort du stock, et elle rend les volumes vendus comparables d'une
+    // unité à l'autre dans les rapports. Le facteur est figé sur la ligne —
+    // corriger la taille d'un carton demain ne réécrira pas ce ticket.
+    const baseQuantity = toBaseQuantity(item.quantity, unit.factor);
+    const lineTotal = unit.price * item.quantity;
     subtotal += lineTotal;
+
     return {
       productVariantId: variant.id,
       productName: variant.product.name,
-      variantLabel: isPack ? `Carton de ${variant.packSize}` : variant.sku,
-      saleUnit: item.saleUnit,
-      quantity: item.quantity,
-      unitPrice,
+      variantLabel: unit.isBase ? variant.sku : `${unit.label} de ${unit.factor}`,
+      saleUnit: unit.factor > 1 ? ('PACK' as const) : ('UNIT' as const),
+      quantity: baseQuantity,
+      unitId: unit.unitId,
+      unitLabel: unit.label,
+      unitFactor: unit.factor,
+      unitPrice: unit.price,
       total: lineTotal,
     };
   });
@@ -107,7 +142,7 @@ export async function createSale(params: {
 
   const store = await prisma.store.findUniqueOrThrow({
     where: { id: storeId },
-    select: { taxEnabled: true, taxRate: true },
+    select: { taxEnabled: true, taxRate: true, allowNegativeStock: true },
   });
 
   const discount = Math.min(input.discount + promoDiscount, subtotal);
@@ -195,21 +230,20 @@ export async function createSale(params: {
     // d'être créée. `recordStockMovement` lève une erreur si la quantité
     // demandée dépasse le stock disponible, ce qui annule toute la
     // transaction — aucune vente partielle possible.
-    for (const item of input.items) {
-      const variant = variantById.get(item.productVariantId)!;
-      // Le stock est toujours compté en unités de base — vendre un carton
-      // déduit `packSize` fois la quantité de cartons vendus d'un coup.
-      const baseQuantity = item.saleUnit === 'PACK' ? item.quantity * variant.packSize! : item.quantity;
+    for (const line of lines) {
       await recordStockMovement(
         {
           storeId,
-          productVariantId: item.productVariantId,
+          productVariantId: line.productVariantId,
           warehouseId: defaultWarehouse.id,
           type: 'SALE',
-          quantityChange: -baseQuantity,
+          // `line.quantity` est déjà en unité de base (converti plus haut) :
+          // le stock ne connaît que cette unité, jamais les cartons.
+          quantityChange: -line.quantity,
           userId,
           referenceType: 'sale',
           referenceId: created.id,
+          allowNegativeStock: store.allowNegativeStock,
         },
         tx,
       );

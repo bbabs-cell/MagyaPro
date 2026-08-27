@@ -15,12 +15,16 @@ export function toQty(value: Prisma.Decimal | number): number {
   return typeof value === 'number' ? value : value.toNumber();
 }
 
-/** Arrondit à 3 décimales — la précision de stockage en base. */
+/** Arrondit à 6 décimales — la précision de stockage en base. */
 export function roundQty(value: number): number {
-  return Math.round(value * 1000) / 1000;
+  return Math.round(value * 1_000_000) / 1_000_000;
 }
 
-/** Formate une quantité pour l'affichage, sans zéros décimaux superflus. */
+/**
+ * Formate une quantité pour l'affichage, sans zéros décimaux superflus.
+ * Plafonné à 3 décimales : la base en stocke 6 pour ne rien perdre au calcul,
+ * mais « 1,5 kg » se lit mieux que « 1,500000 kg » sur un écran de caisse.
+ */
 export function formatQty(value: Prisma.Decimal | number): string {
   const num = toQty(value);
   return num.toLocaleString('fr-FR', { maximumFractionDigits: 3 });

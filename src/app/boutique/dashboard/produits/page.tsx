@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
+import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
 import { PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
 import { ExcelImportExport } from '@/components/boutique/excel-import-export';
@@ -12,6 +13,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function BoutiqueProductsPage() {
   const context = await requireStore('products:view');
+
+  // Reprise paresseuse : sème les unités de la boutique et convertit les
+  // fiches antérieures au moteur d'unités. Ne fait un vrai travail qu'au tout
+  // premier passage (voir `ensureStoreUnitsReady`).
+  await ensureStoreUnitsReady(context.store.id, context.store.businessType);
 
   const [categories, brands, products] = await Promise.all([
     prisma.storeCategory.findMany({
@@ -37,16 +43,30 @@ export default async function BoutiqueProductsPage() {
             barcode: true,
             cost: true,
             price: true,
-            packSize: true,
-            packCost: true,
-            packPrice: true,
             attributes: true,
+            units: {
+              orderBy: { position: 'asc' },
+              select: {
+                unitId: true,
+                factor: true,
+                price: true,
+                cost: true,
+                isSellable: true,
+                isPurchasable: true,
+              },
+            },
             inventory: { select: { quantity: true, warehouseId: true } },
           },
         },
       },
     }),
   ]);
+
+  const storeUnits = await prisma.storeUnit.findMany({
+    where: { storeId: context.store.id, isActive: true },
+    orderBy: { position: 'asc' },
+    select: { id: true, code: true, label: true, labelPlural: true, isDecimal: true },
+  });
 
   return (
     <>
@@ -72,11 +92,16 @@ export default async function BoutiqueProductsPage() {
           variants: product.variants.map((variant) => ({
             ...variant,
             attributes: (variant.attributes ?? {}) as Record<string, string>,
+            units: variant.units.map((unit) => ({ ...unit, factor: toQty(unit.factor) })),
             inventory: variant.inventory.map((inv) => ({
               ...inv,
               quantity: toQty(inv.quantity),
             })),
           })),
+        }))}
+        storeUnits={storeUnits.map((unit) => ({
+          ...unit,
+          labelPlural: unit.labelPlural ?? unit.label,
         }))}
         currency={context.store.currency}
         canManage={context.permissions.has('products:manage')}

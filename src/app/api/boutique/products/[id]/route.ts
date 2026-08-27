@@ -2,6 +2,7 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore, findStoreScopedOrThrow } from '@/lib/boutique/store-tenant';
 import { storeProductUpdateSchema } from '@/lib/validation';
+import { resolveRequestedBaseUnit, validateVariantUnits } from '@/lib/boutique/units-engine';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { ValidationError } from '@/lib/errors';
@@ -22,16 +23,8 @@ export const PATCH = route(async (request, { params }: Params) => {
       price: 'Doit être au moins égal au coût.',
     });
   }
-  if (input.packSize && !input.packPrice) {
-    throw new ValidationError('Le prix du carton est requis quand une taille de carton est définie.', {
-      packPrice: 'Requis.',
-    });
-  }
-  if (input.packPrice != null && input.packCost != null && input.packPrice < input.packCost) {
-    throw new ValidationError('Le prix du carton est inférieur à son coût.', {
-      packPrice: 'Doit être au moins égal au coût du carton.',
-    });
-  }
+  const baseUnitId = await resolveRequestedBaseUnit(context.store, input.baseUnitId);
+  const unitRows = await validateVariantUnits(context.store.id, baseUnitId, input.units);
 
   // Modèle mono-variante en pratique aujourd'hui (une seule créée à la
   // fiche produit, voir `POST /api/boutique/products`) : la modification
@@ -40,11 +33,28 @@ export const PATCH = route(async (request, { params }: Params) => {
   const defaultVariant = await prisma.storeProductVariant.findFirst({
     where: { productId: id },
     orderBy: { createdAt: 'asc' },
-    select: { id: true },
+    select: { id: true, product: { select: { baseUnitId: true } } },
   });
 
-  const [product] = await prisma.$transaction([
-    prisma.storeProduct.update({
+  // Changer l'unité de base d'un produit qui a déjà bougé réinterpréterait
+  // silencieusement tout son stock et son historique : 277 enregistrés comme
+  // des bouteilles deviendraient 277 cartons. Refusé tant qu'un mouvement
+  // existe — le commerçant doit créer une nouvelle fiche.
+  const previousBaseUnitId = defaultVariant?.product.baseUnitId ?? null;
+  if (previousBaseUnitId && previousBaseUnitId !== baseUnitId) {
+    const movements = await prisma.inventoryMovement.count({
+      where: { productVariant: { productId: id } },
+    });
+    if (movements > 0) {
+      throw new ValidationError(
+        "L'unité de stock ne peut plus être changée : ce produit a déjà des mouvements de stock. Créez une nouvelle fiche pour le vendre dans une autre unité.",
+        { baseUnitId: 'Non modifiable après le premier mouvement.' },
+      );
+    }
+  }
+
+  const product = await prisma.$transaction(async (tx) => {
+    const updated = await tx.storeProduct.update({
       where: { id },
       data: {
         name: input.name,
@@ -56,26 +66,36 @@ export const PATCH = route(async (request, { params }: Params) => {
         status: input.status,
         minStockAlert: input.minStockAlert,
         unit: input.unit,
+        baseUnitId,
       },
-    }),
-    ...(defaultVariant
-      ? [
-          prisma.storeProductVariant.update({
-            where: { id: defaultVariant.id },
-            data: {
-              sku: input.sku ?? null,
-              barcode: input.barcode ?? null,
-              cost: input.cost,
-              price: input.price,
-              attributes: input.attributes,
-              packSize: input.packSize,
-              packCost: input.packCost,
-              packPrice: input.packPrice,
-            },
-          }),
-        ]
-      : []),
-  ]);
+    });
+
+    if (defaultVariant) {
+      await tx.storeProductVariant.update({
+        where: { id: defaultVariant.id },
+        data: {
+          sku: input.sku ?? null,
+          barcode: input.barcode ?? null,
+          cost: input.cost,
+          price: input.price,
+          attributes: input.attributes,
+        },
+      });
+
+      // Les conditionnements sont remplacés en bloc plutôt que fusionnés :
+      // le formulaire envoie toujours la liste complète, et une ligne retirée
+      // à l'écran doit disparaître. Sans effet sur l'historique, qui a figé
+      // ses propres facteurs (voir `SaleItem.unitFactor`).
+      await tx.storeVariantUnit.deleteMany({ where: { productVariantId: defaultVariant.id } });
+      if (unitRows.length > 0) {
+        await tx.storeVariantUnit.createMany({
+          data: unitRows.map((row) => ({ ...row, productVariantId: defaultVariant.id })),
+        });
+      }
+    }
+
+    return updated;
+  });
 
   await recordAudit({
     action: AUDIT_ACTIONS.STORE_PRODUCT_UPDATED,

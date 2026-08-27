@@ -8,18 +8,10 @@ import { formatMoney } from '@/lib/money';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { StatusPill } from '@/app/admin/page';
 import { BoutiqueAdminActions } from '@/components/admin/boutique-actions';
+import { SECTOR_LABELS as BUSINESS_TYPE_LABELS } from '@/lib/boutique/unit-catalogue';
 
 export const metadata: Metadata = { title: 'Fiche boutique' };
 export const dynamic = 'force-dynamic';
-
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  CLOTHING: 'Habillement',
-  ELECTRONICS: 'Électronique',
-  COSMETICS: 'Cosmétique',
-  GROCERY: 'Alimentation',
-  MERCERIE: 'Mercerie',
-  OTHER: 'Autre',
-};
 
 export default async function AdminBoutiqueDetailPage({
   params,

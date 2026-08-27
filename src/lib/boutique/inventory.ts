@@ -32,6 +32,15 @@ export async function recordStockMovement(
      * fin par lot.
      */
     expiryDate?: Date | null;
+    /**
+     * Autorise le stock à passer négatif (voir `Store.allowNegativeStock`).
+     * L'appelant transmet le réglage de la boutique — jamais lu ici, pour
+     * éviter une requête supplémentaire à chaque mouvement. Ne relâche que la
+     * condition de suffisance : l'écriture reste atomique dans les deux cas,
+     * deux caisses simultanées ne peuvent toujours pas désynchroniser le
+     * stock.
+     */
+    allowNegativeStock?: boolean;
   },
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
@@ -48,12 +57,14 @@ export async function recordStockMovement(
     warehouseId: params.warehouseId,
   };
 
+  const enforceSufficientStock = params.quantityChange < 0 && !params.allowNegativeStock;
+
   let quantityAfter: number;
   try {
     const updated = await tx.inventory.update({
       where: {
         productVariantId_warehouseId: key,
-        ...(params.quantityChange < 0 ? { quantity: { gte: -params.quantityChange } } : {}),
+        ...(enforceSufficientStock ? { quantity: { gte: -params.quantityChange } } : {}),
       },
       data: { quantity: { increment: params.quantityChange } },
     });
@@ -63,7 +74,7 @@ export async function recordStockMovement(
       error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
     if (!isMissingRecord) throw error;
 
-    if (params.quantityChange < 0) {
+    if (enforceSufficientStock) {
       // Sortie sur une ligne absente ou insuffisante — dans les deux cas,
       // le stock disponible ne couvre pas la demande. Lecture ponctuelle,
       // seulement pour un message d'erreur informatif (jamais utilisée pour
@@ -77,9 +88,11 @@ export async function recordStockMovement(
     }
 
     // Aucune ligne n'existe encore pour ce couple variante/entrepôt (premier
-    // mouvement) : on la crée. Si une autre création concurrente l'a créée
-    // entre-temps (P2002), l'incrément se rejoue en toute sécurité via le
-    // même chemin atomique.
+    // mouvement) : on la crée. En vente à découvert, cette première ligne peut
+    // naître négative — c'est le comportement attendu quand le commerçant a
+    // choisi de vendre avant d'avoir saisi son stock. Si une autre création
+    // concurrente l'a créée entre-temps (P2002), l'incrément se rejoue en
+    // toute sécurité via le même chemin atomique.
     try {
       const created = await tx.inventory.create({
         data: { ...key, quantity: params.quantityChange },

@@ -7,12 +7,18 @@ import { ApiError, api } from '@/lib/client/api';
 import { Button, Field, inputClass } from '@/components/ui';
 
 const BUSINESS_TYPES = [
+  { value: 'MERCERIE', label: 'Mercerie & tissus' },
+  { value: 'GROCERY', label: 'Alimentation générale' },
   { value: 'CLOTHING', label: 'Vêtements & mode' },
-  { value: 'ELECTRONICS', label: 'Électronique' },
+  { value: 'SHOES', label: 'Chaussures' },
   { value: 'COSMETICS', label: 'Cosmétique & beauté' },
-  { value: 'GROCERY', label: 'Alimentation & épicerie' },
-  { value: 'MERCERIE', label: 'Mercerie' },
-  { value: 'OTHER', label: 'Autre commerce' },
+  { value: 'ELECTRONICS', label: 'Électronique' },
+  { value: 'HARDWARE', label: 'Quincaillerie' },
+  { value: 'CONSTRUCTION', label: 'Matériaux de construction' },
+  { value: 'HOUSEHOLD', label: 'Produits ménagers' },
+  { value: 'PHARMACY', label: 'Parapharmacie' },
+  { value: 'GENERAL', label: 'Commerce général' },
+  { value: 'OTHER', label: 'Autre / Personnalisé' },
 ] as const;
 
 const CURRENCIES = [

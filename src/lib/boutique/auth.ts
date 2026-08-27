@@ -6,6 +6,7 @@ import { EMAIL_VERIFICATION_TTL_HOURS, expiresIn, generateToken } from '@/lib/au
 import { sendVerificationEmail } from '@/lib/mail';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { uniqueStoreSlug } from '@/lib/slug';
+import { seedStoreUnits } from '@/lib/boutique/units-engine';
 
 /**
  * Inscription MagyaPro Boutique — équivalent de `registerAccount` (Restaurant)
@@ -91,6 +92,11 @@ export async function registerStoreAccount(input: {
     await tx.cashRegister.create({
       data: { storeId: store.id, name: 'Caisse principale' },
     });
+
+    // Jeu d'unités de départ. Le secteur n'est choisi qu'à l'étape suivante
+    // (onboarding), d'où le profil générique ici — l'onboarding complètera
+    // avec les unités du métier retenu, sans jamais toucher à celles-ci.
+    await seedStoreUnits(store.id, store.businessType, tx);
 
     // Le sous-domaine est un domaine à part entière, vérifié d'office : il
     // nous appartient, il n'y a rien à prouver côté DNS.

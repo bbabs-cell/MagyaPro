@@ -7,18 +7,10 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StatusPill } from '@/app/admin/page';
 import { BoutiqueDemoPanel } from '@/components/admin/boutique-demo-panel';
+import { SECTOR_LABELS as BUSINESS_TYPE_LABELS } from '@/lib/boutique/unit-catalogue';
 
 export const metadata: Metadata = { title: 'Boutiques' };
 export const dynamic = 'force-dynamic';
-
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
-  CLOTHING: 'Habillement',
-  ELECTRONICS: 'Électronique',
-  COSMETICS: 'Cosmétique',
-  GROCERY: 'Alimentation',
-  MERCERIE: 'Mercerie',
-  OTHER: 'Autre',
-};
 
 export default async function AdminBoutiquesPage({
   searchParams,

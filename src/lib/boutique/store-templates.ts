@@ -11,10 +11,16 @@ export const DEFAULT_TEMPLATE_KEY = 'classic';
 /** Suggestion de template par défaut selon le secteur — modifiable librement ensuite. */
 export const SUGGESTED_TEMPLATE_BY_SECTOR: Record<string, string> = {
   CLOTHING: 'mode',
+  SHOES: 'mode',
   ELECTRONICS: 'vitrine',
   COSMETICS: 'mode',
   GROCERY: 'marche',
   MERCERIE: 'vitrine',
+  HARDWARE: 'vitrine',
+  CONSTRUCTION: 'vitrine',
+  HOUSEHOLD: 'marche',
+  PHARMACY: 'vitrine',
+  GENERAL: 'marche',
   OTHER: 'classic',
 };
 

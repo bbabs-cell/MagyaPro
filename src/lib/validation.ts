@@ -554,12 +554,36 @@ export const variantAttributesSchema = z
  * virgule saisi par accident, la colonne en base est de toute façon limitée
  * à cette précision.
  */
+/**
+ * Quantité décimale — arrondie à 6 décimales, la précision de stockage
+ * (`Decimal(18,6)`). Arrondir plus tôt ici ferait disparaître silencieusement
+ * les fractions fines d'une unité de base large (0,5 g d'un produit stocké au
+ * kilo, 2 mm d'un tissu stocké au mètre).
+ */
 export const quantitySchema = (max: number) =>
   z
     .number()
     .min(0)
     .max(max)
-    .transform((value) => Math.round(value * 1000) / 1000);
+    .transform((value) => Math.round(value * 1_000_000) / 1_000_000);
+
+/**
+ * Une unité déclarée sur une fiche produit — sa conversion vers l'unité de
+ * base et ses prix propres. Le prix n'est jamais déduit du facteur : un
+ * carton peut être vendu moins cher que son contenu à l'unité (prix de gros).
+ */
+export const storeVariantUnitSchema = z.object({
+  unitId: z.string().min(1),
+  /** Unités de base contenues — « 1 carton = 20 bouteilles » donne 20. */
+  factor: z
+    .number()
+    .positive('La conversion doit être supérieure à zéro.')
+    .max(1_000_000, 'Conversion trop grande.'),
+  price: amountSchema.nullable().optional(),
+  cost: amountSchema.nullable().optional(),
+  isSellable: z.boolean().default(true),
+  isPurchasable: z.boolean().default(true),
+});
 
 export const storeProductSchema = z.object({
   name: nameSchema,
@@ -580,11 +604,17 @@ export const storeProductSchema = z.object({
   initialStock: quantitySchema(1_000_000).default(0),
   /** Date de péremption du stock initial, facultative — crée un lot suivi séparément. */
   initialStockExpiryDate: z.coerce.date().optional(),
-  /** Nombre d'unités de base par carton — `null`/absent si le produit ne se
-   *  vend/achète pas par carton (voir `StoreProductVariant.packSize`). */
-  packSize: z.number().int().min(1).max(100_000).nullable().optional(),
-  packCost: amountSchema.nullable().optional(),
-  packPrice: amountSchema.nullable().optional(),
+  /**
+   * Unité dans laquelle le stock de ce produit est compté. Absente = l'unité
+   * de base par défaut du secteur de la boutique.
+   */
+  baseUnitId: z.string().min(1).nullable().optional(),
+  /**
+   * Conditionnements supplémentaires (carton, palette…) avec leur conversion
+   * et leurs prix. L'unité de base n'a pas à y figurer : elle porte déjà le
+   * prix et le coût de la fiche.
+   */
+  units: z.array(storeVariantUnitSchema).max(8).default([]),
 });
 
 /**
@@ -607,9 +637,8 @@ export const storeProductUpdateSchema = z.object({
   cost: amountSchema,
   price: amountSchema,
   attributes: variantAttributesSchema,
-  packSize: z.number().int().min(1).max(100_000).nullable(),
-  packCost: amountSchema.nullable(),
-  packPrice: amountSchema.nullable(),
+  baseUnitId: z.string().min(1).nullable().optional(),
+  units: z.array(storeVariantUnitSchema).max(8).default([]),
 });
 
 export const storeSupplierSchema = z.object({
@@ -634,7 +663,11 @@ export const storePurchaseOrderSchema = z.object({
     .array(
       z.object({
         productVariantId: z.string().min(1),
+        /** Quantité exprimée dans `unitId` — convertie en unité de base côté serveur. */
         quantity: quantitySchema(100_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
+        /** Unité d'achat. Absente = unité de base du produit. */
+        unitId: z.string().min(1).optional(),
+        /** Coût d'UNE unité achetée — le prix du carton, pas de la bouteille. */
         unitCost: amountSchema,
         discount: amountSchema.optional().default(0),
       }),
@@ -847,9 +880,14 @@ export const storeSaleSchema = z.object({
     .array(
       z.object({
         productVariantId: z.string().min(1),
+        /** Quantité exprimée dans `unitId` — convertie en unité de base côté serveur. */
         quantity: quantitySchema(10_000).refine((v) => v > 0, 'La quantité doit être supérieure à zéro.'),
-        /** Vendu à l'unité de base ou par carton complet (voir `SaleUnit`). */
-        saleUnit: z.enum(['UNIT', 'PACK']).default('UNIT'),
+        /**
+         * Unité choisie à la caisse. Absente = unité de base du produit. Le
+         * facteur n'est jamais envoyé par le client : il est relu depuis la
+         * fiche produit au moment de la vente, comme le prix.
+         */
+        unitId: z.string().min(1).optional(),
       }),
     )
     .min(1, 'Le panier est vide.')

@@ -14,6 +14,7 @@ import { HowItWorksUpload } from '@/components/admin/how-it-works-upload';
 import { BoutiqueLandingUpload } from '@/components/admin/boutique-landing-upload';
 import { BoutiqueHowItWorksUpload } from '@/components/admin/boutique-how-it-works-upload';
 import { BoutiqueSectorUpload } from '@/components/admin/boutique-sector-upload';
+import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
 const HOW_IT_WORKS_STEPS: Array<{ step: 1 | 2 | 3 | 4; title: string }> = [
   { step: 1, title: 'Créez votre compte' },
@@ -29,13 +30,7 @@ const BOUTIQUE_HOW_IT_WORKS_STEPS: Array<{ step: 1 | 2 | 3 | 4; title: string }>
   { step: 4, title: 'Vendez' },
 ];
 
-const BOUTIQUE_SECTOR_LABELS: Record<(typeof BOUTIQUE_SECTORS)[number], string> = {
-  CLOTHING: 'Habillement',
-  ELECTRONICS: 'Électronique',
-  COSMETICS: 'Cosmétique',
-  GROCERY: 'Alimentation',
-  MERCERIE: 'Mercerie',
-};
+const BOUTIQUE_SECTOR_LABELS = SECTOR_LABELS;
 
 export const metadata: Metadata = { title: 'Images' };
 export const dynamic = 'force-dynamic';
