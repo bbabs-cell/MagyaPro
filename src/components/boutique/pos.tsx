@@ -17,6 +17,7 @@ import {
   type UnitOption,
 } from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
+import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
@@ -247,25 +248,48 @@ export function Pos({
     });
   }
 
-  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return;
-    const needle = query.trim().toLowerCase();
-    if (!needle) return;
+  /**
+   * Tente d'ajouter au panier l'article portant exactement ce code-barres.
+   * Renvoie `true` si un article a été trouvé — que la vente ait pu se faire
+   * ou non (une rupture de stock est signalée, pas ignorée).
+   *
+   * Partagé par les trois façons de scanner : douchette USB/Bluetooth (qui
+   * tape le code puis Entrée), caméra, et saisie manuelle. Une seule logique
+   * pour les trois, donc un seul comportement à comprendre.
+   */
+  function submitBarcode(code: string): boolean {
+    const needle = code.trim().toLowerCase();
+    if (!needle) return false;
 
     // Le code-barres identifie une déclinaison précise (un t-shirt en M noir),
     // pas seulement un produit : le scan ajoute donc directement la bonne.
     for (const product of products) {
       const variant = product.variants.find((v) => v.barcode?.toLowerCase() === needle);
       if (!variant) continue;
-      event.preventDefault();
       if (variant.stock <= 0) {
         setError(`${product.name} : rupture de stock.`);
-        return;
+        return true;
       }
+      setError(null);
       addToCart(product, variant);
       setQuery('');
-      return;
+      return true;
     }
+    return false;
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return;
+    if (submitBarcode(query)) event.preventDefault();
+  }
+
+  function handleScan(code: string) {
+    // Un code inconnu est reporté tel quel dans la recherche : le produit
+    // existe peut-être sans code-barres enregistré, et le vendeur peut alors
+    // le retrouver par son nom sans ressaisir quoi que ce soit.
+    if (submitBarcode(code)) return;
+    setQuery(code);
+    setError(`Aucun produit avec le code-barres ${code}.`);
   }
 
   function updateQuantity(key: string, quantity: number) {
@@ -366,15 +390,18 @@ export function Pos({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <div>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder="Rechercher un produit ou scanner un code-barres…"
-          className={cx(inputClass, 'mb-4')}
-          autoFocus
-        />
+        <div className="mb-4 flex gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Rechercher un produit ou scanner un code-barres…"
+            className={cx(inputClass, 'flex-1')}
+            autoFocus
+          />
+          <BarcodeScannerButton onDetect={handleScan} className="shrink-0" />
+        </div>
 
         {filtered.length === 0 ? (
           <p className="text-sm text-ink-muted">Aucun produit ne correspond à cette recherche.</p>

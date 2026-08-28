@@ -13,6 +13,7 @@ import {
 } from '@/lib/boutique/units';
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
 import { StockWithdrawalForm } from '@/components/boutique/stock-withdrawal-form';
+import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
@@ -907,13 +908,24 @@ function ProductForm({
                         />
                       </td>
                       <td className="py-2 pr-3">
-                        <input
-                          value={draft.barcode}
-                          onChange={(event) =>
-                            updateDeclination(draft.key, { barcode: event.target.value })
-                          }
-                          className={cx(inputClass, 'w-32')}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            value={draft.barcode}
+                            onChange={(event) =>
+                              updateDeclination(draft.key, { barcode: event.target.value })
+                            }
+                            className={cx(inputClass, 'w-32')}
+                          />
+                          {/* Scanner l'étiquette évite de recopier treize
+                              chiffres à la main, où une seule erreur rend
+                              l'article introuvable en caisse. */}
+                          <BarcodeScannerButton
+                            size="sm"
+                            iconOnly
+                            label="Scanner le code-barres"
+                            onDetect={(code) => updateDeclination(draft.key, { barcode: code })}
+                          />
+                        </div>
                       </td>
                       <td className="py-2 pr-3">
                         <input
