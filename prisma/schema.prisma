@@ -1813,6 +1813,14 @@ model StoreProduct {
   variantAxes   Json               @default("[]")
   status        StoreProductStatus @default(DRAFT)
   minStockAlert Decimal            @default(0) @db.Decimal(18, 6)
+  /// Stock cible pour le réapprovisionnement, en unité de base. Sert à
+  /// plafonner la quantité recommandée à la commande — sans lui, un produit
+  /// à forte rotation se verrait conseiller des volumes intenables.
+  maxStock      Decimal?           @db.Decimal(18, 6)
+  /// Jours entre la commande et la réception, pour ce produit. C'est ce
+  /// délai qui distingue « stock faible » (gênant) de « rupture imminente »
+  /// (le réassort n'arrivera pas à temps).
+  supplierLeadDays Int?
   /// Unité héritée, conservée pour les fiches antérieures au moteur d'unités
   /// et comme libellé de repli sur le site public. `baseUnit` fait autorité
   /// dès qu'il est renseigné.

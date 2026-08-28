@@ -98,6 +98,7 @@ export default async function BoutiqueProductsPage() {
         initialProducts={products.map((product) => ({
           ...product,
           minStockAlert: toQty(product.minStockAlert),
+          maxStock: product.maxStock ? toQty(product.maxStock) : null,
           variantAxes: parseVariantAxes(product.variantAxes),
           variants: product.variants.map((variant) => ({
             ...variant,

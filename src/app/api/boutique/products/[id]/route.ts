@@ -76,6 +76,8 @@ export const PATCH = route(async (request, { params }: Params) => {
         imageUrl: input.imageUrl ?? null,
         status: input.status,
         minStockAlert: input.minStockAlert,
+        maxStock: input.maxStock ?? null,
+        supplierLeadDays: input.supplierLeadDays ?? null,
         unit: input.unit,
         baseUnitId,
         variantAxes: input.variantAxes,

@@ -652,6 +652,10 @@ export const storeProductSchema = z.object({
    * prix et le coût de la fiche.
    */
   units: z.array(storeVariantUnitSchema).max(8).default([]),
+  /** Stock cible : plafonne la quantité recommandée à la commande. */
+  maxStock: quantitySchema(1_000_000).nullable().optional(),
+  /** Délai fournisseur en jours — distingue « stock faible » de « rupture imminente ». */
+  supplierLeadDays: z.number().int().min(0).max(365).nullable().optional(),
   variantAxes: variantAxesSchema,
   /**
    * Déclinaisons du produit. Vide = produit simple : une variante unique est
@@ -682,9 +686,29 @@ export const storeProductUpdateSchema = z.object({
   attributes: variantAttributesSchema,
   baseUnitId: z.string().min(1).nullable().optional(),
   units: z.array(storeVariantUnitSchema).max(8).default([]),
+  /** Stock cible : plafonne la quantité recommandée à la commande. */
+  maxStock: quantitySchema(1_000_000).nullable().optional(),
+  /** Délai fournisseur en jours — distingue « stock faible » de « rupture imminente ». */
+  supplierLeadDays: z.number().int().min(0).max(365).nullable().optional(),
   variantAxes: variantAxesSchema,
   variants: z.array(storeProductVariantSchema).max(200).default([]),
 });
+
+/**
+ * Motifs de retrait de stock — voir `POST /api/boutique/stock/retrait`.
+ * Ici plutôt que dans la route : Next.js n'autorise que des gestionnaires
+ * HTTP à être exportés depuis un fichier de route.
+ */
+export const WITHDRAWAL_REASONS = {
+  LOSS: 'Perte',
+  BREAKAGE: 'Casse',
+  EXPIRED: 'Produit expiré',
+  GIFT: 'Produit offert',
+  PERSONAL: 'Utilisation personnelle',
+  INVENTORY_FIX: "Correction d'inventaire",
+  SUPPLIER_RETURN: 'Retour fournisseur',
+  OTHER: 'Autre',
+} as const;
 
 export const storeSupplierSchema = z.object({
   name: nameSchema,

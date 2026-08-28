@@ -12,6 +12,7 @@ import {
   type UnitOption,
 } from '@/lib/boutique/units';
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
+import { StockWithdrawalForm } from '@/components/boutique/stock-withdrawal-form';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
@@ -75,6 +76,8 @@ type Product = {
   description: string | null;
   status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
   minStockAlert: number;
+  maxStock: number | null;
+  supplierLeadDays: number | null;
   unit: string;
   baseUnitId: string | null;
   /** Axes de déclinaison — vide pour un produit simple. */
@@ -144,6 +147,7 @@ export function ProductManager({
   const [products] = useState(initialProducts);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [withdrawing, setWithdrawing] = useState<Product | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showBrandForm, setShowBrandForm] = useState(false);
 
@@ -286,6 +290,17 @@ export function ProductManager({
         />
       )}
 
+      {withdrawing && withdrawing.variants[0] && (
+        <StockWithdrawalForm
+          productName={withdrawing.name}
+          variantId={withdrawing.variants[0].id}
+          stock={totalStock(withdrawing)}
+          units={unitOptionsFor(withdrawing)}
+          onDone={() => setWithdrawing(null)}
+          onCancel={() => setWithdrawing(null)}
+        />
+      )}
+
       {products.length === 0 ? (
         <EmptyState
           title="Aucun produit pour le moment"
@@ -383,9 +398,14 @@ export function ProductManager({
                     </td>
                     {canManage && (
                       <td className="px-4 py-3 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setEditingProduct(product)}>
-                          Modifier
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => setWithdrawing(product)}>
+                            Retirer
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingProduct(product)}>
+                            Modifier
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -672,6 +692,8 @@ function ProductForm({
       brandId: brandId || null,
       status: String(formData.get('status') ?? 'DRAFT'),
       minStockAlert: Number(formData.get('minStockAlert') ?? 0),
+      maxStock: Number(formData.get('maxStock') ?? 0) || null,
+      supplierLeadDays: Number(formData.get('supplierLeadDays') ?? 0) || null,
       unit: String(formData.get('unit') ?? 'UNIT'),
       sku: String(formData.get('sku') ?? '') || undefined,
       cost: toMinor(String(formData.get('cost') ?? '0'), currency),
@@ -1040,6 +1062,47 @@ function ProductForm({
               </p>
             )
           )}
+        </fieldset>
+
+        <fieldset className="rounded-xl border border-surface-border p-4">
+          <legend className="px-1 text-sm font-medium">Réapprovisionnement (facultatif)</legend>
+          <p className="text-xs text-ink-faint">
+            Sert à prévoir les ruptures depuis vos ventes réelles, et à calculer la quantité à
+            commander. Voir l&apos;écran <strong>Prévisions</strong>.
+          </p>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Délai fournisseur (jours)"
+              htmlFor="supplierLeadDays"
+              hint="Temps entre la commande et la réception."
+            >
+              <input
+                id="supplierLeadDays"
+                name="supplierLeadDays"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="2"
+                className={inputClass}
+                defaultValue={product?.supplierLeadDays ?? undefined}
+              />
+            </Field>
+            <Field
+              label={`Stock cible (${baseUnit?.labelPlural ?? 'unités'})`}
+              htmlFor="maxStock"
+              hint="Plafonne la quantité recommandée à la commande."
+            >
+              <input
+                id="maxStock"
+                name="maxStock"
+                type="number"
+                min="0"
+                step="any"
+                className={inputClass}
+                defaultValue={product?.maxStock ?? undefined}
+              />
+            </Field>
+          </div>
         </fieldset>
 
         {isEdit || hasAxes ? (
