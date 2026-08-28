@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
+import { loadEarliestExpiry } from '@/lib/boutique/expiry-load';
 import { parseVariantAxes } from '@/lib/boutique/variants';
 import { PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
@@ -64,6 +65,10 @@ export default async function BoutiqueProductsPage() {
     }),
   ]);
 
+  // Date de péremption la plus proche par déclinaison — une seule requête
+  // groupée pour tout le catalogue (voir `loadEarliestExpiry`).
+  const expiryByVariant = await loadEarliestExpiry(context.store.id);
+
   const storeUnits = await prisma.storeUnit.findMany({
     where: { storeId: context.store.id, isActive: true },
     orderBy: { position: 'asc' },
@@ -103,6 +108,9 @@ export default async function BoutiqueProductsPage() {
           variants: product.variants.map((variant) => ({
             ...variant,
             attributes: (variant.attributes ?? {}) as Record<string, string>,
+            // Sérialisée : le composant qui la lit s'exécute côté navigateur,
+            // où un objet Date ne traverse pas la frontière serveur/client.
+            expiryDate: expiryByVariant.get(variant.id)?.toISOString() ?? null,
             units: variant.units.map((unit) => ({ ...unit, factor: toQty(unit.factor) })),
             inventory: variant.inventory.map((inv) => ({
               ...inv,
@@ -110,6 +118,10 @@ export default async function BoutiqueProductsPage() {
             })),
           })),
         }))}
+        // Instant de référence figé côté serveur : sans lui, le serveur et le
+        // navigateur calculeraient « périme dans N jours » à deux instants
+        // différents, ce que React signale comme une erreur d'hydratation.
+        now={Date.now()}
         storeUnits={storeUnits.map((unit) => ({
           ...unit,
           labelPlural: unit.labelPlural ?? unit.label,

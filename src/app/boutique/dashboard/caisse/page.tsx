@@ -6,6 +6,7 @@ import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady, resolveVariantUnitsBulk } from '@/lib/boutique/units-engine';
 import { parseVariantAxes, type VariantAxis } from '@/lib/boutique/variants';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
+import { loadEarliestExpiry } from '@/lib/boutique/expiry-load';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
 import { Pos } from '@/components/boutique/pos';
 import { CashSessionBar } from '@/components/boutique/cash-session-bar';
@@ -65,6 +66,10 @@ export default async function BoutiqueCaissePage() {
 
   const unitsByVariant = await resolveVariantUnitsBulk(variants.map((variant) => variant.id));
 
+  // Date de péremption la plus proche par déclinaison : le vendeur doit voir
+  // qu'un article est périmé AVANT de l'encaisser, pas après.
+  const expiryByVariant = await loadEarliestExpiry(context.store.id);
+
   // Une carte par PRODUIT, pas par variante : un t-shirt en 4 tailles × 3
   // couleurs occuperait sinon 12 cartes dans la grille. Les déclinaisons
   // deviennent des pastilles à l'intérieur de la carte.
@@ -80,6 +85,7 @@ export default async function BoutiqueCaissePage() {
       barcode: string | null;
       price: number;
       stock: number;
+      expiryDate: string | null;
       units: Array<{
         unitId: string;
         label: string;
@@ -114,6 +120,7 @@ export default async function BoutiqueCaissePage() {
       // Toujours en unité de base — la caisse convertit à l'affichage et à
       // l'ajout au panier, jamais l'inverse.
       stock: variant.inventory?.[0] ? toQty(variant.inventory[0].quantity) : 0,
+      expiryDate: expiryByVariant.get(variant.id)?.toISOString() ?? null,
       units: (unitsByVariant.get(variant.id) ?? [])
         .filter((unit) => unit.isSellable && unit.price !== null)
         .map((unit) => ({
@@ -159,6 +166,10 @@ export default async function BoutiqueCaissePage() {
           taxRate={context.store.taxRate}
           paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
           readOnly={context.isDemoTour}
+          // Instant figé côté serveur : sans lui, « périme dans N jours »
+          // serait calculé à deux instants différents au rendu serveur puis
+          // navigateur, ce que React signale comme une erreur d'hydratation.
+          now={Date.now()}
         />
       )}
     </>

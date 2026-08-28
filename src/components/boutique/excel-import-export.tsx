@@ -51,24 +51,32 @@ export function ExcelImportExport({ canImport }: { canImport: boolean }) {
         Stock sont mis à jour.
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      {/* Le champ de fichier natif a une largeur intrinsèque large (le nom du
+          fichier choisi s'y affiche en entier). Sans `min-w-0`, il refuse de
+          rétrécir et pousse le bouton « Importer » hors de l'écran sur
+          téléphone — c'est exactement ce qui se produisait ici. */}
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <a
           href="/api/boutique/produits/export"
-          className="inline-flex h-9 items-center rounded-lg border border-surface-border px-3 text-sm font-medium text-ink hover:bg-surface-sunken"
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-surface-border px-3 text-sm font-medium text-ink hover:bg-surface-sunken"
         >
           Exporter (.xlsx)
         </a>
 
         {canImport && (
-          <form ref={formRef} onSubmit={submit} className="flex items-center gap-2">
+          <form
+            ref={formRef}
+            onSubmit={submit}
+            className="flex min-w-0 flex-wrap items-center gap-2"
+          >
             <input
               type="file"
               name="file"
               accept=".xlsx"
               required
-              className="text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-sm"
+              className="min-w-0 flex-1 text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-sm"
             />
-            <Button type="submit" size="sm" loading={pending}>
+            <Button type="submit" size="sm" loading={pending} className="shrink-0">
               Importer
             </Button>
           </form>

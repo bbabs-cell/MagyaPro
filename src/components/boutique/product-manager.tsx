@@ -14,6 +14,14 @@ import {
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
 import { StockWithdrawalForm } from '@/components/boutique/stock-withdrawal-form';
 import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
+import {
+  EXPIRY_ICONS,
+  EXPIRY_LABELS,
+  EXPIRY_RAIL,
+  expiryLabel,
+  expiryState,
+  type ExpiryState,
+} from '@/lib/boutique/expiry';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
@@ -57,6 +65,12 @@ type Variant = {
   isActive: boolean;
   attributes: Record<string, string>;
   units: VariantUnit[];
+  /**
+   * Date du lot le plus proche de sa péremption, en ISO. `null` quand aucune
+   * date n'a été renseignée à la réception — le cas de la plupart des
+   * produits non périssables.
+   */
+  expiryDate?: string | null;
 };
 
 /** Ligne de l'éditeur de déclinaisons — valeurs en saisie, donc en texte. */
@@ -132,6 +146,7 @@ export function ProductManager({
   currency,
   canManage,
   businessType,
+  now,
 }: {
   initialCategories: Category[];
   initialBrands: BrandRow[];
@@ -141,6 +156,8 @@ export function ProductManager({
   currency: string;
   canManage: boolean;
   businessType: string;
+  /** Instant de référence figé par le serveur — voir la page Produits. */
+  now: number;
 }) {
   const router = useRouter();
   const [categories] = useState(initialCategories);
@@ -151,6 +168,28 @@ export function ProductManager({
   const [withdrawing, setWithdrawing] = useState<Product | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showBrandForm, setShowBrandForm] = useState(false);
+
+  /**
+   * État de péremption d'un produit : celui de sa déclinaison la plus
+   * urgente. Un seul carton périmé suffit à marquer la fiche — c'est celui-là
+   * qu'il faut sortir du rayon.
+   */
+  function productExpiry(product: Product): { state: ExpiryState; label: string | null } {
+    const order: ExpiryState[] = ['expired', 'critical', 'soon', 'ok'];
+    let worst: ExpiryState = 'ok';
+    let worstDate: string | null = null;
+
+    for (const variant of product.variants) {
+      if (!variant.expiryDate) continue;
+      const state = expiryState(variant.expiryDate, now);
+      if (order.indexOf(state) < order.indexOf(worst)) {
+        worst = state;
+        worstDate = variant.expiryDate;
+      }
+    }
+
+    return { state: worst, label: worstDate ? expiryLabel(worstDate, now) : null };
+  }
 
   function totalStock(product: Product): number {
     return product.variants.reduce(
@@ -334,17 +373,42 @@ export function ProductManager({
                 const activeVariants = product.variants.filter((v) => v.isActive);
                 const stock = totalStock(product);
                 const state = stockState(stock, product.minStockAlert);
+                const expiry = productExpiry(product);
                 return (
                   <tr
                     key={product.id}
                     // Rail de statut : sur une longue liste, la couleur repère
                     // les ruptures et les seuils franchis sans avoir à lire
-                    // chaque chiffre.
-                    style={{ ['--rail' as string]: STOCK_RAIL[state] }}
-                    className="state-rail border-b border-surface-border last:border-0"
+                    // chaque chiffre. La péremption prend le pas sur le stock —
+                    // un produit périmé bien approvisionné reste un produit à
+                    // retirer.
+                    style={{
+                      ['--rail' as string]:
+                        expiry.state === 'ok' ? STOCK_RAIL[state] : EXPIRY_RAIL[expiry.state],
+                    }}
+                    className={cx(
+                      'state-rail border-b border-surface-border last:border-0',
+                      // Un lot périmé se distingue au premier coup d'œil : la
+                      // ligne recule visuellement, comme un article déjà sorti
+                      // du rayon.
+                      expiry.state === 'expired' && 'bg-state-bad-soft/50 opacity-70',
+                    )}
                   >
                     <td data-label="Produit" className="px-4 py-3 font-medium">
                       {product.name}
+                      {expiry.state !== 'ok' ? (
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <Badge tone={expiry.state === 'soon' ? 'warning' : 'danger'}>
+                            <span aria-hidden="true">{EXPIRY_ICONS[expiry.state]}</span>{' '}
+                            {EXPIRY_LABELS[expiry.state]}
+                          </Badge>
+                          {expiry.label ? (
+                            <span className="text-xs font-normal text-ink-muted">
+                              {expiry.label}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : null}
                       {product.variantAxes.length > 0 ? (
                         <p className="mt-0.5 text-xs font-normal text-ink-faint">
                           {activeVariants.length} déclinaison

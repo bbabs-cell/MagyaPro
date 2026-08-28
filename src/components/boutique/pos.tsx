@@ -18,6 +18,13 @@ import {
 } from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
 import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
+import {
+  EXPIRY_ICONS,
+  EXPIRY_LABELS,
+  EXPIRY_RAIL,
+  expiryLabel,
+  expiryState,
+} from '@/lib/boutique/expiry';
 import { VoiceCommandButton, type VoiceResolution } from '@/components/boutique/voice-command';
 import { matchByName, normalize, type VoiceIntent } from '@/lib/boutique/voice-grammar';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
@@ -44,6 +51,8 @@ type Variant = {
   attributes: Record<string, string>;
   barcode: string | null;
   price: number;
+  /** Lot le plus proche de sa péremption, en ISO. `null` si aucun lot suivi. */
+  expiryDate?: string | null;
   /** TOUJOURS en unité de base — la conversion se fait ici, à l'affichage
    *  et à l'ajout au panier. */
   stock: number;
@@ -108,6 +117,7 @@ export function Pos({
   taxRate,
   paymentMethods,
   readOnly = false,
+  now,
 }: {
   storeId: string;
   products: Product[];
@@ -124,6 +134,8 @@ export function Pos({
    * d'appeler l'API — qui le refuserait de toute façon côté serveur.
    */
   readOnly?: boolean;
+  /** Instant de référence figé par le serveur — voir la page Caisse. */
+  now: number;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -529,16 +541,46 @@ export function Pos({
               const state = stockState(
                 variant ? variant.stock : product.variants.reduce((sum, v) => sum + v.stock, 0),
               );
+              // Péremption de la déclinaison choisie, ou de la plus urgente
+              // tant qu'aucune n'est choisie.
+              const expiryDate = variant
+                ? (variant.expiryDate ?? null)
+                : product.variants.reduce<string | null>(
+                    (soonest, v) =>
+                      v.expiryDate && (!soonest || v.expiryDate < soonest) ? v.expiryDate : soonest,
+                    null,
+                  );
+              const expiry = expiryState(expiryDate, now);
 
               return (
                 <div
                   key={product.id}
                   // Rail coloré à gauche : l'état du stock se lit à la
-                  // couleur avant même d'être lu au texte.
-                  style={{ ['--rail' as string]: STOCK_RAIL[state] }}
-                  className="card card-interactive state-rail flex flex-col items-start gap-1 p-4 pl-5 text-left"
+                  // couleur avant même d'être lu au texte. La péremption
+                  // prend le pas — un article périmé ne doit pas être
+                  // encaissé, même s'il en reste en rayon.
+                  style={{
+                    ['--rail' as string]:
+                      expiry === 'ok' ? STOCK_RAIL[state] : EXPIRY_RAIL[expiry],
+                  }}
+                  className={cx(
+                    'card card-interactive state-rail flex flex-col items-start gap-1 p-4 pl-5 text-left',
+                    expiry === 'expired' && 'bg-state-bad-soft/50 opacity-70',
+                  )}
                 >
                   <span className="font-medium text-ink">{product.name}</span>
+
+                  {expiry !== 'ok' ? (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone={expiry === 'soon' ? 'warning' : 'danger'}>
+                        <span aria-hidden="true">{EXPIRY_ICONS[expiry]}</span>{' '}
+                        {EXPIRY_LABELS[expiry]}
+                      </Badge>
+                      <span className="text-xs text-ink-muted">
+                        {expiryLabel(expiryDate, now)}
+                      </span>
+                    </span>
+                  ) : null}
 
                   {product.axes.map((axis) => (
                     <div key={axis.name} className="mt-1.5 w-full">
