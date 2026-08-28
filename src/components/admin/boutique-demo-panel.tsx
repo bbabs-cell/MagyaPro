@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 
 /**
- * Données de démonstration MagyaPro Boutique — génère (ou retire) les 4
- * boutiques fictives par secteur (`seedStoreDemos`/`cleanStoreDemos`),
- * réservé au Super Admin. Aucun accès shell/base n'étant possible en dehors
- * de l'application déployée, ce bouton est le seul moyen d'exécuter cette
- * opération en production.
+ * Données de démonstration MagyaPro Boutique — génère, réinitialise ou retire
+ * les boutiques fictives par secteur (`seedStoreDemos`, `resetStoreDemos`,
+ * `cleanStoreDemos`), réservé au Super Admin. Aucun accès shell/base n'étant
+ * possible en dehors de l'application déployée, ces boutons sont le seul
+ * moyen d'exécuter ces opérations en production.
  */
 export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
   const router = useRouter();
-  const [pending, setPending] = useState<'seed' | 'clean' | null>(null);
+  const [pending, setPending] = useState<'seed' | 'reset' | 'clean' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +31,32 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'La création a échoué.');
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function reset() {
+    if (
+      !window.confirm(
+        'Réinitialiser les boutiques de démonstration ? Elles sont supprimées puis recréées à neuf. Les vraies boutiques ne sont pas touchées.',
+      )
+    ) {
+      return;
+    }
+    setPending('reset');
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await api.put<{ deletedStores: number; created: string[] }>(
+        '/api/admin/boutique-demo',
+      );
+      setMessage(
+        `${result.deletedStores} boutique(s) remise(s) à neuf — recréées : ${result.created.join(', ')}.`,
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'La réinitialisation a échoué.');
     } finally {
       setPending(null);
     }
@@ -72,8 +98,18 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
             disabled={pending !== null}
             className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-white/90 disabled:opacity-60"
           >
-            {pending === 'seed' ? 'Création…' : 'Créer (une par secteur)'}
+            {pending === 'seed' ? 'Création…' : 'Créer les manquantes'}
           </button>
+          {demoCount > 0 && (
+            <button
+              type="button"
+              onClick={reset}
+              disabled={pending !== null}
+              className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-60"
+            >
+              {pending === 'reset' ? 'Réinitialisation…' : 'Réinitialiser'}
+            </button>
+          )}
           {demoCount > 0 && (
             <button
               type="button"

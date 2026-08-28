@@ -80,6 +80,7 @@ export const AUDIT_ACTIONS = {
   STORE_DELETED: 'store.deleted',
   STORE_DEMO_SEEDED: 'store_demo.seeded',
   STORE_DEMO_CLEANED: 'store_demo.cleaned',
+  STORE_DEMO_RESET: 'store_demo.reset',
 
   STORE_CATEGORY_CREATED: 'store_category.created',
   STORE_CATEGORY_UPDATED: 'store_category.updated',
