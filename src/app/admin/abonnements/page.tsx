@@ -7,6 +7,7 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { getPlatformSettings } from '@/lib/platform-settings';
 import { PlatformPaymentSettings } from '@/components/admin/platform-payment-settings';
+import { PlatformSoundSettings } from '@/components/admin/platform-sound-settings';
 import { SubscriptionPaymentReview } from '@/components/admin/subscription-payment-review';
 
 export const metadata: Metadata = { title: 'Abonnements' };
@@ -88,6 +89,8 @@ export default async function AdminSubscriptionsPage({
             promoEndsAt={platformSettings?.promoEndsAt ?? null}
             promoLabel={platformSettings?.promoLabel ?? null}
           />
+
+          <PlatformSoundSettings soundUrl={platformSettings?.notificationSoundUrl ?? null} />
         </div>
       </section>
 

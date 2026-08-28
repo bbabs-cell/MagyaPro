@@ -546,3 +546,33 @@ export async function uploadStoreNotificationSound(params: {
   const key = `stores/${storeId}/sounds/${crypto.randomUUID()}.${AUDIO_EXTENSIONS[detected]}`;
   return storage().put(key, buffer, detected);
 }
+
+/**
+ * Son de notification de l'espace Super Admin — asset de plateforme, rangé
+ * avec les autres (`platform/`) plutôt que sous un tenant, puisqu'il n'en
+ * appartient à aucun.
+ */
+export async function uploadPlatformNotificationSound(params: {
+  file: File;
+}): Promise<StoredFile> {
+  const { file } = params;
+
+  if (file.size === 0) {
+    throw new ValidationError('Le fichier est vide.');
+  }
+  if (file.size > MAX_AUDIO_BYTES) {
+    throw new ValidationError(
+      `Le son ne doit pas dépasser ${Math.round(MAX_AUDIO_BYTES / 1024)} Ko.`,
+    );
+  }
+
+  const buffer = new Uint8Array(await file.arrayBuffer());
+  const detected = detectAudioType(buffer);
+
+  if (!detected || !ALLOWED_AUDIO_TYPES.includes(detected as never)) {
+    throw new ValidationError('Format non pris en charge. Utilisez un fichier MP3, WAV ou OGG.');
+  }
+
+  const key = `platform/sounds/${crypto.randomUUID()}.${AUDIO_EXTENSIONS[detected]}`;
+  return storage().put(key, buffer, detected);
+}

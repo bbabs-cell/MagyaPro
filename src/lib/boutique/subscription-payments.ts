@@ -1,4 +1,8 @@
 import { prisma } from '@/lib/db';
+import {
+  PLATFORM_NOTIFICATION_TYPES,
+  createPlatformNotification,
+} from '@/lib/platform-notifications';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
@@ -99,10 +103,25 @@ export async function attachStoreSubscriptionPaymentProof(params: {
     throw new ConflictError('Cette demande a déjà été traitée.');
   }
 
-  return prisma.storeSubscriptionPayment.update({
+  const updated = await prisma.storeSubscriptionPayment.update({
     where: { id: payment.id },
     data: { proofImageUrl: params.proofUrl, proofSubmittedAt: new Date() },
+    include: { store: { select: { name: true } }, plan: { select: { name: true } } },
   });
+
+  // Le dépôt de la preuve est le moment où l'argent est réputé versé : c'est
+  // là que le Super Admin a quelque chose à faire. La simple demande de
+  // paiement, elle, ne déclenche rien — le commerçant n'a encore rien payé,
+  // et alerter deux fois par abonnement noierait le signal utile.
+  await createPlatformNotification({
+    type: PLATFORM_NOTIFICATION_TYPES.SUBSCRIPTION_PAYMENT,
+    title: `Paiement Boutique à valider — ${updated.store.name}`,
+    body: `${updated.store.name} a déposé une preuve de paiement de ${formatMoney(updated.amount, updated.currency)} pour le plan ${updated.plan.name}.`,
+    href: '/admin/boutique-abonnements',
+    metadata: { paymentId: updated.id, storeId: params.storeId, amount: updated.amount },
+  });
+
+  return updated;
 }
 
 export async function approveStoreSubscriptionPayment(params: {

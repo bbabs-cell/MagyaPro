@@ -14,6 +14,7 @@ export async function updatePlatformSettings(input: {
   promoDiscountPercent?: number | null;
   promoEndsAt?: Date | null;
   promoLabel?: string | null;
+  notificationSoundUrl?: string | null;
 }) {
   const existing = await prisma.platformSettings.findFirst({ select: { id: true } });
 

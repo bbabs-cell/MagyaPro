@@ -80,6 +80,16 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/notifications',
+    label: 'Notifications',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M18 8a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" />
+        <path d="M10.3 20a2 2 0 0 0 3.4 0" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/abonnements',
     label: 'Abonnements',
     icon: (
@@ -172,11 +182,14 @@ export function AdminSidebar({
   userEmail,
   theme,
   onToggleTheme,
+  unreadNotifications = 0,
 }: {
   logoUrl: string | null;
   userEmail: string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  /** Notifications de plateforme non lues — pastille sur l'entrée dédiée. */
+  unreadNotifications?: number;
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -203,7 +216,12 @@ export function AdminSidebar({
             )}
           >
             <span className="shrink-0">{link.icon}</span>
-            <span className="truncate">{link.label}</span>
+            <span className="min-w-0 flex-1 truncate">{link.label}</span>
+            {link.href === '/admin/notifications' && unreadNotifications > 0 && (
+              <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
+                {unreadNotifications}
+              </span>
+            )}
           </Link>
         );
       })}

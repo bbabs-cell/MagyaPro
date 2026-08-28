@@ -997,9 +997,42 @@ model PlatformSettings {
   /// Texte affiché sur le bandeau d'offre (ex. « -20% le premier mois »).
   promoLabel           String?
 
+  /// Son joué dans l'espace Super Admin à l'arrivée d'une notification —
+  /// équivalent de `RestaurantSettings.notificationSoundUrl` et de
+  /// `Store.notificationSoundUrl`, côté plateforme. Sans fichier, un bip
+  /// généré par le navigateur est utilisé.
+  notificationSoundUrl String?
+
   updatedAt DateTime @updatedAt
 
   @@map("platform_settings")
+}
+
+/// Notification destinée aux Super Admins de la plateforme.
+///
+/// Modèle distinct de `Notification`, qui appartient toujours à un restaurant
+/// ou une boutique : y ajouter un troisième cas romprait l'invariant
+/// « restaurantId OU storeId, jamais les deux ni aucun » sur lequel repose
+/// l'isolation entre tenants.
+///
+/// `readAt` est partagé par tous les Super Admins : c'est une boîte commune,
+/// pas une par personne. Un paiement validé par l'un n'a pas à rester en
+/// attente chez l'autre.
+model PlatformNotification {
+  id        String    @id @default(cuid())
+  /// Chaîne libre plutôt qu'un enum : ces notifications sont internes, et un
+  /// nouveau type ne doit pas coûter une migration.
+  type      String
+  title     String
+  body      String
+  /// Lien interne à ouvrir au clic (ex. /admin/abonnements).
+  href      String?
+  metadata  Json      @default("{}")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([readAt, createdAt])
+  @@map("platform_notifications")
 }
 
 // ---------------------------------------------------------------------------

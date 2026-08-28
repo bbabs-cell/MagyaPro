@@ -1,4 +1,8 @@
 import { prisma } from '@/lib/db';
+import {
+  PLATFORM_NOTIFICATION_TYPES,
+  createPlatformNotification,
+} from '@/lib/platform-notifications';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
@@ -108,10 +112,25 @@ export async function attachSubscriptionPaymentProof(params: {
     throw new ConflictError('Cette demande a déjà été traitée.');
   }
 
-  return prisma.subscriptionPayment.update({
+  const updated = await prisma.subscriptionPayment.update({
     where: { id: payment.id },
     data: { proofImageUrl: params.proofUrl, proofSubmittedAt: new Date() },
+    include: { restaurant: { select: { name: true } }, plan: { select: { name: true } } },
   });
+
+  // Le dépôt de la preuve est le moment où l'argent est réputé versé : c'est
+  // là que le Super Admin a quelque chose à faire. La simple demande de
+  // paiement, elle, ne déclenche rien — le commerçant n'a encore rien payé,
+  // et alerter deux fois par abonnement noierait le signal utile.
+  await createPlatformNotification({
+    type: PLATFORM_NOTIFICATION_TYPES.SUBSCRIPTION_PAYMENT,
+    title: `Paiement Restaurant à valider — ${updated.restaurant.name}`,
+    body: `${updated.restaurant.name} a déposé une preuve de paiement de ${formatMoney(updated.amount, updated.currency)} pour le plan ${updated.plan.name}.`,
+    href: '/admin/abonnements',
+    metadata: { paymentId: updated.id, restaurantId: params.restaurantId, amount: updated.amount },
+  });
+
+  return updated;
 }
 
 /** Approuve la demande : active l'abonnement sur le plan payé pour une nouvelle période. */

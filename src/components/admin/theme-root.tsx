@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { AdminSidebar } from '@/components/admin/sidebar';
+import { NotificationWatcher } from '@/components/account/notification-watcher';
 
 /**
  * L'administration n'utilise pas les variables `ink`/`surface` (voir
@@ -17,10 +18,13 @@ const ADMIN_THEME_STORAGE_KEY = 'magyapro:admin-theme';
 export function AdminThemeRoot({
   logoUrl,
   userEmail,
+  unreadNotifications = 0,
   children,
 }: {
   logoUrl: string | null;
   userEmail: string;
+  /** Notifications de plateforme non lues, pour la pastille de navigation. */
+  unreadNotifications?: number;
   children: React.ReactNode;
 }) {
   // Sombre par défaut : c'est l'apparence historique de l'administration,
@@ -76,12 +80,15 @@ export function AdminThemeRoot({
         </>
       )}
 
+      <NotificationWatcher endpoint="/api/admin/notifications" />
+
       <div className="relative lg:flex">
         <AdminSidebar
           logoUrl={logoUrl}
           userEmail={userEmail}
           theme={theme}
           onToggleTheme={toggleTheme}
+          unreadNotifications={unreadNotifications}
         />
 
         <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">

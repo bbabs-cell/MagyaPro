@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AdminThemeRoot } from '@/components/admin/theme-root';
 import { platformLogoUrl } from '@/lib/storage';
+import { countUnreadPlatformNotifications } from '@/lib/platform-notifications';
 
 /**
  * Espace d'administration de la plateforme.
@@ -23,9 +24,14 @@ export default async function AdminLayout({
   if (user.platformRole !== 'SUPER_ADMIN') redirect('/dashboard');
 
   const logoUrl = platformLogoUrl();
+  const unreadNotifications = await countUnreadPlatformNotifications();
 
   return (
-    <AdminThemeRoot logoUrl={logoUrl} userEmail={user.email}>
+    <AdminThemeRoot
+      logoUrl={logoUrl}
+      userEmail={user.email}
+      unreadNotifications={unreadNotifications}
+    >
       {children}
     </AdminThemeRoot>
   );
