@@ -12,12 +12,12 @@ const SECTIONS: Section[] = [
     title: 'Démarrer',
     entries: [
       {
-        q: 'Comment mettre ma boutique en ligne ?',
-        a: 'Ajoutez au moins un produit actif, complétez vos informations dans Réglages, puis passez le statut de votre boutique sur « Publiée » depuis Réglages → Publication. Tant qu\'elle n\'est pas publiée, votre boutique reste invisible pour vos clients.',
+        q: 'Par où commencer ?',
+        a: 'Renseignez votre secteur dans Réglages, créez vos premières fiches produits avec leur stock, puis ouvrez la Caisse. Vous pouvez encaisser dès la première fiche enregistrée.',
       },
       {
-        q: 'Puis-je changer de template plus tard ?',
-        a: 'Oui, autant de fois que vous voulez, depuis Apparence. Changer de template ne touche jamais à votre catalogue, vos ventes ni vos clients : seul l\'habillage visuel change.',
+        q: 'Sur quels appareils puis-je travailler ?',
+        a: 'Téléphone, tablette ou ordinateur, dans votre navigateur — rien à installer. Le catalogue, le stock et les ventes sont les mêmes partout.',
       },
       {
         q: "J'ai plusieurs boutiques, comment les gérer ?",
@@ -98,7 +98,7 @@ const SECTIONS: Section[] = [
     entries: [
       {
         q: 'Comment activer un son de notification personnalisé ?',
-        a: 'Dans Réglages → Son de notification, téléversez votre propre fichier audio. Il remplacera le bip par défaut à chaque commande, rupture de stock ou changement de réglages important.',
+        a: 'Dans Réglages → Son de notification, téléversez votre propre fichier audio. Il remplacera le bip par défaut à chaque alerte : rupture de stock, stock bas ou changement de réglages important.',
       },
       {
         q: 'Pourquoi je n\'entends aucun son ?',

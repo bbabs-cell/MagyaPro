@@ -2,11 +2,9 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
-import { storeTemplatePreviewUrl, templatePreviewUrl } from '@/lib/storage';
+import { templatePreviewUrl } from '@/lib/storage';
 import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
-import { getStoreTemplates } from '@/lib/boutique/store-templates';
 import { TemplatePreviewUpload } from '@/components/admin/template-preview-upload';
-import { StoreTemplatePreviewUpload } from '@/components/admin/store-template-preview-upload';
 
 export const metadata: Metadata = { title: 'Templates' };
 export const dynamic = 'force-dynamic';
@@ -14,15 +12,12 @@ export const dynamic = 'force-dynamic';
 export default async function AdminTemplatesPage() {
   await requireSuperAdmin();
 
-  const [templates, usage, storeTemplates, storeUsage] = await Promise.all([
+  const [templates, usage] = await Promise.all([
     prisma.template.findMany({ orderBy: { position: 'asc' } }),
     prisma.restaurant.groupBy({ by: ['templateKey'], _count: true }),
-    getStoreTemplates(),
-    prisma.store.groupBy({ by: ['templateKey'], _count: true }),
   ]);
 
   const usageByKey = new Map(usage.map((row) => [row.templateKey, row._count]));
-  const storeUsageByKey = new Map(storeUsage.map((row) => [row.templateKey, row._count]));
 
   // Un template inscrit en base mais absent du registre ne saurait pas se
   // rendre : la page le signale plutôt que de laisser la panne se découvrir
@@ -83,32 +78,6 @@ export default async function AdminTemplatesPage() {
         })}
       </div>
 
-      <h2 className="mt-12 text-xl font-semibold tracking-tight">Templates Boutique</h2>
-      <p className="mt-1 text-sm text-white/60">
-        Les mises en page du site public de MagyaPro Boutique. Comme pour Restaurant, le rendu est
-        défini dans le code — cette table contrôle leur disponibilité.
-      </p>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {storeTemplates.map((template) => {
-          const count = storeUsageByKey.get(template.key) ?? 0;
-
-          return (
-            <div key={template.id} className="rounded-2xl border border-white/10 p-4">
-              <StoreTemplatePreviewUpload
-                templateKey={template.key}
-                previewUrl={storeTemplatePreviewUrl(template.key)}
-              />
-              <h3 className="font-medium">{template.name}</h3>
-              <p className="mt-1 font-mono text-xs text-white/40">{template.key}</p>
-              {template.description && <p className="mt-2 text-sm text-white/60">{template.description}</p>}
-              <p className="mt-3 text-sm">
-                {count} boutique{count > 1 ? 's' : ''} l&apos;utilise{count > 1 ? 'nt' : ''}
-              </p>
-            </div>
-          );
-        })}
-      </div>
     </>
   );
 }

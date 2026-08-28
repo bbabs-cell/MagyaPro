@@ -2,11 +2,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
-import { STORE_FEATURES, getStoreEntitlements, hasStoreFeature } from '@/lib/boutique/entitlements';
-import { cnameTarget, verificationRecordName } from '@/lib/domains';
 import { PageHeader } from '@/components/ui';
-import { PublishPanel } from '@/components/boutique/publish-panel';
-import { DomainsManager } from '@/components/boutique/domains-manager';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
 import { StockSettingsPanel } from '@/components/boutique/stock-settings-panel';
@@ -32,71 +28,49 @@ export default async function BoutiqueSettingsPage() {
   // liste ci-dessous s'afficherait vide sur une boutique qui n'a pas encore
   // ouvert ses écrans Produits ou Caisse.
   await ensureStoreUnitsReady(context.store.id, context.store.businessType);
-  const units = await prisma.storeUnit.findMany({
-    where: { storeId: context.store.id },
-    orderBy: [{ isActive: 'desc' }, { position: 'asc' }],
-  });
 
-  const [domains, entitlements, paymentMethods] = await Promise.all([
-    prisma.storeDomain.findMany({
+  const [units, paymentMethods] = await Promise.all([
+    prisma.storeUnit.findMany({
       where: { storeId: context.store.id },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ isActive: 'desc' }, { position: 'asc' }],
     }),
-    getStoreEntitlements(context.store.id),
     prisma.storePaymentMethod.findMany({
       where: { storeId: context.store.id },
       orderBy: { position: 'asc' },
     }),
   ]);
 
+  const canManage = context.permissions.has('settings:manage');
+
   return (
     <>
-      <PageHeader title="Réglages" description="Publication et domaines de votre boutique." />
+      <PageHeader
+        title="Réglages"
+        description="Secteur, unités, TVA, stock et moyens de paiement de votre boutique."
+      />
       <div className="space-y-6">
-        <PublishPanel
-          status={context.store.status}
-          slug={context.store.slug}
-          canPublish={context.permissions.has('store:publish')}
-        />
-        <TaxSettingsPanel
-          taxEnabled={context.store.taxEnabled}
-          taxRate={context.store.taxRate}
-          canManage={context.permissions.has('settings:manage')}
-        />
-        <LanguageSettingsPanel
-          language={context.store.language}
-          canManage={context.permissions.has('settings:manage')}
-        />
         <SectorSettingsPanel
           businessType={context.store.businessType}
           units={units.map((unit) => ({
             ...unit,
             defaultFactor: unit.defaultFactor ? toQty(unit.defaultFactor) : null,
           }))}
-          canManage={context.permissions.has('settings:manage')}
+          canManage={canManage}
+        />
+        <TaxSettingsPanel
+          taxEnabled={context.store.taxEnabled}
+          taxRate={context.store.taxRate}
+          canManage={canManage}
         />
         <StockSettingsPanel
           allowNegativeStock={context.store.allowNegativeStock}
-          canManage={context.permissions.has('settings:manage')}
+          canManage={canManage}
         />
+        <PaymentMethodsManager methods={paymentMethods} canManage={canManage} />
+        <LanguageSettingsPanel language={context.store.language} canManage={canManage} />
         <NotificationSoundPanel
           notificationSoundUrl={context.store.notificationSoundUrl}
-          canManage={context.permissions.has('settings:manage')}
-        />
-        <PaymentMethodsManager
-          methods={paymentMethods}
-          canManage={context.permissions.has('settings:manage')}
-        />
-        <DomainsManager
-          domains={domains.map((domain) => ({
-            ...domain,
-            recordName: verificationRecordName(domain.hostname),
-          }))}
-          cnameTarget={cnameTarget()}
-          canManage={
-            context.permissions.has('settings:manage') &&
-            hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)
-          }
+          canManage={canManage}
         />
       </div>
     </>

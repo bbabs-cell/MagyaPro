@@ -183,7 +183,6 @@ const DEMO_TOUR_PERMISSIONS = new Set<StorePermission>([
   'suppliers:view',
   'pos:access',
   'sales:view',
-  'orders:view',
   'customers:view',
   'finances:view',
   'invoices:view',
@@ -384,9 +383,7 @@ type StoreScopedModel =
   | 'storeExpense'
   | 'invoice'
   | 'storePromotion'
-  | 'inventoryMovement'
-  | 'storeOrder'
-  | 'storeDomain';
+  | 'inventoryMovement';
 
 export async function findStoreScopedOrThrow<T>(
   model: StoreScopedModel,

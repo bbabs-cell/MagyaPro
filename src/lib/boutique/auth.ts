@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { ConflictError, ValidationError } from '@/lib/errors';
 import { hashPassword, validatePasswordStrength } from '@/lib/auth/password';
 import { issueVerificationToken } from '@/lib/auth/service';
-import { EMAIL_VERIFICATION_TTL_HOURS, expiresIn, generateToken } from '@/lib/auth/tokens';
+import { EMAIL_VERIFICATION_TTL_HOURS, expiresIn } from '@/lib/auth/tokens';
 import { sendVerificationEmail } from '@/lib/mail';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { uniqueStoreSlug } from '@/lib/slug';
@@ -97,20 +97,6 @@ export async function registerStoreAccount(input: {
     // (onboarding), d'où le profil générique ici — l'onboarding complètera
     // avec les unités du métier retenu, sans jamais toucher à celles-ci.
     await seedStoreUnits(store.id, store.businessType, tx);
-
-    // Le sous-domaine est un domaine à part entière, vérifié d'office : il
-    // nous appartient, il n'y a rien à prouver côté DNS.
-    await tx.storeDomain.create({
-      data: {
-        storeId: store.id,
-        hostname: `${slug}.boutique`,
-        type: 'SUBDOMAIN',
-        status: 'VERIFIED',
-        verificationToken: generateToken(16),
-        verifiedAt: new Date(),
-        isPrimary: true,
-      },
-    });
 
     if (trialPlan) {
       await tx.storeSubscription.create({

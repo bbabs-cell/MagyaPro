@@ -24,7 +24,7 @@ const INCLUDED_EVERYWHERE = [
   'Alertes de stock bas et de rupture',
   'Déclinaisons : tailles, pointures, couleurs',
   'Unités adaptées à votre métier, et les vôtres',
-  'Boutique en ligne et commandes clients',
+  'Prévision des ruptures et analyses automatiques',
   'Achats fournisseurs et coût d’achat moyen',
   'Clients, crédits et encaissements',
   'Vente hors connexion, synchronisée au retour du réseau',

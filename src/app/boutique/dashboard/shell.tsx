@@ -61,13 +61,6 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M9 8V6a3 3 0 0 1 6 0v2" />
     </svg>
   ),
-  '/boutique/dashboard/commandes': (
-    <svg {...ICON_PROPS}>
-      <rect x="4" y="7" width="16" height="14" rx="2" />
-      <path d="M8 7V5a4 4 0 0 1 8 0v2" />
-      <path d="M8 11h8M8 15h5" />
-    </svg>
-  ),
   '/boutique/dashboard/rapports': (
     <svg {...ICON_PROPS}>
       <rect x="5" y="3" width="14" height="18" rx="2" />
@@ -207,7 +200,6 @@ function getNavSections(
         { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
         { href: '/boutique/dashboard/caisse', label: 'Caisse' },
         { href: '/boutique/dashboard/ventes', label: 'Ventes' },
-        { href: '/boutique/dashboard/commandes', label: 'Commandes en ligne' },
         {
           href: '/boutique/dashboard/notifications',
           label: 'Notifications',
@@ -227,7 +219,6 @@ function getNavSections(
         { href: '/boutique/dashboard/produits', label: 'Produits' },
         { href: '/boutique/dashboard/previsions', label: 'Prévisions' },
         { href: '/boutique/dashboard/mouvements', label: 'Mouvements' },
-        { href: '/boutique/dashboard/apparence', label: 'Apparence' },
         { href: '/boutique/dashboard/achats', label: 'Achats' },
         { href: '/boutique/dashboard/lots', label: 'Lots' },
         { href: '/boutique/dashboard/clients', label: 'Clients' },

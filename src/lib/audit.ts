@@ -62,9 +62,6 @@ export const AUDIT_ACTIONS = {
   DOMAIN_ADDED: 'domain.added',
   DOMAIN_VERIFIED: 'domain.verified',
   DOMAIN_REMOVED: 'domain.removed',
-  STORE_DOMAIN_ADDED: 'store_domain.added',
-  STORE_DOMAIN_VERIFIED: 'store_domain.verified',
-  STORE_DOMAIN_REMOVED: 'store_domain.removed',
 
   ANNOUNCEMENT_CREATED: 'announcement.created',
   ANNOUNCEMENT_UPDATED: 'announcement.updated',
@@ -112,8 +109,6 @@ export const AUDIT_ACTIONS = {
   STORE_TEAM_MEMBER_UPDATED: 'store_team_member.updated',
   STORE_TEAM_MEMBER_REMOVED: 'store_team_member.removed',
   STORE_RETURN_CREATED: 'store_return.created',
-  STORE_ORDER_CREATED: 'store_order.created',
-  STORE_ORDER_STATUS_CHANGED: 'store_order.status_changed',
   STORE_EXPENSE_CREATED: 'store_expense.created',
   STORE_EXPENSE_UPDATED: 'store_expense.updated',
   STORE_EXPENSE_DELETED: 'store_expense.deleted',

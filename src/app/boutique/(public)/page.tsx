@@ -157,7 +157,7 @@ export default async function BoutiqueLandingPage() {
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base text-[#f3ece1]/70 sm:text-lg">
               MagyaPro Boutique réunit caisse, stock, achats, clients et finances dans une
-              seule application — sur place et en ligne.
+              seule application.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -172,17 +172,9 @@ export default async function BoutiqueLandingPage() {
               >
                 Découvrir MagyaPro Boutique
               </Link>
-              {demos.length > 0 && (
-                <Link
-                  href={`/s/${demos[0]!.slug}`}
-                  className="inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-sm font-medium text-[#f3ece1]/70 underline underline-offset-4 transition-colors hover:text-[#f3ece1] sm:w-auto"
-                >
-                  Voir une démo
-                </Link>
-              )}
             </div>
             <p className="mt-5 text-xs text-[#f3ece1]/50">
-              Sans carte bancaire · Sans engagement · Votre boutique en ligne en quelques minutes
+              Sans carte bancaire · Sans engagement · Prêt à encaisser en quelques minutes
             </p>
             {promo && (
               <div className="mt-5">
@@ -237,16 +229,19 @@ export default async function BoutiqueLandingPage() {
               <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
             </div>
             <div className="p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-[#f3ece1]/40">Votre adresse</p>
-              <p className="mt-2 break-all font-mono text-lg text-[#f3ece1]">
-                ma-boutique.
+              <p className="text-xs font-medium uppercase tracking-wide text-[#f3ece1]/40">
+                Sur tous vos écrans
+              </p>
+              <p className="mt-2 text-lg text-[#f3ece1]">
+                Téléphone, tablette ou ordinateur — la{' '}
                 <span className="bg-gradient-to-r from-[#c2603d] to-[#e0bd52] bg-clip-text text-transparent">
-                  boutique.magyapro.com
+                  même caisse
                 </span>
+                , la même boutique.
               </p>
               <p className="mt-3 text-sm text-[#f3ece1]/60">
-                Chaque boutique reçoit sa propre adresse dès la création, avec sa vitrine
-                publique pour recevoir des commandes en ligne.
+                Rien à installer : vous ouvrez MagyaPro dans votre navigateur et vous encaissez.
+                Le stock reste le même d&apos;un appareil à l&apos;autre.
               </p>
             </div>
           </div>
@@ -419,13 +414,7 @@ export default async function BoutiqueLandingPage() {
                 {demo.description && (
                   <p className="mt-1.5 line-clamp-2 text-sm text-[#f3ece1]/60">{demo.description}</p>
                 )}
-                <div className="mt-4 space-y-2">
-                  <Link
-                    href={`/s/${demo.slug}`}
-                    className="block rounded-lg border border-white/15 px-3 py-2 text-center text-sm font-medium text-[#f3ece1] transition-colors hover:bg-white/10"
-                  >
-                    Voir la boutique
-                  </Link>
+                <div className="mt-4">
                   <DemoTourButton
                     slug={demo.slug}
                     className="block w-full rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-3 py-2 text-center text-sm font-semibold text-[#1c1712] transition-transform hover:scale-[1.02] disabled:opacity-60"
@@ -478,8 +467,8 @@ export default async function BoutiqueLandingPage() {
               a: 'Le temps de créer votre compte et vos premiers produits — généralement moins d\'une demi-heure.',
             },
             {
-              q: 'Puis-je vendre sur place et en ligne ?',
-              a: 'Oui. La caisse (POS) gère les ventes sur place, et votre boutique reçoit aussi une vitrine publique pour les commandes en ligne.',
+              q: 'Puis-je utiliser MagyaPro sur plusieurs appareils ?',
+              a: 'Oui. Téléphone, tablette ou ordinateur : le catalogue, le stock et les ventes sont les mêmes partout, mis à jour au fur et à mesure.',
             },
             {
               q: 'Comment mes clients paient-ils ?',

@@ -52,12 +52,12 @@ model User {
   /// un enrôlement abandonné en cours de route ne protège jamais la
   /// connexion avec un secret que l'utilisateur n'a pas fini de vérifier.
   totpSecret      String?
-  totpEnabled     Boolean      @default(false)
+  totpEnabled     Boolean  @default(false)
   /// Empreintes (jamais les codes en clair) — chacune retirée dès son
   /// utilisation, à usage unique.
-  totpBackupCodes String[]     @default([])
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  totpBackupCodes String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   memberships        RestaurantUser[]
   /// Adhésions MagyaPro Boutique — distinctes des adhésions Restaurant : un
@@ -1059,20 +1059,6 @@ model Template {
 /// ni le même rendu ni le même cycle de vie de mise en page. Purement un
 /// registre d'affichage : le rendu réel vit dans le code
 /// (`src/components/site-store/templates/index.tsx`), jamais en base.
-model StoreTemplate {
-  id              String  @id @default(cuid())
-  key             String  @unique
-  name            String
-  description     String?
-  previewImageUrl String?
-  isActive        Boolean @default(true)
-  position        Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("store_templates")
-}
 
 enum DomainType {
   SUBDOMAIN
@@ -1394,10 +1380,8 @@ model Store {
   primaryColor   String  @default("#b45309")
   secondaryColor String  @default("#12151a")
   fontFamily     String  @default("Inter")
-  /// Mise en page du site public — voir `StoreTemplate` et
-  /// `src/components/site-store/templates/index.tsx`. Un choix par défaut
-  /// est suggéré selon `businessType` à l'inscription, mais la boutique peut
-  /// en choisir un autre à tout moment depuis ses réglages.
+  /// Colonne héritée du site public retiré. Conservée telle quelle : plus
+  /// rien ne la lit, et la supprimer n'apporterait rien.
   templateKey    String  @default("classic")
 
   phone       String?
@@ -1434,18 +1418,14 @@ model Store {
 
   /// Compteur de numérotation des ventes, incrémenté transactionnellement —
   /// même principe que `Restaurant.orderCounter`.
-  saleCounter  Int       @default(0)
-  /// Compteur de numérotation des commandes en ligne — distinct de
-  /// `saleCounter`, une commande n'est pas encore une vente.
-  orderCounter Int       @default(0)
-  publishedAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  saleCounter Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   members              StoreUser[]
   subscription         StoreSubscription?
   subscriptionPayments StoreSubscriptionPayment[]
-  domains              StoreDomain[]
   brands               Brand[]
   categories           StoreCategory[]
   units                StoreUnit[]
@@ -1459,7 +1439,6 @@ model Store {
   customers            StoreCustomer[]
   creditPayments       StoreCreditPayment[]
   sales                Sale[]
-  orders               StoreOrder[]
   returns              StoreReturn[]
   cashRegisters        CashRegister[]
   cashSessions         CashSession[]
@@ -1532,39 +1511,9 @@ model StoreWebhook {
   @@map("store_webhooks")
 }
 
-enum StoreDomainType {
-  SUBDOMAIN
-  CUSTOM
-}
-
-enum StoreDomainStatus {
-  PENDING
-  VERIFIED
-  FAILED
-}
-
 /// Distinct de `Domain` (Restaurant) : même mécanique, jamais la même table —
 /// une collision de nom d'hôte entre les deux produits doit rester possible
 /// à traiter proprement (contrainte d'unicité propre à chaque table).
-model StoreDomain {
-  id                String            @id @default(cuid())
-  storeId           String
-  hostname          String            @unique
-  type              StoreDomainType   @default(CUSTOM)
-  status            StoreDomainStatus @default(PENDING)
-  verificationToken String
-  verifiedAt        DateTime?
-  lastCheckedAt     DateTime?
-  isPrimary         Boolean           @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
-
-  @@index([storeId])
-  @@map("store_domains")
-}
 
 /// Accès support Super Admin sur une boutique — mêmes garanties que
 /// `SupportAccess` (Restaurant) : motivé, tracé, révocable. Modèle distinct
@@ -1707,21 +1656,21 @@ enum ProductUnit {
 /// (voir `src/lib/boutique/sector-profiles.ts`) puis crée, renomme ou
 /// désactive librement les siennes (« Plateau », « Bobine », « Botte »).
 model StoreUnit {
-  id          String  @id @default(cuid())
-  storeId     String
+  id            String   @id @default(cuid())
+  storeId       String
   /// Code stable, unique par boutique — sert de clé technique, jamais
   /// affiché : le commerçant peut renommer `label` sans rien casser.
-  code        String
-  label       String
-  labelPlural String?
+  code          String
+  label         String
+  labelPlural   String?
   /// Une quantité fractionnaire a-t-elle un sens dans cette unité ? Le kilo
   /// et le mètre oui (1,5 kg), la bouteille et la pièce non — pilote le pas
   /// de saisie des champs numériques.
-  isDecimal   Boolean @default(false)
+  isDecimal     Boolean  @default(false)
   /// Désactivée : conservée pour l'historique qui la référence, mais plus
   /// proposée à la saisie. Une unité n'est jamais supprimée tant qu'une
   /// vente ou un mouvement la cite.
-  isActive    Boolean @default(true)
+  isActive      Boolean  @default(true)
   /// Conversion habituelle dans cette boutique (« chez moi, un plateau fait
   /// toujours 30 »), pré-remplie à l'ajout de l'unité sur une fiche produit.
   /// Purement indicatif : la conversion qui fait foi reste celle de la fiche
@@ -1731,14 +1680,14 @@ model StoreUnit {
   /// Créée par le commerçant plutôt qu'issue du catalogue — seule une unité
   /// personnalisée peut être renommée librement ou supprimée si rien ne la
   /// référence.
-  isCustom    Boolean @default(false)
-  position    Int     @default(0)
+  isCustom      Boolean  @default(false)
+  position      Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store        Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  baseOf       StoreProduct[]        @relation("ProductBaseUnit")
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  baseOf       StoreProduct[]     @relation("ProductBaseUnit")
   variantUnits StoreVariantUnit[]
 
   @@unique([storeId, code])
@@ -1789,18 +1738,18 @@ model StoreVariantUnit {
 /// couche applicative, jamais par le schéma), pour n'avoir qu'un seul chemin
 /// de gestion du stock.
 model StoreProduct {
-  id            String             @id @default(cuid())
-  storeId       String
-  categoryId    String?
-  brandId       String?
-  supplierId    String?
-  name          String
-  description   String?
-  imageUrl      String?
+  id               String             @id @default(cuid())
+  storeId          String
+  categoryId       String?
+  brandId          String?
+  supplierId       String?
+  name             String
+  description      String?
+  imageUrl         String?
   /// Attributs libres non couverts par les champs dédiés (ex. matière,
   /// garantie) — jamais utilisé pour du contenu qui doit être filtrable ou
   /// requêté : ces attributs-là méritent leur propre colonne.
-  attributes    Json               @default("{}")
+  attributes       Json               @default("{}")
   /// Axes de déclinaison du produit, dans l'ordre d'affichage :
   /// `[{ "name": "Taille", "values": ["S","M","L"] }, { "name": "Couleur",
   /// "values": ["Noir","Blanc"] }]`. Chaque variante choisit une valeur par
@@ -1810,13 +1759,13 @@ model StoreProduct {
   /// ne saurait pas quelles pastilles proposer, ni dans quel ordre, ni
   /// distinguer une taille jamais mise en stock d'une taille inexistante.
   /// Tableau vide = produit sans déclinaison (le cas courant).
-  variantAxes   Json               @default("[]")
-  status        StoreProductStatus @default(DRAFT)
-  minStockAlert Decimal            @default(0) @db.Decimal(18, 6)
+  variantAxes      Json               @default("[]")
+  status           StoreProductStatus @default(DRAFT)
+  minStockAlert    Decimal            @default(0) @db.Decimal(18, 6)
   /// Stock cible pour le réapprovisionnement, en unité de base. Sert à
   /// plafonner la quantité recommandée à la commande — sans lui, un produit
   /// à forte rotation se verrait conseiller des volumes intenables.
-  maxStock      Decimal?           @db.Decimal(18, 6)
+  maxStock         Decimal?           @db.Decimal(18, 6)
   /// Jours entre la commande et la réception, pour ce produit. C'est ce
   /// délai qui distingue « stock faible » (gênant) de « rupture imminente »
   /// (le réassort n'arrivera pas à temps).
@@ -1824,13 +1773,13 @@ model StoreProduct {
   /// Unité héritée, conservée pour les fiches antérieures au moteur d'unités
   /// et comme libellé de repli sur le site public. `baseUnit` fait autorité
   /// dès qu'il est renseigné.
-  unit          ProductUnit        @default(UNIT)
+  unit             ProductUnit        @default(UNIT)
   /// Unité dans laquelle le stock de ce produit est TOUJOURS compté (la
   /// bouteille, jamais le carton). Toutes les autres unités du produit s'y
   /// convertissent via `StoreVariantUnit.factor`. Nullable le temps que les
   /// fiches antérieures soient reprises — `resolveBaseUnit` retombe alors sur
   /// `unit`.
-  baseUnitId    String?
+  baseUnitId       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1884,7 +1833,6 @@ model StoreProductVariant {
   inventory          Inventory[]
   inventoryMovements InventoryMovement[]
   saleItems          SaleItem[]
-  orderItems         StoreOrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
   returnItems        StoreReturnItem[]
   stockBatches       StockBatch[]
@@ -2096,16 +2044,16 @@ model Supplier {
 }
 
 model SupplierPayment {
-  id         String   @id @default(cuid())
-  storeId    String
-  supplierId String
+  id              String   @id @default(cuid())
+  storeId         String
+  supplierId      String
   /// Facultatif : un paiement peut solder la dette globale du fournisseur
   /// sans viser une commande précise (règlement groupé), ou être rattaché à
   /// une commande donnée pour un suivi ligne à ligne.
   purchaseOrderId String?
-  amount     Int
-  paidAt     DateTime @default(now())
-  note       String?
+  amount          Int
+  paidAt          DateTime @default(now())
+  note            String?
 
   createdAt DateTime @default(now())
 
@@ -2435,65 +2383,12 @@ model StoreReturnItem {
 // Commandes en ligne (site public)
 // -----------------------------------------------------------------------
 
-enum StoreOrderStatus {
-  PENDING
-  CONFIRMED
-  READY
-  COMPLETED
-  CANCELLED
-}
-
 /// Commande passée par un client depuis le site public (`/s/[host]`), en
 /// retrait boutique uniquement dans cette première version — pas de
 /// livraison, pas de paiement en ligne : le client règle sur place. Distinct
 /// de `Sale` (vente en caisse, toujours créée par un membre de l'équipe) :
 /// une commande en ligne n'est jamais un client invité ; elle devient une
 /// vente réelle seulement à la confirmation par la boutique.
-model StoreOrder {
-  id            String           @id @default(cuid())
-  storeId       String
-  /// Numéro affiché au client — suite de `Store.orderCounter`, jamais
-  /// l'identifiant technique.
-  number        Int
-  customerName  String
-  customerPhone String
-  customerEmail String?
-  status        StoreOrderStatus @default(PENDING)
-  subtotal      Int
-  total         Int
-  currency      String
-  notes         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  store Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  items StoreOrderItem[]
-
-  @@unique([storeId, number])
-  @@index([storeId, status])
-  @@index([storeId, createdAt])
-  @@map("boutique_orders")
-}
-
-model StoreOrderItem {
-  id               String  @id @default(cuid())
-  orderId          String
-  productVariantId String
-  /// Nom figé au moment de la commande : une fiche produit modifiée ou
-  /// supprimée plus tard ne doit jamais réécrire l'historique.
-  productName      String
-  quantity         Decimal @db.Decimal(18, 6)
-  unitPrice        Int
-  total            Int
-
-  order          StoreOrder          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productVariant StoreProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Restrict)
-
-  @@index([orderId])
-  @@index([productVariantId])
-  @@map("boutique_order_items")
-}
 
 // -----------------------------------------------------------------------
 // Caisses

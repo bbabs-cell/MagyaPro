@@ -31,9 +31,6 @@ export default function robots(): MetadataRoute.Robots {
         '/boutique/connexion',
         '/boutique/inscription',
         '/boutique/bienvenue',
-        // Le site public d'une boutique a son propre robots.txt, servi sur son
-        // propre domaine/chemin — même logique que /r/ pour Restaurant.
-        '/s/',
       ],
     },
     sitemap: `${env.appUrl}/sitemap.xml`,
