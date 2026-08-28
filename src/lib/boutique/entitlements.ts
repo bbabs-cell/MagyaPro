@@ -1,3 +1,5 @@
+import { cache } from 'react';
+
 import { prisma } from '@/lib/db';
 import { PlanLimitError } from '@/lib/errors';
 
@@ -61,7 +63,7 @@ const NO_PLAN: StoreEntitlements = {
   graceEndsAt: null,
 };
 
-export async function getStoreEntitlements(storeId: string): Promise<StoreEntitlements> {
+export const getStoreEntitlements = cache(async (storeId: string): Promise<StoreEntitlements> => {
   const subscription = await prisma.storeSubscription.findUnique({
     where: { storeId },
     include: { plan: true },
@@ -84,7 +86,7 @@ export async function getStoreEntitlements(storeId: string): Promise<StoreEntitl
     trialEndsAt: subscription.trialEndsAt,
     graceEndsAt: subscription.graceEndsAt,
   };
-}
+});
 
 function isActiveStatus(status: string): boolean {
   return status === 'ACTIVE' || status === 'TRIALING';

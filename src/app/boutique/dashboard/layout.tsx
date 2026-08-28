@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -7,6 +8,13 @@ import { getDemoTourContext, getStoreContext, listStoreMemberships } from '@/lib
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
+import { SubscriptionWall } from '@/components/account/subscription-wall';
+import {
+  STORE_FEATURE_LABELS,
+  STORE_LIMIT_LABELS,
+  getStoreEntitlements,
+  type StoreFeature,
+} from '@/lib/boutique/entitlements';
 
 export const metadata: Metadata = {
   title: { template: '%s — MagyaPro Boutique', default: 'Tableau de bord' },
@@ -65,10 +73,45 @@ export default async function BoutiqueDashboardLayout({
   }
 
   const memberships = context.isSupportAccess ? [] : allMemberships;
-  const [unreadNotifications, announcements] = await Promise.all([
+  const [unreadNotifications, announcements, entitlements] = await Promise.all([
     prisma.notification.count({ where: { storeId: context.store.id, readAt: null } }),
     getActiveAnnouncements('STORE'),
+    getStoreEntitlements(context.store.id),
   ]);
+
+  // Abonnement obligatoire : passé l'essai et le délai de grâce, le tableau de
+  // bord laisse place au mur de paiement. Seule la page d'abonnement reste
+  // accessible — sans elle, le commerçant ne pourrait pas régulariser. L'accès
+  // support de l'administration reste ouvert, précisément pour aider dans ce
+  // cas-là.
+  const pathname = (await headers()).get('x-pathname') ?? '';
+  const onSubscriptionPage = pathname.startsWith('/boutique/dashboard/abonnement');
+
+  if (!entitlements.isActive && !onSubscriptionPage && !context.isSupportAccess) {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true, product: 'STORE' },
+      orderBy: { position: 'asc' },
+    });
+
+    return (
+      <SubscriptionWall
+        tenantName={context.store.name}
+        status={entitlements.status}
+        subscribeHref="/boutique/dashboard/abonnement"
+        featureLabel={(key) => STORE_FEATURE_LABELS[key as StoreFeature] ?? key}
+        limitLabel={(key) => STORE_LIMIT_LABELS[key as keyof typeof STORE_LIMIT_LABELS] ?? key}
+        plans={plans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          description: plan.description,
+          price: plan.price,
+          currency: plan.currency,
+          features: plan.features,
+          limits: (plan.limits ?? {}) as Record<string, number | undefined>,
+        }))}
+      />
+    );
+  }
 
   return (
     <>

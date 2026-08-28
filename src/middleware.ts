@@ -57,13 +57,24 @@ export const config = {
   ],
 };
 
+/**
+ * Expose le chemin demandé aux composants serveur. Next.js ne le transmet pas
+ * aux `layout`, qui en ont pourtant besoin : le mur d'abonnement doit laisser
+ * passer la page de paiement tout en bloquant le reste du tableau de bord.
+ */
+function withPathname(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set('x-pathname', request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function middleware(request: NextRequest) {
   const host = (request.headers.get('host') ?? '').split(':')[0]!.toLowerCase();
   const { pathname } = request.nextUrl;
 
   // Réécriture déjà effectuée, ou accès direct en prévisualisation.
   if (pathname.startsWith('/r/') || pathname.startsWith('/s/') || pathname.startsWith('/boutique')) {
-    return NextResponse.next();
+    return withPathname(request);
   }
 
   const isRootDomain =
@@ -73,7 +84,7 @@ export async function middleware(request: NextRequest) {
     host === '127.0.0.1' ||
     host === '';
 
-  if (isRootDomain) return NextResponse.next();
+  if (isRootDomain) return withPathname(request);
 
   // boutique.magyapro.com : landing et dashboard MagyaPro Boutique, servis
   // depuis `src/app/boutique/`, sous le même déploiement que Restaurant.

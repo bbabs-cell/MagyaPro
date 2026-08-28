@@ -51,19 +51,6 @@ function daysAgo(days: number): Date {
 
 const PLANS = [
   {
-    key: 'starter',
-    product: 'RESTAURANT' as const,
-    name: 'Starter',
-    description: 'Pour démarrer : votre site, votre menu et vos commandes.',
-    price: 0,
-    currency: 'XOF',
-    interval: 'MONTH' as const,
-    trialDays: 30,
-    features: [],
-    limits: { maxProducts: 25, maxCategories: 5, maxUsers: 1 },
-    position: 0,
-  },
-  {
     key: 'pro',
     product: 'RESTAURANT' as const,
     name: 'Pro',
@@ -71,7 +58,7 @@ const PLANS = [
     price: 15_000,
     currency: 'XOF',
     interval: 'MONTH' as const,
-    trialDays: 14,
+    trialDays: 30,
     features: [
       'promotions',
       'multiple_users',
@@ -82,7 +69,7 @@ const PLANS = [
       'loyalty',
     ],
     limits: { maxProducts: 150, maxCategories: 20, maxUsers: 5 },
-    position: 1,
+    position: 0,
   },
   {
     key: 'premium',
@@ -92,7 +79,7 @@ const PLANS = [
     price: 35_000,
     currency: 'XOF',
     interval: 'MONTH' as const,
-    trialDays: 14,
+    trialDays: 30,
     features: [
       'promotions',
       'multiple_users',
@@ -106,7 +93,7 @@ const PLANS = [
       'loyalty',
     ],
     limits: { maxProducts: -1, maxCategories: -1, maxUsers: 20 },
-    position: 2,
+    position: 1,
   },
 ];
 
@@ -116,19 +103,6 @@ const PLANS = [
 // pas de fonctionnalité listée sans contenu derrière.
 const STORE_PLANS = [
   {
-    key: 'store_starter',
-    product: 'STORE' as const,
-    name: 'Starter',
-    description: 'Pour démarrer : caisse, stock et ventes.',
-    price: 0,
-    currency: 'XOF',
-    interval: 'MONTH' as const,
-    trialDays: 30,
-    features: [],
-    limits: { maxProducts: 20, maxUsers: 1 },
-    position: 0,
-  },
-  {
     key: 'store_pro',
     product: 'STORE' as const,
     name: 'Pro',
@@ -136,10 +110,10 @@ const STORE_PLANS = [
     price: 10_000,
     currency: 'XOF',
     interval: 'MONTH' as const,
-    trialDays: 14,
+    trialDays: 30,
     features: ['multiple_users'],
     limits: { maxProducts: 200, maxUsers: 5 },
-    position: 1,
+    position: 0,
   },
   {
     key: 'store_premium',
@@ -149,10 +123,10 @@ const STORE_PLANS = [
     price: 25_000,
     currency: 'XOF',
     interval: 'MONTH' as const,
-    trialDays: 14,
+    trialDays: 30,
     features: ['multiple_users', 'custom_domain'],
     limits: { maxProducts: -1, maxUsers: 20 },
-    position: 2,
+    position: 1,
   },
 ];
 

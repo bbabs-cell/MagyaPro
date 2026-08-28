@@ -288,17 +288,16 @@ export async function sendExpiringSubscriptionAlerts(): Promise<{ notified: numb
 }
 
 const GRACE_PERIOD_DAYS = 3;
-/** Durée du plan de repli — un mois, comme les autres plans mensuels. */
-const FALLBACK_PLAN_PERIOD_DAYS = 30;
 
 /**
  * Fait avancer le cycle de vie des abonnements expirés :
  *
  * 1. Une période qui vient de s'écouler (statut encore ACTIVE/TRIALING)
  *    passe en `PAST_DUE` avec un délai de grâce de 3 jours pour renouveler.
- * 2. Un délai de grâce écoulé sans renouvellement bascule automatiquement
- *    sur le plan actif le moins cher (typiquement gratuit) — le restaurant
- *    reste ainsi utilisable plutôt que bloqué.
+ * 2. Un délai de grâce écoulé sans renouvellement fait passer l'abonnement
+ *    en `EXPIRED`. L'accès se réduit alors à la page de paiement : depuis que
+ *    l'abonnement est obligatoire, il n'existe plus de plan gratuit sur
+ *    lequel retomber.
  *
  * Un renouvellement (paiement approuvé ou changement de plan gratuit)
  * réinitialise `graceEndsAt`, donc un restaurant qui règle pendant le délai
@@ -306,7 +305,7 @@ const FALLBACK_PLAN_PERIOD_DAYS = 30;
  */
 export async function processSubscriptionLifecycle(): Promise<{
   enteredGrace: number;
-  downgraded: number;
+  expired: number;
 }> {
   const now = new Date();
 
@@ -350,45 +349,40 @@ export async function processSubscriptionLifecycle(): Promise<{
     include: { restaurant: { select: { id: true, name: true, email: true, settings: { select: { notificationEmail: true } } } } },
   });
 
-  const fallbackPlan = await prisma.plan.findFirst({
-    where: { isActive: true, product: 'RESTAURANT' },
-    orderBy: { position: 'asc' },
-  });
+  // Le délai de grâce écoulé sans paiement fait expirer l'abonnement.
+  // Aucun repli vers un plan gratuit : depuis que l'abonnement est
+  // obligatoire, il n'existe plus de plan à 0 F sur lequel retomber, et un
+  // compte expiré n'accède plus qu'à sa page de paiement (voir le mur
+  // d'abonnement du tableau de bord).
+  //
+  // Les données ne sont jamais touchées : stock, ventes et clients restent
+  // intacts et redeviennent accessibles dès le premier paiement validé.
+  let expired = 0;
+  for (const subscription of graceExpired) {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: 'EXPIRED', graceEndsAt: null },
+    });
+    expired += 1;
 
-  let downgraded = 0;
-  if (fallbackPlan) {
-    for (const subscription of graceExpired) {
-      await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          planId: fallbackPlan.id,
-          status: 'ACTIVE',
-          currentPeriodEnd: expiresIn(FALLBACK_PLAN_PERIOD_DAYS, 'days'),
-          graceEndsAt: null,
-          expiryAlertSentAt: null,
-        },
+    await createNotification({
+      restaurantId: subscription.restaurant.id,
+      type: 'SUBSCRIPTION_EXPIRED',
+      title: 'Abonnement expiré',
+      body: "Le délai de grâce est écoulé sans renouvellement : l'accès est suspendu jusqu'au règlement. Vos données sont conservées.",
+      href: '/dashboard/abonnement',
+      metadata: { subscriptionId: subscription.id },
+    });
+
+    const to = subscription.restaurant.settings?.notificationEmail ?? subscription.restaurant.email;
+    if (to) {
+      await sendMail({
+        to,
+        subject: 'Votre abonnement Magyapro a expiré',
+        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.restaurant.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe Magyapro`,
       });
-      downgraded += 1;
-
-      await createNotification({
-        restaurantId: subscription.restaurant.id,
-        type: 'SUBSCRIPTION_EXPIRED',
-        title: 'Passage automatique au plan gratuit',
-        body: `Le délai de grâce est écoulé sans renouvellement : votre abonnement est passé au plan « ${fallbackPlan.name} ». Vous pouvez choisir un autre plan à tout moment.`,
-        href: '/dashboard/abonnement',
-        metadata: { subscriptionId: subscription.id, planKey: fallbackPlan.key },
-      });
-
-      const recipient = subscription.restaurant.settings?.notificationEmail ?? subscription.restaurant.email;
-      if (recipient) {
-        await sendMail({
-          to: recipient,
-          subject: `Votre abonnement Magyapro est passé au plan ${fallbackPlan.name}`,
-          text: `Bonjour,\n\nLe délai de grâce de ${subscription.restaurant.name} est écoulé sans renouvellement : l'abonnement est passé automatiquement au plan « ${fallbackPlan.name} ».\n\nVous pouvez choisir un autre plan à tout moment depuis votre tableau de bord (Abonnement).\n\nL'équipe Magyapro`,
-        });
-      }
     }
   }
 
-  return { enteredGrace: expiredWithoutGrace.length, downgraded };
+  return { enteredGrace: expiredWithoutGrace.length, expired };
 }

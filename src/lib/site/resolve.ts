@@ -1,6 +1,7 @@
 import { cache } from 'react';
 
 import { prisma } from '@/lib/db';
+import { getEntitlements } from '@/lib/entitlements';
 import { rootHostname } from '@/lib/env';
 
 /**
@@ -79,12 +80,21 @@ async function loadRestaurant(identifier: string) {
  * Restaurant public, mémorisé pour la durée de la requête : la page, ses
  * métadonnées et le layout partagent la même lecture.
  *
- * Renvoie `null` si le restaurant n'existe pas ou n'est pas publié — un
- * brouillon et un restaurant suspendu sont invisibles du public.
+ * Renvoie `null` si le restaurant n'existe pas, n'est pas publié, ou n'a plus
+ * d'abonnement en cours — un brouillon, un restaurant suspendu et un
+ * restaurant impayé sont invisibles du public.
+ *
+ * Les restaurants de démonstration échappent à ce contrôle : ils n'ont pas
+ * d'abonnement et servent la vitrine commerciale de MagyaPro.
  */
 export const resolvePublicRestaurant = cache(async (identifier: string) => {
   const restaurant = await loadRestaurant(identifier);
   if (!restaurant || restaurant.status !== 'ACTIVE') return null;
+  if (restaurant.isDemo) return restaurant;
+
+  const entitlements = await getEntitlements(restaurant.id);
+  if (!entitlements.isActive) return null;
+
   return restaurant;
 });
 

@@ -252,12 +252,11 @@ export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified:
 }
 
 const GRACE_PERIOD_DAYS = 3;
-const FALLBACK_PLAN_PERIOD_DAYS = 30;
 
 /** Fait avancer le cycle de vie des abonnements Boutique expirés — voir l'équivalent Restaurant pour le détail. */
 export async function processStoreSubscriptionLifecycle(): Promise<{
   enteredGrace: number;
-  downgraded: number;
+  expired: number;
 }> {
   const now = new Date();
 
@@ -300,44 +299,40 @@ export async function processStoreSubscriptionLifecycle(): Promise<{
     include: { store: { select: { id: true, name: true, email: true } } },
   });
 
-  const fallbackPlan = await prisma.plan.findFirst({
-    where: { isActive: true, product: 'STORE' },
-    orderBy: { position: 'asc' },
-  });
+  // Le délai de grâce écoulé sans paiement fait expirer l'abonnement.
+  // Aucun repli vers un plan gratuit : depuis que l'abonnement est
+  // obligatoire, il n'existe plus de plan à 0 F sur lequel retomber, et un
+  // compte expiré n'accède plus qu'à sa page de paiement (voir le mur
+  // d'abonnement du tableau de bord).
+  //
+  // Les données ne sont jamais touchées : stock, ventes et clients restent
+  // intacts et redeviennent accessibles dès le premier paiement validé.
+  let expired = 0;
+  for (const subscription of graceExpired) {
+    await prisma.storeSubscription.update({
+      where: { id: subscription.id },
+      data: { status: 'EXPIRED', graceEndsAt: null },
+    });
+    expired += 1;
 
-  let downgraded = 0;
-  if (fallbackPlan) {
-    for (const subscription of graceExpired) {
-      await prisma.storeSubscription.update({
-        where: { id: subscription.id },
-        data: {
-          planId: fallbackPlan.id,
-          status: 'ACTIVE',
-          currentPeriodEnd: expiresIn(FALLBACK_PLAN_PERIOD_DAYS, 'days'),
-          graceEndsAt: null,
-          expiryAlertSentAt: null,
-        },
+    await createNotification({
+      storeId: subscription.store.id,
+      type: 'SUBSCRIPTION_EXPIRED',
+      title: 'Abonnement expiré',
+      body: "Le délai de grâce est écoulé sans renouvellement : l'accès est suspendu jusqu'au règlement. Vos données sont conservées.",
+      href: '/boutique/dashboard/abonnement',
+      metadata: { subscriptionId: subscription.id },
+    });
+
+    const to = subscription.store.email;
+    if (to) {
+      await sendMail({
+        to,
+        subject: 'Votre abonnement Magyapro Boutique a expiré',
+        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.store.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe Magyapro`,
       });
-      downgraded += 1;
-
-      await createNotification({
-        storeId: subscription.store.id,
-        type: 'SUBSCRIPTION_EXPIRED',
-        title: 'Passage automatique au plan gratuit',
-        body: `Le délai de grâce est écoulé sans renouvellement : votre abonnement est passé au plan « ${fallbackPlan.name} ». Vous pouvez choisir un autre plan à tout moment.`,
-        href: '/boutique/dashboard/abonnement',
-        metadata: { subscriptionId: subscription.id, planKey: fallbackPlan.key },
-      });
-
-      if (subscription.store.email) {
-        await sendMail({
-          to: subscription.store.email,
-          subject: `Votre abonnement Magyapro Boutique est passé au plan ${fallbackPlan.name}`,
-          text: `Bonjour,\n\nLe délai de grâce de ${subscription.store.name} est écoulé sans renouvellement : l'abonnement est passé automatiquement au plan « ${fallbackPlan.name} ».\n\nVous pouvez choisir un autre plan à tout moment depuis votre tableau de bord (Abonnement).\n\nL'équipe Magyapro`,
-        });
-      }
     }
   }
 
-  return { enteredGrace: expiredWithoutGrace.length, downgraded };
+  return { enteredGrace: expiredWithoutGrace.length, expired };
 }

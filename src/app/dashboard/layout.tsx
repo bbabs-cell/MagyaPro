@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -5,11 +6,18 @@ import { getCurrentUser, requiresEmailVerification } from '@/lib/auth/session';
 import { getTenantContext, listMemberships } from '@/lib/tenant';
 import { countNewOrders, countPendingAlerts } from '@/lib/alerts';
 import { countUnreadNotifications } from '@/lib/notifications';
-import { getEntitlements } from '@/lib/entitlements';
+import {
+  FEATURE_LABELS,
+  LIMIT_LABELS,
+  getEntitlements,
+  type Feature,
+} from '@/lib/entitlements';
+import { prisma } from '@/lib/db';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from '@/components/dashboard/shell';
 import { ToastProvider } from '@/components/ui/toast';
+import { SubscriptionWall } from '@/components/account/subscription-wall';
 
 export const metadata: Metadata = {
   manifest: '/dashboard/manifest.webmanifest',
@@ -52,6 +60,38 @@ export default async function DashboardLayout({
       getEntitlements(context.restaurant.id),
       getActiveAnnouncements('RESTAURANT'),
     ]);
+
+  // Abonnement obligatoire : passé l'essai et le délai de grâce, le tableau de
+  // bord laisse place au mur de paiement. Seule la page d'abonnement reste
+  // accessible — sans elle, le restaurateur ne pourrait pas régulariser.
+  const pathname = (await headers()).get('x-pathname') ?? '';
+  const onSubscriptionPage = pathname.startsWith('/dashboard/abonnement');
+
+  if (!entitlements.isActive && !onSubscriptionPage && !context.isSupportAccess) {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true, product: 'RESTAURANT' },
+      orderBy: { position: 'asc' },
+    });
+
+    return (
+      <SubscriptionWall
+        tenantName={context.restaurant.name}
+        status={entitlements.status}
+        subscribeHref="/dashboard/abonnement"
+        featureLabel={(key) => FEATURE_LABELS[key as Feature] ?? key}
+        limitLabel={(key) => LIMIT_LABELS[key as keyof typeof LIMIT_LABELS] ?? key}
+        plans={plans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          description: plan.description,
+          price: plan.price,
+          currency: plan.currency,
+          features: plan.features,
+          limits: (plan.limits ?? {}) as Record<string, number | undefined>,
+        }))}
+      />
+    );
+  }
 
   return (
     <ToastProvider>

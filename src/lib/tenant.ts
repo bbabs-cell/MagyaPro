@@ -4,8 +4,9 @@ import type { MembershipRole, Restaurant } from '@prisma/client';
 
 import { prisma } from '@/lib/db';
 import { env } from '@/lib/env';
-import { ForbiddenError, NotFoundError, UnauthorizedError } from '@/lib/errors';
+import { ForbiddenError, NotFoundError, PlanLimitError, UnauthorizedError } from '@/lib/errors';
 import { effectivePermissions, type Permission } from '@/lib/rbac';
+import { getEntitlements } from '@/lib/entitlements';
 import {
   getCurrentUser,
   requiresEmailVerification,
@@ -177,6 +178,27 @@ export async function requireTenant(
     throw new ForbiddenError(
       'Ce restaurant est suspendu. Régularisez votre abonnement pour reprendre la main.',
     );
+  }
+
+  // Abonnement obligatoire : passé l'essai et le délai de grâce, seules les
+  // routes de l'abonnement répondent encore. Le tableau de bord affiche déjà
+  // son mur de paiement ; ce contrôle-ci protège l'API, qu'un client pourrait
+  // appeler directement.
+  //
+  // La lecture des droits est mémorisée par requête (`cache`), donc ce contrôle
+  // ne coûte pas une requête supplémentaire aux pages qui les consultent déjà.
+  if (
+    permission &&
+    permission !== 'subscription:view' &&
+    permission !== 'subscription:manage' &&
+    !context.isSupportAccess
+  ) {
+    const entitlements = await getEntitlements(context.restaurant.id);
+    if (!entitlements.isActive) {
+      throw new PlanLimitError(
+        "Votre abonnement n'est plus actif. Choisissez un plan pour retrouver l'accès à votre restaurant.",
+      );
+    }
   }
 
   if (permission && !context.permissions.has(permission)) {

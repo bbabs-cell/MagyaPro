@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { rootHostname } from '@/lib/env';
 import { toQty } from '@/lib/boutique/quantity';
 import { parseVariantAxes } from '@/lib/boutique/variants';
+import { getStoreEntitlements } from '@/lib/boutique/entitlements';
 
 /**
  * Résolution d'un hôte public en boutique — équivalent de
@@ -61,12 +62,21 @@ async function loadStore(identifier: string) {
 
 /**
  * Boutique publique, mémorisée pour la durée de la requête. `null` si la
- * boutique n'existe pas ou n'est pas active — un brouillon ou une boutique
- * suspendue reste invisible du public.
+ * boutique n'existe pas, n'est pas active, ou n'a plus d'abonnement en cours —
+ * un brouillon, une boutique suspendue et une boutique impayée restent
+ * invisibles du public.
+ *
+ * Les boutiques de démonstration échappent à ce contrôle : elles n'ont pas
+ * d'abonnement et servent la vitrine commerciale de MagyaPro.
  */
 export const resolvePublicStore = cache(async (identifier: string) => {
   const store = await loadStore(identifier);
   if (!store || store.status !== 'ACTIVE') return null;
+  if (store.isDemo) return store;
+
+  const entitlements = await getStoreEntitlements(store.id);
+  if (!entitlements.isActive) return null;
+
   return store;
 });
 

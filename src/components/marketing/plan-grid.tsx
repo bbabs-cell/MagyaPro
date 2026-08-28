@@ -13,6 +13,25 @@ import { Badge, LinkButton } from '@/components/ui';
  * (`?plan=<clé>`) : `registerAccount` l'utilise à la place du plan par
  * défaut si la clé est valide et active.
  */
+/**
+ * Ce que tout abonnement Restaurant inclut, quel que soit le plan. Les cartes
+ * ci-dessus ne montrent que ce qui *diffère* d'un plan à l'autre.
+ *
+ * Uniquement des fonctionnalités réellement livrées, et aucune de celles qui
+ * sont réservées à un plan (voir `FEATURES`) : elles figurent déjà sur les
+ * cartes concernées.
+ */
+const INCLUDED_EVERYWHERE = [
+  'Votre site de commande en ligne',
+  'Menu en photos, catégories et options',
+  'Suivi des commandes, de la réception à la livraison',
+  'Notification des clients par WhatsApp',
+  'Suivi GPS des livraisons pour le client',
+  'Atelier photo et galerie',
+  'Journal des actions de votre équipe',
+  'Export complet de vos données',
+];
+
 export function PlanGrid({ plans }: { plans: Plan[] }) {
   if (plans.length === 0) {
     return (
@@ -24,10 +43,17 @@ export function PlanGrid({ plans }: { plans: Plan[] }) {
   }
 
   return (
-    <div className="mt-12 grid gap-6 md:grid-cols-3">
+    <>
+      <div
+        className={
+        plans.length === 2
+          ? 'mx-auto mt-12 grid max-w-3xl gap-6 md:grid-cols-2'
+          : 'mt-12 grid gap-6 md:grid-cols-3'
+      }
+    >
       {plans.map((plan, index) => {
         const limits = (plan.limits ?? {}) as PlanLimits;
-        const highlighted = index === 1;
+        const highlighted = index === plans.length - 1;
         const signupHref = `/inscription?plan=${encodeURIComponent(plan.key)}&planNom=${encodeURIComponent(plan.name)}`;
 
         return (
@@ -58,7 +84,7 @@ export function PlanGrid({ plans }: { plans: Plan[] }) {
             </p>
             {plan.trialDays > 0 && (
               <p className="mt-1 text-xs text-ink-faint">
-                {plan.trialDays} jours d&apos;essai inclus
+                {plan.trialDays === 30 ? 'Premier mois offert' : `${plan.trialDays} jours d'essai inclus`}
               </p>
             )}
 
@@ -89,6 +115,19 @@ export function PlanGrid({ plans }: { plans: Plan[] }) {
           </div>
         );
       })}
-    </div>
+      </div>
+
+      <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-surface-border bg-surface-sunken p-6">
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Inclus dans tous les plans</p>
+        <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          {INCLUDED_EVERYWHERE.map((item) => (
+            <li key={item} className="flex gap-2 text-ink-muted">
+              <span aria-hidden="true" className="shrink-0 text-brand">✓</span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
