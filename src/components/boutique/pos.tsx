@@ -18,6 +18,8 @@ import {
 } from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
 import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
+import { VoiceCommandButton, type VoiceResolution } from '@/components/boutique/voice-command';
+import { matchByName, normalize, type VoiceIntent } from '@/lib/boutique/voice-grammar';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
@@ -189,7 +191,12 @@ export function Pos({
   const remaining = Math.max(total - paymentsTotal, 0);
   const customer = customers.find((c) => c.id === customerId) ?? null;
 
-  function addToCart(product: Product, variant: Variant, option?: UnitOption) {
+  /**
+   * `amount` : nombre d'unités à ajouter, dans l'unité de la ligne. Absent,
+   * on ajoute un pas — le clic sur une pastille. Renseigné par la commande
+   * vocale, qui dit « trois bouteilles » d'un coup.
+   */
+  function addToCart(product: Product, variant: Variant, option?: UnitOption, amount?: number) {
     setError(null);
 
     // Fiche pas encore reprise par le moteur d'unités : on vend à l'unité de
@@ -218,13 +225,15 @@ export function Pos({
       .filter(Boolean)
       .join(' ');
 
+    const added = amount && amount > 0 ? amount : step;
+
     setCart((current) => {
       const existing = current.find((line) => lineKey(line.variantId, line.unitId) === key);
       if (existing) {
         if (existing.quantity >= maxStock) return current;
         return current.map((line) =>
           lineKey(line.variantId, line.unitId) === key
-            ? { ...line, quantity: Math.min(line.quantity + step, line.maxStock) }
+            ? { ...line, quantity: Math.min(line.quantity + added, line.maxStock) }
             : line,
         );
       }
@@ -240,7 +249,7 @@ export function Pos({
           step,
           name,
           unitPrice,
-          quantity: step,
+          quantity: Math.min(added, maxStock),
           maxStock,
           unit: product.unit,
         },
@@ -387,6 +396,97 @@ export function Pos({
 
   const canCheckout = cart.length > 0 && (remaining === 0 || Boolean(customer));
 
+  // --- Commandes vocales ----------------------------------------------------
+  //
+  // La grammaire (voir `voice-grammar.ts`) ne connaît que les mots ; c'est
+  // ici, où le catalogue et le panier sont connus, que l'intention devient
+  // une action précise — ou un refus explicite.
+
+  /** Retrouve produit, déclinaison et unité correspondant aux mots prononcés. */
+  function resolveVoiceTarget(
+    query: string,
+    unitWord: string | null,
+  ): { product: Product; variant: Variant; unit: UnitOption | undefined } | null {
+    const product = matchByName(products, query);
+    if (!product) return null;
+
+    // La première déclinaison encore en stock : dire « ajoute une chemise »
+    // sans préciser la taille ne doit pas ajouter une taille en rupture.
+    const variant =
+      product.variants.find((candidate) => candidate.stock > 0) ?? product.variants[0];
+    if (!variant) return null;
+
+    if (!unitWord) return { product, variant, unit: undefined };
+    const unit = variant.units.find((candidate) =>
+      normalize(candidate.label).startsWith(unitWord),
+    );
+    return unit ? { product, variant, unit } : null;
+  }
+
+  function describeVoiceIntent(intent: VoiceIntent): VoiceResolution {
+    switch (intent.kind) {
+      case 'add': {
+        const target = resolveVoiceTarget(intent.query, intent.unitWord);
+        if (!target) {
+          return {
+            error: intent.unitWord
+              ? `Aucun produit « ${intent.query} » vendu en ${intent.unitWord}.`
+              : `Aucun produit ne correspond à « ${intent.query} ».`,
+          };
+        }
+        if (target.variant.stock <= 0) return { error: `${target.product.name} : rupture de stock.` };
+        const resolved = target.unit ?? target.variant.units.find((candidate) => candidate.isBase);
+        const unitLabel = resolved
+          ? unitLabelFor(resolved, intent.quantity)
+          : (UNIT_LABELS[target.product.unit] ?? '');
+        return { label: `${intent.quantity} × ${target.product.name} (${unitLabel}) ajouté au panier.` };
+      }
+      case 'remove': {
+        const line = matchByName(cart, intent.query);
+        if (!line) return { error: `Aucune ligne « ${intent.query} » dans le panier.` };
+        return { label: `Retirer « ${line.name} » du panier ?` };
+      }
+      case 'clear':
+        if (cart.length === 0) return { error: 'Le panier est déjà vide.' };
+        return { label: `Vider le panier (${cart.length} ligne${cart.length > 1 ? 's' : ''}) ?` };
+      case 'checkout':
+        if (cart.length === 0) return { error: 'Le panier est vide.' };
+        if (!canCheckout) {
+          return { error: 'Le règlement est incomplet : ajoutez un paiement ou choisissez un client.' };
+        }
+        return { label: `Encaisser ${formatMoney(total, currency)} ?` };
+      case 'search':
+        return { label: `Recherche : ${intent.query}` };
+      default:
+        return { error: 'Commande non reconnue.' };
+    }
+  }
+
+  function executeVoiceIntent(intent: VoiceIntent) {
+    switch (intent.kind) {
+      case 'add': {
+        const target = resolveVoiceTarget(intent.query, intent.unitWord);
+        if (target) addToCart(target.product, target.variant, target.unit, intent.quantity);
+        return;
+      }
+      case 'remove': {
+        const line = matchByName(cart, intent.query);
+        if (line) removeLine(lineKey(line.variantId, line.unitId));
+        return;
+      }
+      case 'clear':
+        setCart([]);
+        return;
+      case 'checkout':
+        void checkout();
+        return;
+      case 'search':
+        setQuery(intent.query);
+        return;
+      default:
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <div>
@@ -402,6 +502,12 @@ export function Pos({
           />
           <BarcodeScannerButton onDetect={handleScan} className="shrink-0" />
         </div>
+
+        <VoiceCommandButton
+          describe={describeVoiceIntent}
+          execute={executeVoiceIntent}
+          className="mb-4"
+        />
 
         {filtered.length === 0 ? (
           <p className="text-sm text-ink-muted">Aucun produit ne correspond à cette recherche.</p>
