@@ -74,9 +74,25 @@ const nextConfig: NextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000',
           },
+          // `self` autorise nos propres pages à *demander* la permission —
+          // il ne l'accorde pas : le navigateur affiche toujours sa fenêtre
+          // de confirmation, et l'utilisateur reste libre de refuser.
+          //
+          // La caméra sert au scanner de codes-barres (Caisse et fiche
+          // produit), le micro aux commandes vocales de la caisse. Tant que
+          // cet en-tête valait `camera=(), microphone=()`, le navigateur
+          // refusait les deux sans même poser la question, et les deux
+          // fonctionnalités échouaient en silence.
+          //
+          // Pas de scope par chemin : le middleware réécrit
+          // `boutique.magyapro.com/dashboard/...` vers `/boutique/dashboard/...`,
+          // alors que les en-têtes sont évalués sur le chemin *entrant*. Une
+          // règle par chemin laisserait donc passer une des deux formes
+          // d'URL et pas l'autre — un piège silencieux. Aucune page ne
+          // sollicite caméra ou micro sans un clic explicite.
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            value: 'camera=(self), microphone=(self), geolocation=(self)',
           },
         ],
       },
