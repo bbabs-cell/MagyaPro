@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
-import { triggerWebhooks } from '@/lib/boutique/webhooks';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import type { z } from 'zod';
@@ -260,13 +259,6 @@ export async function createSale(params: {
     targetType: 'sale',
     targetId: sale.id,
     metadata: { total: sale.total, itemCount: sale.items.length },
-  });
-
-  await triggerWebhooks(storeId, 'SALE_CREATED', {
-    id: sale.id,
-    number: sale.number,
-    total: sale.total,
-    itemCount: sale.items.length,
   });
 
   return sale;

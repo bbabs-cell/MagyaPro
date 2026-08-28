@@ -51,7 +51,6 @@ export const STORE_PERMISSIONS = [
   'audit:view',
 
   'settings:manage',
-  'api:manage',
   'subscription:view',
   'subscription:manage',
 ] as const;
@@ -124,7 +123,6 @@ const ADMIN_PERMISSIONS: StorePermission[] = [
     'employees:manage',
     'audit:view',
     'settings:manage',
-    'api:manage',
     'subscription:view',
   ]),
 ];
@@ -210,7 +208,6 @@ export const STORE_PERMISSION_LABELS: Record<StorePermission, string> = {
   'employees:manage': "Gérer l'équipe",
   'audit:view': 'Voir le journal',
   'settings:manage': 'Gérer les réglages',
-  'api:manage': "Gérer les clés d'API et webhooks",
   'subscription:view': "Voir l'abonnement",
   'subscription:manage': "Gérer l'abonnement",
 };

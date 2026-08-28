@@ -168,12 +168,6 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M4 9h16" />
     </svg>
   ),
-  '/boutique/dashboard/api-docs': (
-    <svg {...ICON_PROPS}>
-      <path d="M8 3 3 12l5 9" />
-      <path d="M16 3l5 9-5 9" />
-    </svg>
-  ),
   '/boutique/dashboard/parametres': (
     <svg {...ICON_PROPS}>
       <circle cx="12" cy="12" r="3" />
@@ -204,7 +198,6 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
 function getNavSections(
   canViewAllStores: boolean,
   unreadNotifications: number,
-  canManageApi: boolean,
   isDemoTour: boolean,
 ): Array<{ title: string; items: NavItem[] }> {
   return [
@@ -253,7 +246,6 @@ function getNavSections(
       items: [
         { href: '/boutique/dashboard/equipe', label: 'Équipe' },
         { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
-        ...(canManageApi ? [{ href: '/boutique/dashboard/api-docs', label: 'API' }] : []),
         { href: '/boutique/dashboard/parametres', label: 'Réglages' },
         // Réglage personnel du compte connecté — sans objet pour une visite
         // guidée anonyme, et la page échouerait (elle exige une vraie session).
@@ -271,7 +263,6 @@ export function DashboardShell({
   storeStatus,
   stores,
   unreadNotifications = 0,
-  canManageApi = false,
   userName,
   userEmail,
   isSupportAccess = false,
@@ -286,7 +277,6 @@ export function DashboardShell({
   /** Boutiques du compte connecté, pour le sélecteur — voir `listStoreMemberships`. */
   stores: Array<{ id: string; name: string; role: StoreRole }>;
   unreadNotifications?: number;
-  canManageApi?: boolean;
   userName: string;
   userEmail: string;
   isSupportAccess?: boolean;
@@ -301,7 +291,7 @@ export function DashboardShell({
   const { theme, toggleTheme } = useBoutiqueTheme();
   const canViewAllStores =
     stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
-  const navSections = getNavSections(canViewAllStores, unreadNotifications, canManageApi, isDemoTour);
+  const navSections = getNavSections(canViewAllStores, unreadNotifications, isDemoTour);
 
   async function handleEndSupport() {
     await api.post('/api/admin/boutique-support-access/fin');

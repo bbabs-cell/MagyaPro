@@ -14,8 +14,6 @@ import { SectorSettingsPanel } from '@/components/boutique/sector-settings-panel
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
 import { toQty } from '@/lib/boutique/quantity';
 import { NotificationSoundPanel } from '@/components/boutique/notification-sound-panel';
-import { ApiKeysManager } from '@/components/boutique/api-keys-manager';
-import { WebhooksManager } from '@/components/boutique/webhooks-manager';
 import { PaymentMethodsManager } from '@/components/boutique/payment-methods-manager';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
 
@@ -24,8 +22,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function BoutiqueSettingsPage() {
   const context = await requireStore('store:view');
-
-  const canManageApi = context.permissions.has('api:manage');
 
   // Sème les moyens de paiement par défaut si la boutique n'a encore rien
   // configuré (voir `getEnabledPaymentMethods`), avant de lire la liste
@@ -41,33 +37,12 @@ export default async function BoutiqueSettingsPage() {
     orderBy: [{ isActive: 'desc' }, { position: 'asc' }],
   });
 
-  const [domains, entitlements, apiKeys, webhooks, paymentMethods] = await Promise.all([
+  const [domains, entitlements, paymentMethods] = await Promise.all([
     prisma.storeDomain.findMany({
       where: { storeId: context.store.id },
       orderBy: { createdAt: 'asc' },
     }),
     getStoreEntitlements(context.store.id),
-    canManageApi
-      ? prisma.storeApiKey.findMany({
-          where: { storeId: context.store.id },
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            name: true,
-            keyPrefix: true,
-            lastUsedAt: true,
-            revokedAt: true,
-            createdAt: true,
-          },
-        })
-      : Promise.resolve([]),
-    canManageApi
-      ? prisma.storeWebhook.findMany({
-          where: { storeId: context.store.id },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true, url: true, events: true, isActive: true, createdAt: true },
-        })
-      : Promise.resolve([]),
     prisma.storePaymentMethod.findMany({
       where: { storeId: context.store.id },
       orderBy: { position: 'asc' },
@@ -123,23 +98,6 @@ export default async function BoutiqueSettingsPage() {
             hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)
           }
         />
-        {canManageApi && (
-          <>
-            <ApiKeysManager
-              apiKeys={apiKeys.map((key) => ({
-                ...key,
-                lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
-                revokedAt: key.revokedAt?.toISOString() ?? null,
-                createdAt: key.createdAt.toISOString(),
-              }))}
-              canManage={canManageApi}
-            />
-            <WebhooksManager
-              webhooks={webhooks.map((w) => ({ ...w, createdAt: w.createdAt.toISOString() }))}
-              canManage={canManageApi}
-            />
-          </>
-        )}
       </div>
     </>
   );

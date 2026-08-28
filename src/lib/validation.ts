@@ -876,18 +876,6 @@ export const storeReturnSchema = z.object({
 });
 
 /** Réglage de TVA d'une boutique — `taxRate` en dixièmes de %, voir `Store.taxRate`. */
-export const storeWebhookSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .url('URL invalide.')
-    .max(500)
-    .refine((value) => value.startsWith('https://'), 'L\'URL doit être en https.'),
-  events: z
-    .array(z.enum(['SALE_CREATED', 'ORDER_CREATED', 'ORDER_STATUS_CHANGED', 'LOW_STOCK']))
-    .min(1, 'Sélectionnez au moins un événement.'),
-});
-
 export const storeTaxSchema = z.object({
   taxEnabled: z.boolean(),
   taxRate: z.number().int().min(0).max(1000),

@@ -11,7 +11,6 @@ import { parseVariantAxes, variantLabel } from '@/lib/boutique/variants';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { notifyCustomerOrderEvent } from '@/lib/boutique/order-notifications';
-import { triggerWebhooks } from '@/lib/boutique/webhooks';
 
 /**
  * Création d'une commande depuis le site public d'une boutique — miroir
@@ -153,12 +152,6 @@ export const POST = route(async (request) => {
   });
 
   await notifyCustomerOrderEvent('CREATED', order, store.name);
-
-  await triggerWebhooks(store.id, 'ORDER_CREATED', {
-    id: order.id,
-    number: order.number,
-    total: order.total,
-  });
 
   return ok({ order }, 201);
 });
