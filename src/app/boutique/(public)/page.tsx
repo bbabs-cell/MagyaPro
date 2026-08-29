@@ -10,6 +10,7 @@ import {
   boutiqueSectorImageUrl,
 } from '@/lib/storage';
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
+import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
@@ -122,66 +123,95 @@ export default async function BoutiqueLandingPage() {
             backgroundSize: '26px 26px',
           }}
         />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full bg-[#c2603d] opacity-30 blur-[110px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 top-10 h-96 w-96 rounded-full bg-[#e0bd52] opacity-20 blur-[110px]"
-        />
-
-        <div className="container-page relative py-20 sm:py-28 lg:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
-              <img src={logoUrl} alt="" className="mx-auto h-14 w-14 object-contain sm:h-16 sm:w-16" />
-            ) : (
-              <span
-                aria-hidden="true"
-                className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#c2603d] to-[#e0bd52] text-xl font-bold text-[#1c1712] sm:h-16 sm:w-16"
-              >
-                M
-              </span>
-            )}
-            <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-[#f3ece1]/80 backdrop-blur">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#e0bd52]" />
-              Caisse et stock pour commerces d&apos;Afrique de l&apos;Ouest
-            </span>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-[#f3ece1] sm:text-6xl lg:text-7xl">
-              Vendez au carton{' '}
-              <span className="bg-gradient-to-r from-[#c2603d] to-[#e0bd52] bg-clip-text text-transparent">
-                comme à l&apos;unité
-              </span>
-              .
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base text-[#f3ece1]/70 sm:text-lg">
-              La caisse qui compte votre stock dans vos vraies unités — carton de 12, sac de
-              25 kg, tissu au mètre, chaussures par pointure. Et qui continue d&apos;encaisser
-              quand le réseau tombe.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/boutique/inscription"
-                className="inline-flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-8 text-sm font-semibold text-[#1c1712] shadow-[0_10px_40px_-10px_rgba(224,189,82,0.5)] transition-transform hover:scale-[1.03] sm:w-auto"
-              >
-                Commencer gratuitement
-              </Link>
-              <Link
-                href="/boutique#fonctionnement"
-                className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/20 px-8 text-sm font-medium text-[#f3ece1] transition-colors hover:bg-white/10 sm:w-auto"
-              >
-                Découvrir MagyaPro Boutique
-              </Link>
-            </div>
-            <p className="mt-5 text-xs text-[#f3ece1]/50">
-              1 mois gratuit · Sans carte bancaire · Fonctionne sans connexion
-            </p>
-            {promo && (
-              <div className="mt-5">
-                <PromoBanner discountPercent={promo.discountPercent} endsAt={promo.endsAt} label={promo.label} />
+        <div className="container-page relative py-20 sm:py-24 lg:py-28">
+          {/* Deux colonnes plutôt qu'un bloc centré : le texte pose la
+              promesse, le ticket la prouve, côte à côte. Centré, il aurait
+              fallu faire défiler pour arriver à la preuve. */}
+          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+            <div className="max-w-2xl">
+              <div className="flex items-center gap-3">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
+                  <img src={logoUrl} alt="" className="h-10 w-10 object-contain" />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e0bd52] font-display text-lg font-bold text-[#1c1712]"
+                  >
+                    M
+                  </span>
+                )}
+                <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">
+                  MagyaPro Boutique
+                </span>
               </div>
-            )}
+
+              {/* Le mot « carton » est composé dans la police du ticket : le
+                  titre et l'objet qu'il décrit parlent la même langue. Il
+                  remplace le mot en dégradé, motif qu'on trouve sur la moitié
+                  des pages de logiciels. */}
+              <h1 className="mt-8 font-display text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.03em] text-[#f3ece1] sm:text-6xl lg:text-[4.25rem]">
+                Vendez au
+                <span className="mt-1 block font-mono text-[2.25rem] font-medium tracking-[-0.01em] text-[#e0bd52] sm:text-5xl lg:text-[3.5rem]">
+                  carton
+                </span>
+                comme à l&apos;unité.
+              </h1>
+
+              <p className="mt-7 max-w-xl text-base leading-relaxed text-[#f3ece1]/70 sm:text-lg">
+                La caisse qui compte votre stock dans vos vraies unités — carton de 12, sac de
+                25 kg, tissu au mètre, chaussures par pointure. Et qui continue d&apos;encaisser
+                quand le réseau tombe.
+              </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/boutique/inscription"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#e0bd52] px-7 py-4 font-display text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63]"
+                >
+                  Commencer gratuitement
+                </Link>
+                <Link
+                  href="/boutique#fonctionnement"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#f3ece1]/20 px-7 py-4 font-display text-sm font-medium text-[#f3ece1] transition-colors hover:bg-[#f3ece1]/5"
+                >
+                  Voir comment ça marche
+                </Link>
+              </div>
+
+              <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.18em] text-[#f3ece1]/45">
+                1 mois gratuit · sans carte bancaire · fonctionne sans connexion
+              </p>
+
+              {promo && (
+                <div className="mt-6">
+                  <PromoBanner discountPercent={promo.discountPercent} endsAt={promo.endsAt} label={promo.label} />
+                </div>
+              )}
+            </div>
+
+            {/* Élément signature. Ce ticket EST l'argument : le même produit y
+                part en bouteilles ET en carton, à deux prix indépendants.
+                Aucune phrase publicitaire ne dit cela aussi vite. */}
+            <div className="justify-self-center lg:justify-self-end">
+              <Ticket
+                tone="kraft"
+                header="Marché du Coin"
+                meta="Ticket n°412 · 18:07"
+                lines={[
+                  { kind: 'item', label: 'Eau minérale 1,5 L', detail: '3 bouteilles × 500', amount: '1 500' },
+                  { kind: 'item', label: 'Eau minérale 1,5 L', detail: '1 carton de 12', amount: '5 400' },
+                  { kind: 'item', label: 'Riz parfumé', detail: '2 kg × 900', amount: '1 800' },
+                  { kind: 'rule' },
+                  { kind: 'total', label: 'Total', amount: '8 700' },
+                  { kind: 'item', label: 'Espèces', amount: '10 000' },
+                  { kind: 'item', label: 'Rendu', amount: '1 300' },
+                  { kind: 'rule' },
+                  { kind: 'note', text: '12 bouteilles sorties du stock' },
+                ]}
+                footer="Merci de votre visite"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -190,7 +220,7 @@ export default async function BoutiqueLandingPage() {
       <section className="container-page py-16 sm:py-20">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-[#f3ece1] sm:text-3xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-3xl">
               Un logiciel de facturation ne connaît pas votre rayon.
             </h2>
             <p className="mt-4 text-[#f3ece1]/65">
@@ -267,8 +297,8 @@ export default async function BoutiqueLandingPage() {
         />
         <div className="container-page relative py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Le parcours</span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">Comment ça fonctionne</h2>
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Le parcours</span>
+            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Comment ça fonctionne</h2>
             <p className="mt-3 text-[#f3ece1]/60">Quatre étapes, guidées de bout en bout.</p>
           </div>
           <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -317,8 +347,8 @@ export default async function BoutiqueLandingPage() {
       {/* -------------------------------------------------------- Fonctionnalités */}
       <section id="fonctionnalites" className="container-page py-16 sm:py-24">
         <div className="max-w-2xl">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Fonctionnalités</span>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Fonctionnalités</span>
+          <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
             Tout ce qu&apos;il faut pour vendre
           </h2>
           <p className="mt-3 text-[#f3ece1]/60">Pensé pour la réalité d&apos;une boutique : rapide en caisse, clair en fin de journée.</p>
@@ -359,8 +389,8 @@ export default async function BoutiqueLandingPage() {
       <section id="secteurs" className="border-y border-white/10 bg-black/20">
         <div className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Secteurs</span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Secteurs</span>
+            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
               Pensé pour votre activité
             </h2>
             <p className="mt-3 text-[#f3ece1]/60">
@@ -402,8 +432,8 @@ export default async function BoutiqueLandingPage() {
       {demos.length > 0 && (
         <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Exemples</span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Exemples</span>
+            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
               Voir MagyaPro Boutique en situation
             </h2>
             <p className="mt-3 text-[#f3ece1]/60">
@@ -446,8 +476,8 @@ export default async function BoutiqueLandingPage() {
         <div className="container-page py-16 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Tarifs</span>
-              <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">Des tarifs lisibles</h2>
+              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Tarifs</span>
+              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Des tarifs lisibles</h2>
               <p className="mt-3 text-[#f3ece1]/60">Chaque plan démarre par une période d&apos;essai. Sans engagement.</p>
             </div>
             <Link href="/boutique/tarifs" className="text-sm font-medium text-[#e0bd52] underline-offset-4 hover:underline">
@@ -467,8 +497,8 @@ export default async function BoutiqueLandingPage() {
 
       {/* ------------------------------------------------------------------- FAQ */}
       <section id="faq" className="container-page py-16 sm:py-24">
-        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#e0bd52]">Questions</span>
-        <h2 className="mt-3 text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">Questions fréquentes</h2>
+        <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Questions</span>
+        <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Questions fréquentes</h2>
         <div className="mt-10 max-w-3xl divide-y divide-white/10 border-y border-white/10">
           {[
             {

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { env } from '@/lib/env';
 import { platformLogoUrl } from '@/lib/storage';
 import { ErrorListener } from '@/components/error-listener';
+import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
 /**
@@ -49,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={fontVariables}>
       <body>
         {env.sentryDsn && (
           // Le DSN Sentry n'est pas un secret (voir `env.ts`), mais il n'est

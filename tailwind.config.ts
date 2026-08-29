@@ -66,7 +66,12 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display, var(--font-sans))', 'ui-serif', 'Georgia', 'serif'],
+        // Repli sur la pile de corps de texte, jamais sur une serif : les
+        // sites publics des restaurants surchargent `--font-display` avec
+        // leur propre police, et un repli serif y produirait un mélange
+        // involontaire le temps du chargement.
+        display: ['var(--font-display, var(--font-sans))', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: {
         xl: '0.875rem',

@@ -6,6 +6,7 @@ import { howItWorksImageUrl, platformLogoUrl, templatePreviewUrl } from '@/lib/s
 import { getActivePromo } from '@/lib/platform-settings';
 import { Logo } from '@/components/ui/logo';
 import { PlanGrid } from '@/components/marketing/plan-grid';
+import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 
 /**
@@ -129,72 +130,95 @@ export default async function LandingPage() {
             backgroundSize: '26px 26px',
           }}
         />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-24 -top-32 h-96 w-96 rounded-full bg-[#2f5bd8] opacity-40 blur-[110px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 top-10 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-30 blur-[110px]"
-        />
+        <div className="container-page relative py-20 sm:py-24 lg:py-28">
+          {/* Même structure que la page Boutique : la promesse à gauche, la
+              preuve imprimée à droite. C'est la parenté de marque — un seul
+              geste montré des deux côtés, pas une illustration recopiée. */}
+          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+            <div className="fade-in-up max-w-2xl">
+              <div className="flex items-center gap-3">
+                <Logo src={heroLogoUrl} showText={false} className="h-10 w-10" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#ff9a4d]">
+                  MagyaPro Restaurant
+                </span>
+              </div>
 
-        <div className="container-page relative py-20 sm:py-28 lg:py-32">
-          <div className="fade-in-up mx-auto max-w-3xl text-center">
-            <Logo
-              src={heroLogoUrl}
-              showText={false}
-              className="mx-auto h-14 w-14 drop-shadow-[0_0_24px_rgba(255,94,46,0.35)] sm:h-16 sm:w-16"
-            />
-            <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-white/80 backdrop-blur">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#ff5e2e]" />
-              Plateforme pour restaurateurs
-            </span>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Créez votre restaurant{' '}
-              <span className="bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] bg-clip-text text-transparent">
-                en ligne
-              </span>{' '}
-              simplement.
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base text-white/70 sm:text-lg">
-              Magyapro vous permet de créer rapidement un site professionnel pour
-              votre restaurant, présenter votre menu, recevoir des commandes et
-              développer votre présence digitale.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/inscription"
-                className="inline-flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] px-8 text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(255,94,46,0.6)] transition-transform hover:scale-[1.03] sm:w-auto"
-              >
-                Commencer gratuitement
-              </Link>
-              <Link
-                href="#fonctionnement"
-                className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/20 px-8 text-sm font-medium text-white transition-colors hover:bg-white/10 sm:w-auto"
-              >
-                Découvrir Magyapro
-              </Link>
-              {demos.length > 0 && (
+              {/* « la salle » en police de bon de commande, comme « carton »
+                  côté Boutique : chaque produit met en avant l'unité de son
+                  métier, dans la même typographie. */}
+              <h1 className="mt-8 font-display text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.03em] text-white sm:text-6xl lg:text-[4.25rem]">
+                De la commande
+                <span className="mt-1 block font-mono text-[2.25rem] font-medium tracking-[-0.01em] text-[#ff9a4d] sm:text-5xl lg:text-[3.5rem]">
+                  à la cuisine
+                </span>
+                sans un papier perdu.
+              </h1>
+
+              <p className="mt-7 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
+                Le client commande depuis sa table ou depuis votre site. Le bon part en cuisine,
+                la salle suit l&apos;avancement, et vous savez le soir ce que la journée a
+                rapporté.
+              </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href={`/r/${demos[0]!.slug}`}
-                  className="inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-sm font-medium text-white/70 underline underline-offset-4 transition-colors hover:text-white sm:w-auto"
+                  href="/inscription"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145]"
                 >
-                  Voir une démo
+                  Commencer gratuitement
                 </Link>
+                <Link
+                  href="#fonctionnement"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/20 px-7 py-4 font-display text-sm font-medium text-white transition-colors hover:bg-white/5"
+                >
+                  Voir comment ça marche
+                </Link>
+                {demos.length > 0 && (
+                  <Link
+                    href={`/r/${demos[0]!.slug}`}
+                    className="inline-flex items-center justify-center px-2 py-4 font-display text-sm font-medium text-white/60 underline underline-offset-4 transition-colors hover:text-white"
+                  >
+                    Voir une démo
+                  </Link>
+                )}
+              </div>
+
+              <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">
+                1 mois gratuit · sans carte bancaire · votre site en ligne le jour même
+              </p>
+
+              {promo && (
+                <div className="mt-6">
+                  <PromoBanner
+                    discountPercent={promo.discountPercent}
+                    endsAt={promo.endsAt}
+                    label={promo.label}
+                  />
+                </div>
               )}
             </div>
-            <p className="mt-5 text-xs text-white/50">
-              Sans carte bancaire · Sans engagement · Votre site en ligne en quelques minutes
-            </p>
-            {promo && (
-              <div className="mt-5">
-                <PromoBanner
-                  discountPercent={promo.discountPercent}
-                  endsAt={promo.endsAt}
-                  label={promo.label}
-                />
-              </div>
-            )}
+
+            {/* Le bon de cuisine — l'objet que ce produit fabrique vraiment.
+                Il ne totalise pas de l'argent mais du travail à faire :
+                c'est ce qui le distingue du ticket de caisse côté Boutique. */}
+            <div className="justify-self-center lg:justify-self-end">
+              <Ticket
+                tone="blanc"
+                header="Le Maquis d'Or"
+                meta="Bon n°34 · Table 7 · 19:42"
+                lines={[
+                  { kind: 'item', label: 'Poulet braisé', detail: '2 × — bien cuit' },
+                  { kind: 'item', label: 'Attiéké poisson', detail: '1 ×' },
+                  { kind: 'item', label: 'Bissap maison', detail: '3 ×' },
+                  { kind: 'rule' },
+                  { kind: 'total', label: 'Reçu à', amount: '19:42' },
+                  { kind: 'item', label: 'En cuisine depuis', amount: '4 min' },
+                  { kind: 'rule' },
+                  { kind: 'note', text: 'Salle prévenue dès que c’est prêt' },
+                ]}
+                footer="À préparer"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -203,7 +227,7 @@ export default async function LandingPage() {
       <section className="container-page py-16 sm:py-20">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl">
               Votre restaurant mérite mieux qu&apos;une page de réseau social.
             </h2>
             <p className="mt-4 text-ink-muted">
@@ -283,10 +307,10 @@ export default async function LandingPage() {
         />
         <div className="container-page relative py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#ff9a4d]">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#ff9a4d]">
               Le parcours
             </span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-4xl">
               Comment ça fonctionne
             </h2>
             <p className="mt-3 text-white/60">
@@ -339,10 +363,10 @@ export default async function LandingPage() {
       {/* -------------------------------------------------------- Fonctionnalités */}
       <section id="fonctionnalites" className="container-page py-16 sm:py-24">
         <div className="max-w-2xl">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
             Fonctionnalités
           </span>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
             Tout ce qu&apos;il faut pour vendre en ligne
           </h2>
           <p className="mt-3 text-ink-muted">
@@ -380,10 +404,10 @@ export default async function LandingPage() {
         <section id="templates" className="border-y border-surface-border bg-surface-sunken">
           <div className="container-page py-16 sm:py-24">
             <div className="max-w-2xl">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
                 Templates
               </span>
-              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
                 Des templates pour chaque style de maison
               </h2>
               <p className="mt-3 text-ink-muted">
@@ -434,10 +458,10 @@ export default async function LandingPage() {
       {demos.length > 0 && (
         <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
               Exemples
             </span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
               Voir Magyapro en situation
             </h2>
             <p className="mt-3 text-ink-muted">
@@ -478,10 +502,10 @@ export default async function LandingPage() {
         <div className="container-page py-16 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
                 Tarifs
               </span>
-              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
                 Des tarifs lisibles
               </h2>
               <p className="mt-3 text-ink-muted">
@@ -512,10 +536,10 @@ export default async function LandingPage() {
 
       {/* ------------------------------------------------------------------- FAQ */}
       <section id="faq" className="container-page py-16 sm:py-24">
-        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">
+        <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
           Questions
         </span>
-        <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-4xl">
+        <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
           Questions fréquentes
         </h2>
         <div className="mt-10 max-w-3xl divide-y divide-surface-border border-y border-surface-border">
