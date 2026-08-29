@@ -6,6 +6,8 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformMetrics } from '@/lib/analytics';
 import { getPlatformStoreMetrics } from '@/lib/boutique/platform-analytics';
 import { formatMoney } from '@/lib/money';
+import { mailStatus } from '@/lib/mail/status';
+import { MailTestButton } from '@/components/admin/mail-test-button';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -128,12 +130,55 @@ export default async function AdminDashboardPage() {
     }),
   ]);
 
+  // Lecture de variables d'environnement uniquement — aucun accès réseau ni
+  // base, donc rien à paralléliser avec les requêtes ci-dessus.
+  const mail = mailStatus();
+
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
       <p className="mt-1 text-sm text-white/60">
         État de la plateforme — MagyaPro Restaurant et MagyaPro Boutique.
       </p>
+
+      {/* --- État de l'envoi d'emails ------------------------------------
+          Le pilote par défaut est « console » : il écrit l'email dans les
+          journaux au lieu de l'envoyer. C'est le bon comportement en
+          développement et une panne silencieuse en production — une
+          inscription semble réussir, mais le client ne reçoit ni sa
+          vérification d'adresse ni son lien de mot de passe oublié. Rien dans
+          l'application ne le signalait ; ce bloc existe pour ça. */}
+      <section
+        aria-label="Envoi des emails"
+        className={`mt-6 rounded-2xl border p-4 ${
+          mail.delivers ? 'border-white/10 bg-white/5' : 'border-red-500/40 bg-red-500/10'
+        }`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-white">
+              <span aria-hidden="true">{mail.delivers ? '✓' : '✕'}</span>
+              Envoi des emails — pilote{' '}
+              <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
+                {mail.driver}
+              </code>
+            </h2>
+            <p className={`mt-1.5 text-sm ${mail.delivers ? 'text-white/60' : 'text-red-200'}`}>
+              {mail.message}
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">
+              {mail.settings.map((setting) => (
+                <li key={setting.key}>
+                  <span aria-hidden="true">{setting.present ? '✓' : '✕'}</span>{' '}
+                  <span className="font-mono">{setting.key}</span>{' '}
+                  {setting.present ? 'défini' : 'absent'}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <MailTestButton />
+        </div>
+      </section>
 
       <h2 className="mt-6 text-lg font-semibold tracking-tight">MagyaPro Restaurant</h2>
 
