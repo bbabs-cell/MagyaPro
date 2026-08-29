@@ -15,9 +15,9 @@ import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
 export const metadata: Metadata = {
-  title: 'MagyaPro Boutique — Gestion de boutiques et commerces',
+  title: 'MagyaPro Boutique — Caisse et stock au carton comme à l’unité',
   description:
-    'MagyaPro Boutique : caisse, stock, achats, clients et finances pour votre boutique ou commerce.',
+    'Caisse tactile et gestion de stock pour commerces : vente au carton, au sac, au mètre ou au kilo, prévision des ruptures et encaissement même sans connexion.',
 };
 export const dynamic = 'force-dynamic';
 
@@ -146,18 +146,19 @@ export default async function BoutiqueLandingPage() {
             )}
             <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-[#f3ece1]/80 backdrop-blur">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#e0bd52]" />
-              Plateforme pour boutiques et commerces
+              Caisse et stock pour commerces d&apos;Afrique de l&apos;Ouest
             </span>
             <h1 className="mt-6 text-4xl font-bold tracking-tight text-[#f3ece1] sm:text-6xl lg:text-7xl">
-              Gérez votre boutique{' '}
+              Vendez au carton{' '}
               <span className="bg-gradient-to-r from-[#c2603d] to-[#e0bd52] bg-clip-text text-transparent">
-                simplement
+                comme à l&apos;unité
               </span>
               .
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base text-[#f3ece1]/70 sm:text-lg">
-              MagyaPro Boutique réunit caisse, stock, achats, clients et finances dans une
-              seule application.
+              La caisse qui compte votre stock dans vos vraies unités — carton de 12, sac de
+              25 kg, tissu au mètre, chaussures par pointure. Et qui continue d&apos;encaisser
+              quand le réseau tombe.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -174,7 +175,7 @@ export default async function BoutiqueLandingPage() {
               </Link>
             </div>
             <p className="mt-5 text-xs text-[#f3ece1]/50">
-              Sans carte bancaire · Sans engagement · Prêt à encaisser en quelques minutes
+              1 mois gratuit · Sans carte bancaire · Fonctionne sans connexion
             </p>
             {promo && (
               <div className="mt-5">
@@ -190,17 +191,23 @@ export default async function BoutiqueLandingPage() {
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-[#f3ece1] sm:text-3xl">
-              Votre boutique mérite mieux qu&apos;un cahier de comptes.
+              Un logiciel de facturation ne connaît pas votre rayon.
             </h2>
             <p className="mt-4 text-[#f3ece1]/65">
-              Caisse, stock et clients dans une seule application, accessible depuis votre
-              téléphone ou votre ordinateur, mise à jour en temps réel.
+              Il sait éditer une facture. Il ne sait pas qu&apos;un carton contient douze
+              bouteilles, que le prix du carton n&apos;est pas douze fois celui de la
+              bouteille, ni que votre client repart avec trois bouteilles et un carton dans
+              la même vente. MagyaPro est construit autour de ça.
             </p>
             <dl className="mt-8 space-y-5">
               {[
                 {
-                  term: 'Aucune compétence technique',
-                  detail: 'Vous configurez votre boutique en quelques étapes guidées. Pas de code, pas d\'installation.',
+                  term: 'Vos unités, pas les nôtres',
+                  detail: 'Carton, sac, bidon, rouleau, mètre, kilo, paire — avec un prix propre à chaque conditionnement. Le stock reste juste, quelle que soit la façon dont vous vendez.',
+                },
+                {
+                  term: 'La vente passe même sans réseau',
+                  detail: 'Vous encaissez hors connexion ; tout se synchronise au retour du signal. Une coupure n\'arrête pas votre journée.',
                 },
                 {
                   term: 'Chaque vente compte',
@@ -318,12 +325,18 @@ export default async function BoutiqueLandingPage() {
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { title: 'Caisse (POS)', detail: 'Scan code-barres, remises, TVA, paiements multiples et fractionnés.', icon: FEATURE_ICONS.pos },
-            { title: 'Stock en temps réel', detail: 'Chaque mouvement tracé — entrées, sorties, transferts, ruptures.', icon: FEATURE_ICONS.stock },
-            { title: 'Achats & fournisseurs', detail: 'Commandes, réceptions, dettes fournisseurs.', icon: FEATURE_ICONS.purchases },
+            // Les trois premières cartes portent ce qu'un logiciel de
+            // facturation généraliste ne sait pas faire. Le reste, indispensable
+            // mais attendu, vient après.
+            { title: 'Vente au carton et à l\'unité', detail: 'Un carton de 12, un sac de 25 kg, du tissu au mètre — avec un prix propre à chaque conditionnement, jamais un simple calcul.', icon: FEATURE_ICONS.stock },
+            { title: 'Vente hors connexion', detail: 'La caisse continue quand le réseau tombe. Tout se synchronise dès qu\'il revient.', icon: FEATURE_ICONS.pos },
+            { title: 'Ruptures annoncées à l\'avance', detail: 'MagyaPro calcule votre rythme de vente et vous dit quoi recommander, avant que le rayon soit vide.', icon: FEATURE_ICONS.reports },
+            { title: 'Dates de péremption', detail: 'Les produits proches de leur date passent en orange, les périmés en rouge — sans ouvrir une seule fiche.', icon: FEATURE_ICONS.stock },
+            { title: 'Caisse tactile', detail: 'Scan code-barres par la caméra, remises, TVA, paiements multiples et fractionnés.', icon: FEATURE_ICONS.pos },
+            { title: 'Achats & fournisseurs', detail: 'Commandes, réceptions, coût d\'achat moyen, dettes fournisseurs.', icon: FEATURE_ICONS.purchases },
             { title: 'Clients & crédit', detail: 'Fichier client, vente à crédit, historique des paiements.', icon: FEATURE_ICONS.customers },
             { title: 'Caisses & finances', detail: 'Ouverture/fermeture de caisse, dépenses, bénéfice net.', icon: FEATURE_ICONS.finances },
-            { title: 'Rapports & statistiques', detail: 'Ventes, stock, clients, employés — exportables en Excel et PDF.', icon: FEATURE_ICONS.reports },
+            { title: 'Analyses automatiques', detail: 'Capital immobilisé, produits qui dorment, marges réelles, ventes à perte.', icon: FEATURE_ICONS.reports },
             { title: 'Promotions', detail: 'Codes promo en pourcentage ou montant, avec dates et limites d\'usage.', icon: FEATURE_ICONS.promotions },
             { title: 'Multi-boutique', detail: 'Plusieurs points de vente, vue consolidée pour les propriétaires.', icon: FEATURE_ICONS.multistore },
             { title: 'Double authentification', detail: 'Sécurisez la connexion de votre équipe avec un code à usage unique.', icon: FEATURE_ICONS.security },
@@ -469,6 +482,14 @@ export default async function BoutiqueLandingPage() {
             {
               q: 'Puis-je utiliser MagyaPro sur plusieurs appareils ?',
               a: 'Oui. Téléphone, tablette ou ordinateur : le catalogue, le stock et les ventes sont les mêmes partout, mis à jour au fur et à mesure.',
+            },
+            {
+              q: 'Je vends au carton et à l’unité, avec des prix différents. C’est possible ?',
+              a: 'C’est précisément ce pour quoi MagyaPro a été conçu. Vous déclarez qu’un carton contient 12 bouteilles, puis vous saisissez le prix du carton ET le prix de la bouteille — ils sont indépendants, le prix du carton n’est jamais un simple calcul. En caisse, vous choisissez l’un ou l’autre ; le stock reste juste dans les deux cas.',
+            },
+            {
+              q: 'Que se passe-t-il si je perds la connexion en pleine vente ?',
+              a: 'Vous continuez à encaisser. La vente est enregistrée sur l’appareil et part automatiquement dès que le réseau revient. Une coupure n’arrête pas votre journée.',
             },
             {
               q: 'Comment mes clients paient-ils ?',
