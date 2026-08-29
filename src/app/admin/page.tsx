@@ -134,6 +134,14 @@ export default async function AdminDashboardPage() {
   // base, donc rien à paralléliser avec les requêtes ci-dessus.
   const mail = mailStatus();
 
+  // Extraits en variables : ces sommes servent deux fois chacune — à
+  // l'affichage et à la décision de colorer la carte.
+  const expiredRestaurantSubs =
+    (metrics.subscriptionsByStatus.EXPIRED ?? 0) + (metrics.subscriptionsByStatus.CANCELLED ?? 0);
+  const expiredStoreSubs =
+    (storeMetrics.subscriptionsByStatus.EXPIRED ?? 0) +
+    (storeMetrics.subscriptionsByStatus.CANCELLED ?? 0);
+
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
@@ -180,21 +188,30 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <h2 className="mt-6 text-lg font-semibold tracking-tight">MagyaPro Restaurant</h2>
+      {/* Séparateur franc entre les deux produits : les deux grilles se
+          ressemblent trait pour trait, et rien n'indiquait où l'une finissait
+          et l'autre commençait. */}
+      <div className="mt-10 border-t border-white/10 pt-6">
+        <h2 className="text-lg font-semibold tracking-tight">MagyaPro Restaurant</h2>
+        <p className="mt-1 text-sm text-white/60">
+          État de la plateforme, tous restaurants confondus.
+        </p>
+      </div>
 
       <section
         aria-label="Indicateurs de la plateforme"
-        className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <AdminStat label="Restaurants" value={String(metrics.restaurants)} icon={STAT_ICONS.restaurants} />
         <AdminStat
           label="Actifs"
           value={String(metrics.activeRestaurants)}
           icon={STAT_ICONS.active}
-          tone="success"
           hint={`${metrics.suspendedRestaurants} suspendu${metrics.suspendedRestaurants > 1 ? 's' : ''}`}
+          // Ambre seulement s'il y a vraiment quelque chose à regarder.
+          tone={metrics.suspendedRestaurants > 0 ? 'warning' : undefined}
         />
-        <AdminStat label="Utilisateurs" value={String(metrics.users)} icon={STAT_ICONS.users} tone="info" />
+        <AdminStat label="Utilisateurs" value={String(metrics.users)} icon={STAT_ICONS.users} />
         <AdminStat
           label="Nouveaux (30 j)"
           value={String(metrics.newRestaurants)}
@@ -206,13 +223,11 @@ export default async function AdminDashboardPage() {
           label="Volume traité"
           value={formatMoney(metrics.grossVolume, 'XOF')}
           icon={STAT_ICONS.volume}
-          tone="success"
           hint="Toutes commandes, hors annulées"
         />
         <AdminStat
           label="Abonnements actifs"
           icon={STAT_ICONS.active_subs}
-          tone="success"
           value={String(
             (metrics.subscriptionsByStatus.ACTIVE ?? 0) +
               (metrics.subscriptionsByStatus.TRIALING ?? 0),
@@ -221,11 +236,8 @@ export default async function AdminDashboardPage() {
         <AdminStat
           label="Abonnements expirés"
           icon={STAT_ICONS.expired_subs}
-          tone="danger"
-          value={String(
-            (metrics.subscriptionsByStatus.EXPIRED ?? 0) +
-              (metrics.subscriptionsByStatus.CANCELLED ?? 0),
-          )}
+          value={String(expiredRestaurantSubs)}
+          tone={expiredRestaurantSubs > 0 ? 'danger' : undefined}
         />
       </section>
 
@@ -235,8 +247,12 @@ export default async function AdminDashboardPage() {
         abonnements.
       </p>
 
-      <h2 className="mt-10 text-lg font-semibold tracking-tight">MagyaPro Boutique</h2>
-      <p className="mt-1 text-sm text-white/60">État de la plateforme, toutes boutiques confondues.</p>
+      <div className="mt-10 border-t border-white/10 pt-6">
+        <h2 className="text-lg font-semibold tracking-tight">MagyaPro Boutique</h2>
+        <p className="mt-1 text-sm text-white/60">
+          État de la plateforme, toutes boutiques confondues.
+        </p>
+      </div>
 
       <section
         aria-label="Indicateurs Boutique de la plateforme"
@@ -247,8 +263,8 @@ export default async function AdminDashboardPage() {
           label="Actives"
           value={String(storeMetrics.activeStores)}
           icon={STAT_ICONS.active}
-          tone="success"
           hint={`${storeMetrics.suspendedStores} suspendue${storeMetrics.suspendedStores > 1 ? 's' : ''}`}
+          tone={storeMetrics.suspendedStores > 0 ? 'warning' : undefined}
         />
         <AdminStat
           label="Nouvelles (30 j)"
@@ -261,13 +277,11 @@ export default async function AdminDashboardPage() {
           label="Volume traité"
           value={formatMoney(storeMetrics.grossVolume, 'XOF')}
           icon={STAT_ICONS.volume}
-          tone="success"
           hint="Toutes ventes, hors annulées"
         />
         <AdminStat
           label="Abonnements actifs"
           icon={STAT_ICONS.active_subs}
-          tone="success"
           value={String(
             (storeMetrics.subscriptionsByStatus.ACTIVE ?? 0) +
               (storeMetrics.subscriptionsByStatus.TRIALING ?? 0),
@@ -276,11 +290,8 @@ export default async function AdminDashboardPage() {
         <AdminStat
           label="Abonnements expirés"
           icon={STAT_ICONS.expired_subs}
-          tone="danger"
-          value={String(
-            (storeMetrics.subscriptionsByStatus.EXPIRED ?? 0) +
-              (storeMetrics.subscriptionsByStatus.CANCELLED ?? 0),
-          )}
+          value={String(expiredStoreSubs)}
+          tone={expiredStoreSubs > 0 ? 'danger' : undefined}
         />
       </section>
 
@@ -429,12 +440,15 @@ export default async function AdminDashboardPage() {
   );
 }
 
-const STAT_ACCENT: Record<'brand' | 'success' | 'warning' | 'danger' | 'info', string> = {
-  brand: 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e]',
+/**
+ * Couleurs d'alerte. Volontairement absentes de la carte par défaut : quand
+ * chaque carte porte sa propre couleur, plus aucune ne signifie quoi que ce
+ * soit, et celle qui annonce un vrai problème se noie dans les autres.
+ */
+const STAT_ACCENT: Record<'success' | 'warning' | 'danger', string> = {
   success: 'bg-emerald-500',
   warning: 'bg-amber-500',
   danger: 'bg-red-500',
-  info: 'bg-sky-500',
 };
 
 function AdminStat({
@@ -442,28 +456,35 @@ function AdminStat({
   value,
   hint,
   icon,
-  tone = 'brand',
+  tone,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon?: React.ReactElement;
-  tone?: 'brand' | 'success' | 'warning' | 'danger' | 'info';
+  /**
+   * À ne renseigner que lorsque la VALEUR elle-même est un signal — trois
+   * abonnements expirés, deux boutiques suspendues. Un compteur ordinaire
+   * n'a pas de couleur.
+   */
+  tone?: 'success' | 'warning' | 'danger';
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
-      <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${STAT_ACCENT[tone]}`} />
+      {tone ? (
+        <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${STAT_ACCENT[tone]}`} />
+      ) : null}
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
         {icon && (
-          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white ${STAT_ACCENT[tone]}`}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/60">
             {icon}
           </span>
         )}
       </div>
-      <p className="mt-2 bg-gradient-to-r from-white to-[#ff9a4d] bg-clip-text text-2xl font-bold tracking-tight text-transparent">
-        {value}
-      </p>
+      {/* Chiffre en blanc plein : le dégradé précédent était décoratif et
+          rendait les grands nombres moins lisibles sur fond sombre. */}
+      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-white">{value}</p>
       {hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}
     </div>
   );
