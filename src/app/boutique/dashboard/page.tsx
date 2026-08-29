@@ -9,8 +9,8 @@ import {
   getStorePopularProducts,
   getStoreRevenueSeries,
 } from '@/lib/boutique/analytics';
-import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
-import { Badge, Card, EmptyState, LinkButton, PageHeader, StatCard } from '@/components/ui';
+import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
+import { Badge, Card, EmptyState, LinkButton, PageHeader, StatCard, cx } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 
 export const metadata: Metadata = { title: "Vue d'ensemble" };
@@ -63,8 +63,11 @@ export default async function BoutiqueDashboardPage() {
   const context = await requireStore('store:view');
   const currency = context.store.currency;
 
-  const [metrics, series, popular, recentSales] = await Promise.all([
+  const [metrics, today, series, popular, recentSales, alerts] = await Promise.all([
     getStoreDashboardMetrics(context.store.id, '30d'),
+    // La journée en cours, séparément : c'est la première question d'un
+    // commerçant qui ouvre l'application, et la page n'y répondait pas.
+    getStoreDashboardMetrics(context.store.id, 'today'),
     getStoreRevenueSeries(context.store.id, '30d'),
     getStorePopularProducts(context.store.id, '30d', 5),
     prisma.sale.findMany({
@@ -80,15 +83,49 @@ export default async function BoutiqueDashboardPage() {
         customer: { select: { name: true } },
       },
     }),
+    getStoreHomeAlerts(context.store.id),
   ]);
 
   const hasActivity = metrics.salesCount > 0;
 
+  // Chaque alerte mène à l'écran qui permet d'agir : signaler un problème sans
+  // dire où le traiter oblige à le chercher dans le menu.
+  const alertItems = [
+    {
+      count: alerts.outOfStock,
+      label: alerts.outOfStock > 1 ? 'produits en rupture' : 'produit en rupture',
+      href: '/boutique/dashboard/previsions',
+      tone: 'bad' as const,
+    },
+    {
+      count: alerts.expired,
+      label: alerts.expired > 1 ? 'produits périmés' : 'produit périmé',
+      href: '/boutique/dashboard/lots',
+      tone: 'bad' as const,
+    },
+    {
+      count: alerts.lowStock,
+      label: alerts.lowStock > 1 ? 'stocks faibles' : 'stock faible',
+      href: '/boutique/dashboard/previsions',
+      tone: 'warn' as const,
+    },
+    {
+      count: alerts.expiringSoon,
+      label: alerts.expiringSoon > 1 ? 'péremptions proches' : 'péremption proche',
+      href: '/boutique/dashboard/lots',
+      tone: 'warn' as const,
+    },
+  ].filter((item) => item.count > 0);
+
   return (
     <>
       <PageHeader
-        title={`👋 Bonjour, ${context.store.name}`}
-        description={`Votre activité des 30 derniers jours — connecté en tant que ${context.role ? STORE_ROLE_LABELS[context.role] : 'accès support'}.`}
+        // On salue la personne connectée, pas l'enseigne : « Bonjour, Diongue »
+        // adressé à la boutique elle-même sonnait faux.
+        // Le prénom seul, et un repli si le nom est vide : « Bonjour  » avec
+        // une espace en trop se voit tout de suite.
+        title={`Bonjour ${context.user.name.trim().split(' ')[0] || 'à vous'}`}
+        description={`${context.store.name} — voici votre journée et vos trente derniers jours.`}
         action={
           <>
             <LinkButton href="/boutique/dashboard/caisse" size="sm">
@@ -101,6 +138,67 @@ export default async function BoutiqueDashboardPage() {
         }
       />
 
+      {/* --- Ce qui demande une action ---------------------------------
+          Ces informations existaient, réparties entre Prévisions, Produits et
+          Analyses : il fallait ouvrir trois écrans pour savoir s'il y avait un
+          problème. Elles remontent ici, avec le lien qui mène au bon endroit. */}
+      {alertItems.length > 0 ? (
+        <section aria-label="À traiter" className="mb-6">
+          <ul className="flex flex-wrap gap-2">
+            {alertItems.map((item) => (
+              <li key={item.href + item.label}>
+                <Link
+                  href={item.href}
+                  className={cx(
+                    'flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm transition-opacity hover:opacity-80',
+                    item.tone === 'bad'
+                      ? 'bg-state-bad-soft text-state-bad'
+                      : 'bg-state-warn-soft text-state-warn',
+                  )}
+                >
+                  {/* Icône en plus de la couleur : la couleur seule exclut
+                      ceux qui la distinguent mal. */}
+                  <span aria-hidden="true" className="font-semibold">
+                    {item.tone === 'bad' ? '✕' : '!'}
+                  </span>
+                  <span>
+                    <span className="font-semibold tabular-nums">{item.count}</span> {item.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* --- Aujourd'hui ------------------------------------------------- */}
+      <section aria-label="Aujourd'hui" className="mb-6">
+        <Card className="flex flex-wrap items-baseline gap-x-8 gap-y-3 p-4 sm:p-5">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Aujourd&apos;hui</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">
+              {formatMoney(today.revenue, currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Ventes</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{today.salesCount}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Panier moyen</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">
+              {today.averageBasket === null ? '—' : formatMoney(today.averageBasket, currency)}
+            </p>
+          </div>
+          {today.salesCount === 0 ? (
+            <p className="basis-full text-sm text-ink-muted">
+              Aucune vente enregistrée aujourd&apos;hui pour l&apos;instant.
+            </p>
+          ) : null}
+        </Card>
+      </section>
+
+      <h2 className="mb-3 text-sm font-medium text-ink-muted">Sur 30 jours</h2>
       <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Chiffre d'affaires"
@@ -136,14 +234,12 @@ export default async function BoutiqueDashboardPage() {
           label="Panier moyen"
           value={metrics.averageBasket === null ? '—' : formatMoney(metrics.averageBasket, currency)}
           icon={STAT_ICONS.basket}
-          tone="info"
           hint={metrics.averageBasket === null ? 'Aucune vente sur la période' : undefined}
         />
         <StatCard
           label="Nouveaux clients"
           value={String(metrics.newCustomers)}
           icon={STAT_ICONS.customers}
-          tone="warning"
           hint="Sur les 30 derniers jours"
         />
       </section>
