@@ -207,44 +207,77 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
+/**
+ * Navigation, regroupée par moment d'usage.
+ *
+ * « Pilotage » comptait dix entrées et mélangeait trois rythmes de travail :
+ * le service en cours (commandes, cuisine, livraisons), la boîte de réception
+ * et l'analyse hebdomadaire (statistiques, finances, clients). Ces choses ne
+ * se consultent ni au même moment ni à la même fréquence — les réunir
+ * obligeait à relire toute la liste pour trouver la bonne page, y compris en
+ * plein coup de feu.
+ *
+ * Même découpage pour « Restaurant », qui empilait le contenu de la carte, la
+ * configuration de l'établissement et les outils de fidélisation.
+ *
+ * Les vingt-cinq pages et leurs permissions sont inchangées : seul leur
+ * classement l'est.
+ */
 const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
   {
-    title: 'Pilotage',
+    // La section du quotidien, légitimement la plus fournie : c'est celle
+    // qu'on ouvre pendant le service.
+    title: 'Service',
     items: [
       { href: '/dashboard', label: 'Vue d\'ensemble', exact: true },
-      { href: '/dashboard/alertes', label: 'Alertes', permission: 'orders:view' },
+      { href: '/dashboard/alertes', label: 'À traiter', permission: 'orders:view' },
       { href: '/dashboard/notifications', label: 'Notifications' },
       { href: '/dashboard/commandes', label: 'Commandes', permission: 'orders:view' },
       { href: '/dashboard/cuisine', label: 'Cuisine', permission: 'orders:update_status' },
-      { href: '/dashboard/livraisons', label: 'Mes livraisons', permission: 'deliveries:drive' },
       { href: '/dashboard/reservations', label: 'Réservations', permission: 'reservations:manage' },
-      { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
-      { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
-      { href: '/dashboard/finances', label: 'Finances', permission: 'finances:manage' },
+      { href: '/dashboard/livraisons', label: 'Mes livraisons', permission: 'deliveries:drive' },
     ],
   },
   {
-    title: 'Restaurant',
+    title: 'Analyse',
+    items: [
+      { href: '/dashboard/statistiques', label: 'Statistiques', permission: 'analytics:view' },
+      { href: '/dashboard/finances', label: 'Finances', permission: 'finances:manage' },
+      { href: '/dashboard/clients', label: 'Clients', permission: 'customers:view' },
+    ],
+  },
+  {
+    title: 'Carte & salle',
     items: [
       { href: '/dashboard/menu', label: 'Menu', permission: 'menu:view' },
       { href: '/dashboard/photos', label: 'Atelier photo', permission: 'menu:manage' },
       { href: '/dashboard/galerie', label: 'Galerie', permission: 'restaurant:update' },
       { href: '/dashboard/salle', label: 'Salle', permission: 'tables:view' },
-      { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
-      { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
+    ],
+  },
+  {
+    title: 'Fidéliser',
+    items: [
       { href: '/dashboard/promotions', label: 'Promotions', permission: 'promotions:manage' },
       { href: '/dashboard/fidelite', label: 'Fidélité', permission: 'loyalty:manage' },
       { href: '/dashboard/avis', label: 'Avis', permission: 'reviews:moderate' },
     ],
   },
   {
-    title: 'Compte',
+    title: 'Configuration',
     items: [
+      { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
+      { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
       { href: '/dashboard/parametres', label: 'Réglages', permission: 'settings:manage' },
       { href: '/dashboard/equipe', label: 'Équipe', permission: 'team:view' },
-      { href: '/dashboard/journal', label: 'Journal', permission: 'audit:view' },
+    ],
+  },
+  {
+    title: 'Compte',
+    items: [
       { href: '/dashboard/abonnement', label: 'Abonnement', permission: 'subscription:view' },
       { href: '/dashboard/securite', label: 'Sécurité' },
+      { href: '/dashboard/journal', label: 'Journal', permission: 'audit:view' },
       { href: '/dashboard/aide', label: "Centre d'aide" },
     ],
   },

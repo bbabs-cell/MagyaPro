@@ -54,13 +54,16 @@ export default async function StoreAnalyticsPage({
         description="Toutes les valeurs sont calculées à partir de vos ventes réelles, hors ventes annulées."
       />
 
-      <nav aria-label="Période" className="mb-6 flex gap-2 overflow-x-auto pb-1">
+      {/* Les pastilles passent à la ligne au lieu de défiler : comprimées sur
+          une seule rangée, « Année » sortait de l'écran sur un téléphone
+          étroit, sans que rien ne signale qu'il existait une suite. */}
+      <nav aria-label="Période" className="mb-6 flex flex-wrap gap-2">
         {(Object.keys(PERIODS) as PeriodKey[]).map((key) => (
           <a
             key={key}
             href={`/boutique/dashboard/statistiques?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
               period === key ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
@@ -121,7 +124,7 @@ export default async function StoreAnalyticsPage({
               {popular.length === 0 ? (
                 <p className="mt-4 text-sm text-ink-muted">Aucune vente sur la période.</p>
               ) : (
-                <table className="mt-4 w-full text-sm">
+                <table className="table-stack mt-4 w-full text-sm">
                   <caption className="sr-only">
                     Classement des produits par quantité vendue
                   </caption>
@@ -135,9 +138,9 @@ export default async function StoreAnalyticsPage({
                   <tbody>
                     {popular.map((product) => (
                       <tr key={product.name} className="border-t border-surface-border">
-                        <td className="py-2 pr-2">{product.name}</td>
-                        <td className="py-2 text-right">{product.quantity}</td>
-                        <td className="py-2 text-right font-medium">
+                        <td data-label="Produit" className="py-2 pr-2">{product.name}</td>
+                        <td data-label="Qté" className="py-2 text-right">{product.quantity}</td>
+                        <td data-label="CA" className="py-2 text-right font-medium">
                           {formatMoney(product.revenue, currency)}
                         </td>
                       </tr>
@@ -166,7 +169,7 @@ export default async function StoreAnalyticsPage({
                   Aucune vente rattachée à un compte sur la période.
                 </p>
               ) : (
-                <table className="mt-4 w-full text-sm">
+                <table className="table-stack mt-4 w-full text-sm">
                   <caption className="sr-only">Ventes et chiffre d&apos;affaires par employé</caption>
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -179,12 +182,12 @@ export default async function StoreAnalyticsPage({
                   <tbody>
                     {employees.map((employee) => (
                       <tr key={employee.userId} className="border-t border-surface-border">
-                        <td className="py-2 pr-2">{employee.name}</td>
-                        <td className="py-2 text-right">{employee.salesCount}</td>
-                        <td className="py-2 text-right font-medium">
+                        <td data-label="Employé" className="py-2 pr-2">{employee.name}</td>
+                        <td data-label="Ventes" className="py-2 text-right">{employee.salesCount}</td>
+                        <td data-label="CA" className="py-2 text-right font-medium">
                           {formatMoney(employee.revenue, currency)}
                         </td>
-                        <td className="py-2 text-right">
+                        <td data-label="Panier moyen" className="py-2 text-right">
                           {formatMoney(employee.averageBasket, currency)}
                         </td>
                       </tr>
@@ -201,7 +204,7 @@ export default async function StoreAnalyticsPage({
                   Aucune vente rattachée à une session de caisse sur la période.
                 </p>
               ) : (
-                <table className="mt-4 w-full text-sm">
+                <table className="table-stack mt-4 w-full text-sm">
                   <caption className="sr-only">Ventes et chiffre d&apos;affaires par caisse</caption>
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -213,9 +216,9 @@ export default async function StoreAnalyticsPage({
                   <tbody>
                     {cashRegisters.map((register) => (
                       <tr key={register.cashRegisterId} className="border-t border-surface-border">
-                        <td className="py-2 pr-2">{register.name}</td>
-                        <td className="py-2 text-right">{register.salesCount}</td>
-                        <td className="py-2 text-right font-medium">
+                        <td data-label="Caisse" className="py-2 pr-2">{register.name}</td>
+                        <td data-label="Ventes" className="py-2 text-right">{register.salesCount}</td>
+                        <td data-label="CA" className="py-2 text-right font-medium">
                           {formatMoney(register.revenue, currency)}
                         </td>
                       </tr>

@@ -21,7 +21,7 @@ export default async function RestaurantNotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="Réservations, preuves de paiement, changements de réglages, abonnement."
+        description="L'historique de tout ce qui s'est passé : réservations, preuves de paiement, changements de réglages, abonnement. Ce qui réclame une action est regroupé dans « À traiter »."
       />
       <NotificationsPanel
         endpoint="/api/restaurant/notifications"

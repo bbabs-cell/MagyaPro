@@ -71,11 +71,14 @@ export default async function DashboardPage() {
   const preContext = await getTenantContext();
   if (preContext?.role === 'COURIER') redirect('/dashboard/livraisons');
 
-  const { restaurant } = await requireTenant('restaurant:view');
+  const { restaurant, user } = await requireTenant('restaurant:view');
   const currency = restaurant.currency;
 
-  const [metrics, series, popular, recentOrders, entitlements] = await Promise.all([
+  const [metrics, today, series, popular, recentOrders, entitlements] = await Promise.all([
     getDashboardMetrics(restaurant.id, '30d'),
+    // La journée en cours, séparément : un restaurateur veut d'abord savoir ce
+    // qu'a fait son service, pas la moyenne du mois.
+    getDashboardMetrics(restaurant.id, 'today'),
     getRevenueSeries(restaurant.id, '30d'),
     getPopularProducts(restaurant.id, '30d', 5),
     prisma.order.findMany({
@@ -99,8 +102,10 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`👋 Bonjour, ${restaurant.name}`}
-        description="Votre activité des 30 derniers jours."
+        // On salue la personne connectée, pas l'établissement : « Bonjour, Chez
+        // Fatou » adressé au restaurant lui-même sonnait faux.
+        title={`Bonjour ${user.name.trim().split(' ')[0] || 'à vous'}`}
+        description={`${restaurant.name} — voici votre journée et vos trente derniers jours.`}
         action={
           <LinkButton href="/dashboard/commandes" variant="secondary" size="sm">
             Voir les commandes
@@ -158,6 +163,36 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {/* --- Aujourd'hui -------------------------------------------------
+          La page ne montrait que trente jours. C'est utile le lundi matin,
+          inutile à 20 h en plein service. */}
+      <section aria-label="Aujourd'hui" className="mb-6">
+        <Card className="flex flex-wrap items-baseline gap-x-8 gap-y-3 p-4 sm:p-5">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Aujourd&apos;hui</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">
+              {formatMoney(today.revenue, currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Commandes</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{today.ordersCount}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink-faint">Panier moyen</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">
+              {today.averageBasket === null ? '—' : formatMoney(today.averageBasket, currency)}
+            </p>
+          </div>
+          {today.ordersCount === 0 ? (
+            <p className="basis-full text-sm text-ink-muted">
+              Aucune commande enregistrée aujourd&apos;hui pour l&apos;instant.
+            </p>
+          ) : null}
+        </Card>
+      </section>
+
+      <h2 className="mb-3 text-sm font-medium text-ink-muted">Sur 30 jours</h2>
       <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="fade-in-up" style={{ animationDelay: '0ms' }}>
           <StatCard
@@ -206,7 +241,6 @@ export default async function DashboardPage() {
                 : formatMoney(metrics.averageBasket, currency)
             }
             icon={STAT_ICONS.basket}
-            tone="info"
             hint={metrics.averageBasket === null ? 'Aucune commande sur la période' : undefined}
           />
         </div>
@@ -215,7 +249,6 @@ export default async function DashboardPage() {
             label="Nouveaux clients"
             value={String(metrics.newCustomers)}
             icon={STAT_ICONS.customers}
-            tone="warning"
             hint="Sur les 30 derniers jours"
           />
         </div>

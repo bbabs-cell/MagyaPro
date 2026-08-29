@@ -59,13 +59,16 @@ export default async function BoutiqueFinancesPage({
         description="Recettes, coûts, pertes et trésorerie — à partir de vos ventes, dépenses et mouvements de stock réels."
       />
 
-      <nav aria-label="Période" className="mb-6 flex gap-2 overflow-x-auto pb-1">
+      {/* Les pastilles passent à la ligne au lieu de défiler : comprimées sur
+          une seule rangée, « Année » sortait de l'écran sur un téléphone
+          étroit, sans que rien ne signale qu'il existait une suite. */}
+      <nav aria-label="Période" className="mb-6 flex flex-wrap gap-2">
         {(Object.keys(PERIODS) as PeriodKey[]).map((key) => (
           <a
             key={key}
             href={`/boutique/dashboard/finances?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
               period === key ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >

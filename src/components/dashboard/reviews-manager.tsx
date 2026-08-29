@@ -104,7 +104,7 @@ export function ReviewsManager({
         </div>
       )}
 
-      <div className="mb-4 flex gap-1.5 overflow-x-auto">
+      <div className="mb-4 flex flex-wrap gap-1.5">
         {FILTERS.map((item) => (
           <button
             key={item.key}

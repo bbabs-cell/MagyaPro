@@ -51,13 +51,16 @@ export default async function FinancesPage({
         description="Marge par plat, dépenses et rentabilité — à partir de vos commandes et dépenses réelles."
       />
 
-      <nav aria-label="Période" className="mb-6 flex gap-2 overflow-x-auto pb-1">
+      {/* Les pastilles passent à la ligne au lieu de défiler : comprimées sur
+          une seule rangée, « Année » sortait de l'écran sur un téléphone
+          étroit, sans que rien ne signale qu'il existait une suite. */}
+      <nav aria-label="Période" className="mb-6 flex flex-wrap gap-2">
         {(Object.keys(PERIODS) as PeriodKey[]).map((key) => (
           <a
             key={key}
             href={`/dashboard/finances?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
               period === key ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
@@ -99,7 +102,10 @@ export default async function FinancesPage({
           </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-sm">
+            {/* `table-stack` replie la table en fiches sous 768 px, comme
+                partout ailleurs. Quatre colonnes de montants comprimées sur un
+                téléphone deviennent illisibles bien avant de déborder. */}
+            <table className="table-stack w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
                   <th className="py-2 pr-3 font-medium">Plat</th>
@@ -111,10 +117,10 @@ export default async function FinancesPage({
               <tbody>
                 {margins.map((product) => (
                   <tr key={product.id} className="border-t border-surface-border">
-                    <td className="py-2 pr-3">{product.name}</td>
-                    <td className="py-2 pr-3 text-right">{formatMoney(product.price, currency)}</td>
-                    <td className="py-2 pr-3 text-right">{formatMoney(product.costPrice, currency)}</td>
-                    <td className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    <td data-label="Plat" className="py-2 pr-3">{product.name}</td>
+                    <td data-label="Prix" className="py-2 pr-3 text-right">{formatMoney(product.price, currency)}</td>
+                    <td data-label="Coût" className="py-2 pr-3 text-right">{formatMoney(product.costPrice, currency)}</td>
+                    <td data-label="Marge" className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
                       {formatMoney(product.margin, currency)} ({product.marginPercent} %)
                     </td>
                   </tr>

@@ -5,7 +5,7 @@ import { requireTenant } from '@/lib/tenant';
 import { AlertCenter } from '@/components/dashboard/alert-center';
 import { PageHeader } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Alertes' };
+export const metadata: Metadata = { title: 'À traiter' };
 export const dynamic = 'force-dynamic';
 
 export default async function AlertsPage() {
@@ -40,9 +40,12 @@ export default async function AlertsPage() {
 
   return (
     <>
+      {/* Deux boîtes de réception cohabitent — celle-ci et « Notifications ».
+          Chacune dit désormais ce qu'elle contient ET ce que contient l'autre :
+          sans cela, on ouvre les deux à chaque fois pour être sûr. */}
       <PageHeader
-        title="Centre d'alertes"
-        description="Tout ce qui attend une action, au même endroit : commandes à confirmer, appels de salle, réservations à valider, preuves de paiement à vérifier."
+        title="À traiter"
+        description="Ce qui attend une action de votre part, maintenant : commandes à confirmer, appels de salle, réservations à valider, preuves de paiement à vérifier. L'historique complet, lui, est dans Notifications."
       />
       <AlertCenter
         orders={orders.map((o) => ({ ...o, placedAt: o.placedAt.toISOString() }))}
