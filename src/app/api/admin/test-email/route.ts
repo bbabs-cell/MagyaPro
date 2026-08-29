@@ -2,6 +2,7 @@ import { ok, route } from '@/lib/api';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { mailer } from '@/lib/mail';
 import { mailStatus } from '@/lib/mail/status';
+import { redactSecrets } from '@/lib/payments/failure';
 import { env } from '@/lib/env';
 
 /**
@@ -55,8 +56,12 @@ export const POST = route(async () => {
     return ok({
       sent: false,
       // Le message du fournisseur est le plus utile ici — c'est lui qui dit
-      // « domaine non vérifié » ou « identifiants refusés ».
-      message: `Échec de l’envoi : ${error instanceof Error ? error.message : 'erreur inconnue'}`,
+      // « domaine non vérifié » ou « identifiants refusés ». Il est renvoyé
+      // masqué : ce texte est écrit par un service tiers, et une erreur SMTP
+      // ou HTTP y recopie volontiers l'identifiant employé. Le Super Admin
+      // connaît déjà cette configuration, mais un diagnostic n'a aucune raison
+      // de la réafficher.
+      message: `Échec de l’envoi : ${redactSecrets(error instanceof Error ? error.message : 'erreur inconnue')}`,
     });
   }
 });

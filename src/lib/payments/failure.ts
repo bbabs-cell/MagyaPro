@@ -32,9 +32,15 @@ const REDACTIONS: Array<{ pattern: RegExp; replace: string }> = [
   // `Bearer eyJhbGci...`, `Basic dXNlcjpwYXNz`
   { pattern: /\b(bearer|basic)\s+[\w\-._~+/=]+/gi, replace: '$1 [masqué]' },
   // `api_key=...`, `"token": "..."`, `secret: ...` — séparateur =, : ou ": "
+  //
+  // Le préfixe `[\w-]*` est indispensable : sans lui, `\btoken\b` ne
+  // reconnaissait pas `access_token`, ni `\bsecret\b` `client_secret`, parce
+  // que le tiret bas est un caractère de mot et supprime la limite. Ce sont
+  // précisément les noms que les fournisseurs OAuth emploient — donc ceux qui
+  // fuitaient.
   {
-    pattern: /\b(api[_-]?key|apikey|token|secret|password|passwd|authorization|signature)\b["']?\s*[:=]\s*["']?[^\s"',&}]+/gi,
-    replace: '$1=[masqué]',
+    pattern: /\b[\w-]*(?:api[_-]?key|apikey|token|secret|password|passwd|authorization|signature)\b["']?\s*[:=]\s*["']?[^\s"',&}]+/gi,
+    replace: '[masqué]',
   },
   // Paramètres de requête d'une URL : c'est là que se cachent les clés.
   { pattern: /(https?:\/\/[^\s"'<>]+?)\?[^\s"'<>]*/gi, replace: '$1?[masqué]' },
