@@ -247,6 +247,63 @@ export default async function AdminDashboardPage() {
         abonnements.
       </p>
 
+      <div className="mt-10 grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="derniers-restaurants">
+          <div className="flex items-center justify-between">
+            <h2 id="derniers-restaurants" className="text-sm font-medium">
+              Derniers restaurants
+            </h2>
+            <Link
+              href="/admin/restaurants"
+              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+            >
+              Tout voir
+            </Link>
+          </div>
+
+          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+            {recentRestaurants.map((restaurant) => (
+              <li key={restaurant.id}>
+                <Link
+                  href={`/admin/restaurants/${restaurant.id}`}
+                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-white/5"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">
+                      {restaurant.name}
+                      {restaurant.isDemo && (
+                        <span className="ml-2 text-xs text-white/40">démo</span>
+                      )}
+                    </span>
+                    <span className="block truncate text-xs text-white/50">
+                      {restaurant.slug} · {restaurant._count.orders} commande
+                      {restaurant._count.orders > 1 ? 's' : ''}
+                    </span>
+                  </span>
+                  <StatusPill status={restaurant.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section aria-labelledby="abonnements">
+          <h2 id="abonnements" className="text-sm font-medium">
+            Répartition des abonnements
+          </h2>
+          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
+            {Object.entries(SUBSCRIPTION_LABELS).map(([key, label]) => (
+              <li key={key} className="flex justify-between text-sm">
+                <span className="text-white/60">{label}</span>
+                <span className="font-medium">
+                  {metrics.subscriptionsByStatus[key] ?? 0}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
       <div className="mt-10 border-t border-white/10 pt-6">
         <h2 className="text-lg font-semibold tracking-tight">MagyaPro Boutique</h2>
         <p className="mt-1 text-sm text-white/60">
@@ -350,62 +407,12 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="derniers-restaurants">
-          <div className="flex items-center justify-between">
-            <h2 id="derniers-restaurants" className="text-sm font-medium">
-              Derniers restaurants
-            </h2>
-            <Link
-              href="/admin/restaurants"
-              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
-            >
-              Tout voir
-            </Link>
-          </div>
 
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
-            {recentRestaurants.map((restaurant) => (
-              <li key={restaurant.id}>
-                <Link
-                  href={`/admin/restaurants/${restaurant.id}`}
-                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-white/5"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">
-                      {restaurant.name}
-                      {restaurant.isDemo && (
-                        <span className="ml-2 text-xs text-white/40">démo</span>
-                      )}
-                    </span>
-                    <span className="block truncate text-xs text-white/50">
-                      {restaurant.slug} · {restaurant._count.orders} commande
-                      {restaurant._count.orders > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                  <StatusPill status={restaurant.status} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="abonnements">
-          <h2 id="abonnements" className="text-sm font-medium">
-            Répartition des abonnements
-          </h2>
-          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
-            {Object.entries(SUBSCRIPTION_LABELS).map(([key, label]) => (
-              <li key={key} className="flex justify-between text-sm">
-                <span className="text-white/60">{label}</span>
-                <span className="font-medium">
-                  {metrics.subscriptionsByStatus[key] ?? 0}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-6 flex items-center justify-between">
+      {/* Le journal couvre les deux produits : il vit désormais à part,
+          sur toute la largeur, au lieu d'être imbriqué dans la colonne
+          des abonnements Restaurant où rien ne le rattachait. */}
+      <section aria-label="Activité récente" className="mt-10 border-t border-white/10 pt-6">
+        <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">Activité récente</h2>
             <Link
               href="/admin/journal"
@@ -434,8 +441,7 @@ export default async function AdminDashboardPage() {
               </li>
             ))}
           </ul>
-        </section>
-      </div>
+      </section>
     </>
   );
 }

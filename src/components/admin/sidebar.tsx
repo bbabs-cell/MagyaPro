@@ -177,6 +177,66 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
   },
 ];
 
+/**
+ * Regroupement de la navigation.
+ *
+ * Les quatorze entrées étaient à plat, dans un ordre qui ne racontait rien —
+ * et les doublons Restaurant/Boutique (abonnements, statistiques) se
+ * retrouvaient séparés par des rubriques sans rapport. Il fallait relire la
+ * liste entière pour trouver une page.
+ *
+ * Cinq sections, cinq questions : qu'est-ce qui se passe, qui sont mes
+ * clients, combien ça rapporte, comment ça évolue, comment la plateforme est
+ * réglée. Aucune ne dépasse quatre entrées, ce qui la rend lisible d'un coup
+ * d'œil sans avoir à la parcourir.
+ *
+ * Les icônes et les routes restent définies dans `LINKS` : cette structure ne
+ * fait que les ordonner, et `label` n'y sert qu'à lever une ambiguïté une fois
+ * l'entrée placée sous son titre de section.
+ */
+const SECTIONS: Array<{ title: string; items: Array<{ href: string; label?: string }> }> = [
+  {
+    title: 'Pilotage',
+    items: [{ href: '/admin' }, { href: '/admin/journal' }],
+  },
+  {
+    title: 'Clients',
+    items: [
+      { href: '/admin/restaurants' },
+      { href: '/admin/boutiques' },
+      { href: '/admin/utilisateurs' },
+    ],
+  },
+  {
+    title: 'Revenus',
+    items: [
+      { href: '/admin/plans' },
+      { href: '/admin/abonnements', label: 'Abonnements Restaurant' },
+      { href: '/admin/boutique-abonnements', label: 'Abonnements Boutique' },
+    ],
+  },
+  {
+    title: 'Statistiques',
+    items: [
+      // « Analytics » était le seul anglicisme de la navigation ; le reste du
+      // produit dit « Statistiques » aux commerçants.
+      { href: '/admin/analytics', label: 'Restaurant' },
+      { href: '/admin/analytics-boutique', label: 'Boutique' },
+    ],
+  },
+  {
+    title: 'Plateforme',
+    items: [
+      { href: '/admin/notifications' },
+      { href: '/admin/annonces' },
+      { href: '/admin/templates' },
+      { href: '/admin/images' },
+    ],
+  },
+];
+
+const LINK_BY_HREF = new Map(LINKS.map((link) => [link.href, link]));
+
 export function AdminSidebar({
   logoUrl,
   userEmail,
@@ -199,32 +259,46 @@ export function AdminSidebar({
   }
 
   const navigation = (
-    <nav aria-label="Navigation de l'administration" className="space-y-0.5">
-      {LINKS.map((link) => {
-        const active = isActive(link);
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setMenuOpen(false)}
-            aria-current={active ? 'page' : undefined}
-            className={cx(
-              'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-              active
-                ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
-                : 'text-white/60 hover:bg-white/5 hover:text-white',
-            )}
-          >
-            <span className="shrink-0">{link.icon}</span>
-            <span className="min-w-0 flex-1 truncate">{link.label}</span>
-            {link.href === '/admin/notifications' && unreadNotifications > 0 && (
-              <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
-                {unreadNotifications}
-              </span>
-            )}
-          </Link>
-        );
-      })}
+    <nav aria-label="Navigation de l'administration" className="space-y-5">
+      {SECTIONS.map((section) => (
+        <div key={section.title}>
+          {/* Un simple intertitre plutôt qu'un menu repliable : cinq sections
+              de trois entrées tiennent à l'écran, et un dépliage ajouterait un
+              clic avant chaque navigation. */}
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/35">
+            {section.title}
+          </p>
+          <div className="space-y-0.5">
+            {section.items.map((item) => {
+              const link = LINK_BY_HREF.get(item.href);
+              if (!link) return null;
+              const active = isActive(link);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cx(
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                    active
+                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white',
+                  )}
+                >
+                  <span className="shrink-0">{link.icon}</span>
+                  <span className="min-w-0 flex-1 truncate">{item.label ?? link.label}</span>
+                  {link.href === '/admin/notifications' && unreadNotifications > 0 && (
+                    <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 
