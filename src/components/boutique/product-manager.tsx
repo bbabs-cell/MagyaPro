@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -129,6 +129,20 @@ const STATUS_TONES: Record<Product['status'], 'success' | 'neutral' | 'warning'>
   ARCHIVED: 'warning',
 };
 
+/**
+ * Filtres rapides de la liste. Volontairement courts et exclusifs : sur un
+ * téléphone, une rangée de pastilles se balaie du pouce, là où un panneau de
+ * filtres combinables demande de réfléchir avant de chercher.
+ */
+type ListFilter = 'all' | 'low' | 'out' | 'expiring';
+
+const FILTER_LABELS: Record<ListFilter, string> = {
+  all: 'Tous',
+  low: 'Stock faible',
+  out: 'Rupture',
+  expiring: 'Péremption',
+};
+
 const UNIT_LABELS: Record<string, string> = {
   UNIT: 'pièce(s)',
   KG: 'kg',
@@ -168,6 +182,8 @@ export function ProductManager({
   const [withdrawing, setWithdrawing] = useState<Product | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showBrandForm, setShowBrandForm] = useState(false);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<ListFilter>('all');
 
   /**
    * État de péremption d'un produit : celui de sa déclinaison la plus
@@ -198,6 +214,62 @@ export function ProductManager({
       0,
     );
   }
+
+  /**
+   * Liste effectivement affichée. La recherche porte sur le nom, la référence
+   * interne et le code-barres : trois façons dont un commerçant désigne le
+   * même article selon qu'il le lit, l'a saisi ou le scanne.
+   */
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+
+    return products.filter((product) => {
+      if (needle) {
+        const matches =
+          product.name.toLowerCase().includes(needle) ||
+          product.variants.some(
+            (variant) =>
+              variant.sku?.toLowerCase().includes(needle) ||
+              variant.barcode?.toLowerCase().includes(needle),
+          );
+        if (!matches) return false;
+      }
+
+      if (filter === 'all') return true;
+
+      const stock = product.variants.reduce(
+        (sum, variant) => sum + variant.inventory.reduce((v, inv) => v + inv.quantity, 0),
+        0,
+      );
+      if (filter === 'out') return stock <= 0;
+      if (filter === 'low') return stockState(stock, product.minStockAlert) === 'low';
+      return productExpiry(product).state !== 'ok';
+    });
+    // `productExpiry` et `stockState` sont des fonctions pures des données déjà
+    // listées en dépendances ; les ajouter forcerait un recalcul à chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, query, filter, now]);
+
+  /** Compte par filtre, affiché sur les pastilles — un filtre à zéro se voit avant d'être touché. */
+  const counts = useMemo(() => {
+    const result: Record<ListFilter, number> = {
+      all: products.length,
+      low: 0,
+      out: 0,
+      expiring: 0,
+    };
+    for (const product of products) {
+      const stock = product.variants.reduce(
+        (sum, variant) => sum + variant.inventory.reduce((v, inv) => v + inv.quantity, 0),
+        0,
+      );
+      if (stock <= 0) result.out += 1;
+      else if (stockState(stock, product.minStockAlert) === 'low') result.low += 1;
+      if (productExpiry(product).state !== 'ok') result.expiring += 1;
+    }
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products, now]);
 
   const unitById = new Map(storeUnits.map((unit) => [unit.id, unit]));
   const unitLabelById = new Map(storeUnits.map((unit) => [unit.id, unit.label]));
@@ -354,6 +426,84 @@ export function ProductManager({
           }
         />
       ) : (
+        <>
+          {/* Recherche et filtres. Passé une trentaine de références, faire
+              défiler toute la liste pour retrouver un article devient le
+              geste le plus coûteux de cet écran — c'est ce qui manquait. */}
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Rechercher un produit, une référence, un code-barres…"
+                aria-label="Rechercher dans le catalogue"
+                className={cx(inputClass, 'flex-1')}
+              />
+              <BarcodeScannerButton
+                onDetect={(code) => setQuery(code)}
+                label="Scanner pour rechercher"
+                iconOnly
+                className="shrink-0"
+              />
+            </div>
+
+            {/* `flex-wrap` : les pastilles passent à la ligne plutôt que d'être
+                rognées, sinon le dernier filtre devient inatteignable sur un
+                écran étroit. */}
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(FILTER_LABELS) as ListFilter[]).map((key) => {
+                const active = filter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setFilter(key)}
+                    style={{ touchAction: 'manipulation' }}
+                    className={cx(
+                      'rounded-full border px-3.5 py-2 text-xs font-medium transition-colors',
+                      active
+                        ? 'border-ink bg-ink text-white'
+                        : 'border-surface-border text-ink hover:bg-surface-sunken',
+                      // Un filtre vide reste cliquable mais s'annonce comme
+                      // vide : plus honnête que de le masquer, ce qui ferait
+                      // douter de son existence.
+                      !active && counts[key] === 0 && 'opacity-50',
+                    )}
+                  >
+                    {FILTER_LABELS[key]}
+                    <span className={cx('ml-1.5 tabular-nums', active ? 'text-white/70' : 'text-ink-faint')}>
+                      {counts[key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState
+              title="Aucun produit ne correspond"
+              description={
+                query
+                  ? `Rien ne correspond à « ${query} ». Vérifiez l'orthographe, ou cherchez sur une partie du nom seulement.`
+                  : 'Aucun produit dans cette catégorie pour le moment.'
+              }
+              action={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setQuery('');
+                    setFilter('all');
+                  }}
+                >
+                  Tout afficher
+                </Button>
+              }
+            />
+          ) : (
         <Card className="overflow-x-auto p-0">
           <table className="table-stack w-full text-sm">
             <thead>
@@ -368,7 +518,7 @@ export function ProductManager({
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => {
+              {filtered.map((product) => {
                 const variant = product.variants[0];
                 const activeVariants = product.variants.filter((v) => v.isActive);
                 const stock = totalStock(product);
@@ -426,10 +576,23 @@ export function ProductManager({
                         )
                       )}
                     </td>
-                    <td data-label="Catégorie" className="px-4 py-3 text-ink-muted">
+                    {/* Sur téléphone la ligne devient une fiche empilée : une
+                        catégorie ou une marque vide y ajouterait une ligne
+                        « — » sans information. Masquée là, conservée en table
+                        où les colonnes doivent rester alignées. */}
+                    <td
+                      data-label="Catégorie"
+                      className={cx(
+                        'px-4 py-3 text-ink-muted',
+                        !product.category && 'max-md:hidden',
+                      )}
+                    >
                       {product.category?.name ?? '—'}
                     </td>
-                    <td data-label="Marque" className="px-4 py-3 text-ink-muted">
+                    <td
+                      data-label="Marque"
+                      className={cx('px-4 py-3 text-ink-muted', !product.brand && 'max-md:hidden')}
+                    >
                       {product.brand?.name ?? '—'}
                     </td>
                     <td data-label="Prix" className="px-4 py-3 text-right font-medium">
@@ -479,6 +642,8 @@ export function ProductManager({
             </tbody>
           </table>
         </Card>
+          )}
+        </>
       )}
     </div>
   );
