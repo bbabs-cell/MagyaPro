@@ -82,6 +82,9 @@ export type StoreInsights = {
   dormant: DormantProduct[];
   /** Combien de variantes dormantes au total (la liste est tronquée). */
   dormantCount: number;
+  /** Capital immobilisé par TOUTES les références dormantes, pas seulement
+   *  celles affichées — c'est le chiffre qui donne l'ampleur du problème. */
+  dormantCapital: number;
   bestMargins: MarginRow[];
   worstMargins: MarginRow[];
   /** Produits vendus en dessous de leur coût d'achat — à corriger en priorité. */
@@ -271,6 +274,7 @@ export async function getStoreInsights(
     stockValue,
     dormant: dormantAll.slice(0, 20),
     dormantCount: dormantAll.length,
+    dormantCapital: dormantAll.reduce((sum, row) => sum + row.capital, 0),
     bestMargins: profitable.slice(0, splitRankings ? 8 : 12),
     worstMargins: splitRankings ? profitable.slice(-8).reverse() : [],
     losses: ranked.filter((row) => row.margin < 0).sort((a, b) => a.margin - b.margin),
