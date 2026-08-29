@@ -31,7 +31,7 @@ const ICON_PROPS = {
   'aria-hidden': true as const,
 };
 
-/** Icônes de la grille de fonctionnalités — traits simples, cohérents avec le reste de la marque. */
+/** Les trois traits distinctifs. Traits simples, cohérents avec le reste de la marque. */
 const FEATURE_ICONS: Record<string, React.ReactElement> = {
   menu: (
     <svg {...ICON_PROPS}>
@@ -53,47 +53,6 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
       <path d="M14 10h4l3 3v2h-7z" />
       <circle cx="7" cy="17.5" r="1.6" />
       <circle cx="17.5" cy="17.5" r="1.6" />
-    </svg>
-  ),
-  customers: (
-    <svg {...ICON_PROPS}>
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
-      <circle cx="17.5" cy="9" r="2.4" />
-      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
-    </svg>
-  ),
-  stats: (
-    <svg {...ICON_PROPS}>
-      <path d="M4 20V10" />
-      <path d="M12 20V4" />
-      <path d="M20 20v-7" />
-    </svg>
-  ),
-  promo: (
-    <svg {...ICON_PROPS}>
-      <path d="M20 12 12.5 19.5a2 2 0 0 1-2.8 0L4 13.8a2 2 0 0 1 0-2.8L11.5 3.5H18a2 2 0 0 1 2 2V12Z" />
-      <circle cx="15" cy="8" r="1.3" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  payments: (
-    <svg {...ICON_PROPS}>
-      <rect x="3" y="6" width="18" height="13" rx="2" />
-      <path d="M3 10h18" />
-      <path d="M7 15h4" />
-    </svg>
-  ),
-  speed: (
-    <svg {...ICON_PROPS}>
-      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" />
-    </svg>
-  ),
-  team: (
-    <svg {...ICON_PROPS}>
-      <circle cx="8" cy="8" r="3" />
-      <circle cx="17" cy="9" r="2.4" />
-      <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
-      <path d="M14.5 20a4.5 4.5 0 0 1 7-3.6" />
     </svg>
   ),
 };
@@ -155,15 +114,18 @@ export default async function LandingPage() {
               </h1>
 
               <p className="mt-7 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
-                Le client commande depuis sa table ou depuis votre site. Le bon part en cuisine,
-                la salle suit l&apos;avancement, et vous savez le soir ce que la journée a
-                rapporté.
+                Le client commande depuis sa table ou votre site. Le bon part en cuisine, la
+                salle suit, la caisse compte.
               </p>
 
+              {/* Un bouton principal, un secondaire. Le troisième lien vers une
+                  démonstration a rejoint la section « Voir MagyaPro en
+                  situation » plus bas : trois appels à l'action côte à côte, le
+                  visiteur n'en choisit aucun. */}
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/inscription"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145]"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
                 >
                   Commencer gratuitement
                 </Link>
@@ -173,19 +135,7 @@ export default async function LandingPage() {
                 >
                   Voir comment ça marche
                 </Link>
-                {demos.length > 0 && (
-                  <Link
-                    href={`/r/${demos[0]!.slug}`}
-                    className="inline-flex items-center justify-center px-2 py-4 font-display text-sm font-medium text-white/60 underline underline-offset-4 transition-colors hover:text-white"
-                  >
-                    Voir une démo
-                  </Link>
-                )}
               </div>
-
-              <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.18em] text-white/45">
-                1 mois gratuit · sans carte bancaire · votre site en ligne le jour même
-              </p>
 
               {promo && (
                 <div className="mt-6">
@@ -207,7 +157,7 @@ export default async function LandingPage() {
                 header="Le Maquis d'Or"
                 meta="Bon n°34 · Table 7 · 19:42"
                 lines={[
-                  { kind: 'item', label: 'Poulet braisé', detail: '2 × — bien cuit' },
+                  { kind: 'item', label: 'Poulet braisé', detail: '2 ×, bien cuit' },
                   { kind: 'item', label: 'Attiéké poisson', detail: '1 ×' },
                   { kind: 'item', label: 'Bissap maison', detail: '3 ×' },
                   { kind: 'rule' },
@@ -224,72 +174,57 @@ export default async function LandingPage() {
       </section>
 
       {/* --------------------------------------------------------- Présentation */}
-      <section className="container-page py-16 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl">
-              Votre restaurant mérite mieux qu&apos;une page de réseau social.
-            </h2>
-            <p className="mt-4 text-ink-muted">
-              Vos clients cherchent votre menu, vos horaires et un moyen simple
-              de commander. Magyapro réunit tout cela sur une adresse qui vous
-              appartient, tenue à jour depuis votre téléphone.
-            </p>
-            <dl className="mt-8 space-y-5">
-              {[
-                {
-                  term: 'Aucune compétence technique',
-                  detail:
-                    'Vous remplissez des formulaires, Magyapro construit le site. Pas de code, pas d\'hébergement à gérer.',
-                },
-                {
-                  term: 'Modifiable à tout moment',
-                  detail:
-                    'Un plat épuisé, un prix qui change, un horaire exceptionnel : la modification est visible immédiatement.',
-                },
-                {
-                  term: 'Vos données vous appartiennent',
-                  detail:
-                    'Vos clients, vos commandes et votre chiffre d\'affaires restent les vôtres, isolés de ceux des autres restaurants.',
-                },
-              ].map((item) => (
-                <div key={item.term} className="flex gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand"
-                  />
-                  <div>
-                    <dt className="font-medium text-ink">{item.term}</dt>
-                    <dd className="mt-0.5 text-sm text-ink-muted">{item.detail}</dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </div>
+      {/* Les trois assurances qui figuraient sous les boutons du hero. */}
+      <section className="container-page pt-12">
+        <ul className="flex flex-wrap gap-x-8 gap-y-2 border-y border-surface-border py-4 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+          <li>1 mois gratuit</li>
+          <li>Sans carte bancaire</li>
+          <li>Votre site en ligne le jour même</li>
+        </ul>
+      </section>
 
-          <div className="overflow-hidden rounded-2xl border border-surface-border bg-[#0b1730] shadow-xl">
-            <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
+      {/* Colonne unique, sans encadré. La fausse fenêtre de navigateur qui
+          occupait la moitié droite (trois pastilles grises et du texte) faisait
+          semblant de montrer le produit. L'adresse qu'elle contenait est une
+          information réelle : elle rejoint la liste ci-dessous. */}
+      <section className="container-page py-14 sm:py-20">
+        <h2 className="max-w-3xl font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+          Votre restaurant mérite mieux qu&apos;une page de réseau social.
+        </h2>
+        <p className="mt-5 max-w-[65ch] text-ink-muted">
+          Vos clients cherchent votre menu, vos horaires et un moyen simple de commander.
+          MagyaPro réunit tout cela sur une adresse qui vous appartient, tenue à jour depuis
+          votre téléphone.
+        </p>
+
+        <dl className="mt-12 grid gap-x-12 border-t border-surface-border sm:grid-cols-2">
+          {[
+            {
+              term: 'Une adresse à vous',
+              detail: `Chaque restaurant reçoit la sienne dès la création, du type chez-fatou.${env.rootDomain.split(':')[0]}. Vous pourrez y associer votre propre nom de domaine si vous en possédez un.`,
+            },
+            {
+              term: 'Aucune compétence technique',
+              detail:
+                'Vous remplissez des formulaires, MagyaPro construit le site. Pas de code, pas d\'hébergement à gérer.',
+            },
+            {
+              term: 'Modifiable à tout moment',
+              detail:
+                'Un plat épuisé, un prix qui change, un horaire exceptionnel : la modification est visible immédiatement.',
+            },
+            {
+              term: 'Vos données vous appartiennent',
+              detail:
+                'Vos clients, vos commandes et votre chiffre d\'affaires restent les vôtres, isolés de ceux des autres restaurants.',
+            },
+          ].map((item) => (
+            <div key={item.term} className="border-b border-surface-border py-6">
+              <dt className="font-display font-semibold text-ink">{item.term}</dt>
+              <dd className="mt-1.5 max-w-[52ch] text-sm leading-relaxed text-ink-muted">{item.detail}</dd>
             </div>
-            <div className="p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-white/40">
-                Votre adresse
-              </p>
-              <p className="mt-2 break-all font-mono text-lg text-white">
-                chez-fatou.
-                <span className="bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] bg-clip-text text-transparent">
-                  {env.rootDomain.split(':')[0]}
-                </span>
-              </p>
-              <p className="mt-3 text-sm text-white/60">
-                Chaque restaurant reçoit sa propre adresse dès la création. Vous
-                pourrez y associer votre nom de domaine si vous en possédez un.
-              </p>
-            </div>
-          </div>
-        </div>
+          ))}
+        </dl>
       </section>
 
       {/* --------------------------------------------------------- Fonctionnement */}
@@ -307,10 +242,7 @@ export default async function LandingPage() {
         />
         <div className="container-page relative py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#ff9a4d]">
-              Le parcours
-            </span>
-            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-4xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-4xl">
               Comment ça fonctionne
             </h2>
             <p className="mt-3 text-white/60">
@@ -367,33 +299,78 @@ export default async function LandingPage() {
             Fonctionnalités
           </span>
           <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-            Tout ce qu&apos;il faut pour vendre en ligne
+            Trois choses qu&apos;une page de réseau social ne fait pas
           </h2>
-          <p className="mt-3 text-ink-muted">
-            Pensé pour la réalité d&apos;un service : rapide sur mobile, lisible en cuisine.
-          </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+        {/* Neuf cartes identiques mettaient le fichier client au même niveau
+            que le passage de la commande en cuisine. Trois éléments portent
+            l'argument, les six autres suivent, groupés par moment du service. */}
+        <div className="mt-12 grid gap-10 border-t border-surface-border pt-10 lg:grid-cols-3 lg:gap-0">
           {[
-            { title: 'Menu digital', detail: 'Catégories, plats, photos, variantes et suppléments. Marquez un plat épuisé en un geste.', icon: FEATURE_ICONS.menu },
-            { title: 'Commandes en ligne', detail: 'Panier, livraison ou retrait, suivi du statut de la réception à la remise.', icon: FEATURE_ICONS.orders },
-            { title: 'Zones de livraison', detail: 'Des tarifs par zone, un minimum de commande, la livraison offerte au-delà d\'un montant.', icon: FEATURE_ICONS.delivery },
-            { title: 'Fichier client', detail: 'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.', icon: FEATURE_ICONS.customers },
-            { title: 'Statistiques', detail: 'Chiffre d\'affaires, panier moyen, plats populaires, périodes d\'activité.', icon: FEATURE_ICONS.stats },
-            { title: 'Codes promo', detail: 'Remise en pourcentage ou en montant, avec dates de validité et limite d\'utilisation.', icon: FEATURE_ICONS.promo },
-            { title: 'Paiements', detail: 'Paiement à la livraison et sur place dès aujourd\'hui, mobile money à mesure des intégrations.', icon: FEATURE_ICONS.payments },
-            { title: 'Site optimisé', detail: 'Rapide sur connexion mobile, référencé, installable comme une application.', icon: FEATURE_ICONS.speed },
-            { title: 'Plusieurs comptes', detail: 'Donnez un accès limité à votre équipe : le service voit les commandes, pas vos revenus.', icon: FEATURE_ICONS.team },
-          ].map((feature) => (
-            <div
-              key={feature.title}
-              className="hover-glow group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1 hover:border-transparent"
-            >
+            {
+              title: 'De la table à la cuisine',
+              detail:
+                'Le client commande depuis son téléphone, le bon arrive en cuisine et la salle voit où en est chaque table. Personne ne recopie une commande sur un carnet, personne ne perd un papier.',
+              icon: FEATURE_ICONS.orders,
+            },
+            {
+              title: 'Le menu change dans la minute',
+              detail:
+                'Un plat épuisé se marque en un geste depuis votre téléphone et disparaît aussitôt du site. Vous ne prenez plus de commandes pour un plat que vous ne pouvez pas servir.',
+              icon: FEATURE_ICONS.menu,
+            },
+            {
+              title: 'Vos zones de livraison',
+              detail:
+                'Un tarif par quartier, un minimum de commande, la livraison offerte au-delà d\'un montant. Le client voit le coût réel avant de valider, pas au moment où le livreur sonne.',
+              icon: FEATURE_ICONS.delivery,
+            },
+          ].map((item) => (
+            <div key={item.title} className="lg:border-l lg:border-surface-border lg:px-8 lg:first:border-l-0 lg:first:pl-0">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                {feature.icon}
+                {item.icon}
               </span>
-              <h3 className="mt-4 font-semibold text-ink">{feature.title}</h3>
-              <p className="mt-1.5 text-sm text-ink-muted">{feature.detail}</p>
+              <h3 className="mt-5 font-display text-xl font-bold tracking-[-0.01em] text-ink">{item.title}</h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-ink-muted">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="mt-20 font-display text-xl font-bold tracking-[-0.01em] text-ink">
+          Et tout ce qu&apos;un restaurant attend d&apos;un logiciel
+        </h3>
+        <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+          {[
+            {
+              group: 'Pendant le service',
+              items: [
+                ['Fichier client', 'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.'],
+                ['Codes promo', 'Remise en pourcentage ou en montant, avec dates de validité et limite d\'utilisation.'],
+                ['Plusieurs comptes', 'Un accès limité pour votre équipe : le service voit les commandes, pas vos revenus.'],
+              ],
+            },
+            {
+              group: 'Après le service',
+              items: [
+                ['Statistiques', 'Chiffre d\'affaires, panier moyen, plats populaires, périodes d\'activité.'],
+                ['Paiements', 'Paiement à la livraison et sur place dès aujourd\'hui, mobile money à mesure des intégrations.'],
+                ['Site optimisé', 'Rapide sur connexion mobile, référencé, installable comme une application.'],
+              ],
+            },
+          ].map((cluster) => (
+            <div key={cluster.group}>
+              <h4 className="border-b border-surface-border pb-3 font-display text-sm font-semibold text-brand">
+                {cluster.group}
+              </h4>
+              <dl className="mt-5 space-y-5">
+                {cluster.items.map(([term, detail]) => (
+                  <div key={term}>
+                    <dt className="text-sm font-medium text-ink">{term}</dt>
+                    <dd className="mt-1 text-sm leading-relaxed text-ink-muted">{detail}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           ))}
         </div>
@@ -404,10 +381,7 @@ export default async function LandingPage() {
         <section id="templates" className="border-y border-surface-border bg-surface-sunken">
           <div className="container-page py-16 sm:py-24">
             <div className="max-w-2xl">
-              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
-                Templates
-              </span>
-              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+              <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
                 Des templates pour chaque style de maison
               </h2>
               <p className="mt-3 text-ink-muted">
@@ -458,10 +432,7 @@ export default async function LandingPage() {
       {demos.length > 0 && (
         <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
-              Exemples
-            </span>
-            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
               Voir Magyapro en situation
             </h2>
             <p className="mt-3 text-ink-muted">
@@ -502,10 +473,7 @@ export default async function LandingPage() {
         <div className="container-page py-16 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
-                Tarifs
-              </span>
-              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+              <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
                 Des tarifs lisibles
               </h2>
               <p className="mt-3 text-ink-muted">
@@ -536,10 +504,7 @@ export default async function LandingPage() {
 
       {/* ------------------------------------------------------------------- FAQ */}
       <section id="faq" className="container-page py-16 sm:py-24">
-        <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
-          Questions
-        </span>
-        <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+        <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
           Questions fréquentes
         </h2>
         <div className="mt-10 max-w-3xl divide-y divide-surface-border border-y border-surface-border">
@@ -550,7 +515,7 @@ export default async function LandingPage() {
             },
             {
               q: 'Combien de temps pour être en ligne ?',
-              a: "Le temps de saisir vos informations et vos premiers plats — généralement moins d'une demi-heure. Vous pouvez publier avec quelques plats et compléter le menu ensuite.",
+              a: "Le temps de saisir vos informations et vos premiers plats, généralement moins d'une demi-heure. Vous pouvez publier avec quelques plats et compléter le menu ensuite.",
             },
             {
               q: 'Puis-je utiliser mon propre nom de domaine ?',
@@ -586,23 +551,22 @@ export default async function LandingPage() {
       </section>
 
       {/* -------------------------------------------------------------- CTA final */}
-      <section className="relative overflow-hidden border-t border-surface-border bg-[#0b1730]">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-0 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-[#ff5e2e] opacity-20 blur-[110px]"
-        />
-        <div className="container-page relative py-20 text-center sm:py-28">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
+      {/* Halo flou et bouton en pilule dégradée retirés : c'était le seul bouton
+          rond et le seul dégradé de la page, à l'endroit exact où le visiteur
+          doit reconnaître le bouton qu'il a déjà vu en haut. */}
+      <section className="border-t border-surface-border bg-[#0b1730]">
+        <div className="container-page py-20 text-center sm:py-28">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-white sm:text-4xl">
             Votre restaurant en ligne dès aujourd&apos;hui.
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/70">
+          <p className="mx-auto mt-4 max-w-xl text-white/70">
             Créez votre compte, composez votre menu, publiez. Vous pourrez tout
             modifier ensuite.
           </p>
           <div className="mt-9">
             <Link
               href="/inscription"
-              className="inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] px-9 text-sm font-semibold text-white shadow-[0_10px_40px_-10px_rgba(255,94,46,0.6)] transition-transform hover:scale-[1.03]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
             >
               Commencer gratuitement
             </Link>

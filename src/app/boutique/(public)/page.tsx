@@ -16,7 +16,7 @@ import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
 export const metadata: Metadata = {
-  title: 'MagyaPro Boutique — Caisse et stock au carton comme à l’unité',
+  title: 'MagyaPro Boutique : caisse et stock au carton comme à l’unité',
   description:
     'Caisse tactile et gestion de stock pour commerces : vente au carton, au sac, au mètre ou au kilo, prévision des ruptures et encaissement même sans connexion.',
 };
@@ -49,51 +49,10 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
       <path d="M12 13v8" />
     </svg>
   ),
-  purchases: (
-    <svg {...ICON_PROPS}>
-      <path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6" />
-      <circle cx="9" cy="20" r="1.3" fill="currentColor" stroke="none" />
-      <circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  customers: (
-    <svg {...ICON_PROPS}>
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
-      <circle cx="17.5" cy="9" r="2.4" />
-      <path d="M15.5 19a4.5 4.5 0 0 1 6.5-4" />
-    </svg>
-  ),
-  finances: (
-    <svg {...ICON_PROPS}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9 15.5c.5 1 1.5 1.5 3 1.5s3-1 3-2.2-1-1.8-3-2.3-3-1.1-3-2.3 1.5-2.2 3-2.2 2.5.5 3 1.5" />
-      <path d="M12 6.5v11" />
-    </svg>
-  ),
   reports: (
     <svg {...ICON_PROPS}>
       <rect x="5" y="3" width="14" height="18" rx="2" />
       <path d="M9 8h6M9 12h6M9 16h3" />
-    </svg>
-  ),
-  promotions: (
-    <svg {...ICON_PROPS}>
-      <path d="M20 12 12.5 19.5a2 2 0 0 1-2.8 0L4 13.8a2 2 0 0 1 0-2.8L11.5 3.5H18a2 2 0 0 1 2 2V12Z" />
-      <circle cx="15" cy="8" r="1.3" fill="currentColor" stroke="none" />
-    </svg>
-  ),
-  multistore: (
-    <svg {...ICON_PROPS}>
-      <path d="M4 21V9l8-5 8 5v12" />
-      <path d="M9 21v-6h6v6" />
-      <path d="M4 9h16" />
-    </svg>
-  ),
-  security: (
-    <svg {...ICON_PROPS}>
-      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
-      <path d="M9.5 12l1.8 1.8 3.2-3.6" />
     </svg>
   ),
 };
@@ -159,9 +118,8 @@ export default async function BoutiqueLandingPage() {
               </h1>
 
               <p className="mt-7 max-w-xl text-base leading-relaxed text-[#f3ece1]/70 sm:text-lg">
-                La caisse qui compte votre stock dans vos vraies unités — carton de 12, sac de
-                25 kg, tissu au mètre, chaussures par pointure. Et qui continue d&apos;encaisser
-                quand le réseau tombe.
+                La caisse qui compte votre stock dans vos vraies unités : carton, sac, mètre,
+                kilo. Elle encaisse même quand le réseau tombe.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -178,10 +136,6 @@ export default async function BoutiqueLandingPage() {
                   Voir comment ça marche
                 </Link>
               </div>
-
-              <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.18em] text-[#f3ece1]/45">
-                1 mois gratuit · sans carte bancaire · fonctionne sans connexion
-              </p>
 
               {promo && (
                 <div className="mt-6">
@@ -217,72 +171,68 @@ export default async function BoutiqueLandingPage() {
       </section>
 
       {/* --------------------------------------------------------- Présentation */}
-      <section className="container-page py-16 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-3xl">
-              Un logiciel de facturation ne connaît pas votre rayon.
-            </h2>
-            <p className="mt-4 text-[#f3ece1]/65">
-              Il sait éditer une facture. Il ne sait pas qu&apos;un carton contient douze
-              bouteilles, que le prix du carton n&apos;est pas douze fois celui de la
-              bouteille, ni que votre client repart avec trois bouteilles et un carton dans
-              la même vente. MagyaPro est construit autour de ça.
-            </p>
-            <dl className="mt-8 space-y-5">
-              {[
-                {
-                  term: 'Vos unités, pas les nôtres',
-                  detail: 'Carton, sac, bidon, rouleau, mètre, kilo, paire — avec un prix propre à chaque conditionnement. Le stock reste juste, quelle que soit la façon dont vous vendez.',
-                },
-                {
-                  term: 'La vente passe même sans réseau',
-                  detail: 'Vous encaissez hors connexion ; tout se synchronise au retour du signal. Une coupure n\'arrête pas votre journée.',
-                },
-                {
-                  term: 'Chaque vente compte',
-                  detail: 'La caisse décrémente le stock en temps réel — jamais de vente enregistrée sans mouvement correspondant.',
-                },
-                {
-                  term: 'Vos données vous appartiennent',
-                  detail: 'Votre catalogue, vos clients et votre chiffre d\'affaires restent isolés de ceux des autres boutiques.',
-                },
-              ].map((item) => (
-                <div key={item.term} className="flex gap-3">
-                  <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e0bd52]" />
-                  <div>
-                    <dt className="font-medium text-[#f3ece1]">{item.term}</dt>
-                    <dd className="mt-0.5 text-sm text-[#f3ece1]/60">{item.detail}</dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </div>
+      {/* Les trois assurances qui figuraient sous les boutons du hero. Elles
+          rassurent, mais elles n'ont pas leur place dans le premier écran : le
+          hero doit tenir la promesse et le bouton, rien d'autre. */}
+      <section className="container-page pt-12">
+        <ul className="flex flex-wrap gap-x-8 gap-y-2 border-y border-white/10 py-4 font-mono text-[11px] uppercase tracking-[0.18em] text-[#f3ece1]/50">
+          <li>1 mois gratuit</li>
+          <li>Sans carte bancaire</li>
+          <li>Fonctionne sans connexion</li>
+        </ul>
+      </section>
 
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 shadow-xl">
-            <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-white/20" />
+      {/* Colonne unique, sans encadré. La maquette de navigateur qui occupait la
+          moitié droite était un faux écran dessiné en div : trois pastilles
+          grises et du texte. Elle prétendait montrer le produit sans rien en
+          montrer. Le ticket du hero, lui, est un vrai objet. */}
+      <section className="container-page py-14 sm:py-20">
+        <h2 className="max-w-3xl font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
+          Un logiciel de facturation ne connaît pas votre rayon.
+        </h2>
+        <p className="mt-5 max-w-[65ch] text-[#f3ece1]/65">
+          Il sait éditer une facture. Il ne sait pas qu&apos;un carton contient douze
+          bouteilles, que le prix du carton n&apos;est pas douze fois celui de la bouteille,
+          ni que votre client repart avec trois bouteilles et un carton dans la même vente.
+          MagyaPro est construit autour de ça.
+        </p>
+
+        <dl className="mt-12 grid gap-x-12 border-t border-white/10 sm:grid-cols-2">
+          {[
+            {
+              term: 'Vos unités, pas les nôtres',
+              detail: 'Carton, sac, bidon, rouleau, mètre, kilo, paire, avec un prix propre à chaque conditionnement. Le stock reste juste, quelle que soit la façon dont vous vendez.',
+            },
+            {
+              term: 'La vente passe même sans réseau',
+              detail: 'Vous encaissez hors connexion ; tout se synchronise au retour du signal. Une coupure n\'arrête pas votre journée.',
+            },
+            {
+              term: 'Chaque vente compte',
+              detail: 'La caisse décrémente le stock en temps réel. Jamais de vente enregistrée sans mouvement correspondant.',
+            },
+            {
+              term: 'La même caisse sur tous vos écrans',
+              detail: 'Téléphone, tablette ou ordinateur, rien à installer. Vous ouvrez MagyaPro dans votre navigateur et le stock reste le même partout.',
+            },
+            {
+              term: 'Vos données vous appartiennent',
+              detail: 'Votre catalogue, vos clients et votre chiffre d\'affaires restent isolés de ceux des autres boutiques.',
+            },
+          ].map((item, index, all) => (
+            <div
+              key={item.term}
+              className={`border-b border-white/10 py-6 ${
+                // Cinq entrées sur deux colonnes : la dernière traverse toute la
+                // largeur plutôt que de laisser une demi-ligne vide à sa droite.
+                index === all.length - 1 && all.length % 2 === 1 ? 'sm:col-span-2' : ''
+              }`}
+            >
+              <dt className="font-display font-semibold text-[#f3ece1]">{item.term}</dt>
+              <dd className="mt-1.5 max-w-[52ch] text-sm leading-relaxed text-[#f3ece1]/60">{item.detail}</dd>
             </div>
-            <div className="p-6 sm:p-8">
-              <p className="text-xs font-medium uppercase tracking-wide text-[#f3ece1]/40">
-                Sur tous vos écrans
-              </p>
-              <p className="mt-2 text-lg text-[#f3ece1]">
-                Téléphone, tablette ou ordinateur — la{' '}
-                <span className="bg-gradient-to-r from-[#c2603d] to-[#e0bd52] bg-clip-text text-transparent">
-                  même caisse
-                </span>
-                , la même boutique.
-              </p>
-              <p className="mt-3 text-sm text-[#f3ece1]/60">
-                Rien à installer : vous ouvrez MagyaPro dans votre navigateur et vous encaissez.
-                Le stock reste le même d&apos;un appareil à l&apos;autre.
-              </p>
-            </div>
-          </div>
-        </div>
+          ))}
+        </dl>
       </section>
 
       {/* --------------------------------------------------------- Fonctionnement */}
@@ -297,8 +247,7 @@ export default async function BoutiqueLandingPage() {
         />
         <div className="container-page relative py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Le parcours</span>
-            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Comment ça fonctionne</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Comment ça fonctionne</h2>
             <p className="mt-3 text-[#f3ece1]/60">Quatre étapes, guidées de bout en bout.</p>
           </div>
           <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -345,41 +294,92 @@ export default async function BoutiqueLandingPage() {
       </section>
 
       {/* -------------------------------------------------------- Fonctionnalités */}
+      {/* Douze cartes identiques mettaient sur le même plan ce qui distingue
+          MagyaPro et ce que fait n'importe quel logiciel de caisse. Le lecteur
+          survolait les douze et n'en retenait aucune. Trois éléments portent
+          désormais l'argument, en pleine largeur ; les neuf autres, attendus
+          mais nécessaires, sont regroupés par moment de la journée. */}
       <section id="fonctionnalites" className="container-page py-16 sm:py-24">
         <div className="max-w-2xl">
           <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Fonctionnalités</span>
           <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
-            Tout ce qu&apos;il faut pour vendre
+            Trois choses qu&apos;un logiciel de caisse ordinaire ne fait pas
           </h2>
-          <p className="mt-3 text-[#f3ece1]/60">Pensé pour la réalité d&apos;une boutique : rapide en caisse, clair en fin de journée.</p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+        <div className="mt-12 grid gap-10 border-t border-white/10 pt-10 lg:grid-cols-3 lg:gap-0">
           {[
-            // Les trois premières cartes portent ce qu'un logiciel de
-            // facturation généraliste ne sait pas faire. Le reste, indispensable
-            // mais attendu, vient après.
-            { title: 'Vente au carton et à l\'unité', detail: 'Un carton de 12, un sac de 25 kg, du tissu au mètre — avec un prix propre à chaque conditionnement, jamais un simple calcul.', icon: FEATURE_ICONS.stock },
-            { title: 'Vente hors connexion', detail: 'La caisse continue quand le réseau tombe. Tout se synchronise dès qu\'il revient.', icon: FEATURE_ICONS.pos },
-            { title: 'Ruptures annoncées à l\'avance', detail: 'MagyaPro calcule votre rythme de vente et vous dit quoi recommander, avant que le rayon soit vide.', icon: FEATURE_ICONS.reports },
-            { title: 'Dates de péremption', detail: 'Les produits proches de leur date passent en orange, les périmés en rouge — sans ouvrir une seule fiche.', icon: FEATURE_ICONS.stock },
-            { title: 'Caisse tactile', detail: 'Scan code-barres par la caméra, remises, TVA, paiements multiples et fractionnés.', icon: FEATURE_ICONS.pos },
-            { title: 'Achats & fournisseurs', detail: 'Commandes, réceptions, coût d\'achat moyen, dettes fournisseurs.', icon: FEATURE_ICONS.purchases },
-            { title: 'Clients & crédit', detail: 'Fichier client, vente à crédit, historique des paiements.', icon: FEATURE_ICONS.customers },
-            { title: 'Caisses & finances', detail: 'Ouverture/fermeture de caisse, dépenses, bénéfice net.', icon: FEATURE_ICONS.finances },
-            { title: 'Analyses automatiques', detail: 'Capital immobilisé, produits qui dorment, marges réelles, ventes à perte.', icon: FEATURE_ICONS.reports },
-            { title: 'Promotions', detail: 'Codes promo en pourcentage ou montant, avec dates et limites d\'usage.', icon: FEATURE_ICONS.promotions },
-            { title: 'Multi-boutique', detail: 'Plusieurs points de vente, vue consolidée pour les propriétaires.', icon: FEATURE_ICONS.multistore },
-            { title: 'Double authentification', detail: 'Sécurisez la connexion de votre équipe avec un code à usage unique.', icon: FEATURE_ICONS.security },
-          ].map((feature) => (
-            <div
-              key={feature.title}
-              className="group rounded-2xl border border-white/10 bg-white/5 p-6 transition-all hover:-translate-y-1 hover:border-white/20"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-r from-[#c2603d]/30 to-[#e0bd52]/30 text-[#e0bd52]">
-                {feature.icon}
+            {
+              title: 'Le carton et la bouteille',
+              detail:
+                'Vous déclarez qu\'un carton contient douze bouteilles, puis vous saisissez les deux prix. Ils sont indépendants : le prix du carton n\'est jamais douze fois celui de la bouteille. En caisse, vous choisissez l\'un ou l\'autre et le stock reste juste.',
+              icon: FEATURE_ICONS.stock,
+            },
+            {
+              title: 'La caisse tient sans réseau',
+              detail:
+                'La vente est enregistrée sur l\'appareil et repart toute seule dès que le signal revient. Une coupure de connexion ne vous fait pas fermer la caisse ni ressortir le cahier.',
+              icon: FEATURE_ICONS.pos,
+            },
+            {
+              title: 'La rupture annoncée avant',
+              detail:
+                'MagyaPro mesure votre rythme de vente réel sur les semaines passées et en déduit la date de rupture de chaque produit. Vous commandez avant que le rayon soit vide, pas après.',
+              icon: FEATURE_ICONS.reports,
+            },
+          ].map((item) => (
+            <div key={item.title} className="lg:border-l lg:border-white/10 lg:px-8 lg:first:border-l-0 lg:first:pl-0">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e0bd52]/15 text-[#e0bd52]">
+                {item.icon}
               </span>
-              <h3 className="mt-4 font-semibold text-[#f3ece1]">{feature.title}</h3>
-              <p className="mt-1.5 text-sm text-[#f3ece1]/60">{feature.detail}</p>
+              <h3 className="mt-5 font-display text-xl font-bold tracking-[-0.01em] text-[#f3ece1]">{item.title}</h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-[#f3ece1]/65">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="mt-20 font-display text-xl font-bold tracking-[-0.01em] text-[#f3ece1]">
+          Et tout ce qu&apos;une boutique attend d&apos;un logiciel
+        </h3>
+        <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              group: 'Vendre',
+              items: [
+                ['Caisse tactile', 'Scan code-barres par la caméra, remises, TVA, paiements multiples et fractionnés.'],
+                ['Promotions', 'Codes promo en pourcentage ou en montant, avec dates et limites d\'usage.'],
+                ['Clients & crédit', 'Fichier client, vente à crédit, historique des paiements.'],
+              ],
+            },
+            {
+              group: 'Tenir le stock',
+              items: [
+                ['Dates de péremption', 'Les produits proches de leur date passent en orange, les périmés en rouge, sans ouvrir une seule fiche.'],
+                ['Achats & fournisseurs', 'Commandes, réceptions, coût d\'achat moyen, dettes fournisseurs.'],
+                ['Analyses automatiques', 'Capital immobilisé, produits qui dorment, marges réelles, ventes à perte.'],
+              ],
+            },
+            {
+              group: 'Piloter',
+              items: [
+                ['Caisses & finances', 'Ouverture et fermeture de caisse, dépenses, bénéfice net.'],
+                ['Multi-boutique', 'Plusieurs points de vente, vue consolidée pour les propriétaires.'],
+                ['Double authentification', 'La connexion de votre équipe protégée par un code à usage unique.'],
+              ],
+            },
+          ].map((cluster) => (
+            <div key={cluster.group}>
+              <h4 className="border-b border-white/10 pb-3 font-display text-sm font-semibold text-[#e0bd52]">
+                {cluster.group}
+              </h4>
+              <dl className="mt-5 space-y-5">
+                {cluster.items.map(([term, detail]) => (
+                  <div key={term}>
+                    <dt className="text-sm font-medium text-[#f3ece1]">{term}</dt>
+                    <dd className="mt-1 text-sm leading-relaxed text-[#f3ece1]/55">{detail}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           ))}
         </div>
@@ -389,24 +389,23 @@ export default async function BoutiqueLandingPage() {
       <section id="secteurs" className="border-y border-white/10 bg-black/20">
         <div className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Secteurs</span>
-            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
               Pensé pour votre activité
             </h2>
             <p className="mt-3 text-[#f3ece1]/60">
-              Habillement, électronique, cosmétique, alimentation — le même outil s&apos;adapte à
-              votre catalogue.
+              Chaque secteur arrive avec ses unités de vente déjà en place : le mètre pour le
+              tissu, la pointure pour la chaussure, le sac pour le ciment.
             </p>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Vignettes serrées, sans encadré. La section « Comment ça fonctionne »
+              utilise déjà la grille de quatre cartes à image ; répéter la même
+              famille de mise en page ici donnerait deux fois le même écran. */}
+          <div className="mt-10 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
             {BOUTIQUE_SECTORS.map((sector) => {
               const imageUrl = boutiqueSectorImageUrl(sector);
               return (
-                <div
-                  key={sector}
-                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
-                >
-                  <div className="relative h-32 w-full">
+                <div key={sector} className="group">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl">
                     {imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
                       <img
@@ -415,12 +414,10 @@ export default async function BoutiqueLandingPage() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#c2603d]/50 to-[#e0bd52]/30" />
+                      <div aria-hidden="true" className="h-full w-full bg-[#e0bd52]/15" />
                     )}
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-[#f3ece1]">{SECTOR_LABELS[sector]}</h3>
-                  </div>
+                  <h3 className="mt-3 text-sm font-medium text-[#f3ece1]">{SECTOR_LABELS[sector]}</h3>
                 </div>
               );
             })}
@@ -432,8 +429,7 @@ export default async function BoutiqueLandingPage() {
       {demos.length > 0 && (
         <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Exemples</span>
-            <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
+            <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
               Voir MagyaPro Boutique en situation
             </h2>
             <p className="mt-3 text-[#f3ece1]/60">
@@ -460,7 +456,7 @@ export default async function BoutiqueLandingPage() {
                 <div className="mt-4">
                   <DemoTourButton
                     slug={demo.slug}
-                    className="block w-full rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-3 py-2 text-center text-sm font-semibold text-[#1c1712] transition-transform hover:scale-[1.02] disabled:opacity-60"
+                    className="block w-full rounded-xl bg-[#e0bd52] px-3 py-2.5 text-center text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63] active:translate-y-px disabled:opacity-60"
                   >
                     Explorer le tableau de bord
                   </DemoTourButton>
@@ -476,8 +472,7 @@ export default async function BoutiqueLandingPage() {
         <div className="container-page py-16 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Tarifs</span>
-              <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Des tarifs lisibles</h2>
+              <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Des tarifs lisibles</h2>
               <p className="mt-3 text-[#f3ece1]/60">Chaque plan démarre par une période d&apos;essai. Sans engagement.</p>
             </div>
             <Link href="/boutique/tarifs" className="text-sm font-medium text-[#e0bd52] underline-offset-4 hover:underline">
@@ -497,8 +492,7 @@ export default async function BoutiqueLandingPage() {
 
       {/* ------------------------------------------------------------------- FAQ */}
       <section id="faq" className="container-page py-16 sm:py-24">
-        <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Questions</span>
-        <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Questions fréquentes</h2>
+        <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">Questions fréquentes</h2>
         <div className="mt-10 max-w-3xl divide-y divide-white/10 border-y border-white/10">
           {[
             {
@@ -507,7 +501,7 @@ export default async function BoutiqueLandingPage() {
             },
             {
               q: 'Combien de temps pour démarrer ?',
-              a: 'Le temps de créer votre compte et vos premiers produits — généralement moins d\'une demi-heure.',
+              a: 'Le temps de créer votre compte et vos premiers produits, généralement moins d\'une demi-heure.',
             },
             {
               q: 'Puis-je utiliser MagyaPro sur plusieurs appareils ?',
@@ -515,7 +509,7 @@ export default async function BoutiqueLandingPage() {
             },
             {
               q: 'Je vends au carton et à l’unité, avec des prix différents. C’est possible ?',
-              a: 'C’est précisément ce pour quoi MagyaPro a été conçu. Vous déclarez qu’un carton contient 12 bouteilles, puis vous saisissez le prix du carton ET le prix de la bouteille — ils sont indépendants, le prix du carton n’est jamais un simple calcul. En caisse, vous choisissez l’un ou l’autre ; le stock reste juste dans les deux cas.',
+              a: 'C’est précisément ce pour quoi MagyaPro a été conçu. Vous déclarez qu’un carton contient 12 bouteilles, puis vous saisissez le prix du carton ET le prix de la bouteille. Ils sont indépendants : le prix du carton n’est jamais un simple calcul. En caisse, vous choisissez l’un ou l’autre ; le stock reste juste dans les deux cas.',
             },
             {
               q: 'Que se passe-t-il si je perds la connexion en pleine vente ?',
@@ -544,23 +538,23 @@ export default async function BoutiqueLandingPage() {
       </section>
 
       {/* -------------------------------------------------------------- CTA final */}
-      <section className="relative overflow-hidden border-t border-white/10 bg-[#1c1712]">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-0 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-[#e0bd52] opacity-15 blur-[110px]"
-        />
-        <div className="container-page relative py-20 text-center sm:py-28">
-          <h2 className="text-2xl font-bold tracking-tight text-[#f3ece1] sm:text-4xl">
+      {/* Le halo flou et le bouton en pilule dégradée ont disparu : c'était le
+          seul bouton rond et le seul dégradé de la page, au moment précis où le
+          visiteur doit reconnaître le même bouton qu'en haut. Il est maintenant
+          identique à celui du hero, à la lettre près. */}
+      <section className="border-t border-white/10 bg-[#1c1712]">
+        <div className="container-page py-20 text-center sm:py-28">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
             Votre boutique, prête à vendre dès aujourd&apos;hui.
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-[#f3ece1]/65">
+          <p className="mx-auto mt-4 max-w-xl text-[#f3ece1]/65">
             Créez votre compte, ajoutez vos produits, ouvrez la caisse. Vous pourrez tout
             modifier ensuite.
           </p>
           <div className="mt-9">
             <Link
               href="/boutique/inscription"
-              className="inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#c2603d] to-[#e0bd52] px-9 text-sm font-semibold text-[#1c1712] shadow-[0_10px_40px_-10px_rgba(224,189,82,0.5)] transition-transform hover:scale-[1.03]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#e0bd52] px-7 py-4 font-display text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63] active:translate-y-px"
             >
               Commencer gratuitement
             </Link>
