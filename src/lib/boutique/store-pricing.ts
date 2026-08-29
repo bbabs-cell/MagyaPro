@@ -142,6 +142,14 @@ export async function getStoreSubscriptionPrice(
  *
  * Retourne `null` pour la première boutique du groupe, qui choisit librement,
  * et pour un groupe dont la boutique de référence n'a pas encore de plan.
+ *
+ * Retourne également `null` si la boutique de référence est rattachée à un
+ * plan qui n'est pas un plan Boutique. Ce cas existe en base : le champ
+ * `Plan.product` a été introduit après coup, avec `RESTAURANT` par défaut, et
+ * un Super Admin peut de toute façon rebasculer un plan d'un produit à
+ * l'autre. Verrouiller les boutiques suivantes sur une clé de plan Restaurant
+ * les empêcherait de payer quoi que ce soit, puisque aucun plan proposé ne
+ * porterait cette clé.
  */
 export async function getGroupPlanKey(storeId: string): Promise<string | null> {
   const store = await prisma.store.findUnique({
@@ -153,9 +161,37 @@ export async function getGroupPlanKey(storeId: string): Promise<string | null> {
   const reference = await prisma.store.findFirst({
     where: { ownerAccountId: store.ownerAccountId, isDemo: false },
     orderBy: { createdAt: 'asc' },
-    select: { id: true, subscription: { select: { plan: { select: { key: true } } } } },
+    select: {
+      id: true,
+      subscription: { select: { plan: { select: { key: true, product: true } } } },
+    },
   });
 
   if (!reference || reference.id === storeId) return null;
-  return reference.subscription?.plan.key ?? null;
+
+  const plan = reference.subscription?.plan;
+  if (!plan || plan.product !== 'STORE') return null;
+  return plan.key;
+}
+
+/**
+ * Plan de facturation d'une boutique, refusé s'il n'appartient pas à Boutique.
+ *
+ * Un abonnement de boutique pointant vers un plan Restaurant est une anomalie
+ * de données, pas une situation à rattraper en silence : en tirer un prix
+ * reviendrait à facturer une boutique au tarif d'un restaurant. Les écrans qui
+ * annoncent un montant s'en servent pour le dire plutôt que pour l'ignorer.
+ */
+export async function getStoreBillingPlan(storeId: string) {
+  const subscription = await prisma.storeSubscription.findUnique({
+    where: { storeId },
+    include: { plan: true },
+  });
+
+  const plan = subscription?.plan ?? null;
+  return {
+    plan,
+    /** Vrai quand le plan rattaché existe mais n'est pas un plan Boutique. */
+    isForeignProduct: plan !== null && plan.product !== 'STORE',
+  };
 }

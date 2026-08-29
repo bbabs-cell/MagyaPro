@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import {
   additionalStorePrice,
   getAdditionalStorePercent,
+  getStoreBillingPlan,
   getStoreBillingPosition,
 } from '@/lib/boutique/store-pricing';
 import { formatMoney } from '@/lib/money';
@@ -34,16 +34,16 @@ export default async function NouvelleBoutiquePage() {
     redirect('/boutique/dashboard');
   }
 
-  const [subscription, percent, position] = await Promise.all([
-    prisma.storeSubscription.findUnique({
-      where: { storeId: context.store.id },
-      include: { plan: true },
-    }),
+  const [billingPlan, percent, position] = await Promise.all([
+    getStoreBillingPlan(context.store.id),
     getAdditionalStorePercent(),
     getStoreBillingPosition(context.store.id),
   ]);
 
-  const plan = subscription?.plan ?? null;
+  // Un plan qui n'appartient pas au produit Boutique ne sert pas de base de
+  // calcul : le prix annoncé serait celui d'un restaurant. On préfère ne rien
+  // chiffrer et le dire.
+  const plan = billingPlan.isForeignProduct ? null : billingPlan.plan;
   const currency = plan?.currency ?? context.store.currency;
 
   // Ce que coûtera la prochaine boutique, et le total qui en résultera. Les
@@ -89,6 +89,19 @@ export default async function NouvelleBoutiquePage() {
               </div>
             </dl>
           </>
+        ) : billingPlan.isForeignProduct ? (
+          <>
+            <p className="text-sm font-medium text-state-bad">
+              Le plan rattaché à {context.store.name} n&apos;est pas un plan Boutique.
+            </p>
+            <p className="mt-2 text-sm text-ink-muted">
+              Il s&apos;appelle « {billingPlan.plan!.name} » mais appartient au produit
+              Restaurant. Chiffrer une boutique supplémentaire à partir de son tarif
+              reviendrait à vous facturer au prix d&apos;un restaurant, c&apos;est pourquoi
+              aucun montant n&apos;est affiché ici. Reprenez le plan de {context.store.name}
+              depuis la page Abonnement, ou signalez-le à l&apos;assistance.
+            </p>
+          </>
         ) : (
           <>
             <p className="text-sm font-medium text-ink">
@@ -128,7 +141,7 @@ export default async function NouvelleBoutiquePage() {
         />
       ) : (
         <p className="mt-6 text-sm text-ink-muted">
-          Revenez ici une fois le plan de {context.store.name} choisi.
+          Revenez ici une fois le plan de {context.store.name} réglé.
         </p>
       )}
     </>

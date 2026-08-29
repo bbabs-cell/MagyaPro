@@ -102,6 +102,18 @@ export default async function StoreSubscriptionPage() {
         description="Le plan de votre boutique et son état de renouvellement."
       />
 
+      {subscription && subscription.plan.product !== 'STORE' && (
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-state-bad/40 bg-state-bad-soft px-4 py-3 text-sm text-state-bad"
+        >
+          Le plan rattaché à cette boutique (« {subscription.plan.name} ») appartient au produit
+          Restaurant, pas à Boutique. Les montants qui en découlent ne sont pas ceux de la grille
+          Boutique. Choisissez ci-dessous le plan Boutique correspondant, ou signalez-le à
+          l’assistance.
+        </div>
+      )}
+
       <Card className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
