@@ -152,6 +152,18 @@ export function Pos({
   const [error, setError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<{ number: number; total: number } | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
+  /**
+   * Panier ouvert en feuille sur téléphone. Sur grand écran il occupe sa
+   * colonne et cet état est ignoré.
+   */
+  const [cartOpen, setCartOpen] = useState(false);
+  /**
+   * Dernier produit ajouté — sert uniquement au retour visuel. Sans lui, sur
+   * téléphone, cliquer sur un prix ne produisait aucun changement visible :
+   * le panier étant hors écran, le vendeur ne savait pas si son geste avait
+   * été pris en compte.
+   */
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -238,6 +250,13 @@ export function Pos({
       .join(' ');
 
     const added = amount && amount > 0 ? amount : step;
+
+    // Retour immédiat : la carte s'allume brièvement et l'appareil vibre.
+    // Une confirmation de 900 ms suffit à rassurer sans retarder la vente
+    // suivante — le vendeur enchaîne souvent trois articles en cinq secondes.
+    setJustAdded(product.id);
+    navigator.vibrate?.(10);
+    window.setTimeout(() => setJustAdded((id) => (id === product.id ? null : id)), 900);
 
     setCart((current) => {
       const existing = current.find((line) => lineKey(line.variantId, line.unitId) === key);
@@ -407,6 +426,7 @@ export function Pos({
   }
 
   const canCheckout = cart.length > 0 && (remaining === 0 || Boolean(customer));
+  const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
 
   // --- Commandes vocales ----------------------------------------------------
   //
@@ -501,7 +521,10 @@ export function Pos({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <div>
+      {/* `pb-24` réserve la hauteur de la barre fixe : une barre en
+          `position: fixed` sort du flux et masquerait sinon la dernière
+          carte de la liste. */}
+      <div className="max-lg:pb-24">
         <div className="mb-4 flex gap-2">
           <input
             type="search"
@@ -565,7 +588,9 @@ export function Pos({
                   }}
                   className={cx(
                     'card card-interactive state-rail flex flex-col items-start gap-1 p-4 pl-5 text-left',
+                    'transition-shadow duration-200',
                     expiry === 'expired' && 'bg-state-bad-soft/50 opacity-70',
+                    justAdded === product.id && 'ring-2 ring-brand',
                   )}
                 >
                   <span className="font-medium text-ink">{product.name}</span>
@@ -667,8 +692,42 @@ export function Pos({
         )}
       </div>
 
-      <Card className="h-fit p-4 sm:p-5">
-        <h2 className="font-semibold text-ink">Panier</h2>
+      {/* Voile derrière la feuille : un appui à côté referme, geste attendu
+          sur téléphone. Absent sur grand écran, où le panier vit dans sa
+          propre colonne et n'a rien à recouvrir. */}
+      {cartOpen ? (
+        <button
+          type="button"
+          aria-label="Fermer le panier"
+          onClick={() => setCartOpen(false)}
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+        />
+      ) : null}
+
+      <Card
+        className={cx(
+          'h-fit p-4 sm:p-5',
+          // Sur téléphone, le panier devient une feuille ancrée en bas plutôt
+          // qu'un bloc rejeté sous une liste de cent produits. `pb-[calc(...)]`
+          // dégage la barre de gestes Android, sans quoi le bouton d'encaissement
+          // tombe dessous et devient difficile à viser.
+          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh]',
+          'max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:rounded-b-none',
+          'max-lg:pb-[calc(1rem+env(safe-area-inset-bottom))]',
+          !cartOpen && 'max-lg:hidden',
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-ink">Panier</h2>
+          <button
+            type="button"
+            onClick={() => setCartOpen(false)}
+            className="-mr-2 rounded-lg px-3 py-2 text-sm text-ink-muted lg:hidden"
+            style={{ touchAction: 'manipulation' }}
+          >
+            Fermer
+          </button>
+        </div>
 
         {error && (
           <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
@@ -700,29 +759,57 @@ export function Pos({
                 : (UNIT_LABELS[line.unit] ?? '');
 
               return (
-                <li key={key} className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1">
+                <li key={key} className="flex flex-wrap items-center gap-2">
+                  <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                     <p className="truncate text-sm font-medium">{line.name}</p>
                     <p className="text-xs text-ink-muted">
                       {formatMoney(line.unitPrice, currency)}
                       {label && ` / ${line.unitLabel}`}
                     </p>
                   </div>
-                  <input
-                    type="number"
-                    min={line.step}
-                    max={line.maxStock}
-                    step={line.step}
-                    value={line.quantity}
-                    onChange={(event) => updateQuantity(key, Number(event.target.value))}
-                    className="w-16 rounded-lg border border-surface-border px-2 py-1 text-center text-sm"
-                  />
-                  <span className="w-16 shrink-0 truncate text-xs text-ink-faint">{label}</span>
+                  {/* Moins / champ / plus. Les flèches natives d'un champ
+                      numérique font quelques pixels de haut : impossibles à
+                      viser au doigt. Ces boutons font 44 px, au-dessus du
+                      minimum recommandé sur Android. */}
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(key, line.quantity - line.step)}
+                      aria-label={`Retirer une unité de ${line.name}`}
+                      style={{ touchAction: 'manipulation' }}
+                      className="h-11 w-11 rounded-lg border border-surface-border text-lg leading-none text-ink transition-colors hover:bg-surface-sunken"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={line.step}
+                      max={line.maxStock}
+                      step={line.step}
+                      value={line.quantity}
+                      onChange={(event) => updateQuantity(key, Number(event.target.value))}
+                      aria-label={`Quantité de ${line.name}`}
+                      className="h-11 w-14 rounded-lg border border-surface-border px-1 text-center text-sm tabular-nums"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(key, line.quantity + line.step)}
+                      disabled={line.quantity >= line.maxStock}
+                      aria-label={`Ajouter une unité de ${line.name}`}
+                      style={{ touchAction: 'manipulation' }}
+                      className="h-11 w-11 rounded-lg border border-surface-border text-lg leading-none text-ink transition-colors hover:bg-surface-sunken disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="shrink-0 truncate text-xs text-ink-faint">{label}</span>
                   <button
                     type="button"
                     onClick={() => removeLine(key)}
-                    aria-label={`Retirer ${line.name}`}
-                    className="shrink-0 text-ink-faint hover:text-state-bad"
+                    aria-label={`Supprimer ${line.name} du panier`}
+                    style={{ touchAction: 'manipulation' }}
+                    className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-state-bad-soft hover:text-state-bad"
                   >
                     ✕
                   </button>
@@ -880,6 +967,46 @@ export function Pos({
           {readOnly ? 'Encaissement désactivé (démo)' : `Encaisser ${formatMoney(total, currency)}`}
         </Button>
       </Card>
+
+      {/* --- Barre fixe, téléphone uniquement -----------------------------
+          Le total et l'accès au panier restent visibles pendant qu'on
+          parcourt le catalogue. C'était le vrai défaut de cet écran : sur
+          téléphone le panier passait sous une liste de cent produits, et le
+          vendeur ajoutait des articles sans jamais voir ce qu'il devait
+          encaisser.
+
+          Masquée quand la feuille est ouverte : elle ferait doublon avec le
+          bouton d'encaissement qui s'y trouve déjà. */}
+      {!cartOpen ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
+          <div className="flex items-center gap-3 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-ink-muted">
+                {itemCount === 0
+                  ? 'Panier vide'
+                  : `${itemCount} article${itemCount > 1 ? 's' : ''}`}
+              </p>
+              <p className="truncate text-lg font-semibold tabular-nums text-ink">
+                {formatMoney(total, currency)}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="lg"
+              variant={cart.length === 0 ? 'secondary' : 'primary'}
+              disabled={cart.length === 0}
+              onClick={() => setCartOpen(true)}
+              // `touch-action: manipulation` supprime le délai de 300 ms que
+              // le navigateur mobile réserve au double-tap : sans lui, chaque
+              // appui semble mou.
+              style={{ touchAction: 'manipulation' }}
+              className="shrink-0"
+            >
+              Voir le panier
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
