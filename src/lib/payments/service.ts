@@ -7,6 +7,7 @@ import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getProvider } from '@/lib/payments/registry';
 import type { PaymentInitResult } from '@/lib/payments/types';
 import { PAYMENT_STATUS_LABELS, PAYMENT_TRANSITIONS } from '@/lib/payments/status';
+import { redactSecrets, sanitizeFailureReason } from '@/lib/payments/failure';
 
 /**
  * Orchestration des paiements : crée l'enregistrement, délègue au fournisseur,
@@ -85,7 +86,9 @@ export async function initiatePayment(params: {
       where: { id: payment.id },
       data: {
         status: 'FAILED',
-        failureReason: error instanceof Error ? error.message : 'Erreur inconnue',
+        // Nettoyé AVANT écriture, pas seulement avant affichage : un secret
+        // qui atteint la base y reste, et une base sauvegardée circule.
+        failureReason: sanitizeFailureReason(error),
       },
     });
     throw new ValidationError(
@@ -155,7 +158,10 @@ export async function applyPaymentStatus(params: {
       data: {
         status: params.status,
         providerRef: params.providerRef ?? undefined,
-        failureReason: params.failureReason ?? undefined,
+        // Ce motif-ci est saisi par le restaurateur (« preuve floue »), pas
+        // par un fournisseur. Il passe quand même au nettoyage : rien
+        // n'empêche d'y coller le message d'erreur reçu par ailleurs.
+        failureReason: params.failureReason ? redactSecrets(params.failureReason) : undefined,
       },
     });
 
