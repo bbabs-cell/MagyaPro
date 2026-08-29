@@ -33,17 +33,25 @@ export function SubscriptionWall({
   subscribeHref,
   featureLabel,
   limitLabel,
+  neverSubscribed = false,
 }: {
   tenantName: string;
   /** `TRIALING` n'arrive jamais ici : le mur ne s'affiche qu'une fois l'accès perdu. */
   status: string;
+  /**
+   * Vrai pour un espace qui n'a jamais eu de plan : une boutique
+   * supplémentaire, ouverte sans période d'essai. Lui annoncer que « sa
+   * période gratuite est terminée » et que « ses données l'attendent » serait
+   * faux deux fois — elle n'a eu ni essai ni données.
+   */
+  neverSubscribed?: boolean;
   plans: WallPlan[];
   /** Page de paiement du produit concerné. */
   subscribeHref: string;
   featureLabel: (key: string) => string;
   limitLabel: (key: string) => string;
 }) {
-  const trialEnded = status === 'EXPIRED' || status === 'PAST_DUE';
+  const trialEnded = !neverSubscribed && (status === 'EXPIRED' || status === 'PAST_DUE');
 
   return (
     <div className="min-h-screen bg-surface-sunken">
@@ -51,14 +59,21 @@ export function SubscriptionWall({
         <header className="mx-auto max-w-2xl text-center">
           <Logo className="mx-auto h-9 w-auto" />
           <h1 className="mt-8 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            {trialEnded ? 'Votre période gratuite est terminée' : 'Abonnement requis'}
+            {neverSubscribed
+              ? 'Réglez cette boutique pour l’ouvrir'
+              : trialEnded
+                ? 'Votre période gratuite est terminée'
+                : 'Abonnement requis'}
           </h1>
           <p className="mt-3 text-ink-muted">
-            Choisissez un plan pour reprendre l&apos;accès à {tenantName}.
+            {neverSubscribed
+              ? `${tenantName} est créée et vous appartient. Elle encaissera dès la validation de son paiement.`
+              : `Choisissez un plan pour reprendre l’accès à ${tenantName}.`}
           </p>
           <p className="mt-4 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
-            Vos données sont intactes — produits, stock, ventes et clients vous attendent.
-            Tout redevient accessible dès la validation de votre paiement.
+            {neverSubscribed
+              ? 'La boutique reste dans votre compte, rien n’est perdu. Elle s’ouvre entièrement dès que son paiement est validé.'
+              : 'Vos données sont intactes : produits, stock, ventes et clients vous attendent. Tout redevient accessible dès la validation de votre paiement.'}
           </p>
         </header>
 

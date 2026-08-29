@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StoreSubscriptionPaymentReview } from '@/components/admin/store-subscription-payment-review';
+import { getStoreBillingPosition } from '@/lib/boutique/store-pricing';
 
 export const metadata: Metadata = { title: 'Abonnements Boutique' };
 export const dynamic = 'force-dynamic';
@@ -52,11 +53,23 @@ export default async function AdminStoreSubscriptionsPage({
       where: { status: 'PENDING' },
       orderBy: { createdAt: 'asc' },
       include: {
-        plan: { select: { name: true } },
-        store: { select: { name: true } },
+        plan: { select: { name: true, price: true, currency: true } },
+        store: { select: { id: true, name: true } },
       },
     }),
   ]);
+
+  // Rang de facturation de chaque boutique dont un paiement attend validation.
+  // Un montant inférieur au tarif du plan doit s'expliquer à l'écran, sinon on
+  // hésite à valider ou on valide à tort.
+  const positions = new Map(
+    await Promise.all(
+      pendingPayments.map(
+        async (payment) =>
+          [payment.id, await getStoreBillingPosition(payment.store.id)] as const,
+      ),
+    ),
+  );
 
   return (
     <>
@@ -85,6 +98,11 @@ export default async function AdminStoreSubscriptionsPage({
                   payment.proofSubmittedAt
                     ? payment.proofSubmittedAt.toLocaleDateString('fr-FR')
                     : 'preuve non encore déposée'
+                }
+                billingNote={
+                  positions.get(payment.id)?.isAdditional
+                    ? `Boutique supplémentaire (n° ${positions.get(payment.id)!.rank} du compte) — montant majoré, inférieur au tarif ${payment.plan.name} de ${formatMoney(payment.plan.price, payment.plan.currency)}`
+                    : null
                 }
               />
             ))}

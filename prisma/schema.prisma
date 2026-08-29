@@ -997,6 +997,15 @@ model PlatformSettings {
   /// Texte affiché sur le bandeau d'offre (ex. « -20% le premier mois »).
   promoLabel           String?
 
+  /// Majoration facturée pour chaque boutique ouverte au-delà de la première
+  /// par un même compte, en pourcentage du tarif du plan. 75 = la deuxième
+  /// boutique coûte 75 % du prix du plan en plus de la première.
+  ///
+  /// Réglage plutôt que constante : un tarif ne s'écrit pas dans le code
+  /// (voir `Plan.price`), et le faire évoluer ne doit pas demander un
+  /// déploiement.
+  additionalStorePercent Int @default(75)
+
   /// Son joué dans l'espace Super Admin à l'arrivée d'une notification —
   /// équivalent de `RestaurantSettings.notificationSoundUrl` et de
   /// `Store.notificationSoundUrl`, côté plateforme. Sans fichier, un bip
@@ -1416,6 +1425,22 @@ model Store {
   onboardingStep        Int       @default(0)
   onboardingCompletedAt DateTime?
 
+  /// Compte qui a créé cette boutique. Sert exclusivement à la facturation :
+  /// toutes les boutiques d'un même compte forment un groupe, la plus
+  /// ancienne paie le tarif du plan et les suivantes une majoration (voir
+  /// `src/lib/boutique/store-pricing.ts`).
+  ///
+  /// Colonne simple sans clé étrangère, comme
+  /// `StoreSubscriptionPayment.reviewedByUserId` : le lien est une trace de
+  /// facturation, pas une dépendance structurelle, et la boutique doit
+  /// survivre à la suppression du compte qui l'a ouverte.
+  ///
+  /// Volontairement distinct de l'adhésion `StoreUser` de rôle `OWNER` : une
+  /// boutique peut avoir plusieurs propriétaires, et un propriétaire peut
+  /// être ajouté ou retiré d'une équipe. Le rattachement de facturation, lui,
+  /// ne doit pas bouger.
+  ownerAccountId String?
+
   /// Compteur de numérotation des ventes, incrémenté transactionnellement —
   /// même principe que `Restaurant.orderCounter`.
   saleCounter Int       @default(0)
@@ -1453,6 +1478,7 @@ model Store {
   paymentMethods       StorePaymentMethod[]
 
   @@index([status])
+  @@index([ownerAccountId, createdAt])
   @@map("stores")
 }
 

@@ -253,6 +253,7 @@ export function DashboardShell({
   storeName,
   storeStatus,
   stores,
+  canAddStore = false,
   unreadNotifications = 0,
   userName,
   userEmail,
@@ -267,6 +268,8 @@ export function DashboardShell({
   storeStatus?: string;
   /** Boutiques du compte connecté, pour le sélecteur — voir `listStoreMemberships`. */
   stores: Array<{ id: string; name: string; role: StoreRole }>;
+  /** Vrai pour le propriétaire de la boutique courante, seul habilité à en ouvrir une autre. */
+  canAddStore?: boolean;
   unreadNotifications?: number;
   userName: string;
   userEmail: string;
@@ -472,7 +475,12 @@ export function DashboardShell({
               <Logo src={platformLogoUrl} />
             </Link>
 
-            <StoreSwitcher currentStoreId={storeId} currentStoreName={storeName} stores={stores} />
+            <StoreSwitcher
+              currentStoreId={storeId}
+              currentStoreName={storeName}
+              stores={stores}
+              canAddStore={canAddStore}
+            />
 
             <div className="mt-6 flex-1">{navigation}</div>
 

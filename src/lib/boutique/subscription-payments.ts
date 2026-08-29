@@ -6,6 +6,7 @@ import {
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
+import { getGroupPlanKey, getStoreSubscriptionPrice } from '@/lib/boutique/store-pricing';
 import { expiresIn } from '@/lib/auth/tokens';
 import { createNotification } from '@/lib/notifications';
 import { sendMail } from '@/lib/mail';
@@ -38,6 +39,16 @@ export async function createStoreSubscriptionPaymentRequest(params: {
     throw new ValidationError('Ce plan est gratuit : aucun paiement requis.');
   }
 
+  // Toutes les boutiques d'un même compte suivent le plan de la plus
+  // ancienne. Contrôle côté serveur et pas seulement dans l'écran : le plan
+  // arrive dans le corps de la requête, il ne se vérifie pas tout seul.
+  const groupPlanKey = await getGroupPlanKey(params.storeId);
+  if (groupPlanKey && groupPlanKey !== plan.key) {
+    throw new ValidationError(
+      'Toutes vos boutiques suivent le plan de votre boutique principale. Changez-le depuis celle-ci pour le changer partout.',
+    );
+  }
+
   const settings = await getPlatformSettings();
   const receivingNumber =
     params.provider === 'wave_manual' ? settings?.waveNumber : settings?.orangeMoneyNumber;
@@ -56,7 +67,12 @@ export async function createStoreSubscriptionPaymentRequest(params: {
     );
   }
 
-  let amount = plan.price;
+  // Majoration des boutiques supplémentaires, recalculée à chaque demande —
+  // renouvellements compris. La calculer une seule fois à la création ferait
+  // repasser la boutique au tarif plein le mois suivant.
+  const price = await getStoreSubscriptionPrice(params.storeId, plan.price);
+
+  let amount = price.amount;
   const promo = await getActivePromo();
   if (promo) {
     const alreadyPaid = await prisma.storeSubscriptionPayment.findFirst({
@@ -64,7 +80,10 @@ export async function createStoreSubscriptionPaymentRequest(params: {
       select: { id: true },
     });
     if (!alreadyPaid) {
-      amount = Math.round((plan.price * (100 - promo.discountPercent)) / 100);
+      // La remise s'applique sur le montant déjà majoré, pas sur le tarif du
+      // plan : une boutique supplémentaire bénéficie de l'offre comme une
+      // première, à hauteur de ce qu'elle paie réellement.
+      amount = Math.round((price.amount * (100 - promo.discountPercent)) / 100);
     }
   }
 
@@ -84,10 +103,18 @@ export async function createStoreSubscriptionPaymentRequest(params: {
     storeId: params.storeId,
     targetType: 'store_subscription_payment',
     targetId: payment.id,
-    metadata: { planKey: plan.key, amount, provider: params.provider, country: params.country },
+    metadata: {
+      planKey: plan.key,
+      amount,
+      provider: params.provider,
+      country: params.country,
+      // Le rang trace pourquoi le montant diffère du tarif affiché du plan.
+      storeRank: price.position.rank,
+      surchargePercent: price.percent,
+    },
   });
 
-  return { payment, plan, receivingNumber };
+  return { payment, plan, receivingNumber, price };
 }
 
 export async function attachStoreSubscriptionPaymentProof(params: {

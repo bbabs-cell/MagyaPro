@@ -18,11 +18,31 @@ type Plan = {
   key: string;
   name: string;
   description: string | null;
+  /** Tarif affiché du plan. */
   priceLabel: string;
+  /**
+   * Montant réellement dû par CETTE boutique. Identique au tarif du plan pour
+   * la première boutique d'un compte, majoré pour les suivantes. Calculé côté
+   * serveur : le prix ne se recalcule jamais dans le navigateur.
+   */
+  amountLabel: string;
   price: number;
   interval: 'MONTH' | 'YEAR';
   trialDays: number;
   features: string[];
+};
+
+/**
+ * Position de la boutique dans la facturation de son compte.
+ *
+ * `lockedPlanKey` est le plan imposé par la boutique principale : toutes les
+ * boutiques d'un compte suivent le même plan, sans quoi « un pourcentage de
+ * quel tarif ? » n'aurait pas de réponse.
+ */
+type Billing = {
+  isAdditional: boolean;
+  percent: number | null;
+  lockedPlanKey: string | null;
 };
 
 type PendingPayment = {
@@ -57,12 +77,14 @@ export function StoreSubscriptionPaymentFlow({
   canManage,
   availableProviders,
   pendingPayment,
+  billing,
 }: {
   plans: Plan[];
   currentPlanKey: string | null;
   canManage: boolean;
   availableProviders: Array<'wave_manual' | 'orange_money_manual'>;
   pendingPayment: PendingPayment | null;
+  billing: Billing;
 }) {
   const router = useRouter();
   const [switching, setSwitching] = useState<string | null>(null);
@@ -204,6 +226,17 @@ export function StoreSubscriptionPaymentFlow({
         </div>
       )}
 
+      {billing.isAdditional && billing.percent !== null && (
+        <div className="mb-4 rounded-xl border border-surface-border bg-surface-sunken px-4 py-3 text-sm">
+          <p className="font-medium text-ink">Boutique supplémentaire</p>
+          <p className="mt-1 text-ink-muted">
+            Ce n&apos;est pas la première boutique de votre compte : elle est facturée{' '}
+            {billing.percent} % du tarif du plan. Les montants ci-dessous sont ceux que vous
+            paierez réellement pour elle, en plus de vos autres boutiques.
+          </p>
+        </div>
+      )}
+
       <h2 className="mb-3 text-sm font-medium">Plans disponibles</h2>
 
       {plans.length === 0 && (
@@ -217,6 +250,10 @@ export function StoreSubscriptionPaymentFlow({
           const isCurrent = plan.key === currentPlanKey;
           const isFree = plan.price <= 0;
           const isPaying = payingPlanKey === plan.key;
+          // Plan imposé par la boutique principale du compte. La règle est
+          // aussi appliquée côté serveur : ce verrou ne fait qu'éviter un
+          // aller-retour perdu.
+          const isLockedOut = billing.lockedPlanKey !== null && plan.key !== billing.lockedPlanKey;
 
           return (
             <Card
@@ -233,11 +270,16 @@ export function StoreSubscriptionPaymentFlow({
               )}
 
               <p className="mt-4">
-                <span className="text-2xl font-semibold tracking-tight">{plan.priceLabel}</span>
+                <span className="text-2xl font-semibold tracking-tight">{plan.amountLabel}</span>
                 <span className="text-sm text-ink-muted">
                   {plan.interval === 'MONTH' ? ' / mois' : ' / an'}
                 </span>
               </p>
+              {billing.isAdditional && !isFree && (
+                <p className="mt-1 text-xs text-ink-faint">
+                  {billing.percent} % du tarif {plan.name} ({plan.priceLabel})
+                </p>
+              )}
 
               <ul className="mt-4 space-y-1.5 text-sm">
                 {plan.features.map((feature) => (
@@ -248,7 +290,14 @@ export function StoreSubscriptionPaymentFlow({
                 ))}
               </ul>
 
-              {canManage && !isCurrent && isFree && (
+              {isLockedOut && (
+                <p className="mt-5 text-xs text-ink-faint">
+                  Vos boutiques suivent toutes le même plan. Changez-le depuis votre boutique
+                  principale.
+                </p>
+              )}
+
+              {canManage && !isLockedOut && !isCurrent && isFree && (
                 <Button
                   className="mt-5 w-full"
                   disabled={switching !== null}
@@ -258,7 +307,7 @@ export function StoreSubscriptionPaymentFlow({
                 </Button>
               )}
 
-              {canManage && !isCurrent && !isFree && !isPaying && (
+              {canManage && !isLockedOut && !isCurrent && !isFree && !isPaying && (
                 <Button
                   variant="secondary"
                   className="mt-5 w-full"

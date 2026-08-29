@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
@@ -19,10 +20,13 @@ export function StoreSwitcher({
   currentStoreId,
   currentStoreName,
   stores,
+  canAddStore = false,
 }: {
   currentStoreId: string;
   currentStoreName: string;
   stores: StoreOption[];
+  /** Vrai pour le propriétaire : lui seul peut ouvrir une boutique de plus. */
+  canAddStore?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -39,11 +43,22 @@ export function StoreSwitcher({
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
+  // Une seule boutique : rien à sélectionner, mais le propriétaire doit
+  // pouvoir en ouvrir une deuxième. C'est précisément le compte qui n'a qu'une
+  // boutique qui a besoin de trouver cette porte.
   if (stores.length <= 1) {
     return (
       <div className="mt-4 rounded-xl border border-white/10 bg-surface-raised/5 p-3">
         <p className="truncate text-sm font-medium">{currentStoreName}</p>
         <p className="mt-0.5 truncate text-xs text-white/40">MagyaPro Boutique</p>
+        {canAddStore && (
+          <Link
+            href="/boutique/dashboard/nouvelle-boutique"
+            className="mt-2.5 block text-xs font-medium text-white/60 transition-colors hover:text-white"
+          >
+            + Ajouter une boutique
+          </Link>
+        )}
       </div>
     );
   }
@@ -114,6 +129,17 @@ export function StoreSwitcher({
               </button>
             </li>
           ))}
+          {canAddStore && (
+            <li className="mt-1 border-t border-white/10 pt-1">
+              <Link
+                href="/boutique/dashboard/nouvelle-boutique"
+                onClick={() => setOpen(false)}
+                className="block rounded-lg px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                + Ajouter une boutique
+              </Link>
+            </li>
+          )}
         </ul>
       )}
     </div>

@@ -22,12 +22,15 @@ export function PlatformPaymentSettings({
   promoDiscountPercent,
   promoEndsAt,
   promoLabel,
+  additionalStorePercent,
 }: {
   waveNumber: string | null;
   orangeMoneyNumber: string | null;
   promoDiscountPercent: number | null;
   promoEndsAt: Date | null;
   promoLabel: string | null;
+  /** Majoration facturée pour chaque boutique ouverte au-delà de la première. */
+  additionalStorePercent: number;
 }) {
   const router = useRouter();
   const [wave, setWave] = useState(waveNumber ?? '');
@@ -35,6 +38,7 @@ export function PlatformPaymentSettings({
   const [discount, setDiscount] = useState(promoDiscountPercent?.toString() ?? '');
   const [endsAt, setEndsAt] = useState(toDateInputValue(promoEndsAt));
   const [label, setLabel] = useState(promoLabel ?? '');
+  const [storePercent, setStorePercent] = useState(additionalStorePercent.toString());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -52,6 +56,11 @@ export function PlatformPaymentSettings({
         promoDiscountPercent: percent,
         promoEndsAt: endsAt ? new Date(`${endsAt}T23:59:59`).toISOString() : null,
         promoLabel: label.trim() || null,
+        // Champ obligatoire côté base : une saisie vide ou illisible garde la
+        // valeur en vigueur plutôt que de remettre la majoration à zéro.
+        additionalStorePercent: Number.isFinite(Number(storePercent))
+          ? Number(storePercent)
+          : additionalStorePercent,
       });
       setSaved(true);
       router.refresh();
@@ -136,6 +145,38 @@ export function PlatformPaymentSettings({
           placeholder="-20% sur votre premier mois"
           className="mt-1.5 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none"
         />
+      </div>
+
+      <div className="sm:col-span-2 border-t border-white/10 pt-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+          Boutiques supplémentaires
+        </p>
+        <p className="mt-1 text-xs text-white/50">
+          Un commerçant peut ouvrir plusieurs boutiques avec le même compte. La première paie le
+          tarif de son plan, chacune des suivantes en paie ce pourcentage. À 75 %, un compte
+          Premium à 25 000 paie 18 750 par boutique supplémentaire.
+        </p>
+      </div>
+      <div>
+        <label htmlFor="additional-store-percent" className="block text-xs font-medium text-white/70">
+          Majoration par boutique supplémentaire (%)
+        </label>
+        <input
+          id="additional-store-percent"
+          type="number"
+          min={0}
+          max={200}
+          value={storePercent}
+          onChange={(event) => setStorePercent(event.target.value)}
+          placeholder="75"
+          className="mt-1.5 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-white/30 focus:outline-none"
+        />
+      </div>
+      <div className="flex items-end">
+        <p className="text-xs text-white/50">
+          Prend effet à la prochaine demande de paiement. Les paiements déjà en attente gardent
+          le montant annoncé au commerçant.
+        </p>
       </div>
 
       <div className="sm:col-span-2">

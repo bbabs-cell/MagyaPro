@@ -9,6 +9,12 @@ import { Badge, Card, PageHeader } from '@/components/ui';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { STORE_FEATURE_LABELS, type StoreFeature } from '@/lib/boutique/entitlements';
+import {
+  additionalStorePrice,
+  getAdditionalStorePercent,
+  getGroupPlanKey,
+  getStoreBillingPosition,
+} from '@/lib/boutique/store-pricing';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
@@ -36,8 +42,17 @@ function featureLabel(key: string): string {
 export default async function StoreSubscriptionPage() {
   const context = await requireStore('subscription:view');
 
-  const [subscription, plans, platformSettings, pendingPayment, promo, paidPayments] =
-    await Promise.all([
+  const [
+    subscription,
+    plans,
+    platformSettings,
+    pendingPayment,
+    promo,
+    paidPayments,
+    position,
+    surchargePercent,
+    lockedPlanKey,
+  ] = await Promise.all([
       prisma.storeSubscription.findUnique({
         where: { storeId: context.store.id },
         include: { plan: true },
@@ -58,8 +73,17 @@ export default async function StoreSubscriptionPage() {
         take: 12,
         include: { plan: { select: { name: true } } },
       }),
+      getStoreBillingPosition(context.store.id),
+      getAdditionalStorePercent(),
+      getGroupPlanKey(context.store.id),
     ]);
   const alreadyPaid = paidPayments.length > 0;
+
+  // Montant réellement dû par cette boutique pour chaque plan. Calculé ici et
+  // pas dans le navigateur : un prix ne se recalcule pas côté client, et c'est
+  // la même règle que celle appliquée à la création du paiement.
+  const amountFor = (price: number) =>
+    position.isAdditional ? additionalStorePrice(price, surchargePercent) : price;
 
   const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
     ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
@@ -161,11 +185,17 @@ export default async function StoreSubscriptionPage() {
                 }
               : null
           }
+          billing={{
+            isAdditional: position.isAdditional,
+            percent: position.isAdditional ? surchargePercent : null,
+            lockedPlanKey,
+          }}
           plans={plans.map((plan) => ({
             key: plan.key,
             name: plan.name,
             description: plan.description,
             priceLabel: formatMoney(plan.price, plan.currency),
+            amountLabel: formatMoney(amountFor(plan.price), plan.currency),
             price: plan.price,
             interval: plan.interval,
             trialDays: plan.trialDays,

@@ -25,6 +25,7 @@ export function StoreSubscriptionPaymentReview({
   country,
   proofImageUrl,
   submittedLabel,
+  billingNote,
 }: {
   paymentId: string;
   storeName: string;
@@ -34,6 +35,12 @@ export function StoreSubscriptionPaymentReview({
   country: string | null;
   proofImageUrl: string | null;
   submittedLabel: string;
+  /**
+   * Explication du montant quand il ne correspond pas au tarif affiché du
+   * plan. Sans elle, on valide un versement de 18 750 pour un plan à 25 000
+   * sans savoir si c'est normal ou si le commerçant a payé de travers.
+   */
+  billingNote?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<'approve' | 'reject' | null>(null);
@@ -74,6 +81,11 @@ export function StoreSubscriptionPaymentReview({
             {planName} · {amountLabel} · {PROVIDER_LABELS[provider] ?? provider}
             {country && <> · {country}</>}
           </p>
+          {billingNote && (
+            <p className="mt-1 inline-block rounded-md bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200">
+              {billingNote}
+            </p>
+          )}
           <p className="mt-0.5 text-xs text-white/40">Déposé {submittedLabel}</p>
         </div>
 

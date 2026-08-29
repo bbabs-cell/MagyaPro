@@ -14,6 +14,7 @@ import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
+import { getAdditionalStorePercent } from '@/lib/boutique/store-pricing';
 
 export const metadata: Metadata = {
   title: 'MagyaPro Boutique : caisse et stock au carton comme à l’unité',
@@ -58,7 +59,7 @@ const FEATURE_ICONS: Record<string, React.ReactElement> = {
 };
 
 export default async function BoutiqueLandingPage() {
-  const [plans, promo, demos] = await Promise.all([
+  const [plans, promo, demos, additionalPercent] = await Promise.all([
     prisma.plan.findMany({ where: { isActive: true, product: 'STORE' }, orderBy: { position: 'asc' } }),
     getActivePromo(),
     prisma.store.findMany({
@@ -66,6 +67,7 @@ export default async function BoutiqueLandingPage() {
       select: { name: true, slug: true, description: true, businessType: true, primaryColor: true },
       orderBy: { createdAt: 'asc' },
     }),
+    getAdditionalStorePercent(),
   ]);
 
   const logoUrl = boutiqueLandingAssetUrl();
@@ -363,7 +365,10 @@ export default async function BoutiqueLandingPage() {
               group: 'Piloter',
               items: [
                 ['Caisses & finances', 'Ouverture et fermeture de caisse, dépenses, bénéfice net.'],
-                ['Multi-boutique', 'Plusieurs points de vente, vue consolidée pour les propriétaires.'],
+                [
+                  'Plusieurs boutiques',
+                  `Ouvrez-en une autre quand vous voulez, avec son propre stock et sa propre équipe. Elle coûte ${additionalPercent} % de votre plan, pas un abonnement entier.`,
+                ],
                 ['Double authentification', 'La connexion de votre équipe protégée par un code à usage unique.'],
               ],
             },
@@ -518,6 +523,10 @@ export default async function BoutiqueLandingPage() {
             {
               q: 'Comment mes clients paient-ils ?',
               a: 'Vous configurez vous-même les moyens de paiement acceptés en caisse (espèces, mobile money, carte...) depuis vos réglages.',
+            },
+            {
+              q: 'Je tiens deux boutiques. Puis-je gérer les deux ?',
+              a: `Oui, avec le même compte. Vous ouvrez la seconde depuis votre tableau de bord, vous passez de l'une à l'autre en un geste et vous suivez le total des deux sur un seul écran. Stock, ventes et équipe restent séparés. Une boutique supplémentaire coûte ${additionalPercent} % du tarif de votre plan, en plus de ce que vous payez déjà.`,
             },
             {
               q: 'Mes données sont-elles isolées des autres boutiques ?',

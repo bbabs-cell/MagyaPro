@@ -96,6 +96,9 @@ export default async function BoutiqueDashboardLayout({
       <SubscriptionWall
         tenantName={context.store.name}
         status={entitlements.status}
+        // Aucun plan n'a jamais été souscrit : c'est une boutique
+        // supplémentaire, ouverte sans essai. Le mur le dit autrement.
+        neverSubscribed={entitlements.planKey === null}
         subscribeHref="/boutique/dashboard/abonnement"
         featureLabel={(key) => STORE_FEATURE_LABELS[key as StoreFeature] ?? key}
         limitLabel={(key) => STORE_LIMIT_LABELS[key as keyof typeof STORE_LIMIT_LABELS] ?? key}
@@ -130,6 +133,10 @@ export default async function BoutiqueDashboardLayout({
         storeName={context.store.name}
         storeStatus={context.store.status}
         stores={memberships.map((m) => ({ id: m.store.id, name: m.store.name, role: m.role }))}
+        // Ouvrir une boutique engage une dépense mensuelle : seul le
+        // propriétaire de celle-ci le décide, jamais un administrateur ni un
+        // Super Admin venu dépanner.
+        canAddStore={!context.isSupportAccess && context.role === 'OWNER'}
         unreadNotifications={unreadNotifications}
         userName={user.name}
         userEmail={user.email}

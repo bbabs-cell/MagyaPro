@@ -6,7 +6,7 @@ import { EMAIL_VERIFICATION_TTL_HOURS, expiresIn } from '@/lib/auth/tokens';
 import { sendVerificationEmail } from '@/lib/mail';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { uniqueStoreSlug } from '@/lib/slug';
-import { seedStoreUnits } from '@/lib/boutique/units-engine';
+import { scaffoldStore } from '@/lib/boutique/store-creation';
 
 /**
  * Inscription MagyaPro Boutique — équivalent de `registerAccount` (Restaurant)
@@ -44,7 +44,7 @@ export async function registerStoreAccount(input: {
     // sans quoi n'importe qui pourrait rattacher une boutique au compte de
     // quelqu'un d'autre en connaissant seulement son email.
     throw new ConflictError(
-      'Un compte existe déjà avec cette adresse email. Connectez-vous pour créer votre boutique.',
+      'Un compte existe déjà avec cette adresse email. Connectez-vous, puis ouvrez votre nouvelle boutique depuis le sélecteur en haut de la barre latérale.',
     );
   }
 
@@ -72,32 +72,18 @@ export async function registerStoreAccount(input: {
       },
     });
 
-    const store = await tx.store.create({
-      data: {
-        name: input.storeName,
-        slug,
-        status: 'DRAFT',
-        members: { create: { userId: user.id, role: 'OWNER' } },
-      },
+    // Même échafaudage que l'ajout d'une boutique par un propriétaire déjà
+    // connecté : point de vente, caisse et unités de départ. Une seule
+    // fonction pour les deux portes, sinon elles finissent par diverger.
+    const store = await scaffoldStore(tx, {
+      name: input.storeName,
+      slug,
+      ownerAccountId: user.id,
+      memberUserId: user.id,
     });
 
-    // Le point de vente principal, créé d'office : une boutique doit
-    // toujours avoir au moins un emplacement pour recevoir du stock.
-    await tx.warehouse.create({
-      data: { storeId: store.id, name: 'Boutique principale', isDefault: true },
-    });
-
-    // Idem pour la caisse : sans elle, impossible d'ouvrir une session de
-    // caisse le jour où le commerçant en a besoin.
-    await tx.cashRegister.create({
-      data: { storeId: store.id, name: 'Caisse principale' },
-    });
-
-    // Jeu d'unités de départ. Le secteur n'est choisi qu'à l'étape suivante
-    // (onboarding), d'où le profil générique ici — l'onboarding complètera
-    // avec les unités du métier retenu, sans jamais toucher à celles-ci.
-    await seedStoreUnits(store.id, store.businessType, tx);
-
+    // Seule l'inscription ouvre une période d'essai. Une boutique
+    // supplémentaire se paie d'avance — voir `createAdditionalStore`.
     if (trialPlan) {
       await tx.storeSubscription.create({
         data: {

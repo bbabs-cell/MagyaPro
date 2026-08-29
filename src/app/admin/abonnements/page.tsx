@@ -7,6 +7,7 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { getPlatformSettings } from '@/lib/platform-settings';
 import { PlatformPaymentSettings } from '@/components/admin/platform-payment-settings';
+import { DEFAULT_ADDITIONAL_STORE_PERCENT } from '@/lib/boutique/store-pricing';
 import { PlatformSoundSettings } from '@/components/admin/platform-sound-settings';
 import { SubscriptionPaymentReview } from '@/components/admin/subscription-payment-review';
 
@@ -88,6 +89,9 @@ export default async function AdminSubscriptionsPage({
             promoDiscountPercent={platformSettings?.promoDiscountPercent ?? null}
             promoEndsAt={platformSettings?.promoEndsAt ?? null}
             promoLabel={platformSettings?.promoLabel ?? null}
+            additionalStorePercent={
+              platformSettings?.additionalStorePercent ?? DEFAULT_ADDITIONAL_STORE_PERCENT
+            }
           />
 
           <PlatformSoundSettings soundUrl={platformSettings?.notificationSoundUrl ?? null} />

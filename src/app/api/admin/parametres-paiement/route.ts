@@ -10,6 +10,10 @@ const schema = z.object({
   promoDiscountPercent: z.number().int().min(1).max(90).nullable().optional(),
   promoEndsAt: z.coerce.date().nullable().optional(),
   promoLabel: z.string().max(120).nullable().optional(),
+  // Majoration des boutiques supplémentaires. Bornée à 200 % : au-delà, une
+  // boutique de plus coûterait davantage qu'un deuxième abonnement complet, ce
+  // qui n'a aucun sens commercial et trahit une erreur de saisie.
+  additionalStorePercent: z.number().int().min(0).max(200).optional(),
 });
 
 /** Numéros Wave/Orange Money de la plateforme, receveurs des paiements d'abonnement. */
