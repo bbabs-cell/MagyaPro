@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { getStoreEntitlements } from '@/lib/boutique/entitlements';
 import { seedStoreUnits } from '@/lib/boutique/units-engine';
 
 const businessTypes = [
@@ -60,5 +61,10 @@ export const POST = route(async (request) => {
   // désactivées par le commerçant, ne sont jamais touchées.
   await seedStoreUnits(context.store.id, input.businessType);
 
-  return ok({ store });
+  // La configuration terminée, la boutique n'est pas forcément utilisable :
+  // une boutique supplémentaire naît sans abonnement, volontairement. L'écran
+  // suivant dépend donc de cet état, et c'est le serveur qui tranche.
+  const entitlements = await getStoreEntitlements(context.store.id);
+
+  return ok({ store, subscriptionActive: entitlements.isActive });
 });

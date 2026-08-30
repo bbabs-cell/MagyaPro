@@ -318,9 +318,24 @@ export async function requireStore(permission?: StorePermission): Promise<StoreC
     !context.isDemoTour
   ) {
     const entitlements = await getStoreEntitlements(context.store.id);
-    if (!entitlements.isActive) {
+
+    // Une boutique qui n'a pas terminé sa configuration doit pouvoir la
+    // terminer, même sans abonnement. C'est indispensable pour les boutiques
+    // supplémentaires, ouvertes sans période d'essai : le tableau de bord les
+    // renvoie vers la configuration tant qu'elle n'est pas finie, et la
+    // configuration est le seul chemin vers leur écran de paiement. Sans cette
+    // dérogation, elles tournent en rond sans jamais pouvoir payer.
+    //
+    // L'exception est volontairement étroite : la seule écriture autorisée est
+    // celle qui décrit la boutique (`store:update`), et seulement tant que la
+    // configuration n'est pas achevée. Ni caisse, ni stock, ni vente.
+    const settingUp = !context.store.onboardingCompletedAt && permission === 'store:update';
+
+    if (!entitlements.isActive && !settingUp) {
       throw new PlanLimitError(
-        "Votre abonnement n'est plus actif. Choisissez un plan pour retrouver l'accès à votre boutique.",
+        entitlements.planKey === null
+          ? 'Cette boutique n’a pas encore de plan. Choisissez-en un pour l’ouvrir.'
+          : "Votre abonnement n'est plus actif. Choisissez un plan pour retrouver l'accès à votre boutique.",
       );
     }
   }

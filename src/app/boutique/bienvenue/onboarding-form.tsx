@@ -43,14 +43,21 @@ export function OnboardingForm() {
     const formData = new FormData(event.currentTarget);
 
     try {
-      await api.post('/api/boutique/onboarding', {
+      const result = await api.post<{ subscriptionActive: boolean }>('/api/boutique/onboarding', {
         businessType: String(formData.get('businessType') ?? 'OTHER'),
         phone: String(formData.get('phone') ?? ''),
         addressLine: String(formData.get('addressLine') ?? ''),
         city: String(formData.get('city') ?? ''),
         currency: String(formData.get('currency') ?? 'XOF'),
       });
-      router.replace('/boutique/dashboard');
+
+      // Sans abonnement utilisable, le tableau de bord n'afficherait que son
+      // mur de paiement : autant emmener directement au choix du plan. La
+      // boutique reste ouverte et ses données intactes, elle ne peut
+      // simplement pas encore servir.
+      router.replace(
+        result.subscriptionActive ? '/boutique/dashboard' : '/boutique/dashboard/abonnement',
+      );
       router.refresh();
     } catch (error) {
       if (error instanceof ApiError) {
