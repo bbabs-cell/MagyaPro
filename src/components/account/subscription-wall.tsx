@@ -36,6 +36,7 @@ export function SubscriptionWall({
   limitLabel,
   neverSubscribed = false,
   paymentSlot,
+  footerSlot,
 }: {
   tenantName: string;
   /** `TRIALING` n'arrive jamais ici : le mur ne s'affiche qu'une fois l'accès perdu. */
@@ -62,6 +63,12 @@ export function SubscriptionWall({
    * plans, mais avec un bouton dessus.
    */
   paymentSlot?: ReactNode;
+  /**
+   * Sorties vers les autres espaces du compte. Le mur masque toute la
+   * navigation : sans ce bloc, quelqu'un qui gère plusieurs boutiques se
+   * retrouve enfermé sur celle qu'il n'a pas encore réglée.
+   */
+  footerSlot?: ReactNode;
 }) {
   const trialEnded = !neverSubscribed && (status === 'EXPIRED' || status === 'PAST_DUE');
 
@@ -166,6 +173,8 @@ export function SubscriptionWall({
         </div>
           </>
         )}
+
+        {footerSlot}
       </div>
     </div>
   );
