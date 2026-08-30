@@ -82,6 +82,11 @@ export default async function AdminPlansPage({
             isActive: plan.isActive,
             position: plan.position,
             subscriptionsCount: plan._count.subscriptions + plan._count.storeSubscriptions,
+            // Un plan Restaurant ne devrait avoir que des restaurants abonnés.
+            // Le total additionne les deux : sans ce détail, une boutique
+            // rattachée à un plan Restaurant se cache dans le décompte.
+            foreignSubscriptionsCount:
+              plan.product === 'STORE' ? plan._count.subscriptions : plan._count.storeSubscriptions,
           }))}
         />
       </div>

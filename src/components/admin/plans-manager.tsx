@@ -22,6 +22,12 @@ type Plan = {
   isActive: boolean;
   position: number;
   subscriptionsCount: number;
+  /**
+   * Abonnés venant de l'autre produit : des boutiques sur un plan Restaurant,
+   * ou l'inverse. Presque toujours zéro. Quand ce n'est pas le cas, c'est une
+   * anomalie de facturation, et le total seul ne la laisse pas voir.
+   */
+  foreignSubscriptionsCount: number;
 };
 
 const RESTAURANT_LIMIT_FIELDS: Array<{ key: keyof PlanLimits; label: string }> = [
@@ -388,6 +394,13 @@ export function PlansManager({
                 d&apos;essai · {plan.subscriptionsCount} abonné
                 {plan.subscriptionsCount > 1 ? 's' : ''}
               </p>
+              {plan.foreignSubscriptionsCount > 0 && (
+                <p className="mt-1 inline-block rounded-md bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200">
+                  Dont {plan.foreignSubscriptionsCount}{' '}
+                  {plan.product === 'STORE' ? 'restaurant' : 'boutique'}
+                  {plan.foreignSubscriptionsCount > 1 ? 's' : ''} : facturé sur la mauvaise grille
+                </p>
+              )}
             </div>
 
             <div className="flex shrink-0 gap-2">
