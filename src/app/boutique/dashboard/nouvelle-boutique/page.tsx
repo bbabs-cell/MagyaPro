@@ -5,8 +5,8 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import {
   additionalStorePrice,
   getAdditionalStorePercent,
+  getGroupBillingTotals,
   getStoreBillingPlan,
-  getStoreBillingPosition,
 } from '@/lib/boutique/store-pricing';
 import { formatMoney } from '@/lib/money';
 import { NewStoreForm } from '@/components/boutique/new-store-form';
@@ -34,10 +34,10 @@ export default async function NouvelleBoutiquePage() {
     redirect('/boutique/dashboard');
   }
 
-  const [billingPlan, percent, position] = await Promise.all([
+  const percent = await getAdditionalStorePercent();
+  const [billingPlan, totals] = await Promise.all([
     getStoreBillingPlan(context.store.id),
-    getAdditionalStorePercent(),
-    getStoreBillingPosition(context.store.id),
+    getGroupBillingTotals(context.store.id, percent),
   ]);
 
   // Un plan qui n'appartient pas au produit Boutique ne sert pas de base de
@@ -46,12 +46,12 @@ export default async function NouvelleBoutiquePage() {
   const plan = billingPlan.isForeignProduct ? null : billingPlan.plan;
   const currency = plan?.currency ?? context.store.currency;
 
-  // Ce que coûtera la prochaine boutique, et le total qui en résultera. Les
-  // boutiques déjà ouvertes au-delà de la première paient déjà la majoration :
-  // le total la compte pour chacune d'elles.
+  // Ce que coûtera la prochaine boutique, et le total qui en résultera. Le
+  // total de départ vient des abonnements réellement en cours, pas du nombre
+  // de boutiques : une boutique ouverte mais pas encore payée ne doit pas être
+  // comptée dans ce que le commerçant paie aujourd'hui.
   const additional = plan ? additionalStorePrice(plan.price, percent) : null;
-  const currentTotal = plan ? plan.price + additional! * (position.groupSize - 1) : null;
-  const nextTotal = currentTotal !== null ? currentTotal + additional! : null;
+  const nextTotal = additional !== null ? totals.total + additional : null;
 
   return (
     <>
@@ -78,16 +78,25 @@ export default async function NouvelleBoutiquePage() {
             <dl className="mt-5 space-y-2 border-t border-surface-border pt-4 text-sm">
               <div className="flex items-baseline justify-between gap-4">
                 <dt className="text-ink-muted">
-                  Vous payez aujourd&apos;hui pour {position.groupSize} boutique
-                  {position.groupSize > 1 ? 's' : ''}
+                  Vous payez aujourd&apos;hui pour {totals.billed} boutique
+                  {totals.billed > 1 ? 's' : ''}
                 </dt>
-                <dd className="tabular-nums text-ink">{formatMoney(currentTotal!, currency)}</dd>
+                <dd className="tabular-nums text-ink">{formatMoney(totals.total, currency)}</dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 font-medium">
                 <dt className="text-ink">Après cet ajout</dt>
                 <dd className="tabular-nums text-ink">{formatMoney(nextTotal!, currency)}</dd>
               </div>
             </dl>
+
+            {totals.groupSize > totals.billed && (
+              <p className="mt-3 text-xs text-ink-faint">
+                {totals.groupSize - totals.billed} boutique
+                {totals.groupSize - totals.billed > 1 ? 's ouvertes attendent' : ' ouverte attend'}{' '}
+                encore son paiement et n&apos;{totals.groupSize - totals.billed > 1 ? 'entrent' : 'entre'}{' '}
+                pas dans ce total.
+              </p>
+            )}
           </>
         ) : billingPlan.isForeignProduct ? (
           <>

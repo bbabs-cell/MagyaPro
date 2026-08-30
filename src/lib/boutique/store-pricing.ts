@@ -133,6 +133,73 @@ export async function getStoreSubscriptionPrice(
   };
 }
 
+export type GroupBillingTotals = {
+  /** Boutiques du groupe, payées ou non. */
+  groupSize: number;
+  /** Boutiques réellement facturées aujourd'hui. */
+  billed: number;
+  /** Somme mensuelle effectivement due pour le groupe. */
+  total: number;
+  /** Devise du groupe, `null` quand aucune boutique n'est facturée. */
+  currency: string | null;
+};
+
+/**
+ * Ce que le compte paie réellement aujourd'hui pour toutes ses boutiques.
+ *
+ * On additionne les boutiques dont l'abonnement est actif ou en essai, pas
+ * toutes les boutiques du groupe. Une boutique supplémentaire vit un moment
+ * sans abonnement, entre son ouverture et la validation de son paiement :
+ * l'inclure ferait annoncer au commerçant un total qu'il ne paie pas encore.
+ *
+ * Une boutique rattachée à un plan d'un autre produit est écartée du calcul
+ * plutôt que comptée de travers — voir `getStoreBillingPlan`.
+ */
+export async function getGroupBillingTotals(
+  storeId: string,
+  percent: number,
+): Promise<GroupBillingTotals> {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    select: { ownerAccountId: true, isDemo: true },
+  });
+
+  const empty: GroupBillingTotals = { groupSize: 1, billed: 0, total: 0, currency: null };
+  if (!store || store.isDemo || !store.ownerAccountId) return empty;
+
+  const stores = await prisma.store.findMany({
+    where: { ownerAccountId: store.ownerAccountId, isDemo: false },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      subscription: {
+        select: { status: true, plan: { select: { price: true, currency: true, product: true } } },
+      },
+    },
+  });
+
+  let total = 0;
+  let billed = 0;
+  let currency: string | null = null;
+
+  stores.forEach((entry, index) => {
+    const subscription = entry.subscription;
+    if (!subscription) return;
+    if (subscription.status !== 'ACTIVE' && subscription.status !== 'TRIALING') return;
+    if (subscription.plan.product !== 'STORE') return;
+
+    // Le rang se compte sur toutes les boutiques du groupe, pas seulement sur
+    // celles qui paient : c'est l'ancienneté qui décide qui paie plein tarif.
+    total +=
+      index === 0
+        ? subscription.plan.price
+        : additionalStorePrice(subscription.plan.price, percent);
+    billed += 1;
+    currency ??= subscription.plan.currency;
+  });
+
+  return { groupSize: stores.length, billed, total, currency };
+}
+
 /**
  * Plan que doit suivre une boutique supplémentaire.
  *
