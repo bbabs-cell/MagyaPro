@@ -7,9 +7,13 @@ import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
 /**
- * Favicon dynamique : dès qu'un logo de plateforme est envoyé (Administration
- * → Logo Magyapro), il devient aussi l'icône d'onglet — sans lui, le fichier
- * statique `app/icon.svg` (marque vectorielle de repli) prend le relais.
+ * Favicon : le logo envoyé depuis Administration → Images → « Logo Magyapro »
+ * sert aussi d'icône d'onglet.
+ *
+ * Il n'y a volontairement pas de repli. Le fichier `app/icon.svg` qui tenait
+ * ce rôle dessinait une ancienne marque en dur ; il a été supprimé avec elle.
+ * Sans logo envoyé, le navigateur affiche son icône par défaut plutôt qu'un
+ * symbole que plus personne ne revendique.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const logoUrl = platformLogoUrl();

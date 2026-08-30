@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Logo, LogoMark } from '@/components/ui/logo';
+import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
@@ -38,11 +38,9 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="flex items-center gap-2">
-                {logoUrl ? (
+                {logoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
                   <img src={logoUrl} alt="" className="h-6 w-6 object-contain" />
-                ) : (
-                  <LogoMark className="h-6 w-6" />
                 )}
                 <p className="font-semibold">Magyapro</p>
               </span>
