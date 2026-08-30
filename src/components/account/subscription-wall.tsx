@@ -66,7 +66,11 @@ export function SubscriptionWall({
   const trialEnded = !neverSubscribed && (status === 'EXPIRED' || status === 'PAST_DUE');
 
   return (
-    <div className="min-h-screen bg-surface-sunken">
+    // `text-ink` explicite : sous `/boutique`, la mise en page parente impose
+    // un fond sombre et un texte crème pour les pages publiques. Le mur, lui,
+    // est clair. Sans cette couleur, tout ce qui n'a pas de classe de couleur
+    // propre hérite du crème et devient illisible sur fond blanc.
+    <div className="min-h-screen bg-surface-sunken text-ink">
       <div className="container-page py-12 sm:py-16">
         <header className="mx-auto max-w-2xl text-center">
           <Logo className="mx-auto h-9 w-auto" />

@@ -174,7 +174,7 @@ export function StoreSubscriptionPaymentFlow({
         <div className="flex items-center gap-2">
           <Badge tone="warning">En attente de validation</Badge>
         </div>
-        <p className="mt-3 text-sm">
+        <p className="mt-3 text-sm text-ink">
           Plan <strong>{activePayment.planName}</strong> — {activePayment.amountLabel} via{' '}
           {PROVIDER_LABELS[activePayment.provider]}
         </p>
@@ -229,7 +229,7 @@ export function StoreSubscriptionPaymentFlow({
       )}
 
       {billing.isAdditional && billing.percent !== null && (
-        <div className="mb-4 rounded-xl border border-surface-border bg-surface-sunken px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl border border-surface-border bg-surface-sunken px-4 py-3 text-sm text-ink">
           <p className="font-medium text-ink">Boutique supplémentaire</p>
           <p className="mt-1 text-ink-muted">
             Ce n&apos;est pas la première boutique de votre compte : elle est facturée{' '}
@@ -239,7 +239,7 @@ export function StoreSubscriptionPaymentFlow({
         </div>
       )}
 
-      <h2 className="mb-3 text-sm font-medium">Plans disponibles</h2>
+      <h2 className="mb-3 text-sm font-medium text-ink">Plans disponibles</h2>
 
       {plans.length === 0 && (
         <p className="text-sm text-ink-muted">
@@ -263,7 +263,7 @@ export function StoreSubscriptionPaymentFlow({
               className={cx('p-5', isCurrent && 'border-brand ring-1 ring-brand')}
             >
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold">{plan.name}</h3>
+                <h3 className="font-semibold text-ink">{plan.name}</h3>
                 {isCurrent && <Badge tone="brand">Actuel</Badge>}
               </div>
 
@@ -272,7 +272,7 @@ export function StoreSubscriptionPaymentFlow({
               )}
 
               <p className="mt-4">
-                <span className="text-2xl font-semibold tracking-tight">{plan.amountLabel}</span>
+                <span className="text-2xl font-semibold tracking-tight text-ink">{plan.amountLabel}</span>
                 <span className="text-sm text-ink-muted">
                   {plan.interval === 'MONTH' ? ' / mois' : ' / an'}
                 </span>
@@ -283,7 +283,7 @@ export function StoreSubscriptionPaymentFlow({
                 </p>
               )}
 
-              <ul className="mt-4 space-y-1.5 text-sm">
+              <ul className="mt-4 space-y-1.5 text-sm text-ink">
                 {[...plan.limits, ...plan.features].map((line) => (
                   <li key={line} className="flex gap-2">
                     <span aria-hidden="true" className="text-brand">✓</span>
@@ -356,7 +356,7 @@ export function StoreSubscriptionPaymentFlow({
                       id={`country-${plan.key}`}
                       value={country}
                       onChange={(event) => setCountry(event.target.value)}
-                      className="mt-1.5 w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm"
+                      className="mt-1.5 w-full rounded-lg border border-surface-border bg-surface px-3 py-2 text-sm text-ink"
                     >
                       <option value="">Choisir un pays…</option>
                       {COUNTRIES.map((name) => (
