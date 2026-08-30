@@ -6,15 +6,9 @@ import { formatMoney } from '@/lib/money';
 import { StoreSubscriptionPaymentFlow } from '@/components/boutique/subscription-payment-flow';
 import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
-import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
+import { getActivePromo } from '@/lib/platform-settings';
 import { PromoBanner } from '@/components/marketing/promo-banner';
-import { STORE_FEATURE_LABELS, type StoreFeature } from '@/lib/boutique/entitlements';
-import {
-  additionalStorePrice,
-  getAdditionalStorePercent,
-  getGroupPlanKey,
-  getStoreBillingPosition,
-} from '@/lib/boutique/store-pricing';
+import { loadStoreSubscriptionScreen } from '@/lib/boutique/subscription-screen';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
@@ -27,13 +21,6 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: 'Expiré',
 };
 
-/// Libellé d'une clé de fonctionnalité de plan Boutique — `STORE_FEATURE_LABELS`
-/// pour les clés connues ; humanisée en repli pour une clé plus récente que
-/// ce déploiement (les plans vivent en base, sans redéploiement).
-function featureLabel(key: string): string {
-  return STORE_FEATURE_LABELS[key as StoreFeature] ?? key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
-}
-
 /**
  * Abonnement Boutique — version allégée de l'équivalent Restaurant : pas de
  * barres d'utilisation ni d'options par fonctionnalité, Boutique n'ayant pas
@@ -42,67 +29,19 @@ function featureLabel(key: string): string {
 export default async function StoreSubscriptionPage() {
   const context = await requireStore('subscription:view');
 
-  const [
-    subscription,
-    plans,
-    platformSettings,
-    pendingPayment,
-    promo,
-    paidPayments,
-    position,
-    surchargePercent,
-    lockedPlanKey,
-  ] = await Promise.all([
-      prisma.storeSubscription.findUnique({
-        where: { storeId: context.store.id },
-        include: { plan: true },
-      }),
-      prisma.plan.findMany({
-        where: { isActive: true, product: 'STORE' },
-        orderBy: { position: 'asc' },
-      }),
-      getPlatformSettings(),
-      prisma.storeSubscriptionPayment.findFirst({
-        where: { storeId: context.store.id, status: 'PENDING' },
-        include: { plan: { select: { name: true } } },
-      }),
-      getActivePromo(),
-      prisma.storeSubscriptionPayment.findMany({
-        where: { storeId: context.store.id, status: 'APPROVED' },
-        orderBy: { reviewedAt: 'desc' },
-        take: 12,
-        include: { plan: { select: { name: true } } },
-      }),
-      getStoreBillingPosition(context.store.id),
-      getAdditionalStorePercent(),
-      getGroupPlanKey(context.store.id),
-    ]);
+  const [screen, promo, paidPayments] = await Promise.all([
+    loadStoreSubscriptionScreen(context.store.id),
+    getActivePromo(),
+    prisma.storeSubscriptionPayment.findMany({
+      where: { storeId: context.store.id, status: 'APPROVED' },
+      orderBy: { reviewedAt: 'desc' },
+      take: 12,
+      include: { plan: { select: { name: true } } },
+    }),
+  ]);
+
+  const subscription = screen.subscription;
   const alreadyPaid = paidPayments.length > 0;
-
-  // Montant réellement dû par cette boutique pour chaque plan. Calculé ici et
-  // pas dans le navigateur : un prix ne se recalcule pas côté client, et c'est
-  // la même règle que celle appliquée à la création du paiement.
-  const amountFor = (price: number) =>
-    position.isAdditional ? additionalStorePrice(price, surchargePercent) : price;
-
-  // Le verrouillage sur le plan de la boutique principale ne vaut que si ce
-  // plan figure vraiment parmi ceux proposés. Sinon (plan désactivé depuis, ou
-  // rattaché à un autre produit), toutes les cartes seraient verrouillées et
-  // la boutique n'aurait plus aucun moyen de payer : un cul-de-sac où l'on
-  // réclame un règlement sans offrir de bouton pour le faire. Dans ce cas, on
-  // rend le choix libre.
-  const effectiveLockedPlanKey =
-    lockedPlanKey && plans.some((plan) => plan.key === lockedPlanKey) ? lockedPlanKey : null;
-
-  const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
-    ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
-    ...(platformSettings?.orangeMoneyNumber ? (['orange_money_manual'] as const) : []),
-  ];
-
-  const receivingNumberFor = (provider: string) =>
-    provider === 'wave_manual'
-      ? (platformSettings?.waveNumber ?? '')
-      : (platformSettings?.orangeMoneyNumber ?? '');
 
   return (
     <>
@@ -192,36 +131,11 @@ export default async function StoreSubscriptionPage() {
       <div className="mt-6">
         <StoreSubscriptionPaymentFlow
           canManage={context.permissions.has('subscription:manage')}
-          currentPlanKey={subscription?.plan.key ?? null}
-          availableProviders={availableProviders}
-          pendingPayment={
-            pendingPayment
-              ? {
-                  id: pendingPayment.id,
-                  planName: pendingPayment.plan.name,
-                  amountLabel: formatMoney(pendingPayment.amount, pendingPayment.currency),
-                  provider: pendingPayment.provider as 'wave_manual' | 'orange_money_manual',
-                  receivingNumber: receivingNumberFor(pendingPayment.provider),
-                  proofImageUrl: pendingPayment.proofImageUrl,
-                }
-              : null
-          }
-          billing={{
-            isAdditional: position.isAdditional,
-            percent: position.isAdditional ? surchargePercent : null,
-            lockedPlanKey: effectiveLockedPlanKey,
-          }}
-          plans={plans.map((plan) => ({
-            key: plan.key,
-            name: plan.name,
-            description: plan.description,
-            priceLabel: formatMoney(plan.price, plan.currency),
-            amountLabel: formatMoney(amountFor(plan.price), plan.currency),
-            price: plan.price,
-            interval: plan.interval,
-            trialDays: plan.trialDays,
-            features: plan.features.map(featureLabel),
-          }))}
+          currentPlanKey={screen.currentPlanKey}
+          availableProviders={screen.availableProviders}
+          pendingPayment={screen.pendingPayment}
+          billing={screen.billing}
+          plans={screen.plans}
         />
       </div>
 

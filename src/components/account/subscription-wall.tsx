@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import { formatMoney } from '@/lib/money';
@@ -34,6 +35,7 @@ export function SubscriptionWall({
   featureLabel,
   limitLabel,
   neverSubscribed = false,
+  paymentSlot,
 }: {
   tenantName: string;
   /** `TRIALING` n'arrive jamais ici : le mur ne s'affiche qu'une fois l'accès perdu. */
@@ -50,6 +52,16 @@ export function SubscriptionWall({
   subscribeHref: string;
   featureLabel: (key: string) => string;
   limitLabel: (key: string) => string;
+  /**
+   * Formulaire de paiement affiché directement sur ce mur.
+   *
+   * Sans lui, l'écran se contente d'un lien vers la page d'abonnement : un
+   * détour de plus pour quelqu'un qui est déjà bloqué et qui vient de lire
+   * qu'il doit payer. Quand il est fourni, il remplace les cartes de
+   * présentation et le lien — les cartes du formulaire portent les mêmes
+   * plans, mais avec un bouton dessus.
+   */
+  paymentSlot?: ReactNode;
 }) {
   const trialEnded = !neverSubscribed && (status === 'EXPIRED' || status === 'PAST_DUE');
 
@@ -77,6 +89,16 @@ export function SubscriptionWall({
           </p>
         </header>
 
+        {paymentSlot ? (
+          <div className="mx-auto mt-10 max-w-3xl">
+            {paymentSlot}
+            <p className="mt-6 text-center text-sm text-ink-faint">
+              Paiement par Wave ou Orange Money. L&apos;accès reprend dès que votre versement est
+              validé.
+            </p>
+          </div>
+        ) : (
+          <>
         <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
           {plans.map((plan, index) => {
             const highlighted = index === plans.length - 1;
@@ -138,6 +160,8 @@ export function SubscriptionWall({
             validé.
           </p>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

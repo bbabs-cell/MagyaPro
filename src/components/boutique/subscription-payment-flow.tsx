@@ -29,6 +29,8 @@ type Plan = {
   price: number;
   interval: 'MONTH' | 'YEAR';
   trialDays: number;
+  /** Limites du plan, déjà rédigées côté serveur (« Jusqu'à 200 produits »). */
+  limits: string[];
   features: string[];
 };
 
@@ -282,10 +284,10 @@ export function StoreSubscriptionPaymentFlow({
               )}
 
               <ul className="mt-4 space-y-1.5 text-sm">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex gap-2">
+                {[...plan.limits, ...plan.features].map((line) => (
+                  <li key={line} className="flex gap-2">
                     <span aria-hidden="true" className="text-brand">✓</span>
-                    {feature}
+                    {line}
                   </li>
                 ))}
               </ul>

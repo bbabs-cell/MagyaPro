@@ -9,6 +9,8 @@ import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from './shell';
 import { SubscriptionWall } from '@/components/account/subscription-wall';
+import { StoreSubscriptionPaymentFlow } from '@/components/boutique/subscription-payment-flow';
+import { loadStoreSubscriptionScreen } from '@/lib/boutique/subscription-screen';
 import {
   STORE_FEATURE_LABELS,
   STORE_LIMIT_LABELS,
@@ -87,10 +89,13 @@ export default async function BoutiqueDashboardLayout({
   const onSubscriptionPage = pathname.startsWith('/boutique/dashboard/abonnement');
 
   if (!entitlements.isActive && !onSubscriptionPage && !context.isSupportAccess) {
-    const plans = await prisma.plan.findMany({
-      where: { isActive: true, product: 'STORE' },
-      orderBy: { position: 'asc' },
-    });
+    // Le paiement se fait sur le mur lui-même, pas derrière un lien. Quelqu'un
+    // qui vient de lire qu'il doit régler sa boutique ne devrait pas avoir à
+    // trouver un autre écran pour le faire, ni à comprendre que « Choisir un
+    // plan et payer » menait ailleurs. Les données sont chargées par la même
+    // fonction que la page Abonnement : les deux écrans annoncent forcément
+    // les mêmes plans aux mêmes montants.
+    const screen = await loadStoreSubscriptionScreen(context.store.id);
 
     return (
       <SubscriptionWall
@@ -102,15 +107,17 @@ export default async function BoutiqueDashboardLayout({
         subscribeHref="/boutique/dashboard/abonnement"
         featureLabel={(key) => STORE_FEATURE_LABELS[key as StoreFeature] ?? key}
         limitLabel={(key) => STORE_LIMIT_LABELS[key as keyof typeof STORE_LIMIT_LABELS] ?? key}
-        plans={plans.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          description: plan.description,
-          price: plan.price,
-          currency: plan.currency,
-          features: plan.features,
-          limits: (plan.limits ?? {}) as Record<string, number | undefined>,
-        }))}
+        plans={[]}
+        paymentSlot={
+          <StoreSubscriptionPaymentFlow
+            canManage={context.permissions.has('subscription:manage')}
+            currentPlanKey={screen.currentPlanKey}
+            availableProviders={screen.availableProviders}
+            pendingPayment={screen.pendingPayment}
+            billing={screen.billing}
+            plans={screen.plans}
+          />
+        }
       />
     );
   }
