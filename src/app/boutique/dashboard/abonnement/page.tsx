@@ -85,6 +85,15 @@ export default async function StoreSubscriptionPage() {
   const amountFor = (price: number) =>
     position.isAdditional ? additionalStorePrice(price, surchargePercent) : price;
 
+  // Le verrouillage sur le plan de la boutique principale ne vaut que si ce
+  // plan figure vraiment parmi ceux proposés. Sinon (plan désactivé depuis, ou
+  // rattaché à un autre produit), toutes les cartes seraient verrouillées et
+  // la boutique n'aurait plus aucun moyen de payer : un cul-de-sac où l'on
+  // réclame un règlement sans offrir de bouton pour le faire. Dans ce cas, on
+  // rend le choix libre.
+  const effectiveLockedPlanKey =
+    lockedPlanKey && plans.some((plan) => plan.key === lockedPlanKey) ? lockedPlanKey : null;
+
   const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
     ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
     ...(platformSettings?.orangeMoneyNumber ? (['orange_money_manual'] as const) : []),
@@ -200,7 +209,7 @@ export default async function StoreSubscriptionPage() {
           billing={{
             isAdditional: position.isAdditional,
             percent: position.isAdditional ? surchargePercent : null,
-            lockedPlanKey,
+            lockedPlanKey: effectiveLockedPlanKey,
           }}
           plans={plans.map((plan) => ({
             key: plan.key,
