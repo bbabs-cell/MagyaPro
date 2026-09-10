@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-import { prisma } from '@/lib/db';
 import { requireStore, listStoreMemberships, setActiveStore } from '@/lib/boutique/store-tenant';
+import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
 import { getStoreDashboardMetrics } from '@/lib/boutique/analytics';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { formatMoney } from '@/lib/money';
@@ -11,27 +11,6 @@ import { Badge, Card, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Toutes les boutiques' };
 export const dynamic = 'force-dynamic';
-
-/** Nombre de variantes dont le stock total est sous le seuil d'alerte du produit. */
-async function countLowStock(storeId: string): Promise<number> {
-  const products = await prisma.storeProduct.findMany({
-    where: { storeId, status: 'ACTIVE' },
-    select: {
-      minStockAlert: true,
-      variants: { where: { isActive: true }, select: { inventory: { select: { quantity: true } } } },
-    },
-  });
-
-  let count = 0;
-  for (const product of products) {
-    const threshold = Number(product.minStockAlert);
-    for (const variant of product.variants) {
-      const total = variant.inventory.reduce((sum, inv) => sum + Number(inv.quantity), 0);
-      if (total <= threshold) count++;
-    }
-  }
-  return count;
-}
 
 export default async function ToutesLesBoutiquesPage() {
   const context = await requireStore('store:view');
@@ -45,11 +24,16 @@ export default async function ToutesLesBoutiquesPage() {
 
   const rows = await Promise.all(
     managed.map(async (m) => {
-      const [metrics, lowStock] = await Promise.all([
+      const [metrics, alerts] = await Promise.all([
         getStoreDashboardMetrics(m.store.id, '30d'),
-        countLowStock(m.store.id),
+        // Les mêmes alertes que sur la vue d'ensemble de chaque boutique, par
+        // la même fonction. Cette page comptait auparavant son « stock bas »
+        // autrement : elle incluait les ruptures, que la vue d'ensemble compte
+        // à part. Le même commerçant lisait donc deux chiffres différents pour
+        // la même chose selon l'écran ouvert.
+        getStoreHomeAlerts(m.store.id),
       ]);
-      return { ...m, metrics, lowStock };
+      return { ...m, metrics, alerts };
     }),
   );
 
@@ -96,8 +80,17 @@ export default async function ToutesLesBoutiquesPage() {
                   <p className="mt-1 text-sm text-ink-muted">
                     {formatMoney(row.metrics.revenue, row.store.currency)} · {row.metrics.salesCount} vente
                     {row.metrics.salesCount > 1 ? 's' : ''}
-                    {row.lowStock > 0 && (
-                      <span className="text-state-warn"> · {row.lowStock} article(s) à stock bas</span>
+                    {row.alerts.outOfStock > 0 && (
+                      <span className="text-state-bad">
+                        {' '}
+                        · {row.alerts.outOfStock} en rupture
+                      </span>
+                    )}
+                    {row.alerts.lowStock > 0 && (
+                      <span className="text-state-warn">
+                        {' '}
+                        · {row.alerts.lowStock} à stock bas
+                      </span>
                     )}
                   </p>
                 </div>

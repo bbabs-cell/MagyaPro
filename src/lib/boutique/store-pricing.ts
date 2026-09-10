@@ -80,6 +80,73 @@ export async function getStoreBillingPosition(storeId: string): Promise<StoreBil
   return { rank, groupSize, isAdditional: rank > 1 };
 }
 
+/**
+ * Rang de facturation de plusieurs boutiques, en deux requêtes.
+ *
+ * `getStoreBillingPosition` en coûte trois par boutique. Appelée dans une
+ * boucle — la liste des paiements en attente de l'administration, par exemple —
+ * elle multiplie les allers-retours par le nombre de lignes affichées, ce qui
+ * est précisément le défaut qui fait exploser le temps de calcul d'une page
+ * sans que rien ne le signale à l'écran.
+ *
+ * Ici, les groupes concernés sont chargés une fois et les rangs calculés en
+ * mémoire. Deux requêtes, que la liste contienne trois lignes ou trois cents.
+ */
+export async function getStoreBillingPositions(
+  storeIds: string[],
+): Promise<Map<string, StoreBillingPosition>> {
+  const single: StoreBillingPosition = { rank: 1, groupSize: 1, isAdditional: false };
+  const positions = new Map<string, StoreBillingPosition>();
+  if (storeIds.length === 0) return positions;
+
+  const stores = await prisma.store.findMany({
+    where: { id: { in: storeIds } },
+    select: { id: true, ownerAccountId: true, isDemo: true },
+  });
+
+  const ownerIds = [
+    ...new Set(
+      stores
+        .filter((store) => !store.isDemo && store.ownerAccountId)
+        .map((store) => store.ownerAccountId as string),
+    ),
+  ];
+
+  // Toutes les boutiques des comptes concernés, dans l'ordre d'ancienneté :
+  // c'est cet ordre qui décide du rang, donc du tarif.
+  const siblings = ownerIds.length
+    ? await prisma.store.findMany({
+        where: { ownerAccountId: { in: ownerIds }, isDemo: false },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, ownerAccountId: true },
+      })
+    : [];
+
+  const groups = new Map<string, string[]>();
+  for (const store of siblings) {
+    const key = store.ownerAccountId as string;
+    const list = groups.get(key);
+    if (list) list.push(store.id);
+    else groups.set(key, [store.id]);
+  }
+
+  for (const store of stores) {
+    if (store.isDemo || !store.ownerAccountId) {
+      positions.set(store.id, single);
+      continue;
+    }
+    const group = groups.get(store.ownerAccountId) ?? [store.id];
+    const rank = group.indexOf(store.id) + 1;
+    positions.set(store.id, {
+      rank: rank > 0 ? rank : 1,
+      groupSize: group.length,
+      isAdditional: rank > 1,
+    });
+  }
+
+  return positions;
+}
+
 /** Majoration en vigueur, en pourcentage du tarif du plan. */
 export async function getAdditionalStorePercent(): Promise<number> {
   const settings = await getPlatformSettings();

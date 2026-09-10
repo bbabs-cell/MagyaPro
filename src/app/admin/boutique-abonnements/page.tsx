@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StoreSubscriptionPaymentReview } from '@/components/admin/store-subscription-payment-review';
-import { getStoreBillingPosition } from '@/lib/boutique/store-pricing';
+import { getStoreBillingPositions } from '@/lib/boutique/store-pricing';
 
 export const metadata: Metadata = { title: 'Abonnements Boutique' };
 export const dynamic = 'force-dynamic';
@@ -62,13 +62,12 @@ export default async function AdminStoreSubscriptionsPage({
   // Rang de facturation de chaque boutique dont un paiement attend validation.
   // Un montant inférieur au tarif du plan doit s'expliquer à l'écran, sinon on
   // hésite à valider ou on valide à tort.
-  const positions = new Map(
-    await Promise.all(
-      pendingPayments.map(
-        async (payment) =>
-          [payment.id, await getStoreBillingPosition(payment.store.id)] as const,
-      ),
-    ),
+  //
+  // Chargé en une fois pour toutes les boutiques concernées : une version
+  // précédente interrogeait la base par paiement affiché, soit trois requêtes
+  // par ligne du tableau.
+  const positions = await getStoreBillingPositions(
+    pendingPayments.map((payment) => payment.store.id),
   );
 
   return (
@@ -100,8 +99,8 @@ export default async function AdminStoreSubscriptionsPage({
                     : 'preuve non encore déposée'
                 }
                 billingNote={
-                  positions.get(payment.id)?.isAdditional
-                    ? `Boutique supplémentaire (n° ${positions.get(payment.id)!.rank} du compte) — montant majoré, inférieur au tarif ${payment.plan.name} de ${formatMoney(payment.plan.price, payment.plan.currency)}`
+                  positions.get(payment.store.id)?.isAdditional
+                    ? `Boutique supplémentaire (n° ${positions.get(payment.store.id)!.rank} du compte), montant majoré, inférieur au tarif ${payment.plan.name} de ${formatMoney(payment.plan.price, payment.plan.currency)}`
                     : null
                 }
               />
