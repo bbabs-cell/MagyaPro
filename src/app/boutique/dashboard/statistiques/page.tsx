@@ -24,6 +24,27 @@ export const dynamic = 'force-dynamic';
  * section « avancée » gated par entitlements : Boutique n'a pas (encore) de
  * système de limites/options par plan, donc rien à distinguer ici.
  */
+/**
+ * Variation d'un indicateur par rapport à la période précédente.
+ *
+ * `null` signifie qu'il n'y avait rien à comparer, pas une stagnation : on le
+ * dit plutôt que d'afficher « 0 % », qui ferait croire à une activité stable
+ * alors qu'il n'y en avait aucune.
+ *
+ * La couleur suit le sens du chiffre, jamais la décoration : une hausse est
+ * verte, une baisse est rouge, une absence de repère reste neutre.
+ */
+function changeProps(change: number | null): {
+  hint: string;
+  tone?: 'success' | 'danger';
+} {
+  if (change === null) return { hint: 'Pas de comparaison possible' };
+  return {
+    hint: `${change > 0 ? '+' : ''}${change} % vs période précédente`,
+    tone: change >= 0 ? 'success' : 'danger',
+  };
+}
+
 export default async function StoreAnalyticsPage({
   searchParams,
 }: {
@@ -72,32 +93,35 @@ export default async function StoreAnalyticsPage({
         ))}
       </nav>
 
+      {/* Les quatre indicateurs portent la même comparaison avec la période
+          précédente. Auparavant, seul le chiffre d'affaires en avait une : les
+          trois autres étaient des nombres nus, impossibles à juger. « 42
+          ventes » ne dit rien tant qu'on ignore s'il y en avait 30 ou 60 avant. */}
       <section aria-label="Indicateurs" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}
-          hint={
-            metrics.revenueChange === null
-              ? 'Aucune donnée sur la période précédente'
-              : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} %`
-          }
-          tone={
-            metrics.revenueChange === null
-              ? undefined
-              : metrics.revenueChange >= 0
-                ? 'success'
-                : 'danger'
-          }
+          {...changeProps(metrics.revenueChange)}
         />
-        <StatCard label="Ventes" value={String(metrics.salesCount)} />
+        <StatCard
+          label="Ventes"
+          value={String(metrics.salesCount)}
+          {...changeProps(metrics.salesChange)}
+        />
         <StatCard
           label="Panier moyen"
           value={
             metrics.averageBasket === null ? '—' : formatMoney(metrics.averageBasket, currency)
           }
-          hint={metrics.averageBasket === null ? 'Aucune vente' : undefined}
+          {...(metrics.averageBasket === null
+            ? { hint: 'Aucune vente' }
+            : changeProps(metrics.basketChange))}
         />
-        <StatCard label="Nouveaux clients" value={String(metrics.newCustomers)} />
+        <StatCard
+          label="Nouveaux clients"
+          value={String(metrics.newCustomers)}
+          {...changeProps(metrics.newCustomersChange)}
+        />
       </section>
 
       {!hasData ? (

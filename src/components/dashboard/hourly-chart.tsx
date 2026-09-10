@@ -9,6 +9,11 @@ import { useState } from 'react';
  * Les barres sont fines, ancrées à la ligne de base, avec des extrémités
  * arrondies et un écart de surface entre elles. Le tableau replié rend les
  * mêmes chiffres accessibles au clavier et aux lecteurs d'écran.
+ *
+ * Une barre se désigne au doigt comme à la souris. La première version
+ * n'écoutait que le survol : sur un téléphone, l'heure et le nombre de
+ * commandes n'apparaissaient jamais. On réagit à l'appui plutôt qu'au
+ * glissement, pour ne pas confisquer le défilement de la page.
  */
 export function HourlyActivityChart({
   data,
@@ -39,7 +44,9 @@ export function HourlyActivityChart({
 
       <div
         className="flex h-32 items-end gap-[2px]"
-        onMouseLeave={() => setHovered(null)}
+        onPointerLeave={(event) => {
+          if (event.pointerType === 'mouse') setHovered(null);
+        }}
       >
         {data.map((point) => {
           const height = (point.orders / max) * 100;
@@ -49,7 +56,10 @@ export function HourlyActivityChart({
             <div
               key={point.hour}
               className="group relative flex h-full flex-1 items-end"
-              onMouseEnter={() => setHovered(point.hour)}
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse') setHovered(point.hour);
+              }}
+              onPointerDown={() => setHovered(point.hour)}
             >
               <div
                 className={`w-full rounded-t transition-colors ${

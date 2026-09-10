@@ -30,6 +30,8 @@ export type StoreDashboardMetrics = {
   newCustomers: number;
   revenueChange: number | null;
   salesChange: number | null;
+  basketChange: number | null;
+  newCustomersChange: number | null;
 };
 
 export async function getStoreDashboardMetrics(
@@ -39,7 +41,7 @@ export async function getStoreDashboardMetrics(
   const { from, to } = periodRange(period);
   const previous = previousRange(from, to);
 
-  const [current, prior, newCustomers] = await Promise.all([
+  const [current, prior, newCustomers, priorNewCustomers] = await Promise.all([
     prisma.sale.aggregate({
       where: { storeId, createdAt: { gte: from, lte: to }, ...COUNTED_SALES },
       _sum: { total: true },
@@ -51,18 +53,28 @@ export async function getStoreDashboardMetrics(
       _count: true,
     }),
     prisma.storeCustomer.count({ where: { storeId, createdAt: { gte: from, lte: to } } }),
+    prisma.storeCustomer.count({
+      where: { storeId, createdAt: { gte: previous.from, lt: previous.to } },
+    }),
   ]);
 
   const revenue = current._sum.total ?? 0;
   const priorRevenue = prior._sum.total ?? 0;
 
+  const averageBasket = current._count > 0 ? Math.round(revenue / current._count) : null;
+  // Le panier moyen de la période précédente se déduit des agrégats déjà
+  // chargés : aucune requête de plus pour obtenir sa variation.
+  const priorBasket = prior._count > 0 ? Math.round(priorRevenue / prior._count) : 0;
+
   return {
     revenue,
     salesCount: current._count,
-    averageBasket: current._count > 0 ? Math.round(revenue / current._count) : null,
+    averageBasket,
     newCustomers,
     revenueChange: percentChange(priorRevenue, revenue),
     salesChange: percentChange(prior._count, current._count),
+    basketChange: averageBasket === null ? null : percentChange(priorBasket, averageBasket),
+    newCustomersChange: percentChange(priorNewCustomers, newCustomers),
   };
 }
 

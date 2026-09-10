@@ -14,6 +14,12 @@ import { formatMoney, toMajor } from '@/lib/money';
  * Un tableau équivalent est rendu sous le graphique (replié) : les données
  * restent accessibles au clavier et aux lecteurs d'écran, qui ne peuvent rien
  * faire d'un tracé SVG.
+ *
+ * L'interaction passe par les événements *pointer* et non *mouse* : la
+ * première version ne réagissait qu'à une souris, si bien que sur un
+ * téléphone — l'appareil de la plupart des commerçants — l'infobulle était
+ * tout simplement inatteignable. Un doigt posé désigne un jour, un doigt qui
+ * glisse balaie la courbe.
  */
 
 type Point = { date: string; revenue: number; orders: number };
@@ -58,6 +64,24 @@ export function RevenueChart({
 
   if (points.length === 0) return null;
 
+  /** Jour le plus proche de la position du pointeur, souris comme doigt. */
+  function indexFromPointer(event: React.PointerEvent<SVGSVGElement>): number {
+    const box = event.currentTarget.getBoundingClientRect();
+    if (box.width === 0) return 0;
+    const x = ((event.clientX - box.left) / box.width) * VIEW_WIDTH;
+
+    let closest = 0;
+    let smallest = Infinity;
+    geometry.coords.forEach((coord, index) => {
+      const distance = Math.abs(coord.x - x);
+      if (distance < smallest) {
+        smallest = distance;
+        closest = index;
+      }
+    });
+    return closest;
+  }
+
   const active = hovered === null ? null : points[hovered];
   const activeCoord = hovered === null ? null : geometry.coords[hovered];
 
@@ -77,7 +101,20 @@ export function RevenueChart({
           className="h-48 w-full touch-none"
           role="img"
           aria-label={`Évolution du chiffre d'affaires. Total ${formatMoney(total, currency)}. Meilleur jour : ${formatDay(peak.date)} avec ${formatMoney(peak.revenue, currency)}.`}
-          onMouseLeave={() => setHovered(null)}
+          // `onPointerLeave` couvre la souris qui sort du cadre. Au doigt,
+          // l'infobulle reste après le relâchement : la faire disparaître à
+          // la levée du doigt ne laisserait pas le temps de lire.
+          onPointerLeave={(event) => {
+            if (event.pointerType === 'mouse') setHovered(null);
+          }}
+          onPointerDown={(event) => setHovered(indexFromPointer(event))}
+          onPointerMove={(event) => {
+            // Au doigt, on ne suit que le glissement en cours ; à la souris,
+            // le simple survol suffit.
+            if (event.pointerType === 'mouse' || event.buttons > 0) {
+              setHovered(indexFromPointer(event));
+            }
+          }}
         >
           {/* Repères horizontaux, en retrait derrière la donnée — avec la
               valeur correspondante, pour donner une échelle de lecture. */}
@@ -145,18 +182,6 @@ export function RevenueChart({
             </>
           )}
 
-          {/* Zones de survol larges : viser un point de 2 px serait impraticable. */}
-          {geometry.coords.map((coord, index) => (
-            <rect
-              key={index}
-              x={coord.x - VIEW_WIDTH / points.length / 2}
-              y={0}
-              width={VIEW_WIDTH / points.length}
-              height={VIEW_HEIGHT}
-              fill="transparent"
-              onMouseEnter={() => setHovered(index)}
-            />
-          ))}
         </svg>
 
         {active && activeCoord && (
