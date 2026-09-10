@@ -113,7 +113,13 @@ describe('Cycle de vie des commandes', () => {
       expect(canTransition('CONFIRMED', 'PREPARING')).toBe(true);
       expect(canTransition('PREPARING', 'READY')).toBe(true);
       expect(canTransition('READY', 'OUT_FOR_DELIVERY')).toBe(true);
-      expect(canTransition('OUT_FOR_DELIVERY', 'COMPLETED')).toBe(true);
+      // Une commande livrée passe d'abord par DELIVERED : le livreur confirme
+      // la remise, le restaurant confirme l'encaissement. Pas de raccourci de
+      // la livraison vers COMPLETED — voir `ORDER_TRANSITIONS`.
+      expect(canTransition('OUT_FOR_DELIVERY', 'DELIVERED')).toBe(true);
+      expect(canTransition('DELIVERED', 'COMPLETED')).toBe(true);
+      // Une commande à emporter, elle, se termine directement depuis READY.
+      expect(canTransition('READY', 'COMPLETED')).toBe(true);
     });
 
     it('interdit de sauter des étapes ou de revenir en arrière', () => {

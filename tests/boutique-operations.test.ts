@@ -237,7 +237,10 @@ describe('Achats', () => {
         userEmail: shop.owner.email,
         purchaseOrderId: order.id,
       }),
-    ).rejects.toThrow(/déjà des lignes reçues/i);
+      // La réception partielle a fait passer la commande en
+      // PARTIALLY_RECEIVED : c'est le contrôle de statut qui refuse, avec son
+      // propre message. Le test porte sur le refus, pas sur sa formulation.
+    ).rejects.toThrow(/ne peut plus être annulée/i);
   });
 });
 

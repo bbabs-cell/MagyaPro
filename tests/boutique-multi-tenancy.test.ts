@@ -121,7 +121,10 @@ describe('Isolation multi-tenant (Boutique)', () => {
         userEmail: alpha.owner.email,
         input: {
           items: [{ productVariantId: alpha.variant.id, quantity: 1 }],
-          payments: [{ method: 'cash', amount: 4500 }],
+          // Prix plein : sans code promo, 4500 laisserait 500 à crédit et la
+          // vente serait refusée faute de client. Ce test-ci porte sur le
+          // stock, pas sur le crédit.
+          payments: [{ method: 'cash', amount: 5000 }],
           discount: 0,
         },
       });
