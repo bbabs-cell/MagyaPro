@@ -53,6 +53,14 @@ jobs:
       - name: Vérification des types
         run: npm run typecheck
 
+      # Les fichiers de test ne sont pas couverts par la vérification
+      # ci-dessus : ils ont leur propre configuration TypeScript. Sans cette
+      # étape, un test qui importe un module supprimé passe inaperçu jusqu'à
+      # son exécution — et deux fichiers avaient effectivement survécu au
+      # retrait des clés d'API et des domaines personnalisés.
+      - name: Vérification des types (tests)
+        run: npm run typecheck:tests
+
       - name: Lint
         run: npm run lint
 

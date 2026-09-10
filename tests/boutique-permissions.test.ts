@@ -30,7 +30,6 @@ describe('Permissions par rôle (Boutique)', () => {
     expect(cashier.has('finances:view')).toBe(false);
     expect(cashier.has('subscription:manage')).toBe(false);
     expect(cashier.has('store:delete')).toBe(false);
-    expect(cashier.has('api:manage')).toBe(false);
   });
 
   it("n'accorde pas à l'administrateur la suppression de la boutique", () => {
@@ -38,7 +37,6 @@ describe('Permissions par rôle (Boutique)', () => {
 
     expect(admin.has('products:manage')).toBe(true);
     expect(admin.has('settings:manage')).toBe(true);
-    expect(admin.has('api:manage')).toBe(true);
     // Supprimer la boutique reste au seul propriétaire.
     expect(admin.has('store:delete')).toBe(false);
   });
@@ -109,8 +107,8 @@ describe('Droits liés au plan (Boutique)', () => {
     const entitlements = await getStoreEntitlements(shop.store.id);
 
     expect(entitlements.isActive).toBe(false);
-    expect(hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)).toBe(false);
-    expect(() => requireStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)).toThrow(
+    expect(hasStoreFeature(entitlements, STORE_FEATURES.MULTIPLE_USERS)).toBe(false);
+    expect(() => requireStoreFeature(entitlements, STORE_FEATURES.MULTIPLE_USERS)).toThrow(
       /abonnement/i,
     );
   });
@@ -123,7 +121,7 @@ describe('Droits liés au plan (Boutique)', () => {
         product: 'STORE',
         price: 15_000,
         currency: 'XOF',
-        features: [STORE_FEATURES.MULTIPLE_USERS, STORE_FEATURES.CUSTOM_DOMAIN],
+        features: [STORE_FEATURES.MULTIPLE_USERS],
         limits: { maxProducts: 2 },
       },
     });
@@ -140,7 +138,7 @@ describe('Droits liés au plan (Boutique)', () => {
     const entitlements = await getStoreEntitlements(shop.store.id);
 
     expect(entitlements.isActive).toBe(true);
-    expect(hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)).toBe(true);
+    expect(hasStoreFeature(entitlements, STORE_FEATURES.MULTIPLE_USERS)).toBe(true);
   });
 
   it('applique les limites quantitatives du plan', async () => {
@@ -170,6 +168,6 @@ describe('Droits liés au plan (Boutique)', () => {
     const entitlements = await getStoreEntitlements(shop.store.id);
 
     expect(entitlements.isActive).toBe(false);
-    expect(hasStoreFeature(entitlements, STORE_FEATURES.CUSTOM_DOMAIN)).toBe(false);
+    expect(hasStoreFeature(entitlements, STORE_FEATURES.MULTIPLE_USERS)).toBe(false);
   });
 });
