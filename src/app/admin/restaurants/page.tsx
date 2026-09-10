@@ -5,7 +5,7 @@ import type { RestaurantStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
-import { StatusPill } from '@/app/admin/page';
+import { StatusPill } from '@/components/admin/state-badge';
 
 export const metadata: Metadata = { title: 'Restaurants' };
 export const dynamic = 'force-dynamic';

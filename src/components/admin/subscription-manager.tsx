@@ -4,16 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { SUBSCRIPTION_STATUSES, SUBSCRIPTION_STATUS_LABELS } from '@/lib/subscription-labels';
 
 type Plan = { id: string; name: string };
 
-const STATUSES = [
-  { value: 'TRIALING', label: 'En essai' },
-  { value: 'ACTIVE', label: 'Actif' },
-  { value: 'PAST_DUE', label: 'En retard' },
-  { value: 'CANCELLED', label: 'Résilié' },
-  { value: 'EXPIRED', label: 'Expiré' },
-] as const;
+const STATUSES = SUBSCRIPTION_STATUSES.map((value) => ({
+  value,
+  label: SUBSCRIPTION_STATUS_LABELS[value],
+}));
 
 /** Convertit une date en valeur `datetime-local`, dans le fuseau du navigateur. */
 function toLocalInput(iso: string): string {

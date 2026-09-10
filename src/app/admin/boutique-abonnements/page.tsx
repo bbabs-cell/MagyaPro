@@ -7,17 +7,20 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StoreSubscriptionPaymentReview } from '@/components/admin/store-subscription-payment-review';
 import { getStoreBillingPositions } from '@/lib/boutique/store-pricing';
+import {
+  SUBSCRIPTION_STATUSES,
+  SUBSCRIPTION_STATUS_LABELS,
+  subscriptionStatusLabel,
+  subscriptionStatusTone,
+} from '@/lib/subscription-labels';
+import { AdminStateBadge } from '@/components/admin/state-badge';
 
 export const metadata: Metadata = { title: 'Abonnements Boutique' };
 export const dynamic = 'force-dynamic';
 
 const STATUSES: Array<{ key: SubscriptionStatus | 'ALL'; label: string }> = [
   { key: 'ALL', label: 'Tous' },
-  { key: 'TRIALING', label: 'En essai' },
-  { key: 'ACTIVE', label: 'Actifs' },
-  { key: 'PAST_DUE', label: 'En retard' },
-  { key: 'CANCELLED', label: 'Résiliés' },
-  { key: 'EXPIRED', label: 'Expirés' },
+  ...SUBSCRIPTION_STATUSES.map((key) => ({ key, label: SUBSCRIPTION_STATUS_LABELS[key] })),
 ];
 
 /**
@@ -176,7 +179,10 @@ export default async function AdminStoreSubscriptionsPage({
                       )}
                     </td>
                     <td data-label="Statut" className="py-3 pr-3">
-                      <span className="text-white/70">{subscription.status}</span>
+                      <AdminStateBadge
+                        label={subscriptionStatusLabel(subscription.status)}
+                        tone={subscriptionStatusTone(subscription.status)}
+                      />
                     </td>
                     <td data-label="Fin de période" className="py-3">
                       <span className={expired ? 'text-red-300' : 'text-white/70'}>

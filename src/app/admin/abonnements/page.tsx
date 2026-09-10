@@ -10,17 +10,20 @@ import { PlatformPaymentSettings } from '@/components/admin/platform-payment-set
 import { DEFAULT_ADDITIONAL_STORE_PERCENT } from '@/lib/boutique/store-pricing';
 import { PlatformSoundSettings } from '@/components/admin/platform-sound-settings';
 import { SubscriptionPaymentReview } from '@/components/admin/subscription-payment-review';
+import {
+  SUBSCRIPTION_STATUSES,
+  SUBSCRIPTION_STATUS_LABELS,
+  subscriptionStatusLabel,
+  subscriptionStatusTone,
+} from '@/lib/subscription-labels';
+import { AdminStateBadge } from '@/components/admin/state-badge';
 
 export const metadata: Metadata = { title: 'Abonnements' };
 export const dynamic = 'force-dynamic';
 
 const STATUSES: Array<{ key: SubscriptionStatus | 'ALL'; label: string }> = [
   { key: 'ALL', label: 'Tous' },
-  { key: 'TRIALING', label: 'En essai' },
-  { key: 'ACTIVE', label: 'Actifs' },
-  { key: 'PAST_DUE', label: 'En retard' },
-  { key: 'CANCELLED', label: 'Résiliés' },
-  { key: 'EXPIRED', label: 'Expirés' },
+  ...SUBSCRIPTION_STATUSES.map((key) => ({ key, label: SUBSCRIPTION_STATUS_LABELS[key] })),
 ];
 
 export default async function AdminSubscriptionsPage({
@@ -184,7 +187,12 @@ export default async function AdminSubscriptionsPage({
                       </span>
                     </td>
                     <td data-label="Statut" className="py-3 pr-3">
-                      <span className="text-white/70">{subscription.status}</span>
+                      {/* Le code brut de la base était affiché tel quel :
+                          « PAST_DUE » sur la ligne d'un client. */}
+                      <AdminStateBadge
+                        label={subscriptionStatusLabel(subscription.status)}
+                        tone={subscriptionStatusTone(subscription.status)}
+                      />
                     </td>
                     <td data-label="Fin de période" className="py-3 pr-3">
                       <span className={expired ? 'text-red-300' : 'text-white/70'}>

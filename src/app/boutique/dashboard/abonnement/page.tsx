@@ -9,17 +9,10 @@ import { Badge, Card, PageHeader } from '@/components/ui';
 import { getActivePromo } from '@/lib/platform-settings';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { loadStoreSubscriptionScreen } from '@/lib/boutique/subscription-screen';
+import { subscriptionStatusMerchantLabel } from '@/lib/subscription-labels';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
-
-const STATUS_LABELS: Record<string, string> = {
-  TRIALING: "Période d'essai",
-  ACTIVE: 'Actif',
-  PAST_DUE: 'Paiement en retard',
-  CANCELLED: 'Résilié',
-  EXPIRED: 'Expiré',
-};
 
 /**
  * Abonnement Boutique — version allégée de l'équivalent Restaurant : pas de
@@ -78,7 +71,7 @@ export default async function StoreSubscriptionPage() {
                         : 'danger'
                   }
                 >
-                  {STATUS_LABELS[subscription.status] ?? subscription.status}
+                  {subscriptionStatusMerchantLabel(subscription.status)}
                 </Badge>
               )}
             </p>

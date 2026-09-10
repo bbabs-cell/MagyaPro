@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
-import { StatusPill } from '@/app/admin/page';
+import { StatusPill } from '@/components/admin/state-badge';
 import { RestaurantAdminActions } from '@/components/admin/restaurant-actions';
 import { SubscriptionManager } from '@/components/admin/subscription-manager';
 import { DemoRestaurantEditor } from '@/components/admin/demo-restaurant-editor';

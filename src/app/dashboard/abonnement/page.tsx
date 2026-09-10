@@ -9,17 +9,10 @@ import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+import { subscriptionStatusMerchantLabel } from '@/lib/subscription-labels';
 
 export const metadata: Metadata = { title: 'Abonnement' };
 export const dynamic = 'force-dynamic';
-
-const STATUS_LABELS: Record<string, string> = {
-  TRIALING: "Période d'essai",
-  ACTIVE: 'Actif',
-  PAST_DUE: 'Paiement en retard',
-  CANCELLED: 'Résilié',
-  EXPIRED: 'Expiré',
-};
 
 export default async function SubscriptionPage() {
   const context = await requireTenant('subscription:view');
@@ -94,7 +87,7 @@ export default async function SubscriptionPage() {
                       : 'danger'
                 }
               >
-                {STATUS_LABELS[entitlements.status] ?? entitlements.status}
+                {subscriptionStatusMerchantLabel(entitlements.status)}
               </Badge>
             </p>
           </div>

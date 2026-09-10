@@ -3,22 +3,20 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
-import { getPlatformMetrics } from '@/lib/analytics';
+import { getPlatformMetrics, percentChange } from '@/lib/analytics';
 import { getPlatformStoreMetrics } from '@/lib/boutique/platform-analytics';
+import { amountIn, getPlatformRevenue, primaryCurrency } from '@/lib/platform-revenue';
+import {
+  SUBSCRIPTION_STATUSES,
+  SUBSCRIPTION_STATUS_LABELS,
+} from '@/lib/subscription-labels';
 import { formatMoney } from '@/lib/money';
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
+import { StatusPill } from '@/components/admin/state-badge';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
-
-const SUBSCRIPTION_LABELS: Record<string, string> = {
-  TRIALING: 'En essai',
-  ACTIVE: 'Actifs',
-  PAST_DUE: 'En retard',
-  CANCELLED: 'Résiliés',
-  EXPIRED: 'Expirés',
-};
 
 const ICON_PROPS = {
   width: 16,
@@ -89,9 +87,10 @@ const STAT_ICONS = {
 export default async function AdminDashboardPage() {
   await requireSuperAdmin();
 
-  const [metrics, storeMetrics, recentRestaurants, recentStores, recentLogs] = await Promise.all([
+  const [metrics, storeMetrics, revenue, recentRestaurants, recentStores, recentLogs] = await Promise.all([
     getPlatformMetrics(),
     getPlatformStoreMetrics(),
+    getPlatformRevenue(),
     prisma.restaurant.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
@@ -142,6 +141,15 @@ export default async function AdminDashboardPage() {
     (storeMetrics.subscriptionsByStatus.EXPIRED ?? 0) +
     (storeMetrics.subscriptionsByStatus.CANCELLED ?? 0);
 
+  // Devise de référence pour l'affichage : celle qui pèse le plus lourd sur
+  // l'ensemble des encaissements. Les montants ne sont jamais additionnés
+  // entre devises — voir `platform-revenue.ts`.
+  const currency = primaryCurrency(revenue.allTime);
+  const thisMonth = amountIn(revenue.currentMonth, currency);
+  const lastMonth = amountIn(revenue.previousMonth, currency);
+  const monthChange = percentChange(lastMonth, thisMonth);
+  const peak = Math.max(...revenue.byMonth.map((point) => amountIn(point.byCurrency, currency)), 1);
+
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
@@ -186,6 +194,104 @@ export default async function AdminDashboardPage() {
           </div>
           <MailTestButton />
         </div>
+      </section>
+
+      {/* --- Recette réelle de MagyaPro ----------------------------------
+          Le chiffre que le propriétaire de la plateforme vient chercher, et
+          qui n'était affiché nulle part. Les cartes ci-dessous montrent le
+          « volume traité », c'est-à-dire l'argent des commerçants ; les écrans
+          d'analyse montrent le MRR, une projection qui suppose que tout le
+          monde paie. Ici : les paiements d'abonnement réellement validés. */}
+      <section
+        aria-labelledby="recette"
+        className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 id="recette" className="text-sm font-medium text-white/70">
+              Recette MagyaPro — ce mois-ci
+            </h2>
+            <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-white">
+              {formatMoney(thisMonth, currency)}
+            </p>
+            <p className="mt-1 text-xs text-white/50">
+              {monthChange === null
+                ? 'Pas de comparaison possible : aucun encaissement le mois dernier.'
+                : `${monthChange >= 0 ? '+' : ''}${monthChange} % par rapport au mois dernier (${formatMoney(lastMonth, currency)}).`}
+            </p>
+          </div>
+
+          <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-white/40">Restaurant</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-white">
+                {formatMoney(amountIn(revenue.currentMonthByProduct.restaurant, currency), currency)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-white/40">Boutique</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-white">
+                {formatMoney(amountIn(revenue.currentMonthByProduct.store, currency), currency)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-white/40">Depuis le début</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-white">
+                {formatMoney(amountIn(revenue.allTime, currency), currency)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Douze mois d'encaissements. Barres rendues côté serveur : aucun
+            script à charger pour une lecture d'un coup d'œil. */}
+        <div className="mt-5 flex items-end gap-1.5" aria-hidden="true">
+          {revenue.byMonth.map((point) => {
+            const amount = amountIn(point.byCurrency, currency);
+            return (
+              <div key={point.month} className="flex flex-1 flex-col items-center gap-1.5">
+                <div className="flex h-16 w-full items-end">
+                  <div
+                    className={`w-full rounded-t ${amount > 0 ? 'bg-emerald-500/70' : 'bg-white/10'}`}
+                    style={{ height: `${Math.max(2, Math.round((amount / peak) * 100))}%` }}
+                  />
+                </div>
+                <span className="truncate text-[10px] text-white/40">{point.month}</span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Le graphique est décoratif pour un lecteur d'écran ; la même
+            information lui est donnée en toutes lettres. */}
+        <p className="sr-only">
+          Encaissements des douze derniers mois :{' '}
+          {revenue.byMonth
+            .map((point) => `${point.month} ${formatMoney(amountIn(point.byCurrency, currency), currency)}`)
+            .join(', ')}
+          .
+        </p>
+
+        {(revenue.pendingCount > 0 || revenue.overdueCount > 0) && (
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4 text-sm">
+            {revenue.pendingCount > 0 && (
+              <Link
+                href="/admin/abonnements"
+                className="rounded-lg bg-amber-500/15 px-3 py-1.5 text-amber-200 hover:bg-amber-500/25"
+              >
+                {revenue.pendingCount} paiement{revenue.pendingCount > 1 ? 's' : ''} à valider
+              </Link>
+            )}
+            {revenue.overdueCount > 0 && (
+              <Link
+                href="/admin/abonnements?statut=ACTIVE"
+                className="rounded-lg bg-red-500/15 px-3 py-1.5 text-red-200 hover:bg-red-500/25"
+              >
+                {revenue.overdueCount} abonnement{revenue.overdueCount > 1 ? 's' : ''} actif
+                {revenue.overdueCount > 1 ? 's' : ''} dont la période est dépassée
+              </Link>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Séparateur franc entre les deux produits : les deux grilles se
@@ -292,9 +398,9 @@ export default async function AdminDashboardPage() {
             Répartition des abonnements
           </h2>
           <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
-            {Object.entries(SUBSCRIPTION_LABELS).map(([key, label]) => (
+            {SUBSCRIPTION_STATUSES.map((key) => (
               <li key={key} className="flex justify-between text-sm">
-                <span className="text-white/60">{label}</span>
+                <span className="text-white/60">{SUBSCRIPTION_STATUS_LABELS[key]}</span>
                 <span className="font-medium">
                   {metrics.subscriptionsByStatus[key] ?? 0}
                 </span>
@@ -397,9 +503,9 @@ export default async function AdminDashboardPage() {
             Répartition des abonnements Boutique
           </h2>
           <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
-            {Object.entries(SUBSCRIPTION_LABELS).map(([key, label]) => (
+            {SUBSCRIPTION_STATUSES.map((key) => (
               <li key={key} className="flex justify-between text-sm">
-                <span className="text-white/60">{label}</span>
+                <span className="text-white/60">{SUBSCRIPTION_STATUS_LABELS[key]}</span>
                 <span className="font-medium">{storeMetrics.subscriptionsByStatus[key] ?? 0}</span>
               </li>
             ))}
@@ -496,25 +602,3 @@ function AdminStat({
   );
 }
 
-export function StatusPill({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    ACTIVE: 'bg-emerald-500/15 text-emerald-300',
-    DRAFT: 'bg-white/10 text-white/60',
-    SUSPENDED: 'bg-red-500/15 text-red-300',
-  };
-  const labels: Record<string, string> = {
-    ACTIVE: 'En ligne',
-    DRAFT: 'Brouillon',
-    SUSPENDED: 'Suspendu',
-  };
-
-  return (
-    <span
-      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-        styles[status] ?? styles.DRAFT
-      }`}
-    >
-      {labels[status] ?? status}
-    </span>
-  );
-}
