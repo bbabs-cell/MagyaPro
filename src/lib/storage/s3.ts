@@ -55,6 +55,18 @@ export const s3StorageDriver: StorageDriver = {
         // Les images téléversées servent le site public : elles doivent être
         // lisibles sans URL signée, comme sur le pilote local.
         ACL: 'public-read',
+        // Sans cet en-tête, le stockage n'en renvoie aucun : chaque visiteur
+        // retélécharge le logo et les illustrations à presque chaque page.
+        // Sur les connexions mobiles visées, c'est le poste le plus coûteux
+        // du site.
+        //
+        // Une heure, et pas un an, parce que les clés sont fixes
+        // (`platform/logo.png` est réécrit à chaque envoi). Un cache long
+        // rendrait un logo remplacé invisible pendant des mois pour les
+        // visiteurs habituels. `stale-while-revalidate` laisse servir
+        // l'ancienne image pendant que la nouvelle se télécharge en fond :
+        // l'affichage reste instantané, la mise à jour arrive sans attendre.
+        CacheControl: 'public, max-age=3600, stale-while-revalidate=86400',
       }),
     );
 

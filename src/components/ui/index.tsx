@@ -296,6 +296,25 @@ const STAT_ACCENT: Record<BadgeTone, string> = {
   brand: 'bg-brand',
 };
 
+/**
+ * Props de `StatCard` décrivant une variation par rapport à la période
+ * précédente.
+ *
+ * `null` signifie qu'il n'y avait rien à comparer, pas une stagnation : on le
+ * dit plutôt que d'afficher « 0 % », qui ferait croire à une activité stable
+ * là où il n'y en avait aucune.
+ *
+ * La couleur suit le sens du chiffre et jamais la décoration : hausse en vert,
+ * baisse en rouge, absence de repère en neutre.
+ */
+export function changeProps(change: number | null): { hint: string; tone?: BadgeTone } {
+  if (change === null) return { hint: 'Pas de comparaison possible' };
+  return {
+    hint: `${change > 0 ? '+' : ''}${change} % vs période précédente`,
+    tone: change >= 0 ? 'success' : 'danger',
+  };
+}
+
 export function StatCard({
   label,
   value,

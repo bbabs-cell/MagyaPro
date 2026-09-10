@@ -63,6 +63,8 @@ export type DashboardMetrics = {
   /** Variation en pourcentage vs période précédente, `null` si incalculable. */
   revenueChange: number | null;
   ordersChange: number | null;
+  basketChange: number | null;
+  newCustomersChange: number | null;
   pendingOrders: number;
   completedOrders: number;
   visitors: number;
@@ -77,7 +79,7 @@ export async function getDashboardMetrics(
   const { from, to } = periodRange(period);
   const previous = previousRange(from, to);
 
-  const [current, prior, pending, completed, newCustomers, visitors] =
+  const [current, prior, pending, completed, newCustomers, priorNewCustomers, visitors] =
     await Promise.all([
       prisma.order.aggregate({
         where: { restaurantId, placedAt: { gte: from, lte: to }, ...COUNTED_ORDERS },
@@ -105,6 +107,9 @@ export async function getDashboardMetrics(
       prisma.customer.count({
         where: { restaurantId, createdAt: { gte: from, lte: to } },
       }),
+      prisma.customer.count({
+        where: { restaurantId, createdAt: { gte: previous.from, lt: previous.to } },
+      }),
       // Visiteurs distincts : on compte les identifiants de visiteur uniques,
       // pas les pages vues.
       prisma.analyticsEvent
@@ -124,13 +129,20 @@ export async function getDashboardMetrics(
   const revenue = current._sum.total ?? 0;
   const priorRevenue = prior._sum.total ?? 0;
 
+  const averageBasket = current._count > 0 ? Math.round(revenue / current._count) : null;
+  // Le panier moyen précédent se déduit des agrégats déjà chargés : sa
+  // variation ne coûte aucune requête supplémentaire.
+  const priorBasket = prior._count > 0 ? Math.round(priorRevenue / prior._count) : 0;
+
   return {
     revenue,
     ordersCount: current._count,
-    averageBasket: current._count > 0 ? Math.round(revenue / current._count) : null,
+    averageBasket,
     newCustomers,
     revenueChange: percentChange(priorRevenue, revenue),
     ordersChange: percentChange(prior._count, current._count),
+    basketChange: averageBasket === null ? null : percentChange(priorBasket, averageBasket),
+    newCustomersChange: percentChange(priorNewCustomers, newCustomers),
     pendingOrders: pending,
     completedOrders: completed,
     visitors,

@@ -11,7 +11,7 @@ import {
   getStorePopularProducts,
   getStoreRevenueSeries,
 } from '@/lib/boutique/analytics';
-import { Card, EmptyState, PageHeader, StatCard } from '@/components/ui';
+import { Card, EmptyState, PageHeader, StatCard, changeProps } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { HourlyActivityChart } from '@/components/dashboard/hourly-chart';
 
@@ -24,27 +24,6 @@ export const dynamic = 'force-dynamic';
  * section « avancée » gated par entitlements : Boutique n'a pas (encore) de
  * système de limites/options par plan, donc rien à distinguer ici.
  */
-/**
- * Variation d'un indicateur par rapport à la période précédente.
- *
- * `null` signifie qu'il n'y avait rien à comparer, pas une stagnation : on le
- * dit plutôt que d'afficher « 0 % », qui ferait croire à une activité stable
- * alors qu'il n'y en avait aucune.
- *
- * La couleur suit le sens du chiffre, jamais la décoration : une hausse est
- * verte, une baisse est rouge, une absence de repère reste neutre.
- */
-function changeProps(change: number | null): {
-  hint: string;
-  tone?: 'success' | 'danger';
-} {
-  if (change === null) return { hint: 'Pas de comparaison possible' };
-  return {
-    hint: `${change > 0 ? '+' : ''}${change} % vs période précédente`,
-    tone: change >= 0 ? 'success' : 'danger',
-  };
-}
-
 export default async function StoreAnalyticsPage({
   searchParams,
 }: {

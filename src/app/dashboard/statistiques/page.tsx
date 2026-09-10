@@ -12,7 +12,7 @@ import {
   type PeriodKey,
 } from '@/lib/analytics';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
-import { Card, EmptyState, PageHeader, StatCard } from '@/components/ui';
+import { Card, EmptyState, PageHeader, StatCard, changeProps } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { HourlyActivityChart } from '@/components/dashboard/hourly-chart';
 
@@ -71,28 +71,27 @@ export default async function AnalyticsPage({
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}
-          hint={
-            metrics.revenueChange === null
-              ? 'Aucune donnée sur la période précédente'
-              : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} %`
-          }
-          tone={
-            metrics.revenueChange === null
-              ? undefined
-              : metrics.revenueChange >= 0
-                ? 'success'
-                : 'danger'
-          }
+          {...changeProps(metrics.revenueChange)}
         />
-        <StatCard label="Commandes" value={String(metrics.ordersCount)} />
+        <StatCard
+          label="Commandes"
+          value={String(metrics.ordersCount)}
+          {...changeProps(metrics.ordersChange)}
+        />
         <StatCard
           label="Panier moyen"
           value={
             metrics.averageBasket === null ? '—' : formatMoney(metrics.averageBasket, currency)
           }
-          hint={metrics.averageBasket === null ? 'Aucune commande' : undefined}
+          {...(metrics.averageBasket === null
+            ? { hint: 'Aucune commande' }
+            : changeProps(metrics.basketChange))}
         />
-        <StatCard label="Nouveaux clients" value={String(metrics.newCustomers)} />
+        <StatCard
+          label="Nouveaux clients"
+          value={String(metrics.newCustomers)}
+          {...changeProps(metrics.newCustomersChange)}
+        />
       </section>
 
       {advanced && (
