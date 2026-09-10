@@ -20,17 +20,6 @@ import { toQty } from '@/lib/boutique/quantity';
 
 export const SALES_PAGE_SIZE = 40;
 
-export const SALE_STATUS_LABELS: Record<SaleStatus, string> = {
-  COMPLETED: 'Complétée',
-  REFUNDED: 'Remboursée',
-  PARTIALLY_REFUNDED: 'Partiellement remboursée',
-  CANCELLED: 'Annulée',
-};
-
-export function isSaleStatus(value: string): value is SaleStatus {
-  return Object.prototype.hasOwnProperty.call(SALE_STATUS_LABELS, value);
-}
-
 /** Les ventes annulées ne comptent pas dans le chiffre d'affaires de la sélection. */
 const REVENUE_STATUSES: SaleStatus[] = ['COMPLETED', 'PARTIALLY_REFUNDED', 'REFUNDED'];
 

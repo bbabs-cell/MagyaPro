@@ -6,28 +6,11 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { Badge, Button, Card, Field, LinkButton, cx, inputClass } from '@/components/ui';
-
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'Espèces',
-  orange_money: 'Orange Money',
-  moov_money: 'Moov Money',
-  card: 'Carte',
-  wave: 'Wave',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  COMPLETED: 'Complétée',
-  REFUNDED: 'Remboursée',
-  PARTIALLY_REFUNDED: 'Partiellement remboursée',
-  CANCELLED: 'Annulée',
-};
-
-const STATUS_TONES: Record<Sale['status'], 'success' | 'warning' | 'danger' | 'neutral'> = {
-  COMPLETED: 'success',
-  PARTIALLY_REFUNDED: 'warning',
-  REFUNDED: 'warning',
-  CANCELLED: 'danger',
-};
+import {
+  SALE_STATUS_LABELS,
+  SALE_STATUS_TONES,
+  paymentMethodLabel,
+} from '@/lib/boutique/labels';
 
 type SaleItem = {
   productVariantId: string;
@@ -216,14 +199,14 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
                   {sale.items.length} article{sale.items.length > 1 ? 's' : ''}
                 </td>
                 <td data-label="Paiement" className="px-4 py-3 text-ink-muted">
-                  {sale.payments.map((p) => PAYMENT_LABELS[p.method] ?? p.method).join(', ')}
+                  {sale.payments.map((p) => paymentMethodLabel(p.method)).join(', ')}
                 </td>
                 <td data-label="Statut" className="px-4 py-3">
                   {/* Trois sorties différentes, trois couleurs. La version
                       précédente peignait en gris aussi bien une annulation
                       qu'un remboursement : deux faits comptables distincts,
                       indiscernables au premier coup d'œil. */}
-                  <Badge tone={STATUS_TONES[sale.status]}>{STATUS_LABELS[sale.status]}</Badge>
+                  <Badge tone={SALE_STATUS_TONES[sale.status]}>{SALE_STATUS_LABELS[sale.status]}</Badge>
                 </td>
                 <td data-label="Total" className="px-4 py-3 text-right font-medium">
                   {formatMoney(sale.total, currency)}

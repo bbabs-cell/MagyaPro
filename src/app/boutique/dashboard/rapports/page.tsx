@@ -3,6 +3,13 @@ import type { Prisma, SaleStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import {
+  DEFAULT_PAYMENT_METHODS,
+  SALE_STATUS_LABELS,
+  paymentMethodLabel,
+  purchaseStatusLabel,
+  purchaseStatusTone,
+} from '@/lib/boutique/labels';
 import { formatMoney } from '@/lib/money';
 import { formatQty } from '@/lib/boutique/quantity';
 import {
@@ -20,28 +27,6 @@ import { PrintButton } from '@/components/dashboard/print-button';
 export const metadata: Metadata = { title: 'Rapports' };
 export const dynamic = 'force-dynamic';
 
-const STATUS_LABELS: Record<string, string> = {
-  COMPLETED: 'Complétée',
-  REFUNDED: 'Remboursée',
-  PARTIALLY_REFUNDED: 'Partiellement remboursée',
-  CANCELLED: 'Annulée',
-};
-
-const PAYMENT_LABELS: Record<string, string> = {
-  cash: 'Espèces',
-  orange_money: 'Orange Money',
-  moov_money: 'Moov Money',
-  card: 'Carte',
-  wave: 'Wave',
-};
-
-const PURCHASE_STATUS_LABELS: Record<string, string> = {
-  DRAFT: 'Brouillon',
-  ORDERED: 'Commandée',
-  PARTIALLY_RECEIVED: 'Partiellement reçue',
-  RECEIVED: 'Reçue',
-  CANCELLED: 'Annulée',
-};
 
 const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   PURCHASE: 'Achat',
@@ -201,7 +186,7 @@ function StatutSelect({ defaultValue }: { defaultValue?: string }) {
         className="rounded-lg border border-surface-border px-3 py-1.5 text-sm"
       >
         <option value="">Tous</option>
-        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+        {Object.entries(SALE_STATUS_LABELS).map(([value, label]) => (
           <option key={value} value={value}>
             {label}
           </option>
@@ -221,7 +206,7 @@ function PaiementSelect({ defaultValue }: { defaultValue?: string }) {
         className="rounded-lg border border-surface-border px-3 py-1.5 text-sm"
       >
         <option value="">Tous</option>
-        {Object.entries(PAYMENT_LABELS).map(([value, label]) => (
+        {DEFAULT_PAYMENT_METHODS.map(({ method: value, label }) => (
           <option key={value} value={value}>
             {label}
           </option>
@@ -247,8 +232,8 @@ async function VentesReport({
   statut?: string;
   paiement?: string;
 }) {
-  const status = statut && statut in STATUS_LABELS ? statut : undefined;
-  const method = paiement && (paiement === 'credit' || paiement in PAYMENT_LABELS) ? paiement : undefined;
+  const status = statut && statut in SALE_STATUS_LABELS ? statut : undefined;
+  const method = paiement && (paiement === 'credit' || DEFAULT_PAYMENT_METHODS.some((entry) => entry.method === paiement)) ? paiement : undefined;
 
   const where: Prisma.SaleWhereInput = {
     storeId,
@@ -322,14 +307,14 @@ async function VentesReport({
                     {sale.customer?.name ?? 'Client de passage'}
                   </td>
                   <td data-label="Paiement" className="px-4 py-3 text-ink-muted">
-                    {sale.payments.map((p) => PAYMENT_LABELS[p.method] ?? p.method).join(', ') || '—'}
+                    {sale.payments.map((p) => paymentMethodLabel(p.method)).join(', ') || '—'}
                     {sale.creditAmount > 0 && (
                       <span className="text-state-warn">{sale.payments.length > 0 ? ' + ' : ''}crédit</span>
                     )}
                   </td>
                   <td data-label="Statut" className="px-4 py-3">
                     <Badge tone={sale.status === 'COMPLETED' ? 'success' : 'neutral'}>
-                      {STATUS_LABELS[sale.status]}
+                      {SALE_STATUS_LABELS[sale.status]}
                     </Badge>
                   </td>
                   <td data-label="Total" className="px-4 py-3 text-right font-medium">
@@ -392,8 +377,11 @@ async function AchatsReport({
                   <td className="px-4 py-3 font-medium">{order.reference}</td>
                   <td className="px-4 py-3 text-ink-muted">{order.supplierName}</td>
                   <td className="px-4 py-3">
-                    <Badge tone={order.status === 'RECEIVED' ? 'success' : 'neutral'}>
-                      {PURCHASE_STATUS_LABELS[order.status] ?? order.status}
+                    {/* Même ton que sur l'écran Achats. Cette page peignait
+                        toute commande non reçue en gris : une commande annulée
+                        y ressemblait à un brouillon. */}
+                    <Badge tone={purchaseStatusTone(order.status)}>
+                      {purchaseStatusLabel(order.status)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right font-medium">{formatMoney(order.total, currency)}</td>

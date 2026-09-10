@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { periodRange, type PeriodKey } from '@/lib/analytics';
+import { percentChange, periodRange, previousRange, type PeriodKey } from '@/lib/analytics';
 import { toQty } from '@/lib/boutique/quantity';
 
 /**
@@ -9,16 +9,6 @@ import { toQty } from '@/lib/boutique/quantity';
  * même si la logique de calcul (variation vs période précédente, buckets
  * journaliers) est volontairement la même.
  */
-
-function previousRange(from: Date, to: Date): { from: Date; to: Date } {
-  const span = to.getTime() - from.getTime();
-  return { from: new Date(from.getTime() - span), to: from };
-}
-
-function percentChange(before: number, after: number): number | null {
-  if (before === 0) return null;
-  return Math.round(((after - before) / before) * 1000) / 10;
-}
 
 /** Les ventes annulées ne comptent ni en revenu ni en volume. */
 const COUNTED_SALES = { status: { not: 'CANCELLED' as const } };

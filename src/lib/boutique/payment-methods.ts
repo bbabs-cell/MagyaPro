@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { DEFAULT_PAYMENT_METHODS } from '@/lib/boutique/labels';
 
 /**
  * Moyens de paiement d'une boutique — configurables (`StorePaymentMethod`),
@@ -8,13 +9,7 @@ import { prisma } from '@/lib/db';
  * personnalise depuis Réglages — jamais une liste vide qui bloquerait la
  * caisse.
  */
-export const DEFAULT_PAYMENT_METHODS: Array<{ method: string; label: string }> = [
-  { method: 'cash', label: 'Espèces' },
-  { method: 'orange_money', label: 'Orange Money' },
-  { method: 'moov_money', label: 'Moov Money' },
-  { method: 'card', label: 'Carte' },
-  { method: 'wave', label: 'Wave' },
-];
+export { DEFAULT_PAYMENT_METHODS } from '@/lib/boutique/labels';
 
 export type StorePaymentMethodRow = {
   id: string;

@@ -39,7 +39,15 @@ export function periodRange(period: PeriodKey): { from: Date; to: Date } {
 }
 
 /** Période immédiatement précédente, de même durée, pour la comparaison. */
-function previousRange(from: Date, to: Date): { from: Date; to: Date } {
+/**
+ * Période immédiatement antérieure, de même durée.
+ *
+ * Partagée par Restaurant et Boutique : les deux produits comparaient leurs
+ * chiffres au passé avec deux copies de cette fonction, alors qu'une
+ * divergence rendrait les variations des deux tableaux de bord
+ * incomparables sans que rien ne le signale.
+ */
+export function previousRange(from: Date, to: Date): { from: Date; to: Date } {
   const span = to.getTime() - from.getTime();
   return { from: new Date(from.getTime() - span), to: from };
 }
@@ -158,7 +166,7 @@ export async function getDashboardMetrics(
  * n'est pas « +∞ % », c'est un premier chiffre, et l'afficher comme une
  * progression serait mensonger.
  */
-function percentChange(before: number, after: number): number | null {
+export function percentChange(before: number, after: number): number | null {
   if (before === 0) return null;
   return Math.round(((after - before) / before) * 1000) / 10;
 }

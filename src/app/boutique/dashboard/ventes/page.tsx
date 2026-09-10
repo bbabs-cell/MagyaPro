@@ -1,12 +1,8 @@
 import type { Metadata } from 'next';
 
 import { requireStore } from '@/lib/boutique/store-tenant';
-import {
-  SALES_PAGE_SIZE,
-  SALE_STATUS_LABELS,
-  isSaleStatus,
-  listStoreSales,
-} from '@/lib/boutique/sales-history';
+import { SALES_PAGE_SIZE, listStoreSales } from '@/lib/boutique/sales-history';
+import { SALE_STATUS_LABELS, isSaleStatus } from '@/lib/boutique/labels';
 import { formatMoney } from '@/lib/money';
 import { Card, EmptyState, PageHeader, buttonClass, cx, inputClass } from '@/components/ui';
 import { SalesManager } from '@/components/boutique/sales-manager';

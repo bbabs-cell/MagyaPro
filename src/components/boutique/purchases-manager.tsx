@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMinor } from '@/lib/money';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/labels';
 
 type Supplier = { id: string; name: string; debtBalance: number };
 type ProductOption = { variantId: string; name: string };
@@ -26,22 +27,6 @@ type PurchaseOrder = {
   expectedAt: string | null;
   supplier: { id: string; name: string };
   items: PurchaseOrderItem[];
-};
-
-const STATUS_LABELS: Record<PurchaseOrder['status'], string> = {
-  DRAFT: 'Brouillon',
-  ORDERED: 'Commandée',
-  PARTIALLY_RECEIVED: 'Partiellement reçue',
-  RECEIVED: 'Reçue',
-  CANCELLED: 'Annulée',
-};
-
-const STATUS_TONES: Record<PurchaseOrder['status'], 'neutral' | 'success' | 'warning' | 'danger'> = {
-  DRAFT: 'neutral',
-  ORDERED: 'warning',
-  PARTIALLY_RECEIVED: 'warning',
-  RECEIVED: 'success',
-  CANCELLED: 'danger',
 };
 
 /** Une commande encore attendue dont la date d'arrivée est passée. */
@@ -269,7 +254,9 @@ export function PurchasesManager({
                       {order.supplier.name}
                     </td>
                     <td data-label="Statut" className="px-4 py-3">
-                      <Badge tone={STATUS_TONES[order.status]}>{STATUS_LABELS[order.status]}</Badge>
+                      <Badge tone={PURCHASE_STATUS_TONES[order.status]}>
+                        {PURCHASE_STATUS_LABELS[order.status]}
+                      </Badge>
                     </td>
                     <td data-label="Total" className="px-4 py-3 text-right font-medium">
                       {formatMoney(total, currency)}
