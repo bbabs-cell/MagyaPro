@@ -113,6 +113,18 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/consolide',
+    label: 'Vue consolidée',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 20V10" />
+        <path d="M9 20V6" />
+        <path d="M14 20v-9" />
+        <path d="M19 20V4" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/analytics',
     label: 'Analytics',
     icon: (
@@ -220,6 +232,9 @@ const SECTIONS: Array<{ title: string; items: Array<{ href: string; label?: stri
     items: [
       // « Analytics » était le seul anglicisme de la navigation ; le reste du
       // produit dit « Statistiques » aux commerçants.
+      // La vue consolidée d'abord : c'est celle qui répond à « comment va la
+      // plateforme », les deux autres détaillent un produit.
+      { href: '/admin/consolide', label: 'Vue consolidée' },
       { href: '/admin/analytics', label: 'Restaurant' },
       { href: '/admin/analytics-boutique', label: 'Boutique' },
     ],

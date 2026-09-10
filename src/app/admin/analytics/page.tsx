@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformAnalytics } from '@/lib/analytics';
 import { formatMoney } from '@/lib/money';
+import { BarChart, Metric } from '@/components/admin/charts';
 
 export const metadata: Metadata = { title: 'Analytics' };
 export const dynamic = 'force-dynamic';
@@ -110,42 +111,5 @@ export default async function AdminAnalyticsPage() {
         )}
       </section>
     </>
-  );
-}
-
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 p-4">
-      <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
-      <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
-      {hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}
-    </div>
-  );
-}
-
-/** Diagramme en barres minimal, sans dépendance : des divs dont la hauteur est proportionnelle. */
-function BarChart({
-  data,
-  max,
-}: {
-  data: Array<{ label: string; value: number; display: string }>;
-  max: number;
-}) {
-  return (
-    <div className="flex h-40 gap-2">
-      {data.map((point) => (
-        <div key={point.label} className="flex h-full flex-1 flex-col items-center gap-1.5">
-          <span className="text-[11px] text-white/50">{point.display}</span>
-          <div className="flex w-full flex-1 items-end">
-            <div
-              className="w-full rounded-t-md bg-white/80"
-              style={{ height: `${Math.max(2, (point.value / max) * 100)}%` }}
-              aria-hidden="true"
-            />
-          </div>
-          <span className="text-[11px] text-white/40">{point.label}</span>
-        </div>
-      ))}
-    </div>
   );
 }

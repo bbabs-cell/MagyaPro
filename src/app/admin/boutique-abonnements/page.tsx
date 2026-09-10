@@ -14,6 +14,15 @@ import {
   subscriptionStatusTone,
 } from '@/lib/subscription-labels';
 import { AdminStateBadge } from '@/components/admin/state-badge';
+import {
+  RENEWAL_SOON_DAYS,
+  SUBSCRIPTIONS_PAGE_SIZE,
+  daysUntil,
+  deadlineLabel,
+  isDeadlineFilter,
+  listStoreSubscriptions,
+} from '@/lib/admin/subscriptions-list';
+import { RenewalFilters } from '@/components/admin/renewal-filters';
 
 export const metadata: Metadata = { title: 'Abonnements Boutique' };
 export const dynamic = 'force-dynamic';
@@ -34,7 +43,7 @@ const STATUSES: Array<{ key: SubscriptionStatus | 'ALL'; label: string }> = [
 export default async function AdminStoreSubscriptionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ statut?: string }>;
+  searchParams: Promise<{ statut?: string; q?: string; echeance?: string; page?: string }>;
 }) {
   await requireSuperAdmin();
   const params = await searchParams;
@@ -42,15 +51,17 @@ export default async function AdminStoreSubscriptionsPage({
   const status = STATUSES.some((entry) => entry.key === params.statut)
     ? (params.statut as SubscriptionStatus | 'ALL')
     : 'ALL';
+  const search = params.q?.trim() || undefined;
+  const deadline =
+    params.echeance && isDeadlineFilter(params.echeance) ? params.echeance : undefined;
+  const page = Number.parseInt(params.page ?? '1', 10) || 1;
 
-  const [subscriptions, pendingPayments] = await Promise.all([
-    prisma.storeSubscription.findMany({
-      where: status === 'ALL' ? {} : { status },
-      orderBy: { currentPeriodEnd: 'asc' },
-      include: {
-        plan: true,
-        store: { select: { id: true, name: true, slug: true, status: true } },
-      },
+  const [list, pendingPayments] = await Promise.all([
+    listStoreSubscriptions({
+      status: status === 'ALL' ? undefined : status,
+      search,
+      deadline,
+      page,
     }),
     prisma.storeSubscriptionPayment.findMany({
       where: { status: 'PENDING' },
@@ -73,11 +84,26 @@ export default async function AdminStoreSubscriptionsPage({
     pendingPayments.map((payment) => payment.store.id),
   );
 
+  // Date figée côté serveur : le retard d'une échéance ne doit pas dépendre de
+  // l'horloge du navigateur qui consulte la page.
+  const now = new Date();
+
+  const hrefWith = (overrides: Record<string, string | undefined>) => {
+    const query = new URLSearchParams();
+    const values = { statut: status === 'ALL' ? undefined : status, q: search, echeance: deadline, ...overrides };
+    for (const [key, value] of Object.entries(values)) {
+      if (value) query.set(key, value);
+    }
+    const suffix = query.toString();
+    return suffix ? `/admin/boutique-abonnements?${suffix}` : '/admin/boutique-abonnements';
+  };
+
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Abonnements Boutique</h1>
       <p className="mt-1 text-sm text-white/60">
-        {subscriptions.length} abonnement{subscriptions.length > 1 ? 's' : ''} pour ce filtre.
+        {list.total} abonnement{list.total > 1 ? 's' : ''} pour ce filtre
+        {list.pageCount > 1 ? ` · page ${list.page} sur ${list.pageCount}` : ''}.
       </p>
 
       {pendingPayments.length > 0 && (
@@ -112,24 +138,16 @@ export default async function AdminStoreSubscriptionsPage({
         </section>
       )}
 
-      <nav aria-label="Filtrer par statut" className="mt-6 flex gap-2 overflow-x-auto pb-1">
-        {STATUSES.map((entry) => (
-          <Link
-            key={entry.key}
-            href={`/admin/boutique-abonnements?statut=${entry.key}`}
-            aria-current={status === entry.key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-              status === entry.key
-                ? 'bg-white text-ink'
-                : 'text-white/70 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            {entry.label}
-          </Link>
-        ))}
-      </nav>
+      <RenewalFilters
+        basePath="/admin/boutique-abonnements"
+        status={status}
+        search={search}
+        deadline={deadline}
+        counts={list.counts}
+        tenantLabel="une boutique"
+      />
 
-      {subscriptions.length === 0 ? (
+      {list.rows.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-white/20 p-10 text-center text-sm text-white/60">
           Aucun abonnement pour ce filtre.
         </p>
@@ -146,20 +164,20 @@ export default async function AdminStoreSubscriptionsPage({
               </tr>
             </thead>
             <tbody>
-              {subscriptions.map((subscription) => {
-                const expired = subscription.currentPeriodEnd < new Date();
+              {list.rows.map((subscription) => {
+                const days = daysUntil(subscription.currentPeriodEnd, now);
 
                 return (
                   <tr key={subscription.id} className="border-b border-white/10">
                     <td data-label="Boutique" className="py-3 pr-3">
                       <Link
-                        href={`/admin/boutiques/${subscription.store.id}`}
+                        href={`/admin/boutiques/${subscription.tenant.id}`}
                         className="font-medium underline-offset-4 hover:underline"
                       >
-                        {subscription.store.name}
+                        {subscription.tenant.name}
                       </Link>
                       <span className="block text-xs text-white/40">
-                        {subscription.store.slug}
+                        {subscription.tenant.slug}
                       </span>
                     </td>
                     <td data-label="Plan" className="py-3 pr-3">
@@ -185,9 +203,13 @@ export default async function AdminStoreSubscriptionsPage({
                       />
                     </td>
                     <td data-label="Fin de période" className="py-3">
-                      <span className={expired ? 'text-red-300' : 'text-white/70'}>
+                      <span
+                        className={
+                          days < 0 ? 'text-red-300' : days <= RENEWAL_SOON_DAYS ? 'text-amber-200' : 'text-white/70'
+                        }
+                      >
                         {subscription.currentPeriodEnd.toLocaleDateString('fr-FR')}
-                        {expired && ' · dépassée'}
+                        <span className="block text-xs opacity-80">{deadlineLabel(days)}</span>
                       </span>
                     </td>
                   </tr>
@@ -196,6 +218,32 @@ export default async function AdminStoreSubscriptionsPage({
             </tbody>
           </table>
         </div>
+      )}
+
+      {list.pageCount > 1 && (
+        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between text-sm">
+          <span className="text-white/60">
+            Page {list.page} sur {list.pageCount} · {SUBSCRIPTIONS_PAGE_SIZE} par page
+          </span>
+          <div className="flex gap-2">
+            {list.page > 1 && (
+              <Link
+                href={hrefWith({ page: String(list.page - 1) })}
+                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+              >
+                Précédent
+              </Link>
+            )}
+            {list.page < list.pageCount && (
+              <Link
+                href={hrefWith({ page: String(list.page + 1) })}
+                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+              >
+                Suivant
+              </Link>
+            )}
+          </div>
+        </nav>
       )}
     </>
   );
