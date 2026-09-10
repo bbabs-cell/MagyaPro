@@ -9,9 +9,25 @@ import { StatusPill } from '@/components/admin/state-badge';
 import { RestaurantAdminActions } from '@/components/admin/restaurant-actions';
 import { SubscriptionManager } from '@/components/admin/subscription-manager';
 import { DemoRestaurantEditor } from '@/components/admin/demo-restaurant-editor';
+import { SubscriptionPanel } from '@/components/admin/subscription-panel';
+import { listRestaurantPayments } from '@/lib/platform-revenue';
+import { Metric } from '@/components/admin/charts';
+import { ROLE_LABELS } from '@/lib/rbac';
 
 export const metadata: Metadata = { title: 'Fiche restaurant' };
 export const dynamic = 'force-dynamic';
+
+/** Libellés des domaines — affichés ici seulement, d'où la table locale. */
+const DOMAIN_TYPE_LABELS: Record<string, string> = {
+  SUBDOMAIN: 'Sous-domaine',
+  CUSTOM: 'Domaine propre',
+};
+
+const DOMAIN_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'En attente',
+  VERIFIED: 'Vérifié',
+  FAILED: 'Échec',
+};
 
 export default async function AdminRestaurantDetailPage({
   params,
@@ -36,7 +52,7 @@ export default async function AdminRestaurantDetailPage({
 
   if (!restaurant) notFound();
 
-  const [revenue, supportHistory, plans] = await Promise.all([
+  const [revenue, supportHistory, plans, payments] = await Promise.all([
     prisma.order.aggregate({
       where: { restaurantId: restaurant.id, status: { not: 'CANCELLED' } },
       _sum: { total: true },
@@ -52,7 +68,12 @@ export default async function AdminRestaurantDetailPage({
       orderBy: { position: 'asc' },
       select: { id: true, name: true },
     }),
+    listRestaurantPayments(id),
   ]);
+
+  // Date figée côté serveur : le retard d'une échéance ne doit pas dépendre de
+  // l'horloge du navigateur qui consulte la fiche.
+  const now = new Date();
 
   // Utile seulement pour l'édition directe des restaurants de démonstration.
   const templates = restaurant.isDemo
@@ -143,35 +164,41 @@ export default async function AdminRestaurantDetailPage({
           <h2 id="abonnement" className="text-sm font-medium">
             Abonnement
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4 text-sm">
-            {restaurant.subscription ? (
-              <>
-                <dl className="space-y-2">
-                  <Row
-                    label="Prix du plan actuel"
-                    value={formatMoney(
-                      restaurant.subscription.plan.price,
-                      restaurant.subscription.plan.currency,
-                    )}
-                  />
-                </dl>
-                <div className="mt-4 border-t border-white/10 pt-4">
-                  <SubscriptionManager
-                    restaurantId={restaurant.id}
-                    plans={plans}
-                    subscription={{
-                      planId: restaurant.subscription.planId,
-                      status: restaurant.subscription.status,
-                      currentPeriodEnd: restaurant.subscription.currentPeriodEnd.toISOString(),
-                      trialEndsAt: restaurant.subscription.trialEndsAt?.toISOString() ?? null,
-                    }}
-                  />
-                </div>
-              </>
-            ) : (
-              <p className="text-white/60">Aucun abonnement rattaché.</p>
-            )}
-          </div>
+          {restaurant.subscription ? (
+            <div className="mt-3 space-y-3">
+              <SubscriptionPanel
+                plan={restaurant.subscription.plan}
+                status={restaurant.subscription.status}
+                currentPeriodEnd={restaurant.subscription.currentPeriodEnd}
+                payments={payments}
+                billingNote={
+                  // Un restaurant rattaché à un plan Boutique est facturé sur
+                  // la mauvaise grille. Les deux produits ont des plans
+                  // homonymes, seul le produit les distingue.
+                  restaurant.subscription.plan.product !== 'RESTAURANT'
+                    ? `Plan ${restaurant.subscription.plan.product.toLowerCase()}, pas un plan Restaurant`
+                    : null
+                }
+                now={now}
+              />
+              <div className="rounded-2xl border border-white/10 p-4">
+                <SubscriptionManager
+                  restaurantId={restaurant.id}
+                  plans={plans}
+                  subscription={{
+                    planId: restaurant.subscription.planId,
+                    status: restaurant.subscription.status,
+                    currentPeriodEnd: restaurant.subscription.currentPeriodEnd.toISOString(),
+                    trialEndsAt: restaurant.subscription.trialEndsAt?.toISOString() ?? null,
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+              Aucun abonnement rattaché.
+            </p>
+          )}
 
           <h2 className="mt-6 text-sm font-medium">Équipe</h2>
           <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
@@ -183,9 +210,16 @@ export default async function AdminRestaurantDetailPage({
                     {member.user.email}
                   </span>
                 </span>
-                <span className="shrink-0 text-xs text-white/50">{member.role}</span>
+                {/* Le code brut du rôle était affiché — « STAFF » au lieu de
+                    son libellé, alors que la table existe dans `rbac.ts`. */}
+                <span className="shrink-0 text-xs text-white/50">
+                  {ROLE_LABELS[member.role] ?? member.role}
+                </span>
               </li>
             ))}
+            {restaurant.members.length === 0 && (
+              <li className="p-3.5 text-sm text-white/50">Aucun membre.</li>
+            )}
           </ul>
 
           <h2 className="mt-6 text-sm font-medium">Domaines</h2>
@@ -194,10 +228,15 @@ export default async function AdminRestaurantDetailPage({
               <li key={domain.id} className="flex justify-between gap-3 p-3.5 text-sm">
                 <span className="min-w-0 truncate font-mono">{domain.hostname}</span>
                 <span className="shrink-0 text-xs text-white/50">
-                  {domain.type} · {domain.status}
+                  {DOMAIN_TYPE_LABELS[domain.type] ?? domain.type} ·{' '}
+                  {DOMAIN_STATUS_LABELS[domain.status] ?? domain.status}
                 </span>
               </li>
             ))}
+            {restaurant.domains.length === 0 && (
+              // Une liste vide encadrée laissait croire à un chargement raté.
+              <li className="p-3.5 text-sm text-white/50">Aucun domaine rattaché.</li>
+            )}
           </ul>
         </section>
       </div>
@@ -230,23 +269,5 @@ export default async function AdminRestaurantDetailPage({
         )}
       </section>
     </>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 p-4">
-      <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
-      <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-white/60">{label}</dt>
-      <dd>{value}</dd>
-    </div>
   );
 }

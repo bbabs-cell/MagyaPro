@@ -9,6 +9,10 @@ import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { StatusPill } from '@/components/admin/state-badge';
 import { BoutiqueAdminActions } from '@/components/admin/boutique-actions';
 import { SECTOR_LABELS as BUSINESS_TYPE_LABELS } from '@/lib/boutique/unit-catalogue';
+import { SubscriptionPanel } from '@/components/admin/subscription-panel';
+import { listStorePayments } from '@/lib/platform-revenue';
+import { getStoreBillingPosition } from '@/lib/boutique/store-pricing';
+import { SALE_STATUS_LABELS } from '@/lib/boutique/labels';
 
 export const metadata: Metadata = { title: 'Fiche boutique' };
 export const dynamic = 'force-dynamic';
@@ -24,6 +28,7 @@ export default async function AdminBoutiqueDetailPage({
   const store = await prisma.store.findUnique({
     where: { id },
     include: {
+      subscription: { include: { plan: true } },
       members: {
         include: { user: { select: { name: true, email: true, status: true, lastLoginAt: true } } },
         orderBy: { createdAt: 'asc' },
@@ -33,7 +38,7 @@ export default async function AdminBoutiqueDetailPage({
   });
   if (!store) notFound();
 
-  const [revenue, recentSales] = await Promise.all([
+  const [revenue, recentSales, payments, position] = await Promise.all([
     prisma.sale.aggregate({
       where: { storeId: store.id, status: { not: 'CANCELLED' } },
       _sum: { total: true },
@@ -44,7 +49,16 @@ export default async function AdminBoutiqueDetailPage({
       take: 10,
       select: { id: true, number: true, total: true, status: true, createdAt: true },
     }),
+    listStorePayments(id),
+    // Rang de facturation : une boutique supplémentaire est réglée à un tarif
+    // majoré, inférieur au prix affiché du plan. Sans cette précision, un
+    // montant plus faible que le plan ressemble à une erreur.
+    getStoreBillingPosition(id),
   ]);
+
+  // Date figée côté serveur : le retard d'une échéance ne doit pas dépendre de
+  // l'horloge du navigateur qui consulte la fiche.
+  const now = new Date();
 
   return (
     <>
@@ -87,6 +101,37 @@ export default async function AdminBoutiqueDetailPage({
         </div>
       </div>
 
+      {/* La fiche ne disait rien de l'abonnement : savoir si cette boutique
+          payait demandait de retourner sur la liste des abonnements. */}
+      <section aria-labelledby="abonnement" className="mt-8 lg:max-w-xl">
+        <h2 id="abonnement" className="text-sm font-medium">
+          Abonnement
+        </h2>
+        {store.subscription ? (
+          <div className="mt-3">
+            <SubscriptionPanel
+              plan={store.subscription.plan}
+              status={store.subscription.status}
+              currentPeriodEnd={store.subscription.currentPeriodEnd}
+              payments={payments}
+              billingNote={
+                store.subscription.plan.product !== 'STORE'
+                  ? `Plan ${store.subscription.plan.product.toLowerCase()}, pas un plan Boutique`
+                  : position.isAdditional
+                    ? `Boutique n° ${position.rank} du compte : facturée au tarif majoré, donc inférieur au prix affiché du plan.`
+                    : null
+              }
+              now={now}
+            />
+          </div>
+        ) : (
+          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+            Aucun abonnement rattaché — la boutique ne peut pas être utilisée
+            tant qu&apos;un plan n&apos;a pas été réglé.
+          </p>
+        )}
+      </section>
+
       <section aria-labelledby="actions" className="mt-8">
         <h2 id="actions" className="text-sm font-medium">
           Actions d&apos;administration
@@ -128,14 +173,32 @@ export default async function AdminBoutiqueDetailPage({
           <h2 className="text-lg font-medium">Ventes récentes</h2>
           <ul className="mt-3 divide-y divide-white/10">
             {recentSales.map((sale) => (
-              <li key={sale.id} className="flex items-center justify-between py-3">
-                <div>
+              <li key={sale.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
                   <p className="font-medium">n°{sale.number}</p>
                   <p className="text-sm text-white/50">
                     {sale.createdAt.toLocaleDateString('fr-FR')}
                   </p>
                 </div>
-                <span className="font-medium">{formatMoney(sale.total, store.currency)}</span>
+                <div className="shrink-0 text-right">
+                  {/* Le statut était chargé mais jamais affiché : une vente
+                      annulée ou remboursée avait l'air d'une vente normale, et
+                      son montant se lisait comme encaissé. */}
+                  <span
+                    className={
+                      sale.status === 'COMPLETED'
+                        ? 'font-medium'
+                        : 'font-medium text-white/40 line-through'
+                    }
+                  >
+                    {formatMoney(sale.total, store.currency)}
+                  </span>
+                  {sale.status !== 'COMPLETED' && (
+                    <span className="block text-xs text-white/50">
+                      {SALE_STATUS_LABELS[sale.status]}
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
             {recentSales.length === 0 && (

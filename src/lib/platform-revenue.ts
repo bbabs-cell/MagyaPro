@@ -167,6 +167,80 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
   };
 }
 
+export type TenantPayment = {
+  id: string;
+  amount: number;
+  currency: string;
+  provider: string;
+  planName: string;
+  paidAt: Date;
+};
+
+/**
+ * Règlements d'abonnement validés d'un client, du plus récent au plus ancien.
+ *
+ * La fiche d'un client ne disait pas ce qu'il avait payé. Pour répondre à
+ * « est-ce que celui-ci règle bien ses factures », il fallait ouvrir la liste
+ * des paiements en attente — qui ne montre justement que ce qui n'est pas
+ * encore validé — ou renoncer.
+ */
+export async function listRestaurantPayments(
+  restaurantId: string,
+  take = 6,
+): Promise<TenantPayment[]> {
+  const rows = await prisma.subscriptionPayment.findMany({
+    where: { restaurantId, status: 'APPROVED' },
+    orderBy: { reviewedAt: 'desc' },
+    take,
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      provider: true,
+      reviewedAt: true,
+      createdAt: true,
+      plan: { select: { name: true } },
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    amount: row.amount,
+    currency: row.currency,
+    provider: row.provider,
+    planName: row.plan.name,
+    // `reviewedAt` est renseigné à la validation ; la date de dépôt sert de
+    // repli pour d'éventuelles lignes anciennes qui n'en portent pas.
+    paidAt: row.reviewedAt ?? row.createdAt,
+  }));
+}
+
+export async function listStorePayments(storeId: string, take = 6): Promise<TenantPayment[]> {
+  const rows = await prisma.storeSubscriptionPayment.findMany({
+    where: { storeId, status: 'APPROVED' },
+    orderBy: { reviewedAt: 'desc' },
+    take,
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      provider: true,
+      reviewedAt: true,
+      createdAt: true,
+      plan: { select: { name: true } },
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    amount: row.amount,
+    currency: row.currency,
+    provider: row.provider,
+    planName: row.plan.name,
+    paidAt: row.reviewedAt ?? row.createdAt,
+  }));
+}
+
 /**
  * Devise principale d'un ensemble de montants : celle qui pèse le plus lourd.
  *
