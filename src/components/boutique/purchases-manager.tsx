@@ -44,6 +44,31 @@ const STATUS_TONES: Record<PurchaseOrder['status'], 'neutral' | 'success' | 'war
   CANCELLED: 'danger',
 };
 
+/** Une commande encore attendue dont la date d'arrivée est passée. */
+function isLate(order: PurchaseOrder, today: string): boolean {
+  if (order.status !== 'ORDERED' && order.status !== 'PARTIALLY_RECEIVED') return false;
+  if (!order.expectedAt) return false;
+  // Comparaison de chaînes AAAA-MM-JJ : pas de fuseau horaire dans l'affaire,
+  // donc pas de commande qui bascule en retard selon l'heure de consultation.
+  return order.expectedAt.slice(0, 10) < today;
+}
+
+/**
+ * Les commandes à suivre d'abord, les closes ensuite, chaque groupe du plus
+ * récent au plus ancien. Une livraison en retard n'a rien à faire sous trois
+ * commandes déjà réceptionnées.
+ */
+const OPEN_STATUSES: Array<PurchaseOrder['status']> = ['ORDERED', 'PARTIALLY_RECEIVED', 'DRAFT'];
+
+function sortOrders(orders: PurchaseOrder[], today: string): PurchaseOrder[] {
+  const rank = (order: PurchaseOrder) => {
+    if (isLate(order, today)) return 0;
+    const open = OPEN_STATUSES.indexOf(order.status);
+    return open === -1 ? 2 : 1;
+  };
+  return [...orders].sort((a, b) => rank(a) - rank(b));
+}
+
 function orderTotal(order: PurchaseOrder): number {
   return (
     order.items.reduce((sum, item) => sum + (item.unitCost - item.discount) * item.quantityOrdered, 0) +
@@ -58,10 +83,13 @@ export function PurchasesManager({
   warehouses,
   currency,
   canManage,
+  today,
 }: {
   initialSuppliers: Supplier[];
   initialProducts: ProductOption[];
   initialOrders: PurchaseOrder[];
+  /** Date du jour figée par le serveur, au format AAAA-MM-JJ. */
+  today: string;
   warehouses: Warehouse[];
   currency: string;
   canManage: boolean;
@@ -70,6 +98,7 @@ export function PurchasesManager({
   const [suppliers] = useState(initialSuppliers);
   const [products] = useState(initialProducts);
   const [orders] = useState(initialOrders);
+  const sortedOrders = sortOrders(orders, today);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
@@ -197,6 +226,9 @@ export function PurchasesManager({
         />
       ) : (
         <Card className="overflow-x-auto p-0">
+          {/* Les commandes à suivre d'abord, les closes ensuite. Mélangées par
+              ordre de création, une livraison en retard se retrouvait sous
+              trois commandes déjà reçues dont plus personne n'a rien à faire. */}
           <table className="table-stack w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -204,20 +236,32 @@ export function PurchasesManager({
                 <th className="px-4 py-3 font-medium">Fournisseur</th>
                 <th className="px-4 py-3 font-medium">Statut</th>
                 <th className="px-4 py-3 text-right font-medium">Total</th>
-                <th className="px-4 py-3 font-medium" />
+                <th className="px-4 py-3 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => {
+              {sortedOrders.map((order) => {
                 const total = orderTotal(order);
                 const anyReceived = order.items.some((item) => item.quantityReceived > 0);
+                const late = isLate(order, today);
                 return (
                   <tr key={order.id} className="border-b border-surface-border last:border-0">
                     <td data-label="Commande" className="px-4 py-3 font-medium">
                       {order.reference}
                       {order.expectedAt && (
-                        <span className="block text-xs font-normal text-ink-faint">
-                          Attendue le {new Date(order.expectedAt).toLocaleDateString('fr-FR')}
+                        <span
+                          className={cx(
+                            'block text-xs font-normal',
+                            // Une date d'arrivée dépassée est la seule
+                            // information vraiment actionnable de cet écran :
+                            // elle était affichée du même gris que le reste.
+                            late ? 'font-medium text-state-bad' : 'text-ink-faint',
+                          )}
+                        >
+                          {late ? 'En retard depuis le ' : 'Attendue le '}
+                          {new Date(order.expectedAt).toLocaleDateString('fr-FR')}
                         </span>
                       )}
                     </td>
@@ -230,7 +274,7 @@ export function PurchasesManager({
                     <td data-label="Total" className="px-4 py-3 text-right font-medium">
                       {formatMoney(total, currency)}
                     </td>
-                    <td data-label="" className="px-4 py-3 text-right">
+                    <td data-label="Actions" className="px-4 py-3 text-right">
                       {canManage && (
                         <div className="flex flex-wrap justify-end gap-1.5">
                           {order.status === 'DRAFT' && (

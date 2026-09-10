@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { formatQty } from '@/lib/boutique/quantity';
 import { UNIT_LABELS } from '@/lib/boutique/units';
+import { EXPIRY_LABELS, expiryState, type ExpiryState } from '@/lib/boutique/expiry';
 import { PageHeader, EmptyState, Card, Badge } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Lots' };
@@ -26,8 +27,16 @@ export default async function BoutiqueLotsPage() {
     },
   });
 
-  const now = new Date();
-  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  // Mêmes seuils que la fiche produit et que la caisse. Cet écran appliquait
+  // les siens — périmé, ou « bientôt » à trente jours — et ignorait donc l'état
+  // critique des sept derniers jours. Le même lot s'affichait en orange ici et
+  // en rouge sur la fiche produit.
+  const now = Date.now();
+  const counts: Record<Exclude<ExpiryState, 'ok'>, number> = { expired: 0, critical: 0, soon: 0 };
+  for (const batch of batches) {
+    const state = expiryState(batch.expiryDate, now);
+    if (state !== 'ok') counts[state] += 1;
+  }
 
   return (
     <>
@@ -42,7 +51,31 @@ export default async function BoutiqueLotsPage() {
           description="Renseignez une date de péremption à la réception d'un achat ou à la création d'un produit pour qu'il apparaisse ici."
         />
       ) : (
-        <Card className="overflow-x-auto p-0">
+        <>
+          {/* Ce qu'il faut écouler, avant la liste. Un tableau trié par date
+              oblige à compter soi-même combien de lots sont déjà perdus. */}
+          {counts.expired + counts.critical + counts.soon > 0 && (
+            <ul className="mb-4 flex flex-wrap gap-2 text-sm">
+              {counts.expired > 0 && (
+                <li className="rounded-lg bg-state-bad-soft px-3 py-1.5 font-medium text-state-bad">
+                  {counts.expired} lot{counts.expired > 1 ? 's' : ''} périmé
+                  {counts.expired > 1 ? 's' : ''}
+                </li>
+              )}
+              {counts.critical > 0 && (
+                <li className="rounded-lg bg-state-bad-soft px-3 py-1.5 font-medium text-state-bad">
+                  {counts.critical} à écouler sous 7 jours
+                </li>
+              )}
+              {counts.soon > 0 && (
+                <li className="rounded-lg bg-state-warn-soft px-3 py-1.5 font-medium text-state-warn">
+                  {counts.soon} sous 30 jours
+                </li>
+              )}
+            </ul>
+          )}
+
+          <Card className="overflow-x-auto p-0">
           <table className="table-stack w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -54,8 +87,7 @@ export default async function BoutiqueLotsPage() {
             </thead>
             <tbody>
               {batches.map((batch) => {
-                const expired = batch.expiryDate < now;
-                const expiringSoon = !expired && batch.expiryDate <= in30Days;
+                const state = expiryState(batch.expiryDate, now);
                 return (
                   <tr key={batch.id} className="border-b border-surface-border last:border-0">
                     <td data-label="Produit" className="px-4 py-3 font-medium">
@@ -69,10 +101,13 @@ export default async function BoutiqueLotsPage() {
                       {UNIT_LABELS[batch.productVariant.product.unit]}
                     </td>
                     <td data-label="Péremption" className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {batch.expiryDate.toLocaleDateString('fr-FR')}
-                        {expired && <Badge tone="danger">Périmé</Badge>}
-                        {expiringSoon && <Badge tone="warning">Bientôt</Badge>}
+                        {state !== 'ok' && (
+                          <Badge tone={state === 'soon' ? 'warning' : 'danger'}>
+                            {EXPIRY_LABELS[state]}
+                          </Badge>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -80,7 +115,8 @@ export default async function BoutiqueLotsPage() {
               })}
             </tbody>
           </table>
-        </Card>
+          </Card>
+        </>
       )}
     </>
   );

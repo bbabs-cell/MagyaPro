@@ -12,6 +12,9 @@ export const dynamic = 'force-dynamic';
 export default async function BoutiquePurchasesPage() {
   const context = await requireStore('purchases:view');
 
+  /** Les commandes terminées ne remontent pas au-delà de quatre-vingt-dix jours. */
+  const closedSince = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
   const [suppliers, variants, orders, warehouses] = await Promise.all([
     prisma.supplier.findMany({
       where: { storeId: context.store.id },
@@ -23,8 +26,19 @@ export default async function BoutiquePurchasesPage() {
       select: { id: true, product: { select: { name: true } } },
       orderBy: { product: { name: 'asc' } },
     }),
+    // Les commandes ouvertes sont chargées en entier : ce sont celles qui
+    // demandent une action, aucune ne doit disparaître derrière une limite.
+    // Les commandes closes, elles, sont bornées — un historique d'achats grossit
+    // indéfiniment, et tout envoyer au navigateur à chaque visite finirait par
+    // rendre la page inutilisable sur une connexion lente.
     prisma.purchaseOrder.findMany({
-      where: { storeId: context.store.id },
+      where: {
+        storeId: context.store.id,
+        OR: [
+          { status: { in: ['DRAFT', 'ORDERED', 'PARTIALLY_RECEIVED'] } },
+          { status: { in: ['RECEIVED', 'CANCELLED'] }, createdAt: { gte: closedSince } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         supplier: { select: { id: true, name: true } },
@@ -49,7 +63,10 @@ export default async function BoutiquePurchasesPage() {
 
   return (
     <>
-      <PageHeader title="Achats" description="Fournisseurs et réapprovisionnement du stock." />
+      <PageHeader
+        title="Achats"
+        description="Vos commandes en cours d'abord, puis les trois derniers mois."
+      />
       <PurchasesManager
         initialSuppliers={suppliers}
         initialProducts={variants.map((v) => ({ variantId: v.id, name: v.product.name }))}
@@ -72,6 +89,9 @@ export default async function BoutiquePurchasesPage() {
         warehouses={warehouses}
         currency={context.store.currency}
         canManage={context.permissions.has('purchases:manage')}
+        // Figé côté serveur : calculé dans le navigateur, le retard changerait
+        // selon l'horloge du téléphone et différerait d'un appareil à l'autre.
+        today={new Date().toISOString().slice(0, 10)}
       />
     </>
   );
