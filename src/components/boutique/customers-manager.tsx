@@ -80,7 +80,9 @@ export function CustomersManager({
                 <th className="px-4 py-3 text-right font-medium">Ventes</th>
                 <th className="px-4 py-3 text-right font-medium">Total dépensé</th>
                 <th className="px-4 py-3 text-right font-medium">Crédit</th>
-                <th className="px-4 py-3 font-medium" />
+                <th className="px-4 py-3 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -101,7 +103,7 @@ export function CustomersManager({
                       <span className="text-ink-faint">—</span>
                     )}
                   </td>
-                  <td data-label="" className="px-4 py-3 text-right">
+                  <td data-label="Actions" className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       {canManageCredit && customer.creditBalance > 0 && (
                         <Button
