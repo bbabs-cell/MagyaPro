@@ -131,8 +131,12 @@ export default async function StoreMovementsPage({
             {pageCount > 1 ? ` — page ${page} sur ${pageCount}` : ''}
           </p>
 
+          {/* `table-stack` replie chaque ligne en carte sous 768 px, comme le
+              reste de l'application. Ce tableau imposait jusqu'ici une largeur
+              minimale de 46 rem et donc un défilement latéral de six colonnes
+              sur téléphone — l'appareil de la plupart des commerçants. */}
           <Card className="mt-3 overflow-x-auto p-0">
-            <table className="w-full min-w-[46rem] text-sm">
+            <table className="table-stack w-full text-sm">
               <caption className="sr-only">
                 Mouvements de stock, du plus récent au plus ancien
               </caption>
@@ -149,7 +153,7 @@ export default async function StoreMovementsPage({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b border-surface-border last:border-0 align-top">
-                    <td className="whitespace-nowrap px-4 py-2.5 text-ink-muted">
+                    <td data-label="Date" className="whitespace-nowrap px-4 py-2.5 text-ink-muted">
                       {row.createdAt.toLocaleDateString('fr-FR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -162,18 +166,19 @@ export default async function StoreMovementsPage({
                         })}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td data-label="Produit" className="px-4 py-2.5">
                       {row.productName}
                       {row.variantLabel ? (
                         <span className="block text-xs text-ink-muted">{row.variantLabel}</span>
                       ) : null}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td data-label="Type" className="px-4 py-2.5">
                       <Badge tone={row.change >= 0 ? 'success' : 'neutral'}>
                         {MOVEMENT_TYPE_LABELS[row.type]}
                       </Badge>
                     </td>
                     <td
+                      data-label="Variation"
                       className={cx(
                         'whitespace-nowrap px-4 py-2.5 text-right font-medium tabular-nums',
                         row.change < 0 ? 'text-state-bad' : 'text-state-ok',
@@ -182,11 +187,11 @@ export default async function StoreMovementsPage({
                       {row.change > 0 ? '+' : ''}
                       {row.change} {row.unit}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
+                    <td data-label="Stock après" className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                       {row.after}
                       <span className="block text-xs text-ink-muted">avant : {row.before}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-ink-muted">
+                    <td data-label="Auteur et motif" className="px-4 py-2.5 text-ink-muted">
                       {row.actor ?? 'Système'}
                       {row.reason ? <span className="block text-xs">{row.reason}</span> : null}
                     </td>

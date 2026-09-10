@@ -22,6 +22,13 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Annulée',
 };
 
+const STATUS_TONES: Record<Sale['status'], 'success' | 'warning' | 'danger' | 'neutral'> = {
+  COMPLETED: 'success',
+  PARTIALLY_REFUNDED: 'warning',
+  REFUNDED: 'warning',
+  CANCELLED: 'danger',
+};
+
 type SaleItem = {
   productVariantId: string;
   productName: string;
@@ -182,7 +189,9 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
             <th className="px-4 py-3 font-medium">Paiement</th>
             <th className="px-4 py-3 font-medium">Statut</th>
             <th className="px-4 py-3 text-right font-medium">Total</th>
-            <th className="px-4 py-3" />
+            <th className="px-4 py-3">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -210,14 +219,16 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
                   {sale.payments.map((p) => PAYMENT_LABELS[p.method] ?? p.method).join(', ')}
                 </td>
                 <td data-label="Statut" className="px-4 py-3">
-                  <Badge tone={sale.status === 'COMPLETED' ? 'success' : 'neutral'}>
-                    {STATUS_LABELS[sale.status]}
-                  </Badge>
+                  {/* Trois sorties différentes, trois couleurs. La version
+                      précédente peignait en gris aussi bien une annulation
+                      qu'un remboursement : deux faits comptables distincts,
+                      indiscernables au premier coup d'œil. */}
+                  <Badge tone={STATUS_TONES[sale.status]}>{STATUS_LABELS[sale.status]}</Badge>
                 </td>
                 <td data-label="Total" className="px-4 py-3 text-right font-medium">
                   {formatMoney(sale.total, currency)}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td data-label="Actions" className="px-4 py-3 text-right">
                   <div className="flex justify-end gap-1.5">
                     <LinkButton
                       href={`/boutique/recu/${sale.id}`}
