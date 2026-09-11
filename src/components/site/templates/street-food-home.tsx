@@ -333,7 +333,7 @@ function ReviewsSection({
             <p className="mt-3 text-amber-500">
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-surface-border">{'★'.repeat(5 - Math.round(averageRating))}</span>
-              <span className="ml-2 text-sm text-ink-muted">{averageRating.toFixed(1)} sur 5</span>
+              <span className="ms-2 text-sm text-ink-muted">{averageRating.toFixed(1)} sur 5</span>
             </p>
           )}
         </div>

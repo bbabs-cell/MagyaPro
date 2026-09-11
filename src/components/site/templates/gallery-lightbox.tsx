@@ -33,7 +33,7 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
             key={image.id}
             type="button"
             onClick={() => setOpenIndex(index)}
-            className="group relative overflow-hidden rounded-2xl text-left"
+            className="group relative overflow-hidden rounded-2xl text-start"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
             <img

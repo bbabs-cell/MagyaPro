@@ -654,7 +654,7 @@ function MenuElegant({
           >
             {category.name}
           </h2>
-          <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-left">
+          <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-start">
             {category.products.map((product) => (
               <div
                 key={product.id}
@@ -804,11 +804,11 @@ function TraditionalProductCard({
             {formatMoney(product.price, currency)}
           </span>
           {product.compareAtPrice && (
-            <span className="ml-2 text-xs text-ink-faint line-through">
+            <span className="ms-2 text-xs text-ink-faint line-through">
               {formatMoney(product.compareAtPrice, currency)}
             </span>
           )}
-          {unavailable && <span className="ml-2 text-xs text-ink-faint">Indisponible</span>}
+          {unavailable && <span className="ms-2 text-xs text-ink-faint">Indisponible</span>}
         </div>
         <QuickAddButton
           product={product}

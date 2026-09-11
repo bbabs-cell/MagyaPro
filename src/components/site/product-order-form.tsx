@@ -154,7 +154,7 @@ export function ProductOrderForm({
       <p className="text-2xl font-semibold">
         {formatMoney(unitPrice, currency)}
         {product.compareAtPrice && (
-          <span className="ml-3 text-base font-normal text-ink-faint line-through">
+          <span className="ms-3 text-base font-normal text-ink-faint line-through">
             {formatMoney(product.compareAtPrice, currency)}
           </span>
         )}
@@ -199,7 +199,7 @@ export function ProductOrderForm({
           <fieldset key={group.id}>
             <legend className="text-sm font-medium">
               {group.name}
-              <span className="ml-2 font-normal text-ink-faint">
+              <span className="ms-2 font-normal text-ink-faint">
                 {group.minSelect > 0
                   ? `${group.minSelect === group.maxSelect ? 'Choisissez' : 'Au moins'} ${group.minSelect}`
                   : 'Facultatif'}

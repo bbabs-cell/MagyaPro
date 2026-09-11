@@ -295,7 +295,7 @@ function MenuSection({
             {categories.map((category) => (
               <div key={category.id}>
                 <h3 className="text-center font-display text-2xl">{category.name}</h3>
-                <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-left">
+                <div className="mx-auto mt-6 max-w-lg divide-y divide-surface-border text-start">
                   {category.products.map((product) => (
                     <div
                       key={product.id}
@@ -404,7 +404,7 @@ function ReviewsSection({
               <span className="text-surface-border">
                 {'★'.repeat(5 - Math.round(averageRating))}
               </span>
-              <span className="ml-2 text-sm text-ink-muted">
+              <span className="ms-2 text-sm text-ink-muted">
                 {averageRating.toFixed(1)} sur 5 · {reviews.length} avis
               </span>
             </p>
@@ -413,7 +413,7 @@ function ReviewsSection({
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-8 sm:grid-cols-2">
           {reviews.slice(0, 6).map((review) => (
-            <figure key={review.id} className="text-center sm:text-left">
+            <figure key={review.id} className="text-center sm:text-start">
               <blockquote className="font-display text-lg italic leading-relaxed">
                 {review.comment ? `« ${review.comment} »` : '★'.repeat(review.rating)}
               </blockquote>

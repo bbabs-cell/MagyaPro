@@ -207,7 +207,7 @@ function MenuSection({
                 <h3 className="text-center font-display text-2xl" style={{ color: GOLD }}>
                   {category.name}
                 </h3>
-                <div className="mx-auto mt-6 max-w-lg divide-y text-left" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
+                <div className="mx-auto mt-6 max-w-lg divide-y text-start" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
                   {category.products.map((product) => (
                     <div
                       key={product.id}
@@ -320,7 +320,7 @@ function ReviewsSection({
             <p className="mt-4" style={{ color: GOLD }}>
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-white/20">{'★'.repeat(5 - Math.round(averageRating))}</span>
-              <span className="ml-2 text-sm text-white/50">
+              <span className="ms-2 text-sm text-white/50">
                 {averageRating.toFixed(1)} sur 5 · {reviews.length} avis
               </span>
             </p>
@@ -329,7 +329,7 @@ function ReviewsSection({
 
         <div className="mx-auto mt-12 grid max-w-4xl gap-8 sm:grid-cols-2">
           {reviews.slice(0, 6).map((review) => (
-            <figure key={review.id} className="text-center sm:text-left">
+            <figure key={review.id} className="text-center sm:text-start">
               <blockquote className="font-display text-lg italic leading-relaxed text-white/85">
                 {review.comment ? `« ${review.comment} »` : '★'.repeat(review.rating)}
               </blockquote>

@@ -55,7 +55,7 @@ export function TableLanding({
           type="button"
           disabled={pending !== null}
           onClick={() => request('CALL')}
-          className="rounded-2xl border border-surface-border p-5 text-left hover:bg-surface-sunken disabled:opacity-50"
+          className="rounded-2xl border border-surface-border p-5 text-start hover:bg-surface-sunken disabled:opacity-50"
         >
           <p className="font-medium">{dict.table.callServer}</p>
           <p className="mt-1 text-sm text-ink-muted">
@@ -67,7 +67,7 @@ export function TableLanding({
           type="button"
           disabled={pending !== null}
           onClick={() => request('BILL')}
-          className="rounded-2xl border border-surface-border p-5 text-left hover:bg-surface-sunken disabled:opacity-50"
+          className="rounded-2xl border border-surface-border p-5 text-start hover:bg-surface-sunken disabled:opacity-50"
         >
           <p className="font-medium">{dict.table.requestBill}</p>
           <p className="mt-1 text-sm text-ink-muted">
