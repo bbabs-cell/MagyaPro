@@ -85,9 +85,11 @@ export default async function AdminConsolidatedPage() {
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="Ce mois-ci" value={formatMoney(thisMonth, currency)} />
+          {/* Le mois précédent en entier : cette carte donne un total, elle ne
+              compare rien, donc pas de troncature au quantième du jour. */}
           <Metric
             label="Mois dernier"
-            value={formatMoney(amountIn(revenue.previousMonth, currency), currency)}
+            value={formatMoney(amountIn(revenue.previousMonthFull, currency), currency)}
           />
           <Metric
             label="Restaurant (ce mois)"

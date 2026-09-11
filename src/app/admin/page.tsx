@@ -214,10 +214,16 @@ export default async function AdminDashboardPage() {
             <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-white">
               {formatMoney(thisMonth, currency)}
             </p>
+            {/* La comparaison porte sur la même portion de mois. Le total
+                complet du mois précédent est donné à côté, sans être comparé :
+                onze jours ne se comparent pas à trente-et-un. */}
             <p className="mt-1 text-xs text-white/50">
               {monthChange === null
-                ? 'Pas de comparaison possible : aucun encaissement le mois dernier.'
-                : `${monthChange >= 0 ? '+' : ''}${monthChange} % par rapport au mois dernier (${formatMoney(lastMonth, currency)}).`}
+                ? `Pas de comparaison possible : rien d’encaissé au ${revenue.comparisonDayOfMonth} du mois dernier.`
+                : `${monthChange >= 0 ? '+' : ''}${monthChange} % par rapport au mois dernier à la même date (${formatMoney(lastMonth, currency)} au ${revenue.comparisonDayOfMonth}).`}
+            </p>
+            <p className="mt-0.5 text-xs text-white/40">
+              Mois dernier en entier : {formatMoney(amountIn(revenue.previousMonthFull, currency), currency)}.
             </p>
           </div>
 

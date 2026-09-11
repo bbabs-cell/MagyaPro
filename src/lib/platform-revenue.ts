@@ -30,8 +30,23 @@ export type MoneyByCurrency = Record<string, number>;
 export type PlatformRevenue = {
   /** Mois calendaire en cours, jusqu'à aujourd'hui. */
   currentMonth: MoneyByCurrency;
-  /** Mois calendaire précédent, en entier — la base de comparaison. */
+  /**
+   * Mois précédent **arrêté au même jour du mois** — la base de comparaison.
+   *
+   * Comparer onze jours de septembre à trente-et-un jours d'août donne un
+   * effondrement mécanique : le 1er du mois, la variation affichée serait
+   * toujours proche de −100 %, quel que soit l'état réel des affaires. Ce
+   * n'est pas une information, c'est un artefact de calendrier.
+   *
+   * À jour égal, les deux nombres sont comparables et la variation dit
+   * quelque chose. Le total complet du mois précédent reste disponible dans
+   * `previousMonthFull`, pour l'afficher sans le comparer.
+   */
   previousMonth: MoneyByCurrency;
+  /** Mois calendaire précédent en entier, sans troncature. */
+  previousMonthFull: MoneyByCurrency;
+  /** Quantième retenu pour la comparaison — sert à l'expliquer à l'écran. */
+  comparisonDayOfMonth: number;
   /** Depuis toujours. */
   allTime: MoneyByCurrency;
   /** Douze derniers mois, du plus ancien au plus récent. */
@@ -108,8 +123,16 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
       }),
     ]);
 
+  // Borne de comparaison : le mois dernier, arrêté à la même heure du même
+  // quantième. `setMonth` gère seul les quantièmes impossibles — un 31 mars
+  // devient un 2 mars pour comparer à février, ce qui reste une borne franche
+  // et commune aux deux périodes.
+  const previousMonthCutoff = new Date(now);
+  previousMonthCutoff.setMonth(previousMonthCutoff.getMonth() - 1);
+
   const currentMonth: MoneyByCurrency = {};
   const previousMonth: MoneyByCurrency = {};
+  const previousMonthFull: MoneyByCurrency = {};
   const currentMonthRestaurant: MoneyByCurrency = {};
   const currentMonthStore: MoneyByCurrency = {};
 
@@ -140,7 +163,10 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
         add(currentMonth, payment.currency, payment.amount);
         add(perProduct, payment.currency, payment.amount);
       } else if (payment.reviewedAt >= firstOfPreviousMonth) {
-        add(previousMonth, payment.currency, payment.amount);
+        add(previousMonthFull, payment.currency, payment.amount);
+        if (payment.reviewedAt <= previousMonthCutoff) {
+          add(previousMonth, payment.currency, payment.amount);
+        }
       }
     }
   };
@@ -156,6 +182,8 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
   return {
     currentMonth,
     previousMonth,
+    previousMonthFull,
+    comparisonDayOfMonth: now.getDate(),
     allTime,
     byMonth: monthKeys.map((key) => ({
       month: labels.get(key) ?? key,

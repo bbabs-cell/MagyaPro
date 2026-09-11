@@ -274,13 +274,14 @@ export function AdminSidebar({
   }
 
   const navigation = (
-    <nav aria-label="Navigation de l'administration" className="space-y-5">
+    <nav aria-label="Navigation de l'administration" className="space-y-4">
       {SECTIONS.map((section) => (
         <div key={section.title}>
-          {/* Un simple intertitre plutôt qu'un menu repliable : cinq sections
-              de trois entrées tiennent à l'écran, et un dépliage ajouterait un
-              clic avant chaque navigation. */}
-          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/35">
+          {/* Un simple intertitre plutôt qu'un menu repliable : un dépliage
+              ajouterait un clic avant chaque navigation. L'espacement est
+              serré à dessein — quinze entrées et cinq intertitres doivent
+              tenir dans la hauteur d'un écran d'ordinateur portable. */}
+          <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-white/35">
             {section.title}
           </p>
           <div className="space-y-0.5">
@@ -295,7 +296,7 @@ export function AdminSidebar({
                   onClick={() => setMenuOpen(false)}
                   aria-current={active ? 'page' : undefined}
                   className={cx(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
                     active
                       ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
                       : 'text-white/60 hover:bg-white/5 hover:text-white',
@@ -341,8 +342,14 @@ export function AdminSidebar({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
           />
         </div>
+        {/* Hauteur bornée puis défilement : le menu s'ouvre dans un en-tête
+            épinglé, donc sans cette borne ses dernières entrées sortaient sous
+            le bas de l'écran, hors d'atteinte. */}
         {menuOpen && (
-          <div id="admin-menu-mobile" className="border-t border-white/10 p-4">
+          <div
+            id="admin-menu-mobile"
+            className="max-h-[calc(100vh-3.5rem)] overflow-y-auto border-t border-white/10 p-4"
+          >
             {navigation}
             <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
               <Link
@@ -357,8 +364,15 @@ export function AdminSidebar({
         )}
       </header>
 
-      <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen">
-        <div className="flex h-full flex-col p-4">
+      {/* La colonne entière défile d'un bloc.
+          Auparavant l'en-tête et le pied étaient épinglés et seule la
+          navigation défilait au milieu : sur un écran d'ordinateur portable,
+          ces deux blocs réservaient près de deux cents pixels et ne laissaient
+          pas la place aux quinze entrées. Le cadre intérieur tranchait alors
+          les intertitres en pleine hauteur de lettre, sans rien indiquer de ce
+          qui restait au-dessus ou en dessous. */}
+      <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+        <div className="flex min-h-full flex-col p-4">
           <div className="shrink-0 px-2 py-2">
             <div className="flex items-center justify-between gap-2">
               <Link href="/admin" className="flex items-center gap-2">
@@ -373,9 +387,9 @@ export function AdminSidebar({
             <p className="mt-4 truncate text-xs text-white/40">{userEmail}</p>
           </div>
 
-          <div className="mt-6 flex-1 overflow-y-auto">{navigation}</div>
+          <div className="mt-5 flex-1">{navigation}</div>
 
-          <div className="mt-6 shrink-0 space-y-1 border-t border-white/10 pt-4">
+          <div className="mt-5 shrink-0 space-y-1 border-t border-white/10 pt-4">
             <Link
               href="/dashboard"
               className="block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
