@@ -1401,8 +1401,19 @@ model Store {
 
   currency String @default("XOF")
   timezone String @default("Africa/Abidjan")
-  /// Langue du site public de la boutique — voir `src/lib/i18n/locales.ts`
-  /// (`fr`, `en`, `ar`), même liste que le sélecteur visiteur de Restaurant.
+  /// Colonne conservée, mais **plus aucun code ne la lit**.
+  ///
+  /// Un panneau de réglage l'écrivait depuis les paramètres de la boutique,
+  /// en annonçant « la langue du site public de votre boutique, vue par tous
+  /// vos clients ». Or une boutique n'a pas de site public — seuls les
+  /// restaurants en ont un — et la valeur enregistrée n'était relue que pour
+  /// réafficher le formulaire. Le commerçant choisissait une langue, obtenait
+  /// « Réglage enregistré », et rien ne changeait nulle part. Le panneau a
+  /// donc été retiré.
+  ///
+  /// La colonne reste : la supprimer exigerait une migration pour aucun gain,
+  /// et une traduction réelle de l'interface Boutique s'y rebrancherait.
+  /// Avant de la relire, s'assurer qu'elle pilote quelque chose de visible.
   language String @default("fr")
 
   taxEnabled Boolean @default(false)

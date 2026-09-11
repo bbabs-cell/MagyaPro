@@ -847,11 +847,6 @@ export const storeTaxSchema = z.object({
   taxRate: z.number().int().min(0).max(1000),
 });
 
-/** Langue du site public d'une boutique — voir `src/lib/i18n/locales.ts`. */
-export const storeLanguageSchema = z.object({
-  language: z.enum(['fr', 'en', 'ar']),
-});
-
 /** Identité visuelle du site public d'une boutique — équivalent de `restaurantAppearanceSchema`. */
 export const storeAppearanceSchema = z.object({
   templateKey: z.enum(['classic', 'mode', 'vitrine', 'marche']),

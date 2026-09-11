@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { PageHeader } from '@/components/ui';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
-import { LanguageSettingsPanel } from '@/components/boutique/language-settings-panel';
 import { StockSettingsPanel } from '@/components/boutique/stock-settings-panel';
 import { SectorSettingsPanel } from '@/components/boutique/sector-settings-panel';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
@@ -67,7 +66,6 @@ export default async function BoutiqueSettingsPage() {
           canManage={canManage}
         />
         <PaymentMethodsManager methods={paymentMethods} canManage={canManage} />
-        <LanguageSettingsPanel language={context.store.language} canManage={canManage} />
         <NotificationSoundPanel
           notificationSoundUrl={context.store.notificationSoundUrl}
           canManage={canManage}
