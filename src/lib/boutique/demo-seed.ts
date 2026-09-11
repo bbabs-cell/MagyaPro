@@ -74,6 +74,14 @@ type DemoStoreDefinition = {
   city: string;
   country: string;
   phone: string;
+  /**
+   * Devise de la boutique. Par défaut le franc CFA d'Afrique de l'Ouest.
+   * Le Cameroun emploie celui d'Afrique centrale : deux monnaies distinctes,
+   * de même nom courant et de même valeur face à l'euro, mais non
+   * interchangeables. Une vitrine qui afficherait la mauvaise apprendrait
+   * quelque chose de faux à qui la consulte.
+   */
+  currency?: string;
   categories: DemoCategory[];
 };
 
@@ -672,6 +680,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     businessType: 'COSMETICS',
     city: 'Douala',
     country: 'Cameroun',
+    currency: 'XAF',
     phone: '+237 6 90 00 10 03',
     categories: [
       {
@@ -869,7 +878,7 @@ async function seedOneStore(
       country: definition.country,
       phone: definition.phone,
       email: `contact@${definition.slug}.demo`,
-      currency: 'XOF',
+      currency: definition.currency ?? 'XOF',
       onboardingStep: 5,
       onboardingCompletedAt: new Date(),
       publishedAt: new Date(),

@@ -19,10 +19,29 @@
     --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
       'Helvetica Neue', sans-serif;
 
+    /* Neutres — source unique du produit entier.
+       Ces valeurs existaient en double : ici, sous l'attribut de thème
+       Boutique, et à nouveau comme valeurs de repli dans la configuration
+       Tailwind, à deux ou trois points près sur chaque canal. Invisible côte à
+       côte, mais c'était bien deux vérités pour un même rôle, et un écran non
+       thématisé n'avait aucun moyen de savoir laquelle suivre.
+       Elles sont désormais déclarées une fois, ici, pour tout le produit ;
+       seul le thème sombre de Boutique les redéfinit, plus bas. */
+    --surface: #fbf8f2;
+    --surface-raised: #ffffff;
+    --surface-sunken: #ece5d8;
+    --surface-border: #ddd3c1;
+
+    --ink: #211d16;
+    --ink-muted: #6a6153;
+    --ink-faint: #948b7b;
+
     /* Couleurs sémantiques par défaut — exactement les valeurs Tailwind
        utilisées jusqu'ici (emerald/amber/red 50 et 700), pour que Restaurant,
        les sites publics et l'administration restent au pixel près ce qu'ils
-       étaient. Seul le tableau de bord Boutique les redéfinit, plus bas. */
+       étaient. Cette divergence-là est délibérée, contrairement à celle des
+       neutres ci-dessus : le tableau de bord Boutique adoucit ces tons pour
+       son fond sable, le reste du produit garde les siens. */
     --state-ok: #047857;
     --state-ok-soft: #ecfdf5;
     --state-warn: #b45309;
@@ -246,14 +265,10 @@
 [data-boutique-theme='light'] {
   color-scheme: light;
 
-  --surface: #fbf8f2;
-  --surface-raised: #ffffff;
-  --surface-sunken: #ece5d8;
-  --surface-border: #ddd3c1;
-
-  --ink: #211d16;
-  --ink-muted: #6a6153;
-  --ink-faint: #948b7b;
+  /* Les neutres ne sont pas redéclarés ici : ce sont ceux de `:root`, et
+     c'est ce qui rend l'alignement réel plutôt que recopié. Quitter le thème
+     sombre suffit à les retrouver, la règle sombre cessant simplement de
+     s'appliquer. */
 
   --nav: #2a2118;
   --nav-raised: #35291d;

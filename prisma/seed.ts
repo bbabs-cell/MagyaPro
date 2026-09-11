@@ -440,12 +440,12 @@ const DEMO_RESTAURANTS: Array<{
     primaryColor: '#dc2626',
     secondaryColor: '#111827',
     fontFamily: 'Space Grotesk',
-    city: 'Abidjan',
-    country: "Côte d'Ivoire",
-    addressLine: 'Rue des Jardins, Deux Plateaux',
-    phone: '+225 07 00 00 03',
+    city: 'Ouagadougou',
+    country: 'Burkina Faso',
+    addressLine: 'Avenue Kwame Nkrumah, Koulouba',
+    phone: '+226 70 00 00 03',
     planKey: 'starter',
-    zones: [{ name: 'Deux Plateaux', fee: 1000, minOrder: 4000, freeAbove: 12_000 }],
+    zones: [{ name: 'Koulouba', fee: 1000, minOrder: 4000, freeAbove: 12_000 }],
     menu: [
       {
         category: 'Burgers',
@@ -528,10 +528,10 @@ const DEMO_RESTAURANTS: Array<{
 
 const DEMO_CUSTOMERS = [
   { name: 'Awa Koné', phone: '+225 07 11 11 11' },
-  { name: 'Ibrahim Traoré', phone: '+225 07 22 22 22' },
+  { name: 'Ibrahim Traoré', phone: '+226 70 22 22 22' },
   { name: 'Fatou Ndiaye', phone: '+221 77 33 33 33' },
   { name: 'Marc Kouassi', phone: '+225 07 44 44 44' },
-  { name: 'Sarah Bamba', phone: '+225 07 55 55 55' },
+  { name: 'Sarah Bamba', phone: '+223 76 55 55 55' },
 ];
 
 /** Générateur pseudo-aléatoire à graine : le seed produit toujours la même démo. */

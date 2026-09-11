@@ -63,8 +63,17 @@ Ce qu'un produit voisin ne pourrait pas copier sans changer de modèle :
   directe : aucun opérateur ne doit être mis en avant par défaut, aucune ville
   ne doit servir d'exemple implicite. Wave domine au Sénégal, Orange Money en
   Côte d'Ivoire ; l'ordre d'affichage ne peut pas être figé sur un pays.
-- **Les données de démonstration sont situées à Abidjan.** C'est un écart connu
-  avec le marché visé, pas une décision.
+- **Les vitrines de démonstration couvrent la sous-région**, et doivent le
+  rester : Abidjan, Dakar, Ouagadougou côté Restaurant ; Bamako, Cotonou,
+  Abidjan, Lomé, Dakar, Ouagadougou et Douala côté Boutique. Aucune ville ne
+  doit redevenir le décor par défaut au fil des ajouts.
+- **Deux francs CFA, pas un.** Les huit pays de l'UEMOA emploient le franc CFA
+  d'Afrique de l'Ouest (XOF), le Cameroun celui d'Afrique centrale (XAF) : même
+  nom courant, même valeur face à l'euro, monnaies distinctes. La vitrine de
+  Douala est en XAF pour cette raison. À noter : les écrans de paiement
+  d'abonnement ne listent aujourd'hui que des pays de l'UEMOA, plus « Guinée »
+  — qui n'emploie pas le franc CFA — et « Autre ». Un commerçant camerounais
+  passerait donc par « Autre ». Périmètre à trancher.
 - **Téléphone d'abord, connexion irrégulière.** Les ventes se saisissent hors
   ligne dans une file d'attente locale qui se synchronise au retour du réseau.
   Le tableau de bord Boutique est installable en application (manifeste + agent

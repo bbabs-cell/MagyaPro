@@ -423,12 +423,16 @@ balayer une liste de vingt produits sans lire un seul mot.
 - **Don't** ajouter une animation qui ne répond pas à une action de
   l'utilisateur. La seule animation d'entrée du système est un fondu de 180ms.
 
-### Écart connu, à ne pas propager
+### Une seule déclaration des neutres
 
-Les mêmes rôles neutres portent deux valeurs selon le contexte : les valeurs de
-repli déclarées dans la configuration Tailwind (`#faf8f4`, `#f1ede4`,
-`#e3ddd0`, encre `#221f1a`) et celles du thème Boutique ci-dessus (`#fbf8f2`,
-`#ece5d8`, `#ddd3c1`, encre `#211d16`). L'écart est de deux ou trois points sur
-chaque canal — invisible côte à côte, mais c'est bien deux sources de vérité
-pour un même rôle. **Les valeurs de ce fichier font foi.** Toute reprise d'un
-écran non thématisé doit converger vers elles plutôt que recopier le repli.
+Les rôles neutres ont porté deux valeurs selon le contexte — celles de la
+configuration Tailwind et celles du thème Boutique, à deux ou trois points près
+sur chaque canal. C'est résolu : ils sont déclarés une fois, sur `:root` dans
+`globals.css`, donc pour tout le produit. Le thème sombre de Boutique est le
+seul à les redéfinir, et les valeurs de repli de la configuration Tailwind sont
+tenues identiques par principe — un repli qui diverge de la vraie valeur est une
+seconde vérité en sommeil.
+
+Les couleurs d'état, elles, divergent **volontairement** : Boutique adoucit
+vert, ambre et rouge pour son fond sable, le reste du produit garde des tons
+plus francs. Cette différence-là est un choix, pas une dérive.

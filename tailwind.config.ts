@@ -15,20 +15,30 @@ const config: Config = {
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
         navy: '#0b1730',
-        // `ink`/`surface` : un seul thème, clair, jamais en blanc pur (un
-        // ivoire doux, plus reposant pour les yeux). Restent pilotées par
-        // variable CSS uniquement pour permettre au reçu imprimable
-        // (`app/recu/layout.tsx`) de repasser en blanc pur à l'impression —
-        // aucun composant ne bascule plus ces variables pour un mode sombre.
+        // `ink`/`surface` : jamais de blanc pur, un ivoire doux plus reposant
+        // pour les yeux.
+        //
+        // Les valeurs écrites ici ne sont que des replis, et elles ne
+        // servent en pratique jamais : `globals.css` déclare ces variables
+        // sur `:root`, donc pour tout le produit. Elles sont tenues
+        // identiques à cette déclaration par principe — un repli qui
+        // diverge de la vraie valeur est une seconde vérité en sommeil, et
+        // c'est exactement ce qui s'était produit ici, à deux ou trois
+        // points près sur chaque canal.
+        //
+        // Le passage par variable CSS reste nécessaire à deux titres : le
+        // reçu imprimable (`app/recu/layout.tsx`) repasse en blanc pur à
+        // l'impression, et le tableau de bord Boutique propose un thème
+        // sombre.
         ink: {
-          DEFAULT: 'var(--ink, #221f1a)',
-          muted: 'var(--ink-muted, #6b6459)',
-          faint: 'var(--ink-faint, #948c7e)',
+          DEFAULT: 'var(--ink, #211d16)',
+          muted: 'var(--ink-muted, #6a6153)',
+          faint: 'var(--ink-faint, #948b7b)',
         },
         surface: {
-          DEFAULT: 'var(--surface, #faf8f4)',
-          sunken: 'var(--surface-sunken, #f1ede4)',
-          border: 'var(--surface-border, #e3ddd0)',
+          DEFAULT: 'var(--surface, #fbf8f2)',
+          sunken: 'var(--surface-sunken, #ece5d8)',
+          border: 'var(--surface-border, #ddd3c1)',
           // Surface légèrement surélevée au-dessus d'une carte (en-tête de
           // tableau, ligne survolée) — la profondeur vient d'un empilement de
           // valeurs, pas d'une ombre seule.
