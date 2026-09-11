@@ -46,23 +46,66 @@ export function toMajor(amount: number, currency: string): number {
  * Utilisé identiquement côté serveur et client pour éviter les écarts
  * d'hydratation React.
  */
+/**
+ * Symboles de devise, tenus ici plutôt que laissés au navigateur.
+ *
+ * `Intl` en mode `currency` va chercher le symbole dans les données de langue
+ * du moteur, et ces données varient d'un appareil à l'autre. Le même montant
+ * s'affichait « 14 362 650 F CFA » dans les pages rendues par le serveur et
+ * « 14 362 650 XOF » dans celles rendues par le navigateur d'un téléphone
+ * Android, dont les données de langue ne connaissent pas le symbole du franc
+ * CFA et retombent sur le code ISO. Deux écritures pour la même monnaie, dans
+ * la même application, selon l'écran ouvert.
+ *
+ * Un commerçant ne doit pas avoir à se demander si « XOF » et « F CFA » sont
+ * la même chose. La table ci-dessous est courte et nous appartient : elle rend
+ * l'affichage identique partout, quel que soit l'appareil.
+ */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  XOF: 'F CFA',
+  XAF: 'FCFA',
+  EUR: '€',
+  USD: '$US',
+  MAD: 'MAD',
+  NGN: '₦',
+  GHS: 'GH₵',
+};
+
+/** Symbole affiché pour une devise ; son code ISO si elle n'est pas connue. */
+export function currencySymbol(currency: string): string {
+  const code = currency.toUpperCase();
+  return CURRENCY_SYMBOLS[code] ?? code;
+}
+
+const NARROW_NBSP = / /g;
+const NBSP = ' ';
+
 export function formatMoney(
   amount: number,
   currency: string = DEFAULT_CURRENCY,
   locale = 'fr-FR',
 ): string {
   const decimals = minorUnits(currency);
+  const value = toMajor(amount, currency);
+
+  let digits: string;
   try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: currency.toUpperCase(),
+    // Mode décimal, et non `currency` : le groupement des milliers et le
+    // séparateur décimal restent confiés à la langue — c'est fiable partout —
+    // tandis que le symbole, lui, vient de notre table.
+    digits = new Intl.NumberFormat(locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
-    }).format(toMajor(amount, currency));
+    }).format(value);
   } catch {
-    // Devise inconnue d'Intl : repli lisible plutôt qu'une exception en plein rendu.
-    return `${toMajor(amount, currency).toFixed(decimals)} ${currency.toUpperCase()}`;
+    digits = value.toFixed(decimals);
   }
+
+  // Les versions récentes séparent les milliers par une espace fine
+  // insécable, les anciennes par une espace insécable ordinaire. Normaliser
+  // évite que le serveur et le navigateur produisent deux chaînes différentes
+  // pour le même montant, ce que React signale à l'hydratation.
+  return `${digits.replace(NARROW_NBSP, NBSP)}${NBSP}${currencySymbol(currency)}`;
 }
 
 /**

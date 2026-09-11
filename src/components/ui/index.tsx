@@ -329,16 +329,27 @@ export function StatCard({
   label: string;
   value: string;
   hint?: string;
+  /**
+   * À ne renseigner que lorsque la VALEUR elle-même est un signal.
+   *
+   * Sans ton, la carte retombait sur la couleur de marque : chaque compteur
+   * ordinaire portait donc un liseré orange pleine largeur et une tuile orange,
+   * et l'écran d'accueil comptait cinq zones orange dont une seule était
+   * cliquable. Quand tout est accentué, plus rien ne l'est — et le bouton
+   * « Ouvrir la caisse », lui, se noyait dans le décor.
+   *
+   * La carte équivalente du Super Admin avait déjà tiré cette leçon ; celle-ci
+   * ne l'avait pas suivie.
+   */
   tone?: BadgeTone;
-  /** Icône décorative affichée dans un badge coloré (tone de l'accent). */
+  /** Icône du sujet de la carte. Discrète tant que la valeur n'alerte pas. */
   icon?: ReactNode;
 }) {
   return (
     <div className="hover-glow-sm card relative overflow-hidden p-4 sm:p-5">
-      <span
-        aria-hidden="true"
-        className={cx('absolute inset-x-0 top-0 h-1', STAT_ACCENT[tone ?? 'brand'])}
-      />
+      {tone && (
+        <span aria-hidden="true" className={cx('absolute inset-x-0 top-0 h-1', STAT_ACCENT[tone])} />
+      )}
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
           {label}
@@ -346,8 +357,8 @@ export function StatCard({
         {icon && (
           <span
             className={cx(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white',
-              STAT_ACCENT[tone ?? 'brand'],
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+              tone ? cx(STAT_ACCENT[tone], 'text-white') : 'bg-surface-sunken text-ink-faint',
             )}
           >
             {icon}
