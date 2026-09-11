@@ -127,12 +127,12 @@
     },
     "typographyMeta": {
       "display": {
-        "displayName": "Display — Fraunces",
-        "purpose": "Titre de page et chiffre unique en tête d'écran. Décidé avec le propriétaire, pas encore implémenté : le code est aujourd'hui en Inter partout."
+        "displayName": "Display — Bricolage Grotesque",
+        "purpose": "Titre de page dans les tableaux de bord ; titres et grands nombres sur les pages publiques. Auto-hébergée, variable, repli sur la pile système."
       },
       "body": {
-        "displayName": "Corps — Inter",
-        "purpose": "Tout le texte courant et, en chasse fixe, tout nombre lu en colonne."
+        "displayName": "Corps — pile système",
+        "purpose": "Tout le texte courant. Aucune police téléchargée : l'appareil dessine son propre caractère, ce qui compte sur connexion irrégulière."
       },
       "label": {
         "displayName": "Intitulé",
@@ -141,6 +141,10 @@
       "micro": {
         "displayName": "Micro",
         "purpose": "Dernier degré avant l'illisible (11px). Étiquettes d'axe et intertitres de barre latérale, sur grand écran seulement."
+      },
+      "receipt": {
+        "displayName": "Ticket — DM Mono",
+        "purpose": "Ticket de caisse, bon de cuisine, identifiants et codes. Évoque le papier plutôt que le terminal."
       }
     },
     "shadows": [
@@ -199,7 +203,7 @@
       "refersTo": "button-primary",
       "description": "L'action principale d'un écran. Un seul par écran.",
       "html": "<button class=\"ds-btn-primary\">Enregistrer la vente</button>",
-      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 16px; border: none; border-radius: 14px; background: #ff5e2e; color: #fff; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; box-shadow: 0 1px 2px rgba(255,94,46,.3); transition: filter 150ms, transform 150ms; cursor: pointer; } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fbf8f2, 0 0 0 4px #ff5e2e; } .ds-btn-primary:active { transform: scale(.98); }"
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 16px; border: none; border-radius: 14px; background: #ff5e2e; color: #fff; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; box-shadow: 0 1px 2px rgba(255,94,46,.3); transition: filter 150ms, transform 150ms; cursor: pointer; } .ds-btn-primary:hover { filter: brightness(1.1); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fbf8f2, 0 0 0 4px #ff5e2e; } .ds-btn-primary:active { transform: scale(.98); }"
     },
     {
       "name": "Bouton secondaire",
@@ -207,7 +211,7 @@
       "refersTo": "button-secondary",
       "description": "Action de second rang, à côté du bouton principal.",
       "html": "<button class=\"ds-btn-secondary\">Annuler</button>",
-      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; border: 1px solid #ddd3c1; border-radius: 14px; background: #fbf8f2; color: #211d16; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background-color 150ms; cursor: pointer; } .ds-btn-secondary:hover { background: #ece5d8; } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fbf8f2, 0 0 0 4px #ff5e2e; }"
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; border: 1px solid #ddd3c1; border-radius: 14px; background: #fbf8f2; color: #211d16; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background-color 150ms; cursor: pointer; } .ds-btn-secondary:hover { background: #ece5d8; } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #fbf8f2, 0 0 0 4px #ff5e2e; }"
     },
     {
       "name": "Champ de saisie",
@@ -215,7 +219,7 @@
       "refersTo": "input",
       "description": "Texte à 15px : au-dessus du seuil qui déclenche le zoom automatique sur iOS.",
       "html": "<input class=\"ds-input\" type=\"search\" placeholder=\"Numéro ou produit\" />",
-      "css": ".ds-input { width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #ddd3c1; border-radius: 14px; background: #fbf8f2; color: #211d16; font-family: Inter, system-ui, sans-serif; font-size: 15px; transition: border-color 150ms; } .ds-input::placeholder { color: #948b7b; } .ds-input:focus { outline: none; border-color: #211d16; box-shadow: 0 0 0 1px #211d16; }"
+      "css": ".ds-input { width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #ddd3c1; border-radius: 14px; background: #fbf8f2; color: #211d16; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; transition: border-color 150ms; } .ds-input::placeholder { color: #948b7b; } .ds-input:focus { outline: none; border-color: #211d16; box-shadow: 0 0 0 1px #211d16; }"
     },
     {
       "name": "Carte",
@@ -223,7 +227,7 @@
       "refersTo": "card",
       "description": "Surface de travail, légèrement surélevée au repos.",
       "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Encaissé aujourd'hui</p><p class=\"ds-card-value\">125 000 F CFA</p></div>",
-      "css": ".ds-card { padding: 16px; border: 1px solid #ddd3c1; border-radius: 20px; background: #fbf8f2; box-shadow: 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18); font-family: Inter, system-ui, sans-serif; transition: box-shadow 200ms ease, border-color 200ms ease; } .ds-card:hover { box-shadow: 0 2px 4px rgba(33,29,22,.07), 0 16px 32px -18px rgba(33,29,22,.26); border-color: #948b7b; } .ds-card-label { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: #948b7b; } .ds-card-value { margin: 8px 0 0; font-size: 24px; font-weight: 600; color: #211d16; font-variant-numeric: tabular-nums; }"
+      "css": ".ds-card { padding: 16px; border: 1px solid #ddd3c1; border-radius: 20px; background: #fbf8f2; box-shadow: 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18); font-family: ui-sans-serif, system-ui, sans-serif; transition: box-shadow 200ms ease, border-color 200ms ease; } .ds-card:hover { box-shadow: 0 2px 4px rgba(33,29,22,.07), 0 16px 32px -18px rgba(33,29,22,.26); border-color: #948b7b; } .ds-card-label { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; color: #948b7b; } .ds-card-value { margin: 8px 0 0; font-size: 24px; font-weight: 600; color: #211d16; font-variant-numeric: tabular-nums; }"
     },
     {
       "name": "Pastille d'état",
@@ -231,7 +235,7 @@
       "refersTo": "badge-success",
       "description": "Dit un fait vérifiable — jamais une identité de marque.",
       "html": "<span class=\"ds-chip ds-chip-ok\">Complétée</span> <span class=\"ds-chip ds-chip-warn\">Seuil franchi</span> <span class=\"ds-chip ds-chip-bad\">Rupture</span>",
-      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 500; } .ds-chip-ok { background: #dcece2; color: #2f6b4a; } .ds-chip-warn { background: #f9edd6; color: #a8700f; } .ds-chip-bad { background: #f8e0de; color: #a8322f; }"
+      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 500; } .ds-chip-ok { background: #dcece2; color: #2f6b4a; } .ds-chip-warn { background: #f9edd6; color: #a8700f; } .ds-chip-bad { background: #f8e0de; color: #a8322f; }"
     },
     {
       "name": "Entrée de navigation",
@@ -239,7 +243,7 @@
       "refersTo": "nav-item-active",
       "description": "Le seul endroit, hors bouton principal, où l'accent braise apparaît.",
       "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item-active\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M4 20V10\"/><path d=\"M12 20V4\"/><path d=\"M20 20v-7\"/></svg>Statistiques</a><a class=\"ds-nav-item\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M6 8h12l-1 11H7L6 8Z\"/><path d=\"M9 8V6a3 3 0 0 1 6 0v2\"/></svg>Ventes</a></nav>",
-      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #2a2118; border-radius: 16px; font-family: Inter, system-ui, sans-serif; } .ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 14px; color: #b3a894; font-size: 14px; text-decoration: none; transition: background-color 150ms, color 150ms; cursor: pointer; } .ds-nav-item:hover { background: #35291d; color: #f5efe3; } .ds-nav-item-active { background: linear-gradient(to right, #ff9a4d, #ff5e2e); color: #fff; }"
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #2a2118; border-radius: 16px; font-family: ui-sans-serif, system-ui, sans-serif; } .ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 14px; color: #b3a894; font-size: 14px; text-decoration: none; transition: background-color 150ms, color 150ms; cursor: pointer; } .ds-nav-item:hover { background: #35291d; color: #f5efe3; } .ds-nav-item-active { background: linear-gradient(to right, #ff9a4d, #ff5e2e); color: #fff; }"
     },
     {
       "name": "Rail d'état",
@@ -247,7 +251,7 @@
       "refersTo": "card",
       "description": "Barre de 3px au bord gauche : l'état du stock se lit à la couleur avant le texte.",
       "html": "<div class=\"ds-rail ds-rail-bad\"><p class=\"ds-rail-title\">Riz parfumé 5 kg</p><p class=\"ds-rail-sub\">0 en stock — seuil 10</p></div>",
-      "css": ".ds-rail { position: relative; overflow: hidden; padding: 16px 16px 16px 20px; border: 1px solid #ddd3c1; border-radius: 20px; background: #fbf8f2; font-family: Inter, system-ui, sans-serif; box-shadow: 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18); } .ds-rail::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rail, transparent); } .ds-rail-bad { --rail: #a8322f; } .ds-rail-warn { --rail: #a8700f; } .ds-rail-ok { --rail: #2f6b4a; } .ds-rail-title { margin: 0; font-size: 14px; font-weight: 500; color: #211d16; } .ds-rail-sub { margin: 4px 0 0; font-size: 12px; color: #6a6153; }"
+      "css": ".ds-rail { position: relative; overflow: hidden; padding: 16px 16px 16px 20px; border: 1px solid #ddd3c1; border-radius: 20px; background: #fbf8f2; font-family: ui-sans-serif, system-ui, sans-serif; box-shadow: 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18); } .ds-rail::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rail, transparent); } .ds-rail-bad { --rail: #a8322f; } .ds-rail-warn { --rail: #a8700f; } .ds-rail-ok { --rail: #2f6b4a; } .ds-rail-title { margin: 0; font-size: 14px; font-weight: 500; color: #211d16; } .ds-rail-sub { margin: 4px 0 0; font-size: 12px; color: #6a6153; }"
     }
   ],
   "narrative": {
@@ -278,12 +282,17 @@
       },
       {
         "name": "La règle des chiffres alignés",
-        "body": "Tout nombre lu en colonne utilise Inter en chasse fixe. Fraunces est réservé au chiffre isolé qu'on lit une fois. Un total qui ne s'aligne pas avec celui du dessus se compare à l'œil, donc mal.",
+        "body": "Tout nombre lu en colonne porte tabular-nums. Un total qui ne s'aligne pas avec celui du dessus se compare à l'œil, donc mal.",
+        "section": "typography"
+      },
+      {
+        "name": "La règle du corps natif",
+        "body": "Le texte courant reste sur la pile système et aucune police n'est chargée pour lui. Déclarer une famille qu'on ne télécharge pas revient à décrire une typographie qui n'existe pas. Une famille nommée dans ce fichier est une famille réellement chargée.",
         "section": "typography"
       },
       {
         "name": "La règle de l'arabe",
-        "body": "Fraunces ne couvre pas l'arabe. En lecture inversée, les titres reprennent la pile de corps de texte : mieux vaut une hiérarchie plus plate qu'un caractère de substitution imposé par le navigateur.",
+        "body": "Bricolage Grotesque ne couvre pas l'arabe. En lecture inversée, les titres reprennent la pile système : mieux vaut une hiérarchie plus plate qu'un caractère de substitution imposé par le navigateur.",
         "section": "typography"
       },
       {

@@ -189,7 +189,11 @@ export function PageHeader({
   return (
     <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+        {/* Le titre de page est le seul endroit du tableau de bord qui porte
+            la police de titrage. Le corps de texte reste sur la pile système :
+            un outil consulté toute la journée se lit mieux dans la police que
+            l'appareil dessine le mieux, et rien n'est téléchargé pour lui. */}
+        <h1 className="font-display text-xl font-semibold tracking-tight text-ink sm:text-2xl">
           {title}
         </h1>
         {description && (

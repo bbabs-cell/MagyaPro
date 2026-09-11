@@ -25,39 +25,44 @@ colors:
   state-bad-soft: "#f8e0de"
 typography:
   display:
-    fontFamily: "Fraunces, Inter, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.5rem, 4vw, 2.25rem)"
+    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.25rem, 4vw, 2.25rem)"
     fontWeight: 600
-    lineHeight: 1.1
+    lineHeight: 1.15
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.4
   body:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1.3
     letterSpacing: "0.05em"
   micro:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 500
     lineHeight: 1.2
     letterSpacing: "0.04em"
+  receipt:
+    fontFamily: "DM Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+    fontSize: "0.75rem"
+    fontWeight: 400
+    lineHeight: 1.5
 rounded:
   button: "0.875rem"
   card: "1.25rem"
@@ -203,42 +208,55 @@ réservé au reçu imprimable, qui repasse volontairement en blanc à l'impressi
 
 ## Typography
 
-**Display Font:** Fraunces (repli : Inter, puis la pile système)
-**Body Font:** Inter (repli : `ui-sans-serif`, `system-ui`)
-**Label/Mono Font:** pile monospace système, pour les identifiants et les codes
+**Display Font:** Bricolage Grotesque (auto-hébergée, variable, repli sur la pile système)
+**Body Font:** la pile système — `ui-sans-serif`, `system-ui`, puis les polices natives
+**Receipt/Mono Font:** DM Mono, pour le ticket de caisse, le bon de cuisine, les identifiants et les codes
 
-**Character:** Inter porte tout le travail — dense, neutre, irréprochable en
-petit corps et en colonne de chiffres. Fraunces n'intervient qu'aux titres et
-aux grands nombres : ses formes chaudes, légèrement anciennes, donnent au
-produit la voix que la lisibilité seule ne donne pas. Le contraste entre les
-deux est le seul geste typographique du système ; il n'en faut pas d'autre.
+**Character:** le corps de texte est délibérément **la police de l'appareil**.
+Un outil consulté toute la journée se lit mieux dans le caractère que le
+téléphone dessine le mieux, et rien n'est téléchargé pour lui — un choix qui
+compte sur des connexions irrégulières. Bricolage Grotesque, grotesque à axe
+optique variable, n'intervient qu'aux titres : ses formes se resserrent en
+grand et s'ouvrent en petit, elle a du caractère sans être décorative. DM Mono
+est la police du papier, pas du terminal : plus chaude qu'une police d'éditeur
+de code, elle convient aux deux seuls objets que ce produit imprime vraiment.
+
+Le contraste entre un titre dessiné et un corps de texte natif est le seul
+geste typographique du système. Il n'en faut pas d'autre.
 
 ### Hierarchy
 
-- **Display** (Fraunces 600, `clamp(1.5rem, 4vw, 2.25rem)`, interligne 1.1) :
-  titre de page, et le chiffre unique en tête d'un écran — la recette du mois,
-  le total encaissé.
-- **Headline** (Inter 600, 1.5rem) : titre de section à l'intérieur d'une page.
-- **Title** (Inter 500, 0.875rem) : intitulé de carte, en-tête de tableau,
+- **Display** (Bricolage Grotesque 600, 1.25rem montant à 2.25rem) : le titre
+  de page, et lui seul dans les tableaux de bord. Sur les pages publiques, elle
+  porte aussi les titres de section et les grands nombres.
+- **Headline** (système 600, 1.5rem) : titre de section à l'intérieur d'une page.
+- **Title** (système 500, 0.875rem) : intitulé de carte, en-tête de tableau,
   entrée de navigation.
-- **Body** (Inter 400, 0.9375rem, interligne 1.6) : le texte courant. Les
+- **Body** (système 400, 0.9375rem, interligne 1.6) : le texte courant. Les
   paragraphes explicatifs ne dépassent pas 70 caractères par ligne.
-- **Label** (Inter 500, 0.75rem, interlettrage 0.05em, en capitales) : intitulés
-  de statistiques et de cellules sur mobile.
-- **Micro** (Inter 500, 0.6875rem) : le dernier degré avant l'illisible.
+- **Label** (système 500, 0.75rem, interlettrage 0.05em, en capitales) :
+  intitulés de statistiques et de cellules sur mobile.
+- **Micro** (système 500, 0.6875rem) : le dernier degré avant l'illisible.
   Réservé à deux emplois sur grand écran — les étiquettes d'axe d'un graphique
   et les intertitres de la barre latérale. Jamais sur un écran tactile, jamais
   pour une information qu'on ne peut pas retrouver ailleurs.
+- **Receipt** (DM Mono 400, 0.75rem) : ticket de caisse, bon de cuisine,
+  identifiants techniques et codes.
 
 ### Named Rules
 
 **La règle des chiffres alignés.** Tout nombre lu en colonne — tableau, liste,
-total — utilise Inter en chasse fixe (`tabular-nums`). Fraunces est réservé au
-chiffre isolé qu'on lit une fois. Un total qui ne s'aligne pas avec celui du
-dessus se compare à l'œil, donc mal.
+total — porte `tabular-nums`. Un total qui ne s'aligne pas avec celui du dessus
+se compare à l'œil, donc mal.
 
-**La règle de l'arabe.** Fraunces ne couvre pas l'arabe. En lecture inversée,
-les titres reprennent la pile de corps de texte : mieux vaut une hiérarchie
+**La règle du corps natif.** Le texte courant reste sur la pile système et
+aucune police n'est chargée pour lui. Déclarer une famille qu'on ne télécharge
+pas revient à décrire une typographie qui n'existe pas : c'était le cas ici
+pendant longtemps, « Inter » figurant en tête de la pile sans jamais être
+servie. Une famille nommée dans ce fichier est une famille réellement chargée.
+
+**La règle de l'arabe.** Bricolage Grotesque ne couvre pas l'arabe. En lecture
+inversée, les titres reprennent la pile système : mieux vaut une hiérarchie
 plus plate qu'un caractère de substitution imposé par le navigateur.
 
 **La règle du repli sans serif.** `--font-display` retombe sur la pile sans
