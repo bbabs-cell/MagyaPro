@@ -54,30 +54,32 @@ export function AdminThemeRoot({
     });
   }
 
+  // La racine ne porte volontairement pas d'`overflow-x-hidden`, et c'est le
+  // point important. Une valeur d'`overflow` autre que `visible` sur un
+  // ancêtre en fait le conteneur de défilement : le menu latéral, pourtant
+  // `sticky`, se mettait alors à défiler avec la page au lieu de rester en
+  // place. Le tableau de bord Boutique, dont la racine n'a pas cette classe,
+  // ne connaissait pas le problème — d'où la différence entre les deux.
   return (
-    <div
-      data-admin-theme={theme}
-      className="relative min-h-screen overflow-x-hidden bg-navy text-white"
-    >
+    <div data-admin-theme={theme} className="relative min-h-screen bg-navy text-white">
       {theme === 'dark' && (
-        <>
+        // Le débordement est contenu par cette enveloppe plutôt que par la
+        // racine : elle recouvre la page, rogne ce qui dépasse, et n'est le
+        // conteneur de défilement de rien puisqu'elle est en position absolue.
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            className="absolute inset-0 opacity-[0.05]"
             style={{
               backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
               backgroundSize: '26px 26px',
             }}
           />
           {/* `absolute`, jamais `fixed` : un élément fixe avec un décalage
-              négatif échappe au `overflow-x-hidden` du conteneur (il n'est
-              pas positionné par rapport à lui) et provoque un débordement
-              horizontal fantôme, surtout visible sur Chrome Android. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]"
-          />
-        </>
+              négatif échappe au rognage de son parent (il n'est pas positionné
+              par rapport à lui) et provoque un débordement horizontal fantôme,
+              surtout visible sur Chrome Android. */}
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#ff5e2e] opacity-[0.12] blur-[120px]" />
+        </div>
       )}
 
       <NotificationWatcher endpoint="/api/admin/notifications" />
