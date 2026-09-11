@@ -262,7 +262,7 @@ export default async function AdminDashboardPage() {
                     style={{ height: `${Math.max(2, Math.round((amount / peak) * 100))}%` }}
                   />
                 </div>
-                <span className="truncate text-[10px] text-white/40">{point.month}</span>
+                <span className="truncate text-[11px] text-white/40">{point.month}</span>
               </div>
             );
           })}
