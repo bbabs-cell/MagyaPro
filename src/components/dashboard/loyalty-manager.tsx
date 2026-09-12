@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type Tier = {
   id: string;
@@ -36,22 +36,18 @@ export function LoyaltyManager({
   currency: string;
   canManage: boolean;
 }) {
-  const router = useRouter();
   const [editing, setEditing] = useState<Tier | 'new' | null>(null);
   const [rewardType, setRewardType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
-  const [pending, setPending] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const mutation = useServerMutation();
+  const fieldErrors = mutation.fieldErrors;
 
   function openEditor(tier: Tier | 'new') {
     setEditing(tier);
     setRewardType(tier === 'new' ? 'PERCENT' : tier.rewardType);
-    setError(null);
-    setFieldErrors({});
+    mutation.clearError();
   }
 
-  async function save(event: FormEvent<HTMLFormElement>) {
+  function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editing) return;
 
@@ -67,42 +63,28 @@ export function LoyaltyManager({
       isActive: formData.get('isActive') === 'on',
     };
 
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
-
-    try {
-      if (editing === 'new') {
-        await api.post('/api/fidelite', payload);
-      } else {
-        await api.patch(`/api/fidelite/${editing.id}`, payload);
-      }
-      setEditing(null);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("Le palier n'a pas pu être enregistré.");
-      }
-    } finally {
-      setPending(false);
-    }
+    const isNew = editing === 'new';
+    mutation.run(
+      () =>
+        isNew
+          ? api.post('/api/fidelite', payload)
+          : api.patch(`/api/fidelite/${editing.id}`, payload),
+      {
+        key: 'enregistrement',
+        onSuccess: () => setEditing(null),
+        successMessage: isNew ? 'Palier créé.' : 'Palier modifié.',
+        failureMessage: "Le palier n'a pas pu être enregistré.",
+      },
+    );
   }
 
-  async function remove(tier: Tier) {
+  function remove(tier: Tier) {
     if (!window.confirm(`Supprimer le palier « ${tier.name} » ?`)) return;
-    setPendingId(tier.id);
-    setError(null);
-    try {
-      await api.delete(`/api/fidelite/${tier.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Le palier n'a pas pu être supprimé.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/fidelite/${tier.id}`), {
+      key: tier.id,
+      successMessage: 'Palier supprimé.',
+      failureMessage: "Le palier n'a pas pu être supprimé.",
+    });
   }
 
   if (editing) {
@@ -113,11 +95,7 @@ export function LoyaltyManager({
         </h2>
 
         <form onSubmit={save} className="mt-5 space-y-4" noValidate>
-          {error && (
-            <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-              {error}
-            </div>
-          )}
+          <AlertMessage message={mutation.error} />
 
           <Field label="Nom du palier" htmlFor="name" required error={fieldErrors.name}>
             <input
@@ -208,7 +186,7 @@ export function LoyaltyManager({
           </label>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" loading={pending}>
+            <Button type="submit" loading={mutation.isPending('enregistrement')}>
               Enregistrer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
@@ -222,11 +200,7 @@ export function LoyaltyManager({
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
@@ -277,7 +251,8 @@ export function LoyaltyManager({
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={pendingId === tier.id}
+                      loading={mutation.isPending(tier.id)}
+                      disabled={mutation.pending}
                       onClick={() => remove(tier)}
                     >
                       Supprimer

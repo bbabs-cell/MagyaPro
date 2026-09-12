@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { toMajor, toMinor } from '@/lib/money';
 import { DAY_NAMES } from '@/lib/site/hours';
 import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
@@ -103,7 +104,6 @@ export function SettingsPanels({
   canPublish: boolean;
   customDomainAllowed: boolean;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<TabKey>('profil');
   const [hours, setHours] = useState(initialHours);
   const [selectedProviders, setSelectedProviders] = useState(settings.paymentProviders);
@@ -111,31 +111,32 @@ export function SettingsPanels({
   const [notificationSoundUrl, setNotificationSoundUrl] = useState(settings.notificationSoundUrl);
   const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
 
-  const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const mutation = useServerMutation();
 
-  async function submit(action: () => Promise<void>, successMessage: string) {
-    setPending(true);
-    setError(null);
+  const pending = mutation.pending;
+  const error = mutation.error;
+  const fieldErrors = mutation.fieldErrors;
+
+  /**
+   * Enregistre un panneau de réglages.
+   *
+   * La confirmation reste **sous le bouton**, et non en message flottant : sur
+   * un écran de réglages on enregistre plusieurs panneaux à la suite, et un
+   * message qui disparaît au bout de quatre secondes laisse ensuite douter de
+   * ce qui a été pris en compte. Elle est effacée dès la modification
+   * suivante.
+   *
+   * Le passage par `useServerMutation` corrige en revanche l'attente : le
+   * bouton cessait de tourner avant que l'écran ne soit à jour, si bien qu'on
+   * pouvait réenregistrer par-dessus un rendu encore en vol.
+   */
+  function submit(action: () => Promise<void>, successMessage: string) {
     setMessage(null);
-    setFieldErrors({});
-
-    try {
-      await action();
-      setMessage(successMessage);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("L'enregistrement a échoué. Réessayez.");
-      }
-    } finally {
-      setPending(false);
-    }
+    mutation.run(action, {
+      onSuccess: () => setMessage(successMessage),
+      failureMessage: "L'enregistrement a échoué. Réessayez.",
+    });
   }
 
   function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -238,7 +239,7 @@ export function SettingsPanels({
             onClick={() => {
               setTab(item.key);
               setMessage(null);
-              setError(null);
+              mutation.clearError();
             }}
             aria-current={tab === item.key ? 'true' : undefined}
             className={cx(

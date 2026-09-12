@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { OrderStatus } from '@prisma/client';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
-import { Button, Field, inputClass } from '@/components/ui';
+import { AlertMessage, Button, Field, inputClass } from '@/components/ui';
 
 /**
  * Avancement du statut depuis la fiche commande.
@@ -25,52 +25,40 @@ export function OrderActions({
   canUpdate: boolean;
   canCancel: boolean;
 }) {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState('');
+  const pending = mutation.pending;
 
   const transitions = ORDER_TRANSITIONS[status].filter(
     (next) => next !== 'CANCELLED' || canCancel,
   );
 
-  async function apply(next: OrderStatus, note?: string) {
-    setPending(true);
-    setError(null);
-
-    try {
-      await api.patch(`/api/commandes/${orderId}`, { status: next, note });
-      setCancelling(false);
-      setReason('');
-      router.refresh();
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Le statut n'a pas pu être modifié. Réessayez.",
-      );
-    } finally {
-      setPending(false);
-    }
+  function apply(next: OrderStatus, note?: string) {
+    mutation.run(() => api.patch(`/api/commandes/${orderId}`, { status: next, note }), {
+      key: next,
+      onSuccess: () => {
+        setCancelling(false);
+        setReason('');
+      },
+      // Contrairement à la liste des commandes, cet écran n'affiche pas de
+      // ligne qui changerait de couleur sous les yeux : c'est une fiche, et le
+      // statut n'y bouge qu'une fois le nouveau rendu arrivé. La confirmation
+      // est donc le seul signal immédiat.
+      successMessage:
+        next === 'CANCELLED'
+          ? 'Commande annulée.'
+          : `Commande marquée « ${ORDER_STATUS_LABELS[next]} ».`,
+      failureMessage: "Le statut n'a pas pu être modifié. Réessayez.",
+    });
   }
 
-  async function confirmPayment() {
-    setPending(true);
-    setError(null);
-
-    try {
-      await api.post(`/api/commandes/${orderId}/payer`);
-      router.refresh();
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Le paiement n'a pas pu être confirmé. Réessayez.",
-      );
-    } finally {
-      setPending(false);
-    }
+  function confirmPayment() {
+    mutation.run(() => api.post(`/api/commandes/${orderId}/payer`), {
+      key: 'paiement',
+      successMessage: 'Paiement encaissé, commande terminée.',
+      failureMessage: "Le paiement n'a pas pu être confirmé. Réessayez.",
+    });
   }
 
   if (!canUpdate) {
@@ -84,17 +72,13 @@ export function OrderActions({
   if (status === 'DELIVERED') {
     return (
       <div className="space-y-3">
-        {error && (
-          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        )}
+        <AlertMessage message={mutation.error} />
         <p className="text-sm text-ink-muted">
           Le livreur a confirmé la remise au client. Terminez la commande une
           fois l&apos;argent reçu.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" loading={pending} onClick={confirmPayment}>
+          <Button type="button" loading={mutation.isPending('paiement')} onClick={confirmPayment}>
             Marquer payé et terminer
           </Button>
           {canCancel && (
@@ -123,11 +107,7 @@ export function OrderActions({
 
   return (
     <div className="space-y-3">
-      {error && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </p>
-      )}
+      <AlertMessage message={mutation.error} />
 
       {cancelling ? (
         <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
@@ -149,7 +129,7 @@ export function OrderActions({
               type="button"
               variant="danger"
               size="sm"
-              loading={pending}
+              loading={mutation.isPending('CANCELLED')}
               onClick={() => apply('CANCELLED', reason || undefined)}
             >
               Confirmer l&apos;annulation
@@ -182,6 +162,7 @@ export function OrderActions({
               <Button
                 key={next}
                 type="button"
+                loading={mutation.isPending(next)}
                 disabled={pending}
                 onClick={() => apply(next)}
               >

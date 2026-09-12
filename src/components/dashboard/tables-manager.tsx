@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useOptimistic, useState, type FormEvent } from 'react';
 
-import { ApiError, api } from '@/lib/client/api';
-import { Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type TableStatus = 'FREE' | 'OCCUPIED' | 'NEEDS_CLEANING';
 
@@ -37,56 +37,61 @@ export function TablesManager({
   tables: Table[];
   canManage: boolean;
 }) {
-  const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
-  async function create(event: FormEvent<HTMLFormElement>) {
+  /**
+   * Le badge d'une table change de couleur dès l'appui.
+   *
+   * C'est un geste de salle, fait en passant devant la table : libre →
+   * occupée → à nettoyer. Attendre le serveur pour voir la pastille changer
+   * conduit à réappuyer, donc à sauter un cran dans le cycle et à annoncer un
+   * mauvais statut au reste de l'équipe.
+   */
+  const [shownTables, setStatusLocally] = useOptimistic(
+    tables,
+    (current: Table[], change: { id: string; status: Table['status'] }) =>
+      current.map((table) =>
+        table.id === change.id ? { ...table, status: change.status } : table,
+      ),
+  );
+
+  function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const label = String(formData.get('label') ?? '');
 
-    setPending(true);
-    setError(null);
-    try {
-      await api.post('/api/tables', { label: String(formData.get('label') ?? '') });
-      setCreating(false);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La table n'a pas pu être créée.");
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.post('/api/tables', { label }), {
+      key: 'creation',
+      onSuccess: () => setCreating(false),
+      successMessage: 'Table créée, son QR code est prêt.',
+      failureMessage: "La table n'a pas pu être créée.",
+    });
   }
 
-  async function cycleStatus(table: Table) {
+  function cycleStatus(table: Table) {
     const next = STATUS_ORDER[(STATUS_ORDER.indexOf(table.status) + 1) % STATUS_ORDER.length]!;
-    setPendingId(table.id);
-    setError(null);
-    try {
-      await api.patch(`/api/tables/${table.id}/statut`, { status: next });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Le statut n\'a pas pu être mis à jour.');
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(
+      async () => {
+        setStatusLocally({ id: table.id, status: next });
+        await api.patch(`/api/tables/${table.id}/statut`, { status: next });
+      },
+      {
+        key: `${table.id}:statut`,
+        // La pastille change sous les yeux : rien à confirmer par-dessus.
+        failureMessage: "Le statut n'a pas pu être mis à jour.",
+      },
+    );
   }
 
-  async function remove(table: Table) {
+  function remove(table: Table) {
     if (!window.confirm(`Supprimer « ${table.label} » ?`)) return;
-    setPendingId(table.id);
-    setError(null);
-    try {
-      await api.delete(`/api/tables/${table.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La table n'a pas pu être supprimée.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/tables/${table.id}`), {
+      key: `${table.id}:suppr`,
+      successMessage: 'Table supprimée.',
+      failureMessage: "La table n'a pas pu être supprimée.",
+    });
   }
 
   async function copyLink(table: Table) {
@@ -101,11 +106,7 @@ export function TablesManager({
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       {creating && canManage && (
         <Card className="mb-6 p-5">
@@ -116,7 +117,7 @@ export function TablesManager({
                 <input id="label" name="label" required className={inputClass} placeholder="Table 4" />
               </Field>
             </div>
-            <Button type="submit" loading={pending}>
+            <Button type="submit" loading={mutation.isPending('creation')}>
               Créer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
@@ -126,7 +127,7 @@ export function TablesManager({
         </Card>
       )}
 
-      {tables.length === 0 ? (
+      {shownTables.length === 0 ? (
         <Card className="p-4 sm:p-5">
           <EmptyState
             title="Aucune table"
@@ -151,13 +152,14 @@ export function TablesManager({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {tables.map((table) => (
+            {shownTables.map((table) => (
               <Card key={table.id} className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{table.label}</p>
                   <button
                     type="button"
-                    disabled={pendingId === table.id}
+                    disabled={mutation.pending}
+                    aria-busy={mutation.isPending(`${table.id}:statut`) || undefined}
                     onClick={() => cycleStatus(table)}
                     title="Cliquer pour changer le statut"
                   >
@@ -190,7 +192,8 @@ export function TablesManager({
                   {canManage && (
                     <button
                       type="button"
-                      disabled={pendingId === table.id}
+                      disabled={mutation.pending}
+                      aria-busy={mutation.isPending(`${table.id}:suppr`) || undefined}
                       onClick={() => remove(table)}
                       className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
                     >

@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
-import { Badge, Button, Card, EmptyState, cx } from '@/components/ui';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { AlertMessage, Badge, Button, Card, EmptyState, cx } from '@/components/ui';
 
 type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -53,10 +53,8 @@ export function ReviewsManager({
   reviews: Review[];
   canModerate: boolean;
 }) {
-  const router = useRouter();
   const [filter, setFilter] = useState<ReviewStatus | 'ALL'>('PENDING');
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
   const approved = reviews.filter((review) => review.status === 'APPROVED');
   const averageRating = useMemo(() => {
@@ -66,17 +64,17 @@ export function ReviewsManager({
 
   const visible = filter === 'ALL' ? reviews : reviews.filter((r) => r.status === filter);
 
-  async function moderate(review: Review, status: 'APPROVED' | 'REJECTED') {
-    setPendingId(review.id);
-    setError(null);
-    try {
-      await api.patch(`/api/avis/${review.id}`, { status });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "L'avis n'a pas pu être modéré.");
-    } finally {
-      setPendingId(null);
-    }
+  function moderate(review: Review, status: 'APPROVED' | 'REJECTED') {
+    mutation.run(() => api.patch(`/api/avis/${review.id}`, { status }), {
+      key: `${review.id}:${status}`,
+      // L'avis quitte le filtre « en attente » : sa disparition ne dit pas
+      // s'il a été publié sur la vitrine ou écarté.
+      successMessage:
+        status === 'APPROVED'
+          ? 'Avis publié sur votre page.'
+          : 'Avis rejeté, il ne sera pas publié.',
+      failureMessage: "L'avis n'a pas pu être modéré.",
+    });
   }
 
   return (
@@ -98,11 +96,7 @@ export function ReviewsManager({
         </Card>
       )}
 
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       <div className="mb-4 flex flex-wrap gap-1.5">
         {FILTERS.map((item) => (
@@ -162,7 +156,8 @@ export function ReviewsManager({
                   <div className="mt-3 flex gap-2">
                     <Button
                       size="sm"
-                      disabled={pendingId === review.id}
+                      loading={mutation.isPending(`${review.id}:APPROVED`)}
+                      disabled={mutation.pending}
                       onClick={() => moderate(review, 'APPROVED')}
                     >
                       Approuver
@@ -170,7 +165,8 @@ export function ReviewsManager({
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={pendingId === review.id}
+                      loading={mutation.isPending(`${review.id}:REJECTED`)}
+                      disabled={mutation.pending}
                       onClick={() => moderate(review, 'REJECTED')}
                     >
                       Rejeter

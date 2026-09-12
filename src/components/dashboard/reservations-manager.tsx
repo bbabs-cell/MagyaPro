@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
-import { Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
@@ -51,12 +51,13 @@ export function ReservationsManager({
   /** Délai après l'heure de réservation avant de la signaler comme probable no-show. */
   graceMinutes: number;
 }) {
-  const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // Erreur locale de saisie, avant tout envoi : le serveur n'a rien à dire
+  // d'une date vide, c'est le navigateur qui l'a laissée passer.
+  const [dateError, setDateError] = useState<string | null>(null);
+  const mutation = useServerMutation();
+  const pending = mutation.pending;
+  const fieldErrors = dateError ? { reservedFor: dateError } : mutation.fieldErrors;
 
   // Remonte le compte à rebours de retard minute par minute, sans dépendre
   // d'une action de l'utilisateur pour se rafraîchir.
@@ -80,17 +81,15 @@ export function ReservationsManager({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
+    mutation.clearError();
+    setDateError(null);
 
     // `noValidate` laisse passer un formulaire dont la date a été vidée :
     // sans ce contrôle, `new Date('').toISOString()` lèverait avant même
     // d'entrer dans le bloc try/catch.
     const reservedForDate = new Date(String(formData.get('reservedFor') ?? ''));
     if (Number.isNaN(reservedForDate.getTime())) {
-      setFieldErrors({ reservedFor: 'Choisissez une date et une heure.' });
-      setPending(false);
+      setDateError('Choisissez une date et une heure.');
       return;
     }
 
@@ -102,33 +101,20 @@ export function ReservationsManager({
       notes: String(formData.get('notes') ?? ''),
     };
 
-    try {
-      await api.post('/api/reservations', payload);
-      setCreating(false);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("La réservation n'a pas pu être enregistrée.");
-      }
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.post('/api/reservations', payload), {
+      key: 'creation',
+      onSuccess: () => setCreating(false),
+      successMessage: 'Réservation enregistrée.',
+      failureMessage: "La réservation n'a pas pu être enregistrée.",
+    });
   }
 
-  async function setStatus(reservation: Reservation, status: ReservationStatus) {
-    setPendingId(reservation.id);
-    setError(null);
-    try {
-      await api.patch(`/api/reservations/${reservation.id}`, { status });
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La réservation n'a pas pu être mise à jour.");
-    } finally {
-      setPendingId(null);
-    }
+  function setStatus(reservation: Reservation, status: ReservationStatus) {
+    mutation.run(() => api.patch(`/api/reservations/${reservation.id}`, { status }), {
+      key: `${reservation.id}:${status}`,
+      successMessage: `${reservation.customerName} — ${STATUS_LABEL[status].toLowerCase()}.`,
+      failureMessage: "La réservation n'a pas pu être mise à jour.",
+    });
   }
 
   function formatWhen(iso: string): string {
@@ -183,7 +169,8 @@ export function ReservationsManager({
             {reservation.status === 'PENDING' && (
               <Button
                 size="sm"
-                disabled={pendingId === reservation.id}
+                loading={mutation.isPending(`${reservation.id}:CONFIRMED`)}
+                disabled={mutation.pending}
                 onClick={() => setStatus(reservation, 'CONFIRMED')}
               >
                 Confirmer
@@ -194,7 +181,8 @@ export function ReservationsManager({
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={pendingId === reservation.id}
+                  loading={mutation.isPending(`${reservation.id}:COMPLETED`)}
+                  disabled={mutation.pending}
                   onClick={() => setStatus(reservation, 'COMPLETED')}
                 >
                   Honorée
@@ -202,7 +190,8 @@ export function ReservationsManager({
                 <Button
                   size="sm"
                   variant="ghost"
-                  disabled={pendingId === reservation.id}
+                  loading={mutation.isPending(`${reservation.id}:CANCELLED`)}
+                  disabled={mutation.pending}
                   onClick={() => setStatus(reservation, 'CANCELLED')}
                 >
                   Annuler
@@ -217,11 +206,7 @@ export function ReservationsManager({
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       {creating && canManage && (
         <Card className="mb-6 p-5">

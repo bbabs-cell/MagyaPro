@@ -124,9 +124,17 @@ aux comptes multi-boutiques, « Sécurité » reste masquée en visite guidée.
 
 **Le fournisseur de messages est correctement porté.** Les dix écrans qui
 utilisent `useServerMutation` ont été vérifiés un par un : tous rendent sous un
-`ToastProvider`. Deux d'entre eux — dépenses et promotions — servent aux deux
-produits et sont couverts des deux côtés. Le mur d'abonnement, seule branche
-sans fournisseur, n'utilise pas le module.
+`ToastProvider`. Le mur d'abonnement, seule branche sans fournisseur, n'utilise
+pas le module.
+
+> **Rectification apportée en phase 6.** Ce paragraphe affirmait que les écrans
+> Dépenses et Promotions « servent aux deux produits et sont couverts des deux
+> côtés ». C'était faux : il existe **deux implémentations distinctes portant le
+> même nom**, `components/boutique/expenses-manager` et
+> `components/dashboard/expenses-manager`, de même pour les promotions. La
+> phase 5 n'avait donc corrigé que les versions Boutique. Les versions
+> Restaurant ont été converties en phase 6. Leur gestion d'erreur, elle, était
+> correcte — le `catch` manquant ne concernait bien que les copies Boutique.
 
 **Les échecs désormais affichés n'en révèlent pas plus.** Ils passent par la
 même enveloppe que partout ailleurs ; ce qui change, c'est qu'ils cessent

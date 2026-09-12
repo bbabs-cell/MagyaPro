@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMinor } from '@/lib/money';
-import { Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { AlertMessage, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type Expense = {
   id: string;
@@ -33,12 +33,9 @@ export function ExpensesManager({
   expenses: Expense[];
   currency: string;
 }) {
-  const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const mutation = useServerMutation();
+  const fieldErrors = mutation.fieldErrors;
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,47 +49,26 @@ export function ExpensesManager({
       notes: String(formData.get('notes') ?? ''),
     };
 
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
-
-    try {
-      await api.post('/api/depenses', payload);
-      setCreating(false);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("La dépense n'a pas pu être enregistrée.");
-      }
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.post('/api/depenses', payload), {
+      key: 'creation',
+      onSuccess: () => setCreating(false),
+      successMessage: 'Dépense enregistrée.',
+      failureMessage: "La dépense n'a pas pu être enregistrée.",
+    });
   }
 
-  async function remove(expense: Expense) {
+  function remove(expense: Expense) {
     if (!window.confirm(`Supprimer « ${expense.label} » ?`)) return;
-    setPendingId(expense.id);
-    setError(null);
-    try {
-      await api.delete(`/api/depenses/${expense.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La dépense n'a pas pu être supprimée.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/depenses/${expense.id}`), {
+      key: expense.id,
+      successMessage: 'Dépense supprimée.',
+      failureMessage: "La dépense n'a pas pu être supprimée.",
+    });
   }
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       {creating && (
         <Card className="mb-6 p-5">
@@ -131,7 +107,7 @@ export function ExpensesManager({
               <input id="notes" name="notes" className={inputClass} />
             </Field>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" loading={pending}>
+              <Button type="submit" loading={mutation.isPending('creation')}>
                 Enregistrer
               </Button>
               <Button type="button" variant="ghost" onClick={() => setCreating(false)}>
@@ -184,7 +160,8 @@ export function ExpensesManager({
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={pendingId === expense.id}
+                    loading={mutation.isPending(expense.id)}
+                    disabled={mutation.pending}
                     onClick={() => remove(expense)}
                   >
                     Supprimer

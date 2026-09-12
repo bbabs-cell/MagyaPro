@@ -101,6 +101,16 @@ export type ServerMutation = {
   isPending: (key: string) => boolean;
   /** Dernier échec, déjà rédigé en français. `null` s'il n'y en a pas. */
   error: string | null;
+  /**
+   * Erreurs par champ renvoyées par le serveur, pour les afficher sous le
+   * champ concerné plutôt que dans un bandeau au-dessus du formulaire.
+   *
+   * Le serveur valide toujours, quoi qu'ait fait le navigateur : lui seul sait
+   * qu'un code est déjà pris ou qu'une date tombe un jour de fermeture. Sans
+   * cette table, un refus portant sur un champ précis n'apparaissait que comme
+   * une phrase générale, à charge pour la personne de deviner lequel reprendre.
+   */
+  fieldErrors: Record<string, string>;
   /** Efface le message d'échec — à l'ouverture d'un formulaire, par exemple. */
   clearError: () => void;
 };
@@ -111,11 +121,13 @@ export function useServerMutation(): ServerMutation {
   const [pending, startTransition] = useTransition();
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const run = useCallback(
     <T,>(mutate: () => Promise<T>, options?: ServerMutationOptions<T>) => {
       setActiveKey(options?.key ?? null);
       setError(null);
+      setFieldErrors({});
 
       startTransition(async () => {
         try {
@@ -137,6 +149,9 @@ export function useServerMutation(): ServerMutation {
               ? failure.message
               : (options?.failureMessage ?? DEFAULT_FAILURE),
           );
+          if (failure instanceof ApiError && failure.fieldErrors) {
+            setFieldErrors(failure.fieldErrors);
+          }
         }
       });
     },
@@ -147,6 +162,7 @@ export function useServerMutation(): ServerMutation {
     (message: string, close?: () => void) => {
       close?.();
       setError(null);
+      setFieldErrors({});
       show(message, 'success');
       startTransition(() => {
         router.refresh();
@@ -160,7 +176,10 @@ export function useServerMutation(): ServerMutation {
     [pending, activeKey],
   );
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    setError(null);
+    setFieldErrors({});
+  }, []);
 
-  return { run, settled, pending, isPending, error, clearError };
+  return { run, settled, pending, isPending, error, fieldErrors, clearError };
 }

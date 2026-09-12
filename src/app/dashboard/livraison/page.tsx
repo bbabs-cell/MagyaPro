@@ -5,7 +5,7 @@ import { requireTenant } from '@/lib/tenant';
 import { DeliverySettings } from '@/components/dashboard/delivery-settings';
 import { PageHeader } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Livraison' };
+export const metadata: Metadata = { title: 'Zones et frais de livraison' };
 export const dynamic = 'force-dynamic';
 
 export default async function DeliveryPage() {
@@ -24,7 +24,7 @@ export default async function DeliveryPage() {
   return (
     <>
       <PageHeader
-        title="Livraison"
+        title="Zones et frais de livraison"
         description="Définissez vos zones, vos frais et vos conditions de livraison."
       />
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type Promotion = {
   id: string;
@@ -34,19 +34,15 @@ export function PromotionsManager({
   currency: string;
   canManage: boolean;
 }) {
-  const router = useRouter();
   const [editing, setEditing] = useState<Promotion | 'new' | null>(null);
   const [type, setType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
-  const [pending, setPending] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const mutation = useServerMutation();
+  const fieldErrors = mutation.fieldErrors;
 
   function openEditor(promotion: Promotion | 'new') {
     setEditing(promotion);
     setType(promotion === 'new' ? 'PERCENT' : promotion.type);
-    setError(null);
-    setFieldErrors({});
+    mutation.clearError();
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -72,43 +68,28 @@ export function PromotionsManager({
       isActive: formData.get('isActive') === 'on',
     };
 
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
-
-    try {
-      if (editing === 'new') {
-        await api.post('/api/promotions', payload);
-      } else {
-        await api.patch(`/api/promotions/${editing.id}`, payload);
-      }
-      setEditing(null);
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("Le code promo n'a pas pu être enregistré.");
-      }
-    } finally {
-      setPending(false);
-    }
+    const isNew = editing === 'new';
+    mutation.run(
+      () =>
+        isNew
+          ? api.post('/api/promotions', payload)
+          : api.patch(`/api/promotions/${editing.id}`, payload),
+      {
+        key: 'enregistrement',
+        onSuccess: () => setEditing(null),
+        successMessage: isNew ? 'Code promo créé.' : 'Code promo modifié.',
+        failureMessage: "Le code promo n'a pas pu être enregistré.",
+      },
+    );
   }
 
-  async function remove(promotion: Promotion) {
+  function remove(promotion: Promotion) {
     if (!window.confirm(`Supprimer le code « ${promotion.code} » ?`)) return;
-
-    setPendingId(promotion.id);
-    setError(null);
-    try {
-      await api.delete(`/api/promotions/${promotion.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Le code n'a pas pu être supprimé.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/promotions/${promotion.id}`), {
+      key: promotion.id,
+      successMessage: 'Code promo supprimé.',
+      failureMessage: "Le code n'a pas pu être supprimé.",
+    });
   }
 
   if (editing) {
@@ -119,11 +100,7 @@ export function PromotionsManager({
         </h2>
 
         <form onSubmit={save} className="mt-5 space-y-4" noValidate>
-          {error && (
-            <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-              {error}
-            </div>
-          )}
+          <AlertMessage message={mutation.error} />
 
           <Field
             label="Code"
@@ -259,7 +236,7 @@ export function PromotionsManager({
           </label>
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" loading={pending}>
+            <Button type="submit" loading={mutation.isPending('enregistrement')}>
               Enregistrer
             </Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
@@ -273,11 +250,7 @@ export function PromotionsManager({
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
@@ -347,7 +320,8 @@ export function PromotionsManager({
                       <Button
                         size="sm"
                         variant="ghost"
-                        disabled={pendingId === promotion.id}
+                        loading={mutation.isPending(promotion.id)}
+                        disabled={mutation.pending}
                         onClick={() => remove(promotion)}
                       >
                         Supprimer

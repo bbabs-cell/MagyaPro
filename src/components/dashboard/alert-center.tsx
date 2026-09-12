@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { formatMoney } from '@/lib/money';
-import { ApiError, api } from '@/lib/client/api';
-import { Button, Card, EmptyState, LinkButton } from '@/components/ui';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { AlertMessage, Button, Card, EmptyState, LinkButton } from '@/components/ui';
 
 type OrderAlert = { id: string; number: number; total: number; currency: string; placedAt: string };
 type TableCallAlert = { id: string; title: string; body: string; createdAt: string };
@@ -36,36 +36,34 @@ export function AlertCenter({
   reservations: ReservationAlert[];
   paymentProofs: PaymentProofAlert[];
 }) {
-  const router = useRouter();
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
-  async function handleTableCall(id: string) {
-    setPendingId(id);
-    try {
-      await api.patch(`/api/alertes/table-calls/${id}`, {});
-      setDismissed((current) => new Set(current).add(id));
-      router.refresh();
-    } catch {
-      // Un échec ponctuel laisse l'alerte visible : l'employé peut réessayer.
-    } finally {
-      setPendingId(null);
-    }
+  // L'échec était ici purement et simplement ignoré — `catch {}` avec un
+  // commentaire disant que l'employé pourrait réessayer, alors que rien à
+  // l'écran ne lui apprenait qu'il y avait quelque chose à réessayer. En plein
+  // service, l'appel de salle restait affiché et personne ne savait pourquoi.
+  function handleTableCall(id: string) {
+    mutation.run(() => api.patch(`/api/alertes/table-calls/${id}`, {}), {
+      key: id,
+      onSuccess: () => setDismissed((current) => new Set(current).add(id)),
+      failureMessage: "L'appel n'a pas pu être marqué comme traité.",
+    });
   }
 
-  async function verifyPayment(payment: PaymentProofAlert, status: 'PAID' | 'FAILED') {
-    setPendingId(payment.id);
-    setError(null);
-    try {
-      await api.patch(`/api/paiements/${payment.id}`, { status });
-      setDismissed((current) => new Set(current).add(payment.id));
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La vérification n'a pas pu être enregistrée.");
-    } finally {
-      setPendingId(null);
-    }
+  function verifyPayment(payment: PaymentProofAlert, status: 'PAID' | 'FAILED') {
+    mutation.run(() => api.patch(`/api/paiements/${payment.id}`, { status }), {
+      key: `${payment.id}:${status}`,
+      onSuccess: () => setDismissed((current) => new Set(current).add(payment.id)),
+      // Un encaissement validé ou refusé engage de l'argent : la ligne
+      // disparaît de la liste, ce qui ne dit pas laquelle des deux décisions a
+      // été enregistrée.
+      successMessage:
+        status === 'PAID'
+          ? `Paiement validé — ${formatMoney(payment.amount, payment.currency)}.`
+          : 'Paiement refusé, la commande reste impayée.',
+      failureMessage: "La vérification n'a pas pu être enregistrée.",
+    });
   }
 
   const visibleTableCalls = tableCalls.filter((call) => !dismissed.has(call.id));
@@ -83,11 +81,7 @@ export function AlertCenter({
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} />
 
       {visiblePaymentProofs.length > 0 && (
         <Card className="p-4 sm:p-5">
@@ -113,7 +107,8 @@ export function AlertCenter({
                 <div className="flex shrink-0 gap-1.5">
                   <Button
                     size="sm"
-                    disabled={pendingId === payment.id}
+                    loading={mutation.isPending(`${payment.id}:PAID`)}
+                    disabled={mutation.pending}
                     onClick={() => verifyPayment(payment, 'PAID')}
                   >
                     Valider
@@ -121,7 +116,8 @@ export function AlertCenter({
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={pendingId === payment.id}
+                    loading={mutation.isPending(`${payment.id}:FAILED`)}
+                    disabled={mutation.pending}
                     onClick={() => verifyPayment(payment, 'FAILED')}
                   >
                     Rejeter
@@ -161,7 +157,8 @@ export function AlertCenter({
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={pendingId === call.id}
+                  loading={mutation.isPending(call.id)}
+                  disabled={mutation.pending}
                   onClick={() => handleTableCall(call.id)}
                 >
                   Traité

@@ -267,7 +267,15 @@ const NAV_SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Configuration',
     items: [
       { href: '/dashboard/apparence', label: 'Apparence', permission: 'restaurant:update' },
-      { href: '/dashboard/livraison', label: 'Livraison', permission: 'delivery:manage' },
+      // « Livraison » et « Mes livraisons » se distinguaient d'une seule
+      // lettre, dans deux sections différentes : l'un règle les zones et les
+      // frais, l'autre est l'écran de tournée du livreur. L'intitulé dit
+      // maintenant lequel est lequel.
+      {
+        href: '/dashboard/livraison',
+        label: 'Zones et frais de livraison',
+        permission: 'delivery:manage',
+      },
       { href: '/dashboard/parametres', label: 'Réglages', permission: 'settings:manage' },
       { href: '/dashboard/equipe', label: 'Équipe', permission: 'team:view' },
     ],
