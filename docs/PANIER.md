@@ -68,7 +68,8 @@ Un visiteur qui passait le site en anglais ou en arabe voyait donc la carte
 traduite, les menus traduits, le panier traduit — et du français sur les seuls
 écrans où l'on commande vraiment.
 
-Vingt-et-une clés ont été ajoutées dans les trois langues.
+Dix-neuf clés ont été ajoutées par langue — dix-huit sur la fiche d'un plat,
+une pour le panier — soit cinquante-sept en tout.
 
 ### Un test pour que cela ne recommence pas
 
