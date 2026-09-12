@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { formatMoney } from '@/lib/money';
 import { formatQty } from '@/lib/boutique/quantity';
+import { paymentMethodLabel } from '@/lib/boutique/labels';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { PrintButton } from '@/components/dashboard/print-button';
 
@@ -83,14 +84,28 @@ export default async function BoutiqueInvoicePage({
         <PrintButton />
       </div>
 
-      <div className="flex items-start justify-between gap-4 border-b border-ink pb-4">
-        <div>
-          <p className="text-lg font-bold">{store.name}</p>
-          {store.addressLine && <p className="text-sm text-ink-muted">{store.addressLine}</p>}
-          {store.phone && <p className="text-sm text-ink-muted">{store.phone}</p>}
+      <div className="flex items-start justify-between gap-4 border-b-2 border-ink pb-4">
+        <div className="flex items-start gap-3">
+          {/* Le logo était chargé par la boutique mais absent du document
+              qu'elle remet à ses clients. C'est pourtant le seul endroit où
+              son identité vaut quelque chose hors de l'écran. */}
+          {store.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- image de tenant
+            <img
+              src={store.logoUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded-lg object-contain"
+            />
+          )}
+          <div>
+            <p className="text-lg font-bold">{store.name}</p>
+            {store.addressLine && <p className="text-sm text-ink-muted">{store.addressLine}</p>}
+            {store.city && <p className="text-sm text-ink-muted">{store.city}</p>}
+            {store.phone && <p className="text-sm text-ink-muted">{store.phone}</p>}
+          </div>
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-ink-faint">Facture</p>
+          <p className="text-xs uppercase tracking-wide text-ink-muted">Facture</p>
           <p className="text-lg font-bold">{invoice.number}</p>
           <p className="text-sm text-ink-muted">
             {invoice.issuedAt.toLocaleDateString('fr-FR', {
@@ -105,7 +120,7 @@ export default async function BoutiqueInvoicePage({
 
       {sale.customer && (
         <div className="mt-6">
-          <p className="text-xs uppercase tracking-wide text-ink-faint">Client</p>
+          <p className="text-xs uppercase tracking-wide text-ink-muted">Client</p>
           <p className="mt-1 text-sm">{sale.customer.name}</p>
           {sale.customer.phone && <p className="text-sm text-ink-muted">{sale.customer.phone}</p>}
         </div>
@@ -113,7 +128,7 @@ export default async function BoutiqueInvoicePage({
 
       <table className="mt-6 w-full text-sm">
         <thead>
-          <tr className="border-b border-ink-faint text-left text-xs uppercase tracking-wide text-ink-faint">
+          <tr className="border-b border-ink-muted text-left text-xs uppercase tracking-wide text-ink-muted">
             <th className="py-2 font-medium">Article</th>
             <th className="py-2 text-right font-medium">Qté</th>
             <th className="py-2 text-right font-medium">Prix unitaire</th>
@@ -152,9 +167,9 @@ export default async function BoutiqueInvoicePage({
             <span>{formatMoney(sale.taxAmount, currency)}</span>
           </div>
         )}
-        <div className="flex justify-between border-t border-ink pt-1.5 text-base font-bold">
+        <div className="flex items-baseline justify-between border-t-2 border-ink pt-2 text-lg font-bold">
           <span>Total</span>
-          <span>{formatMoney(sale.total, currency)}</span>
+          <span className="tabular-nums">{formatMoney(sale.total, currency)}</span>
         </div>
         {sale.creditAmount > 0 && (
           <div className="flex justify-between text-xs text-ink-faint">
@@ -163,6 +178,40 @@ export default async function BoutiqueInvoicePage({
           </div>
         )}
       </div>
+
+      {/* Règlement.
+          Les paiements étaient chargés par cette page et n'étaient affichés
+          nulle part. Or c'est l'information qu'un client cherche sur un reçu —
+          « est-ce que j'ai payé, et comment » — et celle qui fait foi si la
+          question se pose plus tard. */}
+      {sale.payments.length > 0 && (
+        <div className="mt-8 border-t border-surface-border pt-4">
+          <p className="text-xs uppercase tracking-wide text-ink-muted">Règlement</p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {sale.payments.map((payment) => (
+              <li key={payment.id} className="flex justify-between gap-4">
+                <span>
+                  {paymentMethodLabel(payment.method)}
+                  {payment.reference && (
+                    <span className="text-ink-muted"> · {payment.reference}</span>
+                  )}
+                </span>
+                <span className="tabular-nums">{formatMoney(payment.amount, currency)}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p
+            className={`mt-3 inline-block rounded-md px-2.5 py-1 text-sm font-semibold ${
+              sale.creditAmount > 0 ? 'bg-state-warn-soft text-state-warn' : 'bg-state-ok-soft text-state-ok'
+            }`}
+          >
+            {sale.creditAmount > 0
+              ? `Reste à payer : ${formatMoney(sale.creditAmount, currency)}`
+              : 'Payée'}
+          </p>
+        </div>
+      )}
 
       <p className="mt-10 text-center text-xs text-ink-faint">
         Généré par MagyaPro Boutique pour {store.name}

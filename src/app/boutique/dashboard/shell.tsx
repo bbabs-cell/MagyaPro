@@ -372,7 +372,7 @@ export function DashboardShell({
       {/* Bandeau d'accès support : impossible à manquer, pour que
           l'administrateur sache qu'il agit dans l'espace d'un client. */}
       {isSupportAccess && (
-        <div className="bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950">
+        <div className="bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950 print:hidden">
           Accès support actif sur « {storeName} ». Vos actions sont
           journalisées.{' '}
           <button
@@ -386,7 +386,7 @@ export function DashboardShell({
       )}
 
       {isDemoTour && (
-        <div className="bg-[#e0bd52] px-4 py-2 text-center text-sm font-medium text-[#1c1712]">
+        <div className="bg-[#e0bd52] px-4 py-2 text-center text-sm font-medium text-[#1c1712] print:hidden">
           Visite guidée de « {storeName} » — consultation uniquement, aucune vente ni
           modification n&apos;est enregistrée.{' '}
           <button type="button" onClick={handleEndDemoTour} className="underline underline-offset-2">
@@ -396,7 +396,7 @@ export function DashboardShell({
       )}
 
       {storeStatus === 'SUSPENDED' && (
-        <div role="alert" className="bg-red-600 px-4 py-2 text-center text-sm text-white">
+        <div role="alert" className="bg-red-600 px-4 py-2 text-center text-sm text-white print:hidden">
           Cette boutique est suspendue : son site public est hors ligne et les
           modifications sont bloquées.
         </div>
@@ -404,7 +404,7 @@ export function DashboardShell({
 
       <AnnouncementBanner announcements={announcements} />
 
-      <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-surface-border bg-surface lg:hidden print:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button
             type="button"
@@ -431,7 +431,7 @@ export function DashboardShell({
         aria-hidden={!menuOpen}
         onClick={() => setMenuOpen(false)}
         className={cx(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden',
+          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden print:hidden',
           menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       />
@@ -439,7 +439,7 @@ export function DashboardShell({
         id="menu-mobile-boutique"
         aria-hidden={!menuOpen}
         className={cx(
-          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-nav p-4 text-nav-ink transition-transform duration-200 ease-out lg:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-nav p-4 text-nav-ink transition-transform duration-200 ease-out lg:hidden print:hidden',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -465,7 +465,11 @@ export function DashboardShell({
       </div>
 
       <div className="lg:flex">
-        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-nav text-nav-ink lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+        {/* Toute la coquille disparaît à l'impression. Un rapport exporté en PDF
+          emportait sinon la barre latérale entière — le menu, le compte, le
+          bouton de déconnexion — sur la gauche de chaque page, alors que ce
+          document part chez un comptable ou un banquier. */}
+        <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-nav text-nav-ink lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto print:hidden">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
@@ -511,7 +515,7 @@ export function DashboardShell({
           </div>
         </aside>
 
-        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 print:p-0">
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>

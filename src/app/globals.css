@@ -523,3 +523,46 @@
     animation: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   Impression.
+
+   Deux documents partent vraiment sur du papier : la facture remise au
+   client, et les rapports exportés en PDF pour un comptable ou un banquier.
+   Rien ne réglait leur mise en page — la fenêtre était imprimée telle
+   quelle, avec ses marges de navigateur et ses coupures au hasard.
+   ------------------------------------------------------------------ */
+@media print {
+  @page {
+    /* Marge franche : sans elle, le navigateur applique la sienne, qui varie
+       d'un poste à l'autre et rogne parfois la colonne des montants. */
+    margin: 14mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Une ligne de tableau coupée entre deux pages sépare un article de son
+     prix. Un titre seul en bas de page annonce une section qui commence
+     ailleurs. */
+  tr,
+  li,
+  thead {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Les fonds colorés des pastilles d'état ne sont pas imprimés par défaut :
+     un « Payée » vert deviendrait un texte pâle sur blanc. */
+  .print-keep-colors,
+  [class*='bg-state-'] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
