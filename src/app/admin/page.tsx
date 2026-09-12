@@ -5,12 +5,12 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformMetrics, percentChange } from '@/lib/analytics';
 import { getPlatformStoreMetrics } from '@/lib/boutique/platform-analytics';
-import { amountIn, getPlatformRevenue, primaryCurrency } from '@/lib/platform-revenue';
+import { getPlatformRevenue } from '@/lib/platform-revenue';
 import {
   SUBSCRIPTION_STATUSES,
   SUBSCRIPTION_STATUS_LABELS,
 } from '@/lib/subscription-labels';
-import { formatMoney } from '@/lib/money';
+import { amountIn, formatMoney, primaryCurrency } from '@/lib/money';
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
 import { StatusPill } from '@/components/admin/state-badge';

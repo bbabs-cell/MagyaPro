@@ -6,7 +6,7 @@ import { requireStore, listStoreMemberships, setActiveStore } from '@/lib/boutiq
 import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
 import { getStoreDashboardMetrics } from '@/lib/boutique/analytics';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, hasSeveralCurrencies, primaryCurrency, sumByCurrency } from '@/lib/money';
 import { Badge, Card, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Toutes les boutiques' };
@@ -37,7 +37,19 @@ export default async function ToutesLesBoutiquesPage() {
     }),
   );
 
-  const totalRevenue = rows.reduce((sum, r) => sum + r.metrics.revenue, 0);
+  // Cumul par devise, jamais entre devises.
+  //
+  // Ce total additionnait auparavant les recettes de toutes les boutiques sans
+  // regarder leur monnaie, puis les affichait dans celle de la première
+  // boutique de la liste. Un propriétaire ayant une boutique à Abidjan et une à
+  // Douala lisait donc un nombre mêlant deux francs CFA distincts — celui
+  // d'Afrique de l'Ouest et celui d'Afrique centrale — étiqueté au hasard de
+  // l'ordre d'affichage. De l'argent faux, sans aucun signal.
+  const revenueByCurrency = sumByCurrency(
+    rows.map((r) => ({ amount: r.metrics.revenue, currency: r.store.currency })),
+  );
+  const mainCurrency = primaryCurrency(revenueByCurrency);
+  const mixedCurrencies = hasSeveralCurrencies(revenueByCurrency);
   const totalSales = rows.reduce((sum, r) => sum + r.metrics.salesCount, 0);
 
   async function switchAndOpen(storeId: string) {
@@ -56,9 +68,31 @@ export default async function ToutesLesBoutiquesPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="p-4 sm:p-5">
           <p className="text-sm text-ink-muted">Chiffre d&apos;affaires cumulé</p>
-          <p className="mt-1 text-2xl font-semibold text-ink">
-            {formatMoney(totalRevenue, rows[0]?.store.currency ?? 'XOF')}
-          </p>
+          {/* Une ligne par devise. Dans l'immense majorité des cas il n'y en a
+              qu'une, et l'affichage est identique à avant. */}
+          {Object.entries(revenueByCurrency)
+            .sort(([, a], [, b]) => b - a)
+            .map(([code, amount]) => (
+              <p
+                key={code}
+                className={
+                  code === mainCurrency
+                    ? 'mt-1 text-2xl font-semibold text-ink'
+                    : 'mt-0.5 text-lg font-semibold text-ink'
+                }
+              >
+                {formatMoney(amount, code)}
+              </p>
+            ))}
+          {Object.keys(revenueByCurrency).length === 0 && (
+            <p className="mt-1 text-2xl font-semibold text-ink">{formatMoney(0, mainCurrency)}</p>
+          )}
+          {mixedCurrencies && (
+            <p className="mt-2 text-xs text-ink-muted">
+              Vos boutiques n&apos;utilisent pas toutes la même monnaie : les
+              montants sont présentés séparément plutôt qu&apos;additionnés.
+            </p>
+          )}
         </Card>
         <Card className="p-4 sm:p-5">
           <p className="text-sm text-ink-muted">Ventes cumulées</p>

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import type { MoneyByCurrency } from '@/lib/money';
 
 /**
  * Recette réelle de MagyaPro — l'argent effectivement encaissé.
@@ -24,8 +25,6 @@ import { prisma } from '@/lib/db';
  * différentes produirait un nombre faux sans que rien ne le signale.
  */
 
-/** Montants par devise — `{ XOF: 125000 }`. Jamais de total inter-devises. */
-export type MoneyByCurrency = Record<string, number>;
 
 export type PlatformRevenue = {
   /** Mois calendaire en cours, jusqu'à aujourd'hui. */
@@ -269,21 +268,3 @@ export async function listStorePayments(storeId: string, take = 6): Promise<Tena
   }));
 }
 
-/**
- * Devise principale d'un ensemble de montants : celle qui pèse le plus lourd.
- *
- * Les écrans ont besoin d'un chiffre en tête d'affiche. Tant qu'une seule
- * devise circule — le cas aujourd'hui — c'est simplement celle-là ; le jour où
- * une seconde apparaît, la fonction désigne la dominante et l'appelant reste
- * libre d'afficher le reste à côté plutôt que de tout additionner.
- */
-export function primaryCurrency(amounts: MoneyByCurrency, fallback = 'XOF'): string {
-  const entries = Object.entries(amounts);
-  if (entries.length === 0) return fallback;
-  return entries.reduce((best, entry) => (entry[1] > best[1] ? entry : best))[0];
-}
-
-/** Montant dans une devise donnée, zéro si elle n'apparaît pas. */
-export function amountIn(amounts: MoneyByCurrency, currency: string): number {
-  return amounts[currency] ?? 0;
-}

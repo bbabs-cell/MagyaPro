@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { currencySymbol, formatMoney, toMajor, toMinor } from '@/lib/money';
+import {
+  amountIn,
+  currencySymbol,
+  formatMoney,
+  hasSeveralCurrencies,
+  primaryCurrency,
+  sumByCurrency,
+  toMajor,
+  toMinor,
+} from '@/lib/money';
 
 /**
  * Écriture des montants.
@@ -59,5 +68,56 @@ describe('Conversion en unité mineure', () => {
 
   it('accepte la virgule décimale française', () => {
     expect(toMinor('12,50', 'EUR')).toBe(1250);
+  });
+});
+
+/**
+ * Totaux qui traversent plusieurs commerces.
+ *
+ * Le défaut à l'origine : le cumul multi-boutiques additionnait les recettes
+ * sans regarder la monnaie, puis les affichait dans celle de la première
+ * boutique de la liste. Deux francs CFA distincts circulent dans la zone visée
+ * — celui d'Afrique de l'Ouest et celui d'Afrique centrale — et rien à l'écran
+ * ne signalait le mélange.
+ */
+describe('Cumul par devise', () => {
+  it('additionne à devise égale et sépare les devises différentes', () => {
+    expect(
+      sumByCurrency([
+        { amount: 1000, currency: 'XOF' },
+        { amount: 500, currency: 'XAF' },
+        { amount: 250, currency: 'XOF' },
+      ]),
+    ).toEqual({ XOF: 1250, XAF: 500 });
+  });
+
+  it('regroupe les codes quelle que soit leur casse', () => {
+    expect(sumByCurrency([
+      { amount: 100, currency: 'xof' },
+      { amount: 100, currency: 'XOF' },
+    ])).toEqual({ XOF: 200 });
+  });
+
+  it('désigne comme principale la devise qui pèse le plus lourd', () => {
+    expect(primaryCurrency({ XAF: 300, XOF: 900 })).toBe('XOF');
+  });
+
+  it('retombe sur la devise par défaut quand il n’y a rien à totaliser', () => {
+    expect(primaryCurrency({})).toBe('XOF');
+    expect(primaryCurrency({}, 'EUR')).toBe('EUR');
+  });
+
+  it('lit un montant dans une devise absente comme zéro, sans échouer', () => {
+    expect(amountIn({ XOF: 400 }, 'XAF')).toBe(0);
+    expect(amountIn({ XOF: 400 }, 'xof')).toBe(400);
+  });
+
+  it('ne signale un mélange que si deux devises portent réellement un montant', () => {
+    expect(hasSeveralCurrencies({ XOF: 1000 })).toBe(false);
+    // Une devise à zéro vient d'un seau préparé d'avance, pas d'une recette :
+    // elle ne doit pas déclencher l'avertissement.
+    expect(hasSeveralCurrencies({ XOF: 1000, XAF: 0 })).toBe(false);
+    expect(hasSeveralCurrencies({ XOF: 1000, XAF: 5 })).toBe(true);
+    expect(hasSeveralCurrencies({})).toBe(false);
   });
 });

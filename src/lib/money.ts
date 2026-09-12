@@ -122,3 +122,54 @@ export function clampAmount(amount: number, max?: number): number {
   const lower = Math.max(0, Math.round(amount));
   return max === undefined ? lower : Math.min(lower, max);
 }
+
+/**
+ * Montants tenus par devise — jamais additionnés entre elles.
+ *
+ * Une somme qui mêle deux monnaies est un nombre qui ne veut rien dire, et
+ * rien à l'écran ne le signale : c'est le pire défaut possible sur de
+ * l'argent. La zone visée par ce produit en compte justement deux, le franc
+ * CFA d'Afrique de l'Ouest et celui d'Afrique centrale — même nom courant,
+ * même valeur face à l'euro, monnaies distinctes.
+ *
+ * La règle vit ici plutôt que dans un module d'écran : elle vaut pour tout
+ * total qui traverse plusieurs commerces ou plusieurs abonnements.
+ */
+export type MoneyByCurrency = Record<string, number>;
+
+/** Regroupe des montants par devise, sans jamais les mélanger. */
+export function sumByCurrency(
+  entries: Array<{ amount: number; currency: string }>,
+): MoneyByCurrency {
+  const totals: MoneyByCurrency = {};
+  for (const entry of entries) {
+    const code = entry.currency.toUpperCase();
+    totals[code] = (totals[code] ?? 0) + entry.amount;
+  }
+  return totals;
+}
+
+/**
+ * Devise principale d'un ensemble de montants : celle qui pèse le plus lourd.
+ *
+ * Les écrans ont besoin d'un chiffre en tête d'affiche. Tant qu'une seule
+ * devise circule — le cas de l'immense majorité des commerçants — c'est
+ * simplement celle-là ; le jour où une seconde apparaît, la fonction désigne
+ * la dominante et l'appelant reste libre d'afficher le reste à côté plutôt que
+ * de tout additionner.
+ */
+export function primaryCurrency(amounts: MoneyByCurrency, fallback = DEFAULT_CURRENCY): string {
+  const entries = Object.entries(amounts);
+  if (entries.length === 0) return fallback;
+  return entries.reduce((best, entry) => (entry[1] > best[1] ? entry : best))[0];
+}
+
+/** Montant dans une devise donnée, zéro si elle n'apparaît pas. */
+export function amountIn(amounts: MoneyByCurrency, currency: string): number {
+  return amounts[currency.toUpperCase()] ?? 0;
+}
+
+/** Vrai dès que plus d'une devise est en jeu — donc qu'un total unique mentirait. */
+export function hasSeveralCurrencies(amounts: MoneyByCurrency): boolean {
+  return Object.keys(amounts).filter((code) => amounts[code] !== 0).length > 1;
+}

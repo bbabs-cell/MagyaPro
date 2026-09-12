@@ -31,9 +31,17 @@ Aujourd'hui, aucun propriétaire réel n'a de boutique dans les deux zones : le
 chiffre n'est donc pas encore faux. Il le deviendra au premier cas, sans que
 rien ne prévienne.
 
-**Correctif attendu :** ne totaliser qu'à devise égale, et afficher les
-devises séparément sinon. La règle existe déjà dans le produit, appliquée à la
-recette de la plateforme.
+**Corrigé.** Le cumul ne totalise plus qu'à devise égale : une ligne par
+monnaie, la plus lourde en tête, et une phrase sous la carte quand plusieurs
+coexistent. Tant qu'une seule devise circule — le cas de tous les commerçants
+actuels — l'écran est identique à avant.
+
+La règle elle-même a été remontée dans `src/lib/money.ts`
+(`sumByCurrency`, `primaryCurrency`, `amountIn`, `hasSeveralCurrencies`) : elle
+n'appartenait pas au module de recette de la plateforme, où elle avait été
+écrite, mais à l'endroit qui porte déjà tout ce qui touche aux montants. Elle
+est désormais disponible pour tout total qui traverse plusieurs commerces, et
+couverte par six tests.
 
 ### C2. Faille Next.js — **corrigée en phase 0**
 
@@ -55,6 +63,13 @@ Classé un cran plus bas parce que les vitrines de démonstration sont exclues d
 ces calculs et qu'aucun commerce réel n'est hors zone ouest-africaine. Le
 chiffre est donc exact aujourd'hui. Il cessera de l'être le jour d'une
 inscription camerounaise.
+
+**Toujours ouvert** après le correctif de C1. Contrairement à ce que cette
+page annonçait, il ne suit pas du même changement : les briques nécessaires
+existent maintenant, mais le graphique de volume ne sait afficher qu'une seule
+série de nombres. Séparer les devises demande de toucher aussi les composants
+de graphique du Super Admin, ce qui dépasse un correctif ponctuel. À traiter
+avec les écrans d'analyse.
 
 ### I2. Un cuisinier voit trop de choses
 
@@ -103,10 +118,9 @@ test humain.
 
 ---
 
-## Proposition
+## Suite donnée
 
-C1 est petit — une quinzaine de lignes, la règle existant déjà ailleurs dans le
-produit. Il peut être corrigé immédiatement plutôt que d'attendre son tour,
-puisqu'il s'agit d'argent affiché faux.
+C1 a été corrigé immédiatement, sans attendre son tour dans les phases :
+il s'agissait d'argent affiché faux.
 
-I1 suivra naturellement le même correctif.
+I1 reste ouvert et rejoint le lot des écrans d'analyse — voir ci-dessus.

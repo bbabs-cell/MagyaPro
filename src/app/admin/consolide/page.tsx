@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformAnalytics } from '@/lib/analytics';
 import { getPlatformStoreAnalytics } from '@/lib/boutique/platform-analytics';
-import { amountIn, getPlatformRevenue, primaryCurrency } from '@/lib/platform-revenue';
-import { formatMoney } from '@/lib/money';
+import { getPlatformRevenue } from '@/lib/platform-revenue';
+import { amountIn, formatMoney, primaryCurrency } from '@/lib/money';
 import { BarChart, GroupedBarChart, Metric } from '@/components/admin/charts';
 
 export const metadata: Metadata = { title: 'Vue consolidée' };

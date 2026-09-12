@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { amountIn, primaryCurrency } from '@/lib/platform-revenue';
+// Ces deux règles vivent désormais dans `money`, avec le reste de ce qui
+// touche aux devises : elles valent pour tout total qui traverse plusieurs
+// commerces, pas seulement pour la recette de la plateforme.
+import { amountIn, primaryCurrency } from '@/lib/money';
 import {
   SUBSCRIPTION_STATUSES,
   subscriptionStatusLabel,
