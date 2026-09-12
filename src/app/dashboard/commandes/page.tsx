@@ -17,6 +17,17 @@ const STATUS_FILTERS = [
 
 type Filter = (typeof STATUS_FILTERS)[number];
 
+/**
+ * Libellés courts, pour la barre de filtres uniquement.
+ *
+ * « Livrée — paiement à confirmer » dit la bonne chose sur une commande, où
+ * l'information est actionnable. Dans une pastille, ces trente caractères
+ * écrasaient les neuf autres filtres. Le sens complet reste sur la commande.
+ */
+const FILTER_LABELS: Partial<Record<OrderStatus, string>> = {
+  DELIVERED: 'Livrée',
+};
+
 /** Statuts considérés « en cours » : le filtre par défaut du service. */
 const ACTIVE_STATUSES: OrderStatus[] = [
   'NEW', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED',
@@ -83,6 +94,11 @@ export default async function OrdersPage({
     0,
   );
 
+  // Somme du regroupement, qui porte sur tout le restaurant. `total`, lui, ne
+  // compte que le filtre courant : l'employer ici afficherait « Toutes 0 »
+  // pendant qu'on consulte un statut vide.
+  const allCount = Object.values(countByStatus).reduce((sum, value) => sum + value, 0);
+
   return (
     <>
       <PageHeader
@@ -94,7 +110,11 @@ export default async function OrdersPage({
         }
       />
 
-      <nav aria-label="Filtrer par statut" className="mb-5 flex gap-2 overflow-x-auto pb-1">
+      {/* Les pastilles passent à la ligne au lieu de défiler : sur dix filtres,
+          « Toutes » sortait de l'écran par la droite sans que rien ne signale
+          qu'il existait une suite. Même choix que les périodes de l'écran
+          Statistiques. */}
+      <nav aria-label="Filtrer par statut" className="mb-5 flex flex-wrap gap-2">
         {(['ACTIVE', ...ACTIVE_STATUSES, 'COMPLETED', 'CANCELLED', 'ALL'] as Filter[]).map(
           (value) => {
             const label =
@@ -102,29 +122,37 @@ export default async function OrdersPage({
                 ? 'En cours'
                 : value === 'ALL'
                   ? 'Toutes'
-                  : ORDER_STATUS_LABELS[value as OrderStatus];
+                  : (FILTER_LABELS[value as OrderStatus] ?? ORDER_STATUS_LABELS[value as OrderStatus]);
             const count =
               value === 'ACTIVE'
                 ? activeCount
                 : value === 'ALL'
-                  ? undefined
+                  ? allCount
                   : (countByStatus[value as OrderStatus] ?? 0);
+            const active = filter === value;
 
             return (
               <a
                 key={value}
                 href={`/dashboard/commandes?statut=${value}`}
-                aria-current={filter === value ? 'true' : undefined}
+                aria-current={active ? 'true' : undefined}
                 className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  filter === value
-                    ? 'bg-brand text-white'
-                    : 'bg-surface text-ink-muted hover:text-ink'
+                  active ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
                 }`}
               >
                 {label}
-                {count !== undefined && count > 0 && (
-                  <span className="ml-1.5 opacity-70">{count}</span>
-                )}
+                {/* Le compte est toujours affiché, zéro compris. Il n'apparaissait
+                    qu'au-delà de zéro : on ne pouvait donc pas distinguer un
+                    statut vide d'un statut non compté, et il fallait cliquer
+                    pour découvrir qu'il n'y avait rien. Savoir où est le travail
+                    sans cliquer est la raison d'être de cette barre. */}
+                <span
+                  className={`ms-1.5 tabular-nums ${
+                    active ? 'opacity-80' : count > 0 ? 'font-medium text-ink' : 'text-ink-faint'
+                  }`}
+                >
+                  {count}
+                </span>
               </a>
             );
           },
