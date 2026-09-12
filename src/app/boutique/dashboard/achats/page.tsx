@@ -8,7 +8,7 @@ import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader } from '@/components/ui';
 import { PurchasesManager } from '@/components/boutique/purchases-manager';
 
-export const metadata: Metadata = { title: 'Achats' };
+export const metadata: Metadata = { title: 'Achats fournisseurs' };
 export const dynamic = 'force-dynamic';
 
 export default async function BoutiquePurchasesPage() {
@@ -72,7 +72,7 @@ export default async function BoutiquePurchasesPage() {
   return (
     <>
       <PageHeader
-        title="Achats"
+        title="Achats fournisseurs"
         description="Vos commandes en cours d'abord, puis les trois derniers mois."
       />
       <PurchasesManager

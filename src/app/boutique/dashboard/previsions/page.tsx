@@ -9,7 +9,7 @@ import { forecastStock } from '@/lib/boutique/stock-forecast';
 import { loadSalesVelocity } from '@/lib/boutique/stock-velocity';
 import { StockForecastTable, type ForecastRow } from '@/components/boutique/stock-forecast-table';
 
-export const metadata: Metadata = { title: 'Prévisions' };
+export const metadata: Metadata = { title: 'Ruptures à venir' };
 export const dynamic = 'force-dynamic';
 
 /**
@@ -101,7 +101,7 @@ export default async function BoutiqueForecastPage() {
   return (
     <>
       <PageHeader
-        title="Prévisions"
+        title="Ruptures à venir"
         description="Ce qui risque de manquer, et quand — d'après vos ventes réelles."
       />
       <StockForecastTable rows={rows} baseUnitLabel="" />

@@ -24,7 +24,7 @@ import {
 import { Badge, Card, PageHeader, StatCard } from '@/components/ui';
 import { PrintButton } from '@/components/dashboard/print-button';
 
-export const metadata: Metadata = { title: 'Rapports' };
+export const metadata: Metadata = { title: 'Rapports à imprimer' };
 export const dynamic = 'force-dynamic';
 
 
@@ -97,7 +97,7 @@ export default async function BoutiqueRapportsPage({
   return (
     <>
       <PageHeader
-        title="Rapports"
+        title="Rapports à imprimer"
         description="Filtrez par période — imprimables ou exportables en PDF."
         action={<PrintButton />}
       />

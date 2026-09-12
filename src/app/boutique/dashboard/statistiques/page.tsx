@@ -15,7 +15,7 @@ import { Card, EmptyState, PageHeader, StatCard, changeProps } from '@/component
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { HourlyActivityChart } from '@/components/dashboard/hourly-chart';
 
-export const metadata: Metadata = { title: 'Statistiques' };
+export const metadata: Metadata = { title: 'Chiffres de vente' };
 export const dynamic = 'force-dynamic';
 
 /**
@@ -50,7 +50,7 @@ export default async function StoreAnalyticsPage({
   return (
     <>
       <PageHeader
-        title="Statistiques"
+        title="Chiffres de vente"
         description="Toutes les valeurs sont calculées à partir de vos ventes réelles, hors ventes annulées."
       />
 

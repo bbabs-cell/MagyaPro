@@ -38,7 +38,11 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
         api.post('/api/boutique/cash-sessions', {
           openingBalance: toMinor(String(formData.get('openingBalance') ?? '0'), currency),
         }),
-      { onSuccess: () => setMode('idle'), failureMessage: "L'ouverture a échoué." },
+      {
+        onSuccess: () => setMode('idle'),
+        successMessage: 'Caisse ouverte.',
+        failureMessage: "L'ouverture a échoué.",
+      },
     );
   }
 
@@ -79,7 +83,11 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
           amount: toMinor(String(formData.get('amount') ?? '0'), currency),
           reason: String(formData.get('reason') ?? '') || undefined,
         }),
-      { onSuccess: () => setMode('idle'), failureMessage: "L'enregistrement a échoué." },
+      {
+        onSuccess: () => setMode('idle'),
+        successMessage: 'Mouvement enregistré.',
+        failureMessage: "L'enregistrement a échoué.",
+      },
     );
   }
 

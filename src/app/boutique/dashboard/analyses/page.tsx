@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { formatMoney } from '@/lib/money';
 import { DORMANT_DAYS, TREND_DAYS, getStoreInsights, type MarginRow } from '@/lib/boutique/insights';
-import { Badge, Card, EmptyState, PageHeader, StatCard, cx } from '@/components/ui';
+import { Badge, Card, EmptyState, LinkButton, PageHeader, StatCard, cx } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Analyses' };
+export const metadata: Metadata = { title: 'Marges et stock' };
 export const dynamic = 'force-dynamic';
 
 /**
@@ -55,7 +55,7 @@ export default async function StoreInsightsPage() {
   return (
     <>
       <PageHeader
-        title="Analyses"
+        title="Marges et stock"
         description={`Lecture automatique de vos données sur ${TREND_DAYS} jours. Aucun chiffre n'est estimé ni simulé.`}
       />
 
@@ -186,9 +186,19 @@ export default async function StoreInsightsPage() {
                 Marge calculée au coût d&apos;achat actuel de la fiche.
               </p>
               {insights.bestMargins.length === 0 ? (
-                <p className="mt-4 text-sm text-ink-muted">
-                  Aucune marge calculable : renseignez le coût d&apos;achat de vos produits.
-                </p>
+                // Une consigne sans le chemin pour l'appliquer oblige à
+                // chercher dans le menu. Le bouton mène directement là où le
+                // coût d'achat se renseigne.
+                <div className="mt-4">
+                  <p className="text-sm text-ink-muted">
+                    Aucune marge ne peut être calculée : il manque le coût
+                    d&apos;achat de vos produits, c&apos;est-à-dire le prix
+                    auquel vous, vous les achetez.
+                  </p>
+                  <LinkButton href="/boutique/dashboard/produits" size="sm" variant="secondary" className="mt-3">
+                    Renseigner mes coûts d&apos;achat
+                  </LinkButton>
+                </div>
               ) : (
                 <MarginTable rows={insights.bestMargins} currency={currency} />
               )}

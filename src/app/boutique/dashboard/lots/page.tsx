@@ -7,7 +7,7 @@ import { UNIT_LABELS } from '@/lib/boutique/units';
 import { EXPIRY_LABELS, expiryState, type ExpiryState } from '@/lib/boutique/expiry';
 import { PageHeader, EmptyState, Card, Badge } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Lots' };
+export const metadata: Metadata = { title: 'Dates de péremption' };
 export const dynamic = 'force-dynamic';
 
 /**
@@ -41,7 +41,7 @@ export default async function BoutiqueLotsPage() {
   return (
     <>
       <PageHeader
-        title="Lots"
+        title="Dates de péremption"
         description="Stock suivi par date de péremption — uniquement les articles reçus avec une date renseignée."
       />
 

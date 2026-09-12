@@ -1,7 +1,6 @@
 'use client';
 
-import { startTransition, useOptimistic, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useOptimistic, useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
@@ -88,7 +87,6 @@ export function MenuManager({
   canManage: boolean;
   limits: { maxCategories?: number; maxProducts?: number };
 }) {
-  const router = useRouter();
 
   /**
    * Données du serveur, lues telles quelles.
@@ -131,14 +129,6 @@ export function MenuManager({
     ? shownProducts.filter((product) => product.categoryId === selectedCategory)
     : shownProducts;
 
-  /** Referme un formulaire et laisse la liste se remettre à jour sans à-coup. */
-  function closeAndRefresh(close: () => void) {
-    close();
-    startTransition(() => {
-      router.refresh();
-    });
-  }
-
   function toggleAvailability(product: Product) {
     const isAvailable = !product.isAvailable;
     mutation.run(
@@ -164,6 +154,7 @@ export function MenuManager({
 
     mutation.run(() => api.delete(`/api/menu/categories/${category.id}`), {
       key: category.id,
+      successMessage: 'Catégorie supprimée.',
       failureMessage: "La catégorie n'a pas pu être supprimée.",
     });
   }
@@ -179,6 +170,7 @@ export function MenuManager({
 
     mutation.run(() => api.delete(`/api/menu/produits/${product.id}`), {
       key: `${product.id}:suppr`,
+      successMessage: 'Plat supprimé.',
       failureMessage: "Le plat n'a pas pu être supprimé.",
     });
   }
@@ -188,7 +180,7 @@ export function MenuManager({
       <CategoryForm
         category={categoryForm === 'new' ? null : categoryForm}
         onClose={() => setCategoryForm(null)}
-        onSaved={() => closeAndRefresh(() => setCategoryForm(null))}
+        onSaved={() => mutation.settled('Catégorie enregistrée.', () => setCategoryForm(null))}
       />
     );
   }
@@ -201,7 +193,7 @@ export function MenuManager({
         defaultCategoryId={selectedCategory}
         currency={currency}
         onClose={() => setProductForm(null)}
-        onSaved={() => closeAndRefresh(() => setProductForm(null))}
+        onSaved={() => mutation.settled('Plat enregistré.', () => setProductForm(null))}
       />
     );
   }

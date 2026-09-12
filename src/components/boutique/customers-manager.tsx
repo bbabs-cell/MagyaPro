@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 type Customer = {
   id: string;
@@ -31,7 +31,7 @@ export function CustomersManager({
   canManage: boolean;
   canManageCredit: boolean;
 }) {
-  const router = useRouter();
+  const mutation = useServerMutation();
   /**
    * Données du serveur, lues telles quelles.
    *
@@ -50,6 +50,8 @@ export function CustomersManager({
 
   return (
     <div className="space-y-6">
+      <AlertMessage message={mutation.error} />
+
       {canManage && (
         <Button size="sm" onClick={() => setShowForm(true)}>
           + Nouveau client
@@ -58,10 +60,7 @@ export function CustomersManager({
 
       {showForm && (
         <CustomerForm
-          onDone={() => {
-            setShowForm(false);
-            router.refresh();
-          }}
+          onDone={() => mutation.settled('Client enregistré.', () => setShowForm(false))}
           onCancel={() => setShowForm(false)}
         />
       )}
@@ -69,10 +68,7 @@ export function CustomersManager({
       {editingCustomer && (
         <CustomerForm
           customer={editingCustomer}
-          onDone={() => {
-            setEditingCustomer(null);
-            router.refresh();
-          }}
+          onDone={() => mutation.settled('Fiche client modifiée.', () => setEditingCustomer(null))}
           onCancel={() => setEditingCustomer(null)}
         />
       )}
@@ -143,10 +139,7 @@ export function CustomersManager({
         <CreditPaymentForm
           customer={customers.find((c) => c.id === payingId)!}
           currency={currency}
-          onDone={() => {
-            setPayingId(null);
-            router.refresh();
-          }}
+          onDone={() => mutation.settled('Paiement enregistré.', () => setPayingId(null))}
           onCancel={() => setPayingId(null)}
         />
       )}

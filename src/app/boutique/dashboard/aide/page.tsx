@@ -72,7 +72,7 @@ const SECTIONS: Section[] = [
     entries: [
       {
         q: 'Comment enregistrer une commande fournisseur ?',
-        a: 'Depuis Achats, créez une commande d\'achat liée à un fournisseur, puis réceptionnez-la (totalement ou partiellement) : le stock et le coût moyen d\'achat de chaque produit sont mis à jour automatiquement.',
+        a: 'Depuis Achats fournisseurs, créez une commande d\'achat liée à un fournisseur, puis réceptionnez-la (totalement ou partiellement) : le stock et le coût moyen d\'achat de chaque produit sont mis à jour automatiquement.',
       },
       {
         q: 'Comment gérer les dépenses hors achats de stock ?',

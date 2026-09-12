@@ -1,7 +1,6 @@
 'use client';
 
-import { startTransition, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
@@ -89,7 +88,6 @@ export function PurchasesManager({
   currency: string;
   canManage: boolean;
 }) {
-  const router = useRouter();
   /**
    * Données du serveur, lues telles quelles.
    *
@@ -111,24 +109,10 @@ export function PurchasesManager({
   const [payingSupplier, setPayingSupplier] = useState<Supplier | null>(null);
   const mutation = useServerMutation();
 
-  /**
-   * Refermeture d'un formulaire après enregistrement.
-   *
-   * Le rafraîchissement passe par une transition : sans elle, la liste
-   * derrière le formulaire restait figée sur son ancien contenu le temps du
-   * nouveau rendu, puis sautait. Le fournisseur tout juste créé apparaissait
-   * une seconde après la fermeture de sa fiche.
-   */
-  function closeAndRefresh(close: () => void) {
-    close();
-    startTransition(() => {
-      router.refresh();
-    });
-  }
-
   function confirmOrder(orderId: string) {
     mutation.run(() => api.post(`/api/boutique/purchase-orders/${orderId}/confirm`), {
       key: `${orderId}:confirm`,
+      successMessage: 'Commande envoyée au fournisseur.',
       failureMessage: 'La confirmation a échoué.',
     });
   }
@@ -137,6 +121,7 @@ export function PurchasesManager({
     if (!window.confirm('Annuler cette commande ?')) return;
     mutation.run(() => api.post(`/api/boutique/purchase-orders/${orderId}/cancel`), {
       key: `${orderId}:cancel`,
+      successMessage: 'Commande annulée.',
       failureMessage: "L'annulation a échoué.",
     });
   }
@@ -164,7 +149,7 @@ export function PurchasesManager({
 
       {showSupplierForm && (
         <SupplierForm
-          onDone={() => closeAndRefresh(() => setShowSupplierForm(false))}
+          onDone={() => mutation.settled('Fournisseur ajouté.', () => setShowSupplierForm(false))}
           onCancel={() => setShowSupplierForm(false)}
         />
       )}
@@ -174,7 +159,7 @@ export function PurchasesManager({
           suppliers={suppliers}
           products={products}
           currency={currency}
-          onDone={() => closeAndRefresh(() => setShowOrderForm(false))}
+          onDone={() => mutation.settled('Commande enregistrée.', () => setShowOrderForm(false))}
           onCancel={() => setShowOrderForm(false)}
         />
       )}
@@ -184,7 +169,7 @@ export function PurchasesManager({
           supplier={payingSupplier}
           orders={orders.filter((o) => o.supplier.id === payingSupplier.id)}
           currency={currency}
-          onDone={() => closeAndRefresh(() => setPayingSupplier(null))}
+          onDone={() => mutation.settled('Paiement enregistré.', () => setPayingSupplier(null))}
           onCancel={() => setPayingSupplier(null)}
         />
       )}
@@ -346,7 +331,7 @@ export function PurchasesManager({
         <ReceiveForm
           order={receivingOrder}
           warehouses={warehouses}
-          onDone={() => closeAndRefresh(() => setReceivingOrder(null))}
+          onDone={() => mutation.settled('Réception enregistrée, stock mis à jour.', () => setReceivingOrder(null))}
           onCancel={() => setReceivingOrder(null)}
         />
       )}

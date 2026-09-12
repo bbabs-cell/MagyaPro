@@ -97,6 +97,9 @@ export function OrdersBoard({
       },
       {
         key: `${order.id}:${status}`,
+        // Le badge de la ligne change déjà sous les yeux : une confirmation
+        // par-dessus serait du bruit. C'est la règle — on ne confirme que ce
+        // qui ne se voit pas.
         failureMessage: "Le statut n'a pas pu être modifié. Réessayez.",
       },
     );
@@ -112,6 +115,9 @@ export function OrdersBoard({
       },
       {
         key: `${order.id}:paiement`,
+        // De l'argent qui entre : celui-là se confirme, même si la ligne
+        // change aussi de couleur.
+        successMessage: 'Paiement encaissé, commande terminée.',
         failureMessage: "Le paiement n'a pas pu être confirmé. Réessayez.",
       },
     );

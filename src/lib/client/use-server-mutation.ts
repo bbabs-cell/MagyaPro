@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError } from '@/lib/client/api';
+import { useToast } from '@/components/ui/toast';
 
 /**
  * Enchaînement « j'agis, le serveur répond, l'écran se met à jour ».
@@ -61,6 +62,15 @@ export type ServerMutationOptions<T> = {
   key?: string;
   /** Message d'échec propre à cette action, si le défaut est trop vague. */
   failureMessage?: string;
+  /**
+   * Confirmation affichée en cas de succès — « Produit ajouté. »,
+   * « Paiement enregistré. »
+   *
+   * À renseigner dès que le résultat n'est pas visible de lui-même à l'écran.
+   * Une ligne qui change de couleur se passe de commentaire ; un réglage
+   * enregistré, un paiement encaissé ou une commande confirmée, non.
+   */
+  successMessage?: string;
   /** Ne pas redemander de rendu au serveur — l'écran gère son état lui-même. */
   skipRefresh?: boolean;
   /** Appelé après un succès, avant le rafraîchissement. */
@@ -73,6 +83,18 @@ export type ServerMutation = {
    * par `pending`, et la suite du travail par `onSuccess`.
    */
   run: <T>(mutate: () => Promise<T>, options?: ServerMutationOptions<T>) => void;
+  /**
+   * Un formulaire enfant vient d'enregistrer par ses propres moyens : referme,
+   * confirme, et remet la liste à jour.
+   *
+   * Beaucoup d'écrans délèguent l'enregistrement à un sous-formulaire qui
+   * possède déjà son bouton et son message d'erreur, et se contente de
+   * prévenir le parent une fois fini. Le parent refermait alors le formulaire
+   * et demandait un rendu — sans transition, la liste derrière restait figée
+   * sur son ancien contenu puis sautait, et rien ne disait que
+   * l'enregistrement avait abouti.
+   */
+  settled: (message: string, close?: () => void) => void;
   /** Vrai tant que l'écran n'est pas à jour — appel réseau *et* nouveau rendu. */
   pending: boolean;
   /** Vrai pour la seule ligne en cours de traitement. */
@@ -85,6 +107,7 @@ export type ServerMutation = {
 
 export function useServerMutation(): ServerMutation {
   const router = useRouter();
+  const { show } = useToast();
   const [pending, startTransition] = useTransition();
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +121,7 @@ export function useServerMutation(): ServerMutation {
         try {
           const data = await mutate();
           options?.onSuccess?.(data);
+          if (options?.successMessage) show(options.successMessage, 'success');
 
           // Après l'`await`, les mises à jour restent rattachées à la même
           // transition : `pending` ne retombera qu'une fois le nouveau rendu
@@ -116,7 +140,19 @@ export function useServerMutation(): ServerMutation {
         }
       });
     },
-    [router],
+    [router, show],
+  );
+
+  const settled = useCallback(
+    (message: string, close?: () => void) => {
+      close?.();
+      setError(null);
+      show(message, 'success');
+      startTransition(() => {
+        router.refresh();
+      });
+    },
+    [router, show],
   );
 
   const isPending = useCallback(
@@ -126,5 +162,5 @@ export function useServerMutation(): ServerMutation {
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { run, pending, isPending, error, clearError };
+  return { run, settled, pending, isPending, error, clearError };
 }

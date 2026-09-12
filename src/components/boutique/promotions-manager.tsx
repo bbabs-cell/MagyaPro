@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
 
 type Promotion = {
   id: string;
@@ -29,7 +29,7 @@ export function PromotionsManager({
   currency: string;
   canManage: boolean;
 }) {
-  const router = useRouter();
+  const mutation = useServerMutation();
   /**
    * Données du serveur, lues telles quelles.
    *
@@ -44,21 +44,20 @@ export function PromotionsManager({
   const promotions = initialPromotions;
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
-  const [pending, setPending] = useState(false);
-
-  async function remove(promotion: Promotion) {
+  // Même défaut qu'ailleurs : l'échec n'était ni capté ni annoncé.
+  function remove(promotion: Promotion) {
     if (!window.confirm(`Supprimer le code promo « ${promotion.code} » ?`)) return;
-    setPending(true);
-    try {
-      await api.delete(`/api/boutique/promotions/${promotion.id}`);
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.delete(`/api/boutique/promotions/${promotion.id}`), {
+      key: promotion.id,
+      successMessage: 'Code promo supprimé.',
+      failureMessage: "Le code promo n'a pas pu être supprimé.",
+    });
   }
 
   return (
     <div className="space-y-6">
+      <AlertMessage message={mutation.error} />
+
       {canManage && (
         <Button size="sm" onClick={() => setShowForm(true)}>
           + Nouveau code promo
@@ -69,11 +68,12 @@ export function PromotionsManager({
         <PromotionForm
           currency={currency}
           promotion={editing}
-          onDone={() => {
-            setShowForm(false);
-            setEditing(null);
-            router.refresh();
-          }}
+          onDone={() =>
+            mutation.settled(editing ? 'Code promo modifié.' : 'Code promo créé.', () => {
+              setShowForm(false);
+              setEditing(null);
+            })
+          }
           onCancel={() => {
             setShowForm(false);
             setEditing(null);
@@ -136,7 +136,8 @@ export function PromotionsManager({
                         <Button
                           size="sm"
                           variant="ghost"
-                          disabled={pending}
+                          loading={mutation.isPending(promo.id)}
+                          disabled={mutation.pending}
                           onClick={() => remove(promo)}
                         >
                           Supprimer

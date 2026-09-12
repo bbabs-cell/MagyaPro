@@ -13,6 +13,7 @@ import { StoreSwitcher } from '@/components/boutique/store-switcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ToastProvider } from '@/components/ui/toast';
 import { useBoutiqueTheme } from '@/components/boutique/use-boutique-theme';
 
 /**
@@ -188,6 +189,38 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
+/**
+ * Menu du tableau de bord Boutique.
+ *
+ * ## Règle de nommage
+ *
+ * Un intitulé de menu doit répondre seul à « qu'est-ce que je trouve là », sans
+ * qu'il faille cliquer pour le découvrir. Ce n'était pas le cas : chaque page
+ * portait une description parfaitement claire — « Ce qui risque de manquer, et
+ * quand », « Stock suivi par date de péremption » — mais le menu n'en gardait
+ * qu'un mot, et souvent le plus obscur : « Prévisions », « Lots »,
+ * « Mouvements ».
+ *
+ * Le cas le plus coûteux était celui des quatre écrans de chiffres. Un
+ * commerçant ne peut pas deviner ce qui distingue « Statistiques » d'
+ * « Analyses », de « Finances » et de « Rapports » — ces mots veulent dire la
+ * même chose dans le langage courant. Ils portent pourtant quatre contenus
+ * bien différents : ce qu'il a vendu, ce que son stock vaut et rapporte, ce
+ * qu'il gagne réellement, et le papier à imprimer. Les intitulés le disent
+ * maintenant.
+ *
+ * ## Regroupement
+ *
+ * Les sections séparent désormais le travail des chiffres. « Au quotidien »
+ * porte ce qu'on ouvre plusieurs fois par jour, « Mes chiffres » ce qu'on
+ * consulte le soir ou en fin de mois. Les quatre écrans d'analyse étaient
+ * auparavant mélangés à la caisse et aux ventes, ce qui allongeait la première
+ * section à huit entrées — la plus longue du menu, alors qu'elle contient les
+ * trois liens réellement utilisés en permanence.
+ *
+ * Les adresses ne changent pas : un lien enregistré en favori continue de
+ * fonctionner, et les icônes, indexées par adresse, suivent d'elles-mêmes.
+ */
 function getNavSections(
   canViewAllStores: boolean,
   unreadNotifications: number,
@@ -195,9 +228,12 @@ function getNavSections(
 ): Array<{ title: string; items: NavItem[] }> {
   return [
     {
-      title: 'Pilotage',
+      title: 'Au quotidien',
       items: [
         { href: '/boutique/dashboard', label: "Vue d'ensemble", exact: true },
+        ...(canViewAllStores
+          ? [{ href: '/boutique/dashboard/toutes-boutiques', label: 'Toutes les boutiques' }]
+          : []),
         { href: '/boutique/dashboard/caisse', label: 'Caisse' },
         { href: '/boutique/dashboard/ventes', label: 'Ventes' },
         {
@@ -205,35 +241,37 @@ function getNavSections(
           label: 'Notifications',
           badge: unreadNotifications,
         },
-        { href: '/boutique/dashboard/rapports', label: 'Rapports' },
-        { href: '/boutique/dashboard/statistiques', label: 'Statistiques' },
-        { href: '/boutique/dashboard/analyses', label: 'Analyses' },
-        ...(canViewAllStores
-          ? [{ href: '/boutique/dashboard/toutes-boutiques', label: 'Toutes les boutiques' }]
-          : []),
       ],
     },
     {
-      title: 'Boutique',
+      title: 'Ma boutique',
       items: [
         { href: '/boutique/dashboard/produits', label: 'Produits' },
-        { href: '/boutique/dashboard/previsions', label: 'Prévisions' },
-        { href: '/boutique/dashboard/mouvements', label: 'Mouvements' },
-        { href: '/boutique/dashboard/achats', label: 'Achats' },
-        { href: '/boutique/dashboard/lots', label: 'Lots' },
+        { href: '/boutique/dashboard/mouvements', label: 'Entrées et sorties' },
+        { href: '/boutique/dashboard/previsions', label: 'Ruptures à venir' },
+        { href: '/boutique/dashboard/lots', label: 'Dates de péremption' },
+        { href: '/boutique/dashboard/achats', label: 'Achats fournisseurs' },
         { href: '/boutique/dashboard/clients', label: 'Clients' },
       ],
     },
     {
-      title: 'Finances',
+      title: 'Mon argent',
       items: [
-        { href: '/boutique/dashboard/finances', label: 'Finances' },
+        { href: '/boutique/dashboard/finances', label: 'Bénéfices' },
         { href: '/boutique/dashboard/depenses', label: 'Dépenses' },
         { href: '/boutique/dashboard/promotions', label: 'Promotions' },
       ],
     },
     {
-      title: 'Compte',
+      title: 'Mes chiffres',
+      items: [
+        { href: '/boutique/dashboard/statistiques', label: 'Chiffres de vente' },
+        { href: '/boutique/dashboard/analyses', label: 'Marges et stock' },
+        { href: '/boutique/dashboard/rapports', label: 'Rapports à imprimer' },
+      ],
+    },
+    {
+      title: 'Mon compte',
       items: [
         { href: '/boutique/dashboard/equipe', label: 'Équipe' },
         { href: '/boutique/dashboard/abonnement', label: 'Abonnement' },
@@ -358,12 +396,18 @@ export function DashboardShell({
     </nav>
   );
 
+  // Le fournisseur de messages est monté ici plutôt que dans le layout : ce
+  // dernier a trois sorties distinctes (visite guidée, mur d'abonnement,
+  // tableau de bord) et l'envelopper trois fois se serait désynchronisé au
+  // premier ajout de branche. Le tableau de bord Restaurant a le sien, monté
+  // dans son layout — qui, lui, n'a qu'une seule sortie.
   return (
-    // `text-ink` réinitialise explicitement la couleur de texte : le layout
-    // racine `/boutique` (pages avant connexion) pose un texte clair sur fond
-    // sombre pour son propre thème, hérité sinon par tout élément d'ici qui
-    // ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
-    // bord (clair, ink/surface) quasi invisibles sur leur fond clair.
+    <ToastProvider>
+    {/* `text-ink` réinitialise explicitement la couleur de texte : le layout
+        racine `/boutique` (pages avant connexion) pose un texte clair sur fond
+        sombre pour son propre thème, hérité sinon par tout élément d'ici qui
+        ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
+        bord (clair, ink/surface) quasi invisibles sur leur fond clair. */}
     <div className="min-h-screen bg-surface-sunken text-ink">
       {/* Aucun son en visite guidée : un visiteur anonyme n'a aucune raison
           d'être notifié de l'activité réelle de la boutique qu'il explore. */}
@@ -520,5 +564,6 @@ export function DashboardShell({
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

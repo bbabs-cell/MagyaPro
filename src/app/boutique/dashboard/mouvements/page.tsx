@@ -10,7 +10,7 @@ import {
 } from '@/lib/boutique/movements';
 import { Badge, Card, EmptyState, PageHeader, buttonClass, cx, inputClass } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Mouvements de stock' };
+export const metadata: Metadata = { title: 'Entrées et sorties' };
 export const dynamic = 'force-dynamic';
 
 /**
@@ -62,7 +62,7 @@ export default async function StoreMovementsPage({
   return (
     <>
       <PageHeader
-        title="Mouvements de stock"
+        title="Entrées et sorties"
         description="Chaque entrée et chaque sortie, avec son auteur et son motif. Rien n'est recalculé : c'est ce qui a été écrit au moment de l'opération."
       />
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { startTransition, useMemo, useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import {
   STOCK_RAIL,
@@ -173,21 +173,7 @@ export function ProductManager({
   /** Instant de référence figé par le serveur — voir la page Produits. */
   now: number;
 }) {
-  const router = useRouter();
-
-  /**
-   * Referme un formulaire et laisse la liste derrière lui se remettre à jour.
-   *
-   * La transition évite que le catalogue reste figé sur son ancien contenu
-   * pendant le nouveau rendu, puis saute : le produit enregistré n'apparaît
-   * plus une seconde après la fermeture de sa fiche.
-   */
-  function closeAndRefresh(close: () => void) {
-    close();
-    startTransition(() => {
-      router.refresh();
-    });
-  }
+  const mutation = useServerMutation();
 
   /**
    * Données du serveur, lues telles quelles.
@@ -375,7 +361,7 @@ export function ProductManager({
           placeholder="Vêtements homme"
           endpoint="/api/boutique/categories"
           field="name"
-          onDone={() => closeAndRefresh(() => setShowCategoryForm(false))}
+          onDone={() => mutation.settled('Catégorie ajoutée.', () => setShowCategoryForm(false))}
           onCancel={() => setShowCategoryForm(false)}
         />
       )}
@@ -386,7 +372,7 @@ export function ProductManager({
           placeholder="Nike"
           endpoint="/api/boutique/brands"
           field="name"
-          onDone={() => closeAndRefresh(() => setShowBrandForm(false))}
+          onDone={() => mutation.settled('Marque ajoutée.', () => setShowBrandForm(false))}
           onCancel={() => setShowBrandForm(false)}
         />
       )}
@@ -398,7 +384,7 @@ export function ProductManager({
           storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
-          onDone={() => closeAndRefresh(() => setShowForm(false))}
+          onDone={() => mutation.settled('Produit ajouté.', () => setShowForm(false))}
           onCancel={() => setShowForm(false)}
         />
       )}
@@ -411,7 +397,7 @@ export function ProductManager({
           storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
-          onDone={() => closeAndRefresh(() => setEditingProduct(null))}
+          onDone={() => mutation.settled('Produit modifié.', () => setEditingProduct(null))}
           onCancel={() => setEditingProduct(null)}
         />
       )}

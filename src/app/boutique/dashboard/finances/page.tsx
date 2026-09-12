@@ -14,7 +14,7 @@ import {
 } from '@/lib/boutique/finances';
 import { Card, PageHeader, StatCard } from '@/components/ui';
 
-export const metadata: Metadata = { title: 'Finances' };
+export const metadata: Metadata = { title: 'Bénéfices' };
 export const dynamic = 'force-dynamic';
 
 const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
@@ -55,7 +55,7 @@ export default async function BoutiqueFinancesPage({
   return (
     <>
       <PageHeader
-        title="Finances"
+        title="Bénéfices"
         description="Recettes, coûts, pertes et trésorerie — à partir de vos ventes, dépenses et mouvements de stock réels."
       />
 

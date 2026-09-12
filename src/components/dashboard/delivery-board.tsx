@@ -137,6 +137,7 @@ export function DeliveryBoard({
       {
         key: order.id,
         skipRefresh: true,
+        successMessage: 'Livraison prise en charge.',
         failureMessage: "Cette livraison n'a pas pu être prise en charge.",
       },
     );
@@ -159,7 +160,12 @@ export function DeliveryBoard({
           inFlightRef.current -= 1;
         }
       },
-      { key: order.id, skipRefresh: true, failureMessage: "La livraison n'a pas pu être confirmée." },
+      {
+        key: order.id,
+        skipRefresh: true,
+        successMessage: 'Livraison confirmée.',
+        failureMessage: "La livraison n'a pas pu être confirmée.",
+      },
     );
   }
 

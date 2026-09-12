@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import { Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   RENT: 'Loyer',
@@ -38,7 +38,7 @@ export function ExpensesManager({
   currency: string;
   canManage: boolean;
 }) {
-  const router = useRouter();
+  const mutation = useServerMutation();
   /**
    * Données du serveur, lues telles quelles.
    *
@@ -53,23 +53,24 @@ export function ExpensesManager({
   const expenses = initialExpenses;
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
-  const [pending, setPending] = useState(false);
-
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  async function remove(expense: Expense) {
+  // L'échec était auparavant avalé : ni `catch`, ni message. Une suppression
+  // refusée laissait la ligne en place sans un mot, et le commerçant
+  // recommençait en croyant avoir mal appuyé.
+  function remove(expense: Expense) {
     if (!window.confirm(`Supprimer la dépense « ${expense.label} » ?`)) return;
-    setPending(true);
-    try {
-      await api.delete(`/api/boutique/expenses/${expense.id}`);
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.delete(`/api/boutique/expenses/${expense.id}`), {
+      key: expense.id,
+      successMessage: 'Dépense supprimée.',
+      failureMessage: "La dépense n'a pas pu être supprimée.",
+    });
   }
 
   return (
     <div className="space-y-6">
+      <AlertMessage message={mutation.error} />
+
       {canManage && (
         <Button size="sm" onClick={() => setShowForm(true)}>
           + Nouvelle dépense
@@ -80,11 +81,12 @@ export function ExpensesManager({
         <ExpenseForm
           currency={currency}
           expense={editing}
-          onDone={() => {
-            setShowForm(false);
-            setEditing(null);
-            router.refresh();
-          }}
+          onDone={() =>
+            mutation.settled(editing ? 'Dépense modifiée.' : 'Dépense enregistrée.', () => {
+              setShowForm(false);
+              setEditing(null);
+            })
+          }
           onCancel={() => {
             setShowForm(false);
             setEditing(null);
@@ -134,7 +136,8 @@ export function ExpensesManager({
                         <Button
                           size="sm"
                           variant="ghost"
-                          disabled={pending}
+                          loading={mutation.isPending(expense.id)}
+                          disabled={mutation.pending}
                           onClick={() => remove(expense)}
                         >
                           Supprimer
