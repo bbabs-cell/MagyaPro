@@ -10,7 +10,7 @@ import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/la
 import {
   PURCHASE_PAYMENT_LABELS,
   PURCHASE_PAYMENT_TONES,
-  type PurchasePaymentState,
+  type PurchaseBalance,
 } from '@/lib/boutique/purchase-payment';
 
 /** `outstanding` : reste dû, déduit des commandes livrées — plus un compteur. */
@@ -34,7 +34,7 @@ type PurchaseOrder = {
   expectedAt: string | null;
   supplier: { id: string; name: string };
   /** Livré, réglé, reste — calculé côté serveur, jamais stocké. */
-  payment: { due: number; paid: number; remaining: number; state: PurchasePaymentState };
+  payment: PurchaseBalance;
   items: PurchaseOrderItem[];
 };
 
@@ -105,7 +105,17 @@ export function PurchasesManager({
   const sortedOrders = sortOrders(orders, today);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
-  const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
+  /**
+   * Commande en cours de réception, retenue par son identifiant et non par
+   * l'objet lui-même.
+   *
+   * L'écran de réception affiche maintenant l'état du règlement, qui change
+   * pendant qu'il est ouvert. Garder une copie de la commande la figerait au
+   * moment de l'ouverture : le commerçant réceptionnerait, paierait, et lirait
+   * encore les chiffres d'avant.
+   */
+  const [receivingId, setReceivingId] = useState<string | null>(null);
+  const receivingOrder = receivingId ? (orders.find((o) => o.id === receivingId) ?? null) : null;
   const [payingSupplier, setPayingSupplier] = useState<Supplier | null>(null);
   const mutation = useServerMutation();
 
@@ -312,7 +322,7 @@ export function PurchasesManager({
                             </Button>
                           )}
                           {(order.status === 'ORDERED' || order.status === 'PARTIALLY_RECEIVED') && (
-                            <Button size="sm" variant="secondary" onClick={() => setReceivingOrder(order)}>
+                            <Button size="sm" variant="secondary" onClick={() => setReceivingId(order.id)}>
                               Réceptionner
                             </Button>
                           )}
@@ -331,8 +341,15 @@ export function PurchasesManager({
         <ReceiveForm
           order={receivingOrder}
           warehouses={warehouses}
-          onDone={() => mutation.settled('Réception enregistrée, stock mis à jour.', () => setReceivingOrder(null))}
-          onCancel={() => setReceivingOrder(null)}
+          currency={currency}
+          // La réception ne referme plus l'écran : le règlement se fait juste
+          // en dessous, avec le reste à payer que le serveur vient de
+          // recalculer. Refermer obligerait à ressortir, retrouver la
+          // commande, rouvrir un formulaire de paiement — ce que le §14
+          // proscrit explicitement.
+          onReceived={() => mutation.settled('Réception enregistrée, stock mis à jour.')}
+          onPaid={() => mutation.settled('Paiement enregistré.')}
+          onClose={() => setReceivingId(null)}
         />
       )}
     </div>
@@ -401,6 +418,26 @@ function OrderForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lines, setLines] = useState([{ productVariantId: '', quantity: 1, unitCost: '0', discount: '0' }]);
+  // Les frais annexes deviennent un état plutôt qu'un champ libre : ils
+  // entrent dans le total affiché, et un total qui ignore le transport n'est
+  // pas le total.
+  const [extraFees, setExtraFees] = useState('0');
+
+  /**
+   * Total de la commande, mis à jour à chaque frappe.
+   *
+   * Le formulaire affichait le total de chaque ligne mais jamais celui de la
+   * commande : sur cinq lignes, le commerçant validait sans savoir ce qu'il
+   * engageait, et devait attendre la liste pour le découvrir. Le §13 demande
+   * de voir le total avant de valider.
+   */
+  const linesTotal = lines.reduce((sum, line) => {
+    const unitCost = Number(line.unitCost.replace(',', '.')) || 0;
+    const discount = Number(line.discount.replace(',', '.')) || 0;
+    return sum + Math.max(0, unitCost - discount) * (line.quantity || 0);
+  }, 0);
+  const feesValue = Number(extraFees.replace(',', '.')) || 0;
+  const filledLines = lines.filter((line) => line.productVariantId).length;
 
   function updateLine(index: number, patch: Partial<(typeof lines)[number]>) {
     setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
@@ -415,7 +452,7 @@ function OrderForm({
       await api.post('/api/boutique/purchase-orders', {
         supplierId: String(formData.get('supplierId') ?? ''),
         confirm,
-        extraFees: toMinor(String(formData.get('extraFees') ?? '0'), currency),
+        extraFees: toMinor(extraFees || '0', currency),
         expectedAt: formData.get('expectedAt') ? String(formData.get('expectedAt')) : undefined,
         note: String(formData.get('note') ?? '') || undefined,
         items: lines
@@ -591,15 +628,44 @@ function OrderForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Frais annexes (facultatif)" htmlFor="extraFees" hint="Transport, douane...">
-            <input id="extraFees" name="extraFees" type="number" min={0} step="0.01" defaultValue="0" className={inputClass} />
+            <input
+              id="extraFees"
+              inputMode="decimal"
+              value={extraFees}
+              onChange={(event) => setExtraFees(event.target.value)}
+              className={inputClass}
+            />
           </Field>
           <Field label="Note (facultatif)" htmlFor="note">
             <input id="note" name="note" className={inputClass} />
           </Field>
         </div>
 
+        {/* Récapitulatif : ce qu'on engage, juste au-dessus du bouton qui
+            l'engage. */}
+        <div className="rounded-xl border border-surface-border bg-surface-sunken p-4">
+          <dl className="space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-ink-muted">
+                {filledLines} produit{filledLines > 1 ? 's' : ''}
+              </dt>
+              <dd>{formatMoney(toMinor(String(linesTotal), currency), currency)}</dd>
+            </div>
+            {feesValue > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink-muted">Frais annexes</dt>
+                <dd>{formatMoney(toMinor(String(feesValue), currency), currency)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-surface-border pt-1.5 text-base font-semibold text-ink">
+              <dt>Total de la commande</dt>
+              <dd>{formatMoney(toMinor(String(linesTotal + feesValue), currency), currency)}</dd>
+            </div>
+          </dl>
+        </div>
+
         <div className="flex flex-wrap gap-2 pt-2">
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={pending} disabled={filledLines === 0}>
             Commander
           </Button>
           <Button
@@ -622,125 +688,358 @@ function OrderForm({
   );
 }
 
+/**
+ * Réception d'une commande fournisseur — et son règlement, au même endroit.
+ *
+ * Le §14 est explicite : réceptionner ne doit pas obliger à sortir, chercher la
+ * facture ailleurs, ouvrir un autre écran de paiement, puis revenir vérifier.
+ * C'était pourtant le parcours : la réception fermait l'écran, et le règlement
+ * se faisait depuis la fiche du fournisseur, en retrouvant la commande dans une
+ * liste déroulante.
+ *
+ * Ici, l'argent est affiché en haut — livré, réglé, reste — et le formulaire de
+ * règlement est en bas, sur la même page. Confirmer une réception ne referme
+ * plus rien : les montants se recalculent et le versement peut suivre
+ * immédiatement, pendant que le livreur du fournisseur attend.
+ */
 function ReceiveForm({
   order,
   warehouses,
-  onDone,
-  onCancel,
+  currency,
+  onReceived,
+  onPaid,
+  onClose,
 }: {
   order: PurchaseOrder;
   warehouses: Warehouse[];
-  onDone: () => void;
-  onCancel: () => void;
+  currency: string;
+  onReceived: () => void;
+  onPaid: () => void;
+  onClose: () => void;
 }) {
   const remainingItems = order.items.filter((item) => item.quantityReceived < item.quantityOrdered);
-  const [quantities, setQuantities] = useState<Record<string, number>>(
-    Object.fromEntries(remainingItems.map((item) => [item.id, item.quantityOrdered - item.quantityReceived])),
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [warehouseId, setWarehouseId] = useState(
+    warehouses.find((w) => w.isDefault)?.id ?? warehouses[0]?.id ?? '',
   );
-  const [warehouseId, setWarehouseId] = useState(warehouses.find((w) => w.isDefault)?.id ?? warehouses[0]?.id ?? '');
   const [expiryDate, setExpiryDate] = useState('');
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  // Les quantités proposées suivent la commande : après une réception
+  // partielle, le reste attendu change, et une valeur figée à l'ouverture
+  // proposerait de réceptionner deux fois la même marchandise.
+  const suggested = (item: PurchaseOrderItem) =>
+    quantities[item.id] ?? item.quantityOrdered - item.quantityReceived;
+
+  const ordered = orderTotal(order);
+  const fullyReceived = remainingItems.length === 0;
+
+  function receive(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
-    setError(null);
+    const lines = remainingItems
+      .map((item) => ({ purchaseOrderItemId: item.id, quantity: suggested(item) }))
+      .filter((line) => line.quantity > 0);
 
-    try {
-      await api.post(`/api/boutique/purchase-orders/${order.id}/receive`, {
-        warehouseId,
-        expiryDate: expiryDate || undefined,
-        items: remainingItems
-          .map((item) => ({ purchaseOrderItemId: item.id, quantity: quantities[item.id] ?? 0 }))
-          .filter((line) => line.quantity > 0),
-      });
-      onDone();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'La réception a échoué.');
-      setPending(false);
-    }
+    mutation.run(
+      () =>
+        api.post(`/api/boutique/purchase-orders/${order.id}/receive`, {
+          warehouseId,
+          expiryDate: expiryDate || undefined,
+          items: lines,
+        }),
+      {
+        key: 'reception',
+        onSuccess: () => {
+          setQuantities({});
+          onReceived();
+        },
+        failureMessage: 'La réception a échoué.',
+      },
+    );
+  }
+
+  function pay(amount: number, note?: string) {
+    mutation.run(
+      () =>
+        api.post(`/api/boutique/suppliers/${order.supplier.id}/payments`, {
+          amount,
+          purchaseOrderId: order.id,
+          note: note || undefined,
+        }),
+      {
+        key: 'paiement',
+        onSuccess: onPaid,
+        failureMessage: "Le paiement n'a pas pu être enregistré.",
+      },
+    );
   }
 
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-medium">Réception — {order.reference}</h2>
-      <p className="mt-1 text-sm text-ink-muted">
-        Ajustez les quantités si la livraison ne correspond pas exactement à la commande — le reste
-        pourra être réceptionné plus tard.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-medium">Réception — {order.reference}</h2>
+          <p className="mt-1 text-sm text-ink-muted">{order.supplier.name}</p>
+        </div>
+        <Badge tone={PURCHASE_PAYMENT_TONES[order.payment.state]}>
+          {PURCHASE_PAYMENT_LABELS[order.payment.state]}
+        </Badge>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
-        {error && (
-          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
-            {error}
-          </div>
-        )}
+      <AlertMessage message={mutation.error} className="mt-4" />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Entrepôt de réception" htmlFor="warehouseId" required>
-            <select
-              id="warehouseId"
-              value={warehouseId}
-              onChange={(event) => setWarehouseId(event.target.value)}
-              required
-              className={inputClass}
+      {/* ------------------------------------------------------- L'argent */}
+      <dl className="mt-4 grid gap-3 rounded-xl border border-surface-border bg-surface-sunken p-4 sm:grid-cols-4">
+        <div>
+          <dt className="text-xs text-ink-muted">Commandé</dt>
+          <dd className="mt-0.5 font-medium text-ink">{formatMoney(ordered, currency)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Livré à ce jour</dt>
+          <dd className="mt-0.5 font-medium text-ink">{formatMoney(order.payment.due, currency)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Déjà réglé</dt>
+          <dd className="mt-0.5 font-medium text-ink">{formatMoney(order.payment.paid, currency)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-ink-muted">Reste à payer</dt>
+          <dd
+            className={cx(
+              'mt-0.5 text-lg font-semibold',
+              order.payment.remaining > 0 ? 'text-state-warn' : 'text-state-ok',
+            )}
+          >
+            {formatMoney(order.payment.remaining, currency)}
+          </dd>
+        </div>
+      </dl>
+
+      {order.payment.advance > 0 && (
+        <p className="mt-2 text-xs text-ink-muted">
+          Vous avez versé {formatMoney(order.payment.advance, currency)} de plus que ce qui est
+          livré — une avance sur le reste de la commande.
+        </p>
+      )}
+
+      {/* --------------------------------------------------- La réception */}
+      {fullyReceived ? (
+        <p className="mt-5 rounded-xl border border-dashed border-surface-border p-4 text-center text-sm text-ink-muted">
+          Toute la marchandise commandée a été reçue.
+        </p>
+      ) : (
+        <form onSubmit={receive} className="mt-5 space-y-4" noValidate>
+          <h3 className="text-sm font-medium text-ink">Ce que vous recevez aujourd&apos;hui</h3>
+          <p className="text-sm text-ink-muted">
+            Ajustez les quantités si la livraison ne correspond pas exactement à la commande — le
+            reste pourra être réceptionné plus tard.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Entrepôt de réception" htmlFor="warehouseId" required>
+              <select
+                id="warehouseId"
+                value={warehouseId}
+                onChange={(event) => setWarehouseId(event.target.value)}
+                required
+                className={inputClass}
+              >
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label="Date de péremption du lot (facultatif)"
+              htmlFor="expiryDate"
+              hint="Pour les denrées ou cosmétiques."
             >
-              {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Date de péremption du lot (facultatif)" htmlFor="expiryDate" hint="Pour les denrées ou cosmétiques.">
-            <input
-              id="expiryDate"
-              type="date"
-              value={expiryDate}
-              onChange={(event) => setExpiryDate(event.target.value)}
-              className={inputClass}
-            />
-          </Field>
-        </div>
+              <input
+                id="expiryDate"
+                type="date"
+                value={expiryDate}
+                onChange={(event) => setExpiryDate(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
 
-        <div className="space-y-2">
-          {remainingItems.map((item) => {
-            const remaining = item.quantityOrdered - item.quantityReceived;
-            return (
-              <div key={item.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-surface-border p-3">
-                <div>
-                  <p className="text-sm font-medium text-ink">{item.productName}</p>
-                  <p className="text-xs text-ink-muted">
-                    Commandé : {item.quantityOrdered} · Déjà reçu : {item.quantityReceived} · Reste : {remaining}
-                  </p>
+          <div className="space-y-2">
+            {remainingItems.map((item) => {
+              const remaining = item.quantityOrdered - item.quantityReceived;
+              return (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-surface-border p-3"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-ink">{item.productName}</p>
+                    <p className="text-xs text-ink-muted">
+                      Commandé : {item.quantityOrdered} · Déjà reçu : {item.quantityReceived} ·
+                      Reste : {remaining}
+                    </p>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={remaining}
+                    step={0.001}
+                    value={suggested(item)}
+                    onChange={(event) =>
+                      setQuantities((current) => ({
+                        ...current,
+                        [item.id]: Number(event.target.value),
+                      }))
+                    }
+                    className={cx(inputClass, 'w-28')}
+                  />
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  max={remaining}
-                  step={0.001}
-                  value={quantities[item.id] ?? 0}
-                  onChange={(event) =>
-                    setQuantities((current) => ({ ...current, [item.id]: Number(event.target.value) }))
-                  }
-                  className={cx(inputClass, 'w-28')}
-                />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        <div className="flex gap-2 pt-2">
-          <Button type="submit" loading={pending} disabled={!warehouseId}>
+          <Button type="submit" loading={mutation.isPending('reception')} disabled={!warehouseId}>
             Confirmer la réception
           </Button>
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
-            Annuler
+        </form>
+      )}
+
+      {/* ----------------------------------------------------- Le paiement */}
+      <PaymentPanel
+        remaining={order.payment.remaining}
+        currency={currency}
+        pending={mutation.isPending('paiement')}
+        disabled={mutation.pending}
+        onPay={pay}
+      />
+
+      <div className="mt-5 border-t border-surface-border pt-4">
+        <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.pending}>
+          Fermer
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Règlement d'une commande, depuis l'écran de réception.
+ *
+ * Deux gestes, parce qu'il n'y a que deux situations réelles : on solde la
+ * commande, ou on verse un acompte. « Marquer comme payé » évite de retaper un
+ * montant que le produit connaît déjà — et un montant retapé est un montant
+ * qu'on peut mal taper.
+ */
+function PaymentPanel({
+  remaining,
+  currency,
+  pending,
+  disabled,
+  onPay,
+}: {
+  remaining: number;
+  currency: string;
+  pending: boolean;
+  disabled: boolean;
+  onPay: (amount: number, note?: string) => void;
+}) {
+  const [partial, setPartial] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+
+  if (remaining <= 0) {
+    return (
+      <p className="mt-5 rounded-xl bg-state-ok-soft px-4 py-3 text-sm font-medium text-state-ok">
+        Cette commande est réglée. Rien à verser.
+      </p>
+    );
+  }
+
+  function submitPartial(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    let minor: number;
+    try {
+      minor = toMinor(amount, currency);
+    } catch {
+      return;
+    }
+    if (minor <= 0) return;
+    onPay(minor, note);
+    setAmount('');
+    setNote('');
+    setPartial(false);
+  }
+
+  return (
+    <div className="mt-5 border-t border-surface-border pt-5">
+      <h3 className="text-sm font-medium text-ink">Régler cette commande</h3>
+      <p className="mt-1 text-sm text-ink-muted">
+        Reste à payer : {formatMoney(remaining, currency)}
+      </p>
+
+      {partial ? (
+        <form onSubmit={submitPartial} className="mt-3 space-y-3" noValidate>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={`Montant versé (${currency})`} htmlFor="acompte" required>
+              <input
+                id="acompte"
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+                className={inputClass}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Note (facultatif)" htmlFor="acompteNote">
+              <input
+                id="acompteNote"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" loading={pending} disabled={disabled}>
+              Enregistrer le versement
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setPartial(false)}
+              disabled={disabled}
+            >
+              Annuler
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            loading={pending}
+            disabled={disabled}
+            onClick={() => onPay(remaining)}
+          >
+            Marquer comme payé · {formatMoney(remaining, currency)}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={disabled}
+            onClick={() => setPartial(true)}
+          >
+            Verser un acompte
           </Button>
         </div>
-      </form>
-    </Card>
+      )}
+    </div>
   );
 }
 
@@ -757,30 +1056,31 @@ function SupplierPaymentForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
+  const pending = mutation.pending;
 
   // Seules les commandes qui doivent encore quelque chose : proposer une
   // commande déjà soldée ne mène qu'à un règlement en trop.
   const unsettled = orders.filter((order) => order.payment.remaining > 0);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
-    setError(null);
     const formData = new FormData(event.currentTarget);
 
-    try {
-      await api.post(`/api/boutique/suppliers/${supplier.id}/payments`, {
-        amount: toMinor(String(formData.get('amount') ?? '0'), currency),
-        purchaseOrderId: String(formData.get('purchaseOrderId') ?? '') || undefined,
-        note: String(formData.get('note') ?? '') || undefined,
-      });
-      onDone();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "L'enregistrement a échoué.");
-      setPending(false);
-    }
+    mutation.run(
+      () =>
+        api.post(`/api/boutique/suppliers/${supplier.id}/payments`, {
+          amount: toMinor(String(formData.get('amount') ?? '0'), currency),
+          purchaseOrderId: String(formData.get('purchaseOrderId') ?? '') || undefined,
+          note: String(formData.get('note') ?? '') || undefined,
+        }),
+      {
+        // Le parent affiche déjà la confirmation en refermant le formulaire.
+        onSuccess: onDone,
+        skipRefresh: true,
+        failureMessage: "L'enregistrement a échoué.",
+      },
+    );
   }
 
   return (
@@ -790,11 +1090,7 @@ function SupplierPaymentForm({
         Reste à régler chez ce fournisseur : {formatMoney(supplier.outstanding, currency)}
       </p>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
-        {error && (
-          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
-            {error}
-          </div>
-        )}
+        <AlertMessage message={mutation.error} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Montant" htmlFor="amount" required>
             <input id="amount" name="amount" type="number" min={0.01} step="0.01" required className={inputClass} />

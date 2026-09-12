@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  maxPayable,
   paymentState,
   purchaseBalance,
   receivedLineValue,
@@ -71,7 +72,7 @@ describe('État de règlement', () => {
 describe('Solde d’une commande', () => {
   it('déduit le reste à régler des règlements rattachés', () => {
     const solde = purchaseBalance([ligne({ quantityReceived: 10 })], [{ amount: 3000 }, { amount: 2000 }]);
-    expect(solde).toEqual({ due: 10_000, paid: 5000, remaining: 5000, state: 'partial' });
+    expect(solde).toEqual({ due: 10_000, paid: 5000, remaining: 5000, advance: 0, state: 'partial' });
   });
 
   it('ne rend pas un reste négatif sur un trop-perçu', () => {
@@ -82,6 +83,59 @@ describe('Solde d’une commande', () => {
 
   it('ne doit rien sur une commande passée mais pas encore reçue', () => {
     const solde = purchaseBalance([ligne({ quantityReceived: 0 })], []);
-    expect(solde).toEqual({ due: 0, paid: 0, remaining: 0, state: 'paid' });
+    expect(solde).toEqual({ due: 0, paid: 0, remaining: 0, advance: 0, state: 'paid' });
+  });
+});
+
+describe('Trop-versé et avance', () => {
+  const line = { quantityReceived: 10, unitFactor: 1, unitCost: 1_000, discount: 0 };
+
+  it('signale ce qui a été versé au-delà du livré, au lieu de l’absorber', () => {
+    // Le `Math.max(0, …)` sur le reste masquait l'écart : un commerçant qui
+    // avait payé quarante mille francs de trop lisait « Payée » et n'en
+    // apprenait rien.
+    const balance = purchaseBalance([line], [{ amount: 50_000 }]);
+    expect(balance.due).toBe(10_000);
+    expect(balance.paid).toBe(50_000);
+    expect(balance.remaining).toBe(0);
+    expect(balance.advance).toBe(40_000);
+  });
+
+  it('ne signale aucune avance quand le compte est juste', () => {
+    expect(purchaseBalance([line], [{ amount: 10_000 }]).advance).toBe(0);
+    expect(purchaseBalance([line], [{ amount: 4_000 }]).advance).toBe(0);
+  });
+
+  it('compte comme avance un règlement sur une commande pas encore livrée', () => {
+    // Payer d'avance un nouveau fournisseur est courant : ce n'est pas une
+    // erreur, mais cela doit se voir.
+    const notDelivered = { quantityReceived: 0, unitFactor: 1, unitCost: 1_000, discount: 0 };
+    const balance = purchaseBalance([notDelivered], [{ amount: 5_000 }]);
+    expect(balance.advance).toBe(5_000);
+    expect(balance.remaining).toBe(0);
+  });
+});
+
+describe('Plafond de règlement', () => {
+  it('vaut la valeur commandée, frais annexes compris', () => {
+    const lines = [{ quantityOrdered: 10, unitFactor: 1, unitCost: 1_000, discount: 0 }];
+    expect(maxPayable(lines, 2_500)).toBe(12_500);
+  });
+
+  it('se fonde sur ce qui est commandé, pas sur ce qui est livré', () => {
+    // Sinon une avance sur une commande à venir serait refusée.
+    const lines = [{ quantityOrdered: 10, unitFactor: 1, unitCost: 1_000, discount: 0 }];
+    expect(maxPayable(lines)).toBe(10_000);
+  });
+
+  it('tient compte de la remise et de l’unité d’achat groupée', () => {
+    // Un carton de 12 à 22 000, remise 1 000 : 24 unités = 2 cartons.
+    const lines = [{ quantityOrdered: 24, unitFactor: 12, unitCost: 22_000, discount: 1_000 }];
+    expect(maxPayable(lines)).toBe(42_000);
+  });
+
+  it('ignore des frais annexes négatifs', () => {
+    const lines = [{ quantityOrdered: 1, unitFactor: 1, unitCost: 1_000, discount: 0 }];
+    expect(maxPayable(lines, -500)).toBe(1_000);
   });
 });

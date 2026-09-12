@@ -48,6 +48,14 @@ type PurchaseLine = {
   discount: number;
 };
 
+/** Ligne vue du bon de commande, avant toute livraison. */
+type OrderedLine = {
+  quantityOrdered: Quantity;
+  unitFactor: Quantity;
+  unitCost: number;
+  discount: number;
+};
+
 /**
  * Valeur de ce qui a réellement été livré sur une ligne.
  *
@@ -76,15 +84,52 @@ export type PurchaseBalance = {
   paid: number;
   /** Ce qui reste à régler, jamais négatif. */
   remaining: number;
+  /**
+   * Versé au-delà de ce qui est livré. Zéro dans le cas courant.
+   *
+   * Ce n'est pas forcément une erreur : payer d'avance une commande pas encore
+   * arrivée est une pratique fréquente avec un nouveau fournisseur. Mais
+   * l'écart était jusqu'ici absorbé sans un mot par un `Math.max(0, …)` — un
+   * commerçant qui avait versé quarante mille francs de trop lisait « Payée »
+   * et n'apprenait rien. Une avance se voit ; un trop-versé se réclame.
+   */
+  advance: number;
   state: PurchasePaymentState;
 };
 
 export function purchaseBalance(lines: PurchaseLine[], payments: PurchasePayment[]): PurchaseBalance {
   const due = receivedOrderValue(lines);
   const paid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const remaining = Math.max(0, due - paid);
 
-  return { due, paid, remaining, state: paymentState(due, paid) };
+  return {
+    due,
+    paid,
+    remaining: Math.max(0, due - paid),
+    advance: Math.max(0, paid - due),
+    state: paymentState(due, paid),
+  };
+}
+
+/**
+ * Plafond de ce qu'on peut verser sur une commande : la valeur de ce qui a été
+ * commandé, frais annexes compris.
+ *
+ * Rien n'empêchait jusqu'ici d'enregistrer un règlement de n'importe quel
+ * montant. Une faute de frappe — un zéro de trop sur un clavier de téléphone —
+ * passait sans un mot et faussait la trésorerie du mois.
+ *
+ * Le plafond est la valeur **commandée**, et non la valeur livrée : payer
+ * d'avance une marchandise qui n'est pas encore arrivée est courant, et le
+ * refuser bloquerait une pratique légitime. Au-delà du bon de commande, en
+ * revanche, il n'y a plus rien qui justifie le versement.
+ */
+export function maxPayable(lines: OrderedLine[], extraFees = 0): number {
+  const ordered = lines.reduce((sum, line) => {
+    const factor = toQty(line.unitFactor) || 1;
+    const unit = Math.max(0, line.unitCost - line.discount);
+    return sum + Math.round((toQty(line.quantityOrdered) / factor) * unit);
+  }, 0);
+  return ordered + Math.max(0, extraFees);
 }
 
 /**

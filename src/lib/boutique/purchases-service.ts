@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { toQty } from '@/lib/boutique/quantity';
+import { maxPayable } from '@/lib/boutique/purchase-payment';
+import { formatMoney } from '@/lib/money';
 import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
@@ -381,14 +383,48 @@ export async function addSupplierPayment(params: {
 }) {
   const { storeId, userId, userEmail, supplierId, input } = params;
 
-  const supplier = await prisma.supplier.findFirst({ where: { id: supplierId, storeId } });
+  const supplier = await prisma.supplier.findFirst({
+    where: { id: supplierId, storeId },
+    select: { id: true, store: { select: { currency: true } } },
+  });
   if (!supplier) throw new NotFoundError('Fournisseur introuvable.');
 
   if (input.purchaseOrderId) {
     const purchaseOrder = await prisma.purchaseOrder.findFirst({
       where: { id: input.purchaseOrderId, storeId, supplierId },
+      select: {
+        id: true,
+        extraFees: true,
+        items: {
+          select: {
+            quantityOrdered: true,
+            unitFactor: true,
+            unitCost: true,
+            discount: true,
+          },
+        },
+        payments: { select: { amount: true } },
+      },
     });
     if (!purchaseOrder) throw new NotFoundError('Commande introuvable pour ce fournisseur.');
+
+    // Rien n'empêchait d'enregistrer un règlement de n'importe quel montant :
+    // un zéro de trop sur un clavier de téléphone passait sans un mot et
+    // faussait la trésorerie du mois. Le plafond est la valeur commandée, et
+    // non la valeur livrée — payer d'avance une marchandise pas encore arrivée
+    // est courant, et le refuser bloquerait une pratique légitime.
+    const ceiling = maxPayable(purchaseOrder.items, purchaseOrder.extraFees);
+    const alreadyPaid = purchaseOrder.payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+    if (alreadyPaid + input.amount > ceiling) {
+      const left = Math.max(0, ceiling - alreadyPaid);
+      throw new ValidationError(
+        left === 0
+          ? 'Cette commande est déjà entièrement réglée.'
+          : `Ce règlement dépasse le montant de la commande. Il reste au plus ${formatMoney(left, supplier.store.currency)} à verser.`,
+        { amount: 'Montant supérieur à ce qui reste dû sur cette commande.' },
+      );
+    }
   }
 
   const payment = await prisma.supplierPayment.create({
