@@ -9,6 +9,13 @@ import { formatMoney } from '@/lib/money';
 import { Field, inputClass } from '@/components/ui';
 import { toCheckoutItems, useCart } from '@/components/site/cart-context';
 import { clearTableToken, getTableToken } from '@/lib/site/table-session';
+import {
+  forgetCustomer,
+  hasSavedCustomer,
+  readSavedCustomer,
+  saveCustomer,
+  type SavedCustomer,
+} from '@/lib/site/saved-customer';
 import { useI18n } from '@/components/site/i18n-provider';
 
 /**
@@ -87,6 +94,15 @@ export function CheckoutFlow({
   const [quoting, setQuoting] = useState(false);
 
   const [step, setStep] = useState<'cart' | 'details'>('cart');
+
+  // Coordonnées retenues du dernier passage. Lues après le montage : le rendu
+  // serveur n'a pas accès au stockage du navigateur, et les pré-remplir
+  // directement provoquerait un écart à l'hydratation.
+  const [saved, setSaved] = useState<SavedCustomer | null>(null);
+  useEffect(() => {
+    const stored = readSavedCustomer(restaurantId);
+    if (hasSavedCustomer(stored)) setSaved(stored);
+  }, [restaurantId]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -169,6 +185,12 @@ export function CheckoutFlow({
     setFieldErrors({});
 
     const formData = new FormData(event.currentTarget);
+    const identity = {
+      name: String(formData.get('customerName') ?? ''),
+      phone: String(formData.get('customerPhone') ?? ''),
+      email: String(formData.get('customerEmail') ?? ''),
+      address: String(formData.get('deliveryAddress') ?? ''),
+    };
 
     try {
       const result = await api.post<{
@@ -181,10 +203,10 @@ export function CheckoutFlow({
         deliveryZoneId: fulfillment === 'DELIVERY' ? zoneId : null,
         tableToken: fulfillment === 'DINE_IN' ? (tableToken ?? undefined) : undefined,
         promoCode: appliedPromo ?? undefined,
-        customerName: String(formData.get('customerName') ?? ''),
-        customerPhone: String(formData.get('customerPhone') ?? ''),
-        customerEmail: String(formData.get('customerEmail') ?? ''),
-        deliveryAddress: String(formData.get('deliveryAddress') ?? ''),
+        customerName: identity.name,
+        customerPhone: identity.phone,
+        customerEmail: identity.email,
+        deliveryAddress: identity.address,
         deliveryLat: fulfillment === 'DELIVERY' ? position?.lat : undefined,
         deliveryLng: fulfillment === 'DELIVERY' ? position?.lng : undefined,
         instructions: String(formData.get('instructions') ?? ''),
@@ -194,6 +216,10 @@ export function CheckoutFlow({
       // Le panier n'est vidé qu'après confirmation de la création : en cas
       // d'échec, le client retrouve sa commande intacte.
       clear();
+
+      // Coordonnées retenues sur l'appareil, une fois la commande acceptée —
+      // pas avant, pour ne pas mémoriser une saisie que le serveur a refusée.
+      saveCustomer(restaurantId, identity);
 
       // La session de table s'arrête avec la commande qui l'a utilisée :
       // sans cela, un client qui repasserait sur le site plus tard (livraison
@@ -374,7 +400,24 @@ export function CheckoutFlow({
         {/* ------------------------------------------------------ Coordonnées */}
         {step === 'details' && (
           <section aria-label={dict.cartPage.yourDetails} className="rounded-2xl border border-surface-border p-4">
-            <h2 className="text-sm font-medium">{dict.cartPage.yourDetails}</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-sm font-medium">{dict.cartPage.yourDetails}</h2>
+              {/* Un téléphone se prête, et une commande livrée à la mauvaise
+                  adresse coûte cher au restaurant comme au client. Il faut
+                  donc pouvoir dire « ce n'est pas moi » d'un seul geste. */}
+              {saved && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    forgetCustomer(restaurantId);
+                    setSaved(null);
+                  }}
+                  className="text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
+                >
+                  {dict.cartPage.notYou}
+                </button>
+              )}
+            </div>
 
             <form id="checkout-form" onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
               {submitError && (
@@ -384,7 +427,14 @@ export function CheckoutFlow({
               )}
 
               <Field label={dict.cartPage.fullName} htmlFor="customerName" required error={fieldErrors.customerName}>
-                <input id="customerName" name="customerName" required autoComplete="name" className={inputClass} />
+                <input
+                  id="customerName"
+                  name="customerName"
+                  required
+                  autoComplete="name"
+                  defaultValue={saved?.name ?? ''}
+                  className={inputClass}
+                />
               </Field>
 
               <Field
@@ -400,6 +450,7 @@ export function CheckoutFlow({
                   type="tel"
                   required
                   autoComplete="tel"
+                  defaultValue={saved?.phone ?? ''}
                   className={inputClass}
                 />
               </Field>
@@ -410,6 +461,7 @@ export function CheckoutFlow({
                   name="customerEmail"
                   type="email"
                   autoComplete="email"
+                  defaultValue={saved?.email ?? ''}
                   className={inputClass}
                 />
               </Field>
@@ -427,6 +479,7 @@ export function CheckoutFlow({
                     required
                     rows={2}
                     autoComplete="street-address"
+                    defaultValue={saved?.address ?? ''}
                     className={inputClass}
                   />
                 </Field>
