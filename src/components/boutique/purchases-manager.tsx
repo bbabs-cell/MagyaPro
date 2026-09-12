@@ -447,59 +447,118 @@ function OrderForm({
         </div>
 
         <div className="space-y-3">
-          {lines.map((line, index) => (
-            <div key={index} className="grid gap-2 sm:grid-cols-[1fr_90px_110px_110px_auto]">
-              <select
-                value={line.productVariantId}
-                onChange={(event) => updateLine(index, { productVariantId: event.target.value })}
-                className={inputClass}
+          {/* En-têtes de colonnes, sur grand écran seulement.
+              Les champs n'avaient pour toute étiquette qu'un texte d'invite,
+              qui disparaît dès la première frappe : une fois la ligne
+              remplie, on lisait « 12 · 4500 · 200 » sans savoir lequel était
+              la quantité et lequel le prix. Sur téléphone, où les champs
+              s'empilent, c'était pire encore. */}
+          <div className="hidden gap-2 px-1 text-xs font-medium uppercase tracking-wide text-ink-faint sm:grid sm:grid-cols-[1fr_90px_120px_120px_110px_auto]">
+            <span>Produit</span>
+            <span>Quantité</span>
+            <span>Coût unitaire</span>
+            <span>Remise / unité</span>
+            <span className="text-end">Total ligne</span>
+            <span className="sr-only">Retirer</span>
+          </div>
+
+          {lines.map((line, index) => {
+            const quantity = Number(line.quantity) || 0;
+            const unitCost = Number(String(line.unitCost).replace(',', '.')) || 0;
+            const discount = Number(String(line.discount).replace(',', '.')) || 0;
+            // Total de la ligne, affiché en clair : c'est le seul moyen de
+            // vérifier d'un coup d'œil qu'on n'a pas interverti la quantité
+            // et le prix — 4500 articles à 12 F saute alors aux yeux.
+            const lineTotal = Math.max(0, unitCost - discount) * quantity;
+
+            return (
+              <div
+                key={index}
+                className="grid gap-2 rounded-xl border border-surface-border p-3 sm:grid-cols-[1fr_90px_120px_120px_110px_auto] sm:items-center sm:border-0 sm:p-0"
               >
-                <option value="">Choisir un produit</option>
-                {products.map((product) => (
-                  <option key={product.variantId} value={product.variantId}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min={0.001}
-                step={0.001}
-                value={line.quantity}
-                onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
-                className={inputClass}
-                placeholder="Qté"
-              />
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={line.unitCost}
-                onChange={(event) => updateLine(index, { unitCost: event.target.value })}
-                className={inputClass}
-                placeholder={`Coût (${currency})`}
-              />
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={line.discount}
-                onChange={(event) => updateLine(index, { discount: event.target.value })}
-                className={inputClass}
-                placeholder="Remise/u."
-              />
-              {lines.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setLines((current) => current.filter((_, i) => i !== index))}
-                  className="text-ink-faint hover:text-state-bad"
-                  aria-label="Retirer cette ligne"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
+                <label className="sm:contents">
+                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
+                    Produit
+                  </span>
+                  <select
+                    value={line.productVariantId}
+                    onChange={(event) => updateLine(index, { productVariantId: event.target.value })}
+                    className={inputClass}
+                  >
+                    <option value="">Choisir un produit</option>
+                    {products.map((product) => (
+                      <option key={product.variantId} value={product.variantId}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="sm:contents">
+                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
+                    Quantité
+                  </span>
+                  <input
+                    type="number"
+                    min={0.001}
+                    step={0.001}
+                    value={line.quantity}
+                    onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
+                    className={inputClass}
+                  />
+                </label>
+
+                <label className="sm:contents">
+                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
+                    Coût unitaire ({currency})
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={line.unitCost}
+                    onChange={(event) => updateLine(index, { unitCost: event.target.value })}
+                    className={inputClass}
+                  />
+                </label>
+
+                <label className="sm:contents">
+                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
+                    Remise par unité ({currency})
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={line.discount}
+                    onChange={(event) => updateLine(index, { discount: event.target.value })}
+                    className={inputClass}
+                  />
+                </label>
+
+                <p className="flex items-baseline justify-between gap-2 text-sm tabular-nums sm:justify-end">
+                  <span className="text-xs font-medium text-ink-muted sm:hidden">Total ligne</span>
+                  <span className={lineTotal > 0 ? 'font-semibold text-ink' : 'text-ink-faint'}>
+                    {formatMoney(toMinor(String(lineTotal), currency), currency)}
+                  </span>
+                </p>
+
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setLines((current) => current.filter((_, i) => i !== index))}
+                    className="justify-self-end text-sm text-ink-faint hover:text-state-bad sm:justify-self-auto"
+                  >
+                    <span className="sm:hidden">Retirer cette ligne</span>
+                    <span aria-hidden="true" className="hidden sm:inline">
+                      ✕
+                    </span>
+                    <span className="sr-only hidden sm:inline">Retirer cette ligne</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
           <Button
             type="button"
             size="sm"
