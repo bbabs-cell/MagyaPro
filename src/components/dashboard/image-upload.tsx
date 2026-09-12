@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
+import { downscaleImage, type ImageTarget } from '@/lib/client/downscale-image';
 import { Button } from '@/components/ui';
 
 /**
@@ -12,6 +13,19 @@ import { Button } from '@/components/ui';
  * l'identifiant du restaurant issu de la session. Le composant reçoit en
  * retour une URL, seule valeur persistée sur l'entité.
  */
+/**
+ * À quoi sert l'image, donc jusqu'où la réduire. Une couverture s'affiche
+ * pleine largeur, une vignette de plat jamais plus grande qu'une carte.
+ */
+const TARGET_BY_FOLDER: Record<string, ImageTarget> = {
+  logos: 'logo',
+  covers: 'cover',
+  products: 'product',
+  categories: 'product',
+  seo: 'cover',
+  chef: 'product',
+};
+
 export function ImageUploadField({
   label,
   folder,
@@ -34,8 +48,13 @@ export function ImageUploadField({
     setError(null);
 
     try {
+      // Réduite sur l'appareil avant l'envoi : une photo de téléphone brute
+      // partait telle quelle et était servie à l'identique à chaque visiteur
+      // du site public. Voir `downscale-image.ts`.
+      const prepared = await downscaleImage(file, TARGET_BY_FOLDER[folder]);
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', prepared);
       formData.append('folder', folder);
 
       const result = await uploadFile<{ url: string }>('/api/upload', formData);

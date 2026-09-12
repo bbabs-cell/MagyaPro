@@ -4,6 +4,7 @@ import { useRef, useState, type DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api, uploadFile } from '@/lib/client/api';
+import { downscaleImage } from '@/lib/client/downscale-image';
 import { Card, EmptyState } from '@/components/ui';
 
 type ProductWithoutPhoto = { id: string; name: string; categoryName: string };
@@ -38,8 +39,11 @@ export function PhotoWorkshop({ products }: { products: ProductWithoutPhoto[] })
       }
 
       try {
+        // Envoi en lot : c'est ici que le poids compte le plus, une série de
+        // photos de téléphone partant à la suite sur un réseau instable.
+        const prepared = await downscaleImage(file, 'product');
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', prepared);
         formData.append('folder', 'products');
         const uploaded = await uploadFile<{ url: string }>('/api/upload', formData);
         await api.patch(`/api/menu/produits/${target.id}/photo`, { imageUrl: uploaded.url });

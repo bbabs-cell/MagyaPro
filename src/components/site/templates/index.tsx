@@ -115,7 +115,7 @@ function HeroModern({ data }: { data: HeroData }) {
           <div className="aspect-[4/5] overflow-hidden rounded-[2rem] lg:aspect-square">
             {data.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-              <img src={data.coverUrl} alt="" className="h-full w-full object-cover" />
+              <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <div
                 aria-hidden="true"
@@ -196,7 +196,7 @@ function HeroAfricanPremium({ data }: { data: HeroData }) {
           <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem]">
             {data.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-              <img src={data.coverUrl} alt="" className="h-full w-full object-cover" />
+              <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <div
                 aria-hidden="true"
@@ -233,6 +233,8 @@ function HeroFastFood({ data }: { data: HeroData }) {
           <img
             src={data.coverUrl}
             alt=""
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
           {/* Teinte de la couleur du restaurant plutôt qu'un voile noir
@@ -302,6 +304,8 @@ function HeroTraditional({ data }: { data: HeroData }) {
           <img
             src={data.coverUrl}
             alt=""
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
@@ -452,7 +456,7 @@ function HeroElegant({ data }: { data: HeroData }) {
         {data.coverUrl && (
           <div className="relative mt-16 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
-            <img src={data.coverUrl} alt="" className="aspect-[21/9] w-full object-cover" />
+            <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="aspect-[21/9] w-full object-cover" />
           </div>
         )}
       </div>

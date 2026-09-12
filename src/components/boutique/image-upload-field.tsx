@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
+import { downscaleImage } from '@/lib/client/downscale-image';
 import { Button } from '@/components/ui';
 
 /**
@@ -31,8 +32,10 @@ export function ImageUploadField({
     setError(null);
 
     try {
+      // Réduite sur l'appareil avant l'envoi — voir `downscale-image.ts`.
+      const prepared = await downscaleImage(file, folder === 'logos' ? 'logo' : 'product');
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', prepared);
       formData.append('folder', folder);
 
       const result = await uploadFile<{ url: string }>('/api/boutique/upload', formData);

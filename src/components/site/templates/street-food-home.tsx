@@ -132,7 +132,7 @@ function StreetFoodHero({
           <div className="aspect-square overflow-hidden rounded-[2.5rem] border-4 border-white/20 shadow-2xl">
             {data.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
-              <img src={data.coverUrl} alt="" className="h-full w-full object-cover" />
+              <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <div aria-hidden="true" className="h-full w-full bg-black/15" />
             )}
