@@ -444,6 +444,21 @@ export const deliveryConfirmationSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{6}$/, 'Code à six chiffres.'),
+  /**
+   * Ce que le livreur déclare avoir encaissé auprès du client.
+   *
+   * Facultatif : une commande déjà réglée en ligne n'a rien à percevoir sur le
+   * pas de la porte. Le montant n'est lu que pour un paiement partiel — pour
+   * un paiement complet, c'est le total de la commande qui fait foi, jamais ce
+   * champ (voir `resolveCollection`).
+   */
+  collection: z
+    .object({
+      outcome: z.enum(['full', 'partial', 'none']),
+      amount: z.number().int().positive().optional(),
+      method: z.string().trim().optional(),
+    })
+    .optional(),
 });
 
 // --- Équipe -----------------------------------------------------------------

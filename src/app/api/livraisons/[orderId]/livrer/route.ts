@@ -23,6 +23,7 @@ export const POST = route(async (request, { params }: Params) => {
     courierId: user.id,
     courierEmail: user.email,
     code: input.code,
+    collection: input.collection ?? null,
     ip: await currentClientIp(),
   });
 

@@ -5,11 +5,19 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@
 import { priceOrder, type CartInput } from '@/lib/orders/pricing';
 import { notifyNewOrder, notifyOrderStatusChanged } from '@/lib/notifications';
 import { smsOrderConfirmation, smsOrderStatusChanged } from '@/lib/customer-notifications';
-import { applyPaymentStatus } from '@/lib/payments/service';
+import { applyPaymentStatus, newPaymentReference } from '@/lib/payments/service';
+import {
+  InvalidCollectionError,
+  collectionMethodLabel,
+  isCollectionMethod,
+  resolveCollection,
+  type CollectionOutcome,
+} from '@/lib/orders/delivery-collection';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
 import { generateSixDigitCode } from '@/lib/codes';
 import { grantLoyaltyRewards } from '@/lib/loyalty';
+import { formatMoney } from '@/lib/money';
 
 // Les transitions et libellés vivent dans un module pur, partagé avec
 // l'interface : le dashboard ne peut pas proposer une transition que le
@@ -388,11 +396,24 @@ export async function confirmDelivery(params: {
   courierId: string;
   courierEmail?: string | null;
   code: string;
+  /**
+   * Ce que le livreur déclare avoir encaissé. Absent pour une commande déjà
+   * réglée en ligne : il n'y a alors rien à percevoir sur le pas de la porte.
+   */
+  collection?: { outcome: CollectionOutcome; amount?: number; method?: string } | null;
   ip?: string | null;
 }) {
   const order = await prisma.order.findFirst({
     where: { id: params.orderId, restaurantId: params.restaurantId },
-    select: { id: true, status: true, courierId: true, deliveryCode: true },
+    select: {
+      id: true,
+      status: true,
+      courierId: true,
+      deliveryCode: true,
+      customerId: true,
+      total: true,
+      currency: true,
+    },
   });
   if (!order) throw new NotFoundError('Livraison introuvable.');
   if (order.courierId !== params.courierId) {
@@ -413,14 +434,137 @@ export async function confirmDelivery(params: {
   });
   const alreadyPaid = payment?.status === 'PAID';
 
+  // Rien à encaisser sur une commande déjà réglée en ligne : la déclaration du
+  // livreur, si elle arrive quand même, est ignorée plutôt que de créer une
+  // seconde ligne de paiement pour la même commande.
+  const note = alreadyPaid
+    ? null
+    : await recordCourierCollection({
+        restaurantId: params.restaurantId,
+        order,
+        collection: params.collection,
+        courierId: params.courierId,
+        courierEmail: params.courierEmail,
+      });
+
   return updateOrderStatus({
     restaurantId: params.restaurantId,
     orderId: order.id,
     status: alreadyPaid ? 'COMPLETED' : 'DELIVERED',
     userId: params.courierId,
     actorEmail: params.courierEmail,
+    note,
     ip: params.ip,
   });
+}
+
+/**
+ * Enregistre ce que le livreur a reçu du client, et rend la phrase qui sera
+ * consignée dans l'historique de la commande.
+ *
+ * La ligne créée est en `PROCESSING`, pas en `PAID` : l'argent a quitté le
+ * client mais n'est pas encore arrivé au restaurant. Voir l'en-tête de
+ * `delivery-collection.ts` — c'est la distinction qui empêche le compte de
+ * résultat de compter une recette que personne n'a encore touchée.
+ */
+async function recordCourierCollection(params: {
+  restaurantId: string;
+  order: { id: string; customerId: string; total: number; currency: string };
+  collection?: { outcome: CollectionOutcome; amount?: number; method?: string } | null;
+  courierId: string;
+  courierEmail?: string | null;
+}): Promise<string | null> {
+  const { order, collection } = params;
+  if (!collection) return null;
+
+  // Ce qui reste réellement à percevoir, et non le total de la commande : un
+  // client peut en avoir réglé une partie en ligne. C'est ce même montant que
+  // l'écran du livreur affiche — le contrôle du serveur doit porter sur le
+  // chiffre qu'on lui a montré, sinon un partiel légitime serait refusé et un
+  // partiel excessif accepté.
+  const settled = await prisma.payment.aggregate({
+    where: { orderId: order.id, status: { in: ['PAID', 'PROCESSING'] } },
+    _sum: { amount: true },
+  });
+  const due = Math.max(0, order.total - (settled._sum.amount ?? 0));
+
+  let resolved;
+  try {
+    resolved = resolveCollection(due, collection.outcome, collection.amount);
+  } catch (failure) {
+    if (failure instanceof InvalidCollectionError) {
+      throw new ValidationError(failure.message, { amount: failure.message });
+    }
+    throw failure;
+  }
+
+  const money = (value: number) => formatMoney(value, order.currency);
+
+  if (resolved.collected === 0) {
+    return `Livré sans paiement — ${money(due)} restent dus.`;
+  }
+
+  const method = collection.method ?? '';
+  if (!isCollectionMethod(method)) {
+    throw new ValidationError('Indiquez comment le client a payé.', {
+      method: 'Choisissez un moyen de paiement.',
+    });
+  }
+
+  // Une commande à régler à la livraison porte déjà une ligne de paiement en
+  // attente, créée à la commande avec le moyen choisi par le client. C'est
+  // celle-là qu'on renseigne, plutôt que d'en ouvrir une seconde : il n'y a eu
+  // qu'un règlement, et deux lignes pour la même somme rendraient la fiche
+  // illisible et le total des encaissements faux.
+  const existing = await prisma.payment.findFirst({
+    where: { orderId: order.id, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  });
+
+  const paymentId =
+    existing?.id ??
+    (
+      await prisma.payment.create({
+        data: {
+          restaurantId: params.restaurantId,
+          orderId: order.id,
+          customerId: order.customerId,
+          provider: method,
+          amount: resolved.collected,
+          currency: order.currency,
+          reference: newPaymentReference(),
+          status: 'PENDING',
+        },
+        select: { id: true },
+      })
+    ).id;
+
+  // Le moyen et le montant réels ne sont connus qu'ici : le client avait
+  // annoncé « paiement à la livraison », il a pu régler par Wave sur le pas de
+  // la porte, ou ne donner qu'une partie.
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { provider: method, amount: resolved.collected },
+  });
+
+  // Le changement de statut passe par `applyPaymentStatus` et non par une
+  // écriture directe : c'est lui qui vérifie la transition, aligne le statut
+  // de paiement de la commande et consigne l'action. Le contourner laisserait
+  // une commande « en attente » avec un paiement « en cours ».
+  await applyPaymentStatus({
+    restaurantId: params.restaurantId,
+    paymentId,
+    // Encaissé par le livreur, pas encore remis au restaurant.
+    status: 'PROCESSING',
+    actorUserId: params.courierId,
+    actorEmail: params.courierEmail,
+  });
+
+  const label = collectionMethodLabel(method);
+  return resolved.fullyPaid
+    ? `Encaissé par le livreur : ${money(resolved.collected)} (${label}).`
+    : `Encaissé par le livreur : ${money(resolved.collected)} sur ${money(due)} (${label}) — écart de ${money(resolved.shortfall)}.`;
 }
 
 /**

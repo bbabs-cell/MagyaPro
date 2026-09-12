@@ -15,7 +15,14 @@ import { redactSecrets, sanitizeFailureReason } from '@/lib/payments/failure';
  */
 
 /** Référence lisible et non devinable : MGY-<horodatage>-<aléa>. */
-function newReference(): string {
+/**
+ * Référence interne unique d'un paiement, transmise au fournisseur.
+ *
+ * Exportée parce que l'encaissement à la livraison crée lui aussi une ligne de
+ * paiement, sans passer par un fournisseur en ligne : les deux doivent porter
+ * des références de la même forme, dans le même journal.
+ */
+export function newPaymentReference(): string {
   return `MGY-${Date.now().toString(36).toUpperCase()}-${randomBytes(4)
     .toString('hex')
     .toUpperCase()}`;
@@ -50,7 +57,7 @@ export async function initiatePayment(params: {
     );
   }
 
-  const reference = newReference();
+  const reference = newPaymentReference();
   const payment = await prisma.payment.create({
     data: {
       restaurantId: order.restaurantId,

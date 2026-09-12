@@ -1,49 +1,20 @@
 import { ok, route } from '@/lib/api';
-import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
-
-const SELECT = {
-  id: true,
-  number: true,
-  customerName: true,
-  customerPhone: true,
-  deliveryAddress: true,
-  deliveryLat: true,
-  deliveryLng: true,
-  total: true,
-  currency: true,
-  placedAt: true,
-  statusUpdatedAt: true,
-} as const;
+import { listCourierDeliveries } from '@/lib/deliveries';
 
 /**
  * Livraisons visibles par un livreur : les courses libres à prendre, et les
  * siennes en cours. Jamais les livraisons prises en charge par un collègue.
+ *
+ * Interrogée toutes les quinze secondes par l'écran de tournée. Elle partage
+ * sa lecture avec la page elle-même (`lib/deliveries`), pour que le contenu ne
+ * change pas au premier rafraîchissement automatique.
  */
 export const GET = route(async () => {
   const { restaurant, user } = await requireTenant('deliveries:drive');
-
-  const [pool, mine] = await Promise.all([
-    prisma.order.findMany({
-      where: {
-        restaurantId: restaurant.id,
-        fulfillmentType: 'DELIVERY',
-        status: 'READY',
-        courierId: null,
-      },
-      orderBy: { statusUpdatedAt: 'asc' },
-      select: SELECT,
-    }),
-    prisma.order.findMany({
-      where: {
-        restaurantId: restaurant.id,
-        courierId: user.id,
-        status: 'OUT_FOR_DELIVERY',
-      },
-      orderBy: { statusUpdatedAt: 'asc' },
-      select: SELECT,
-    }),
-  ]);
-
+  const { pool, mine } = await listCourierDeliveries({
+    restaurantId: restaurant.id,
+    courierId: user.id,
+  });
   return ok({ pool, mine });
 });

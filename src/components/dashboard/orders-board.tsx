@@ -9,6 +9,7 @@ import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney } from '@/lib/money';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { PAYMENT_STATUS_LABELS } from '@/lib/payments/status';
+import { deliveryPaymentLabel } from '@/lib/orders/delivery-collection';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { AlertMessage, Badge, Button } from '@/components/ui';
 
@@ -214,8 +215,14 @@ export function OrdersBoard({
                   </td>
 
                   <td data-label="Paiement" className="py-3 pr-3">
+                    {/* Sur une livraison, « en cours » ne renseigne personne :
+                        le restaurateur veut savoir si l'argent est chez le
+                        client, chez son livreur, ou dans sa caisse. Les autres
+                        modes gardent le libellé générique, qui leur suffit. */}
                     <span className="text-ink-muted">
-                      {PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                      {order.fulfillmentType === 'DELIVERY'
+                        ? deliveryPaymentLabel(order.paymentStatus)
+                        : PAYMENT_STATUS_LABELS[order.paymentStatus]}
                     </span>
                   </td>
 
