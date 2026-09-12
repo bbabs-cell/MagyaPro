@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { formatMoney } from '@/lib/money';
 import { useCart } from '@/components/site/cart-context';
+import { useI18n } from '@/components/site/i18n-provider';
 
 /**
  * Composition d'un article et ajout au panier.
@@ -48,6 +49,7 @@ export function ProductOrderForm({
 }) {
   const router = useRouter();
   const { addLine } = useCart();
+  const { dict } = useI18n();
 
   const [variantId, setVariantId] = useState<string | null>(
     product.variants[0]?.id ?? null,
@@ -99,9 +101,7 @@ export function ProductOrderForm({
     for (const group of product.optionGroups) {
       const chosen = selected[group.id] ?? [];
       if (chosen.length < group.minSelect) {
-        setError(
-          `Choisissez ${group.minSelect === 1 ? 'une option' : `au moins ${group.minSelect} options`} dans « ${group.name} ».`,
-        );
+        setError(dict.product.chooseInGroup(group.minSelect, group.name));
         return;
       }
     }
@@ -141,10 +141,8 @@ export function ProductOrderForm({
   if (!product.isAvailable) {
     return (
       <div className="rounded-2xl border border-surface-border bg-surface-sunken p-5">
-        <p className="font-medium">Ce plat est actuellement indisponible.</p>
-        <p className="mt-1 text-sm text-ink-muted">
-          Revenez plus tard ou découvrez le reste de la carte.
-        </p>
+        <p className="font-medium">{dict.product.unavailableTitle}</p>
+        <p className="mt-1 text-sm text-ink-muted">{dict.product.unavailableHint}</p>
       </div>
     );
   }
@@ -162,7 +160,7 @@ export function ProductOrderForm({
 
       {product.variants.length > 0 && (
         <fieldset>
-          <legend className="text-sm font-medium">Taille</legend>
+          <legend className="text-sm font-medium">{dict.product.size}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {product.variants.map((variant) => (
               <label
@@ -201,9 +199,11 @@ export function ProductOrderForm({
               {group.name}
               <span className="ms-2 font-normal text-ink-faint">
                 {group.minSelect > 0
-                  ? `${group.minSelect === group.maxSelect ? 'Choisissez' : 'Au moins'} ${group.minSelect}`
-                  : 'Facultatif'}
-                {group.maxSelect > 1 && ` · jusqu'à ${group.maxSelect}`}
+                  ? group.minSelect === group.maxSelect
+                    ? dict.product.choose(group.minSelect)
+                    : dict.product.atLeast(group.minSelect)
+                  : dict.product.optional}
+                {group.maxSelect > 1 && dict.product.upTo(group.maxSelect)}
               </span>
             </legend>
 
@@ -245,13 +245,13 @@ export function ProductOrderForm({
       {orderingEnabled ? (
         <>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium">Quantité</span>
+            <span className="text-sm font-medium">{dict.product.quantity}</span>
             <div className="inline-flex items-center rounded-xl border border-surface-border">
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 className="h-11 w-11 text-lg hover:bg-surface-sunken"
-                aria-label="Diminuer la quantité"
+                aria-label={dict.product.decrease}
               >
                 −
               </button>
@@ -262,7 +262,7 @@ export function ProductOrderForm({
                 type="button"
                 onClick={() => setQuantity((q) => Math.min(99, q + 1))}
                 className="h-11 w-11 text-lg hover:bg-surface-sunken"
-                aria-label="Augmenter la quantité"
+                aria-label={dict.product.increase}
               >
                 +
               </button>
@@ -271,7 +271,7 @@ export function ProductOrderForm({
 
           {added && (
             <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              Ajouté au panier.
+              {dict.product.addedToCart}
             </p>
           )}
 
@@ -281,20 +281,20 @@ export function ProductOrderForm({
               onClick={() => handleAdd(false)}
               className="h-12 flex-1 rounded-xl border border-surface-border font-medium hover:bg-surface-sunken"
             >
-              Ajouter au panier
+              {dict.product.addToCart}
             </button>
             <button
               type="button"
               onClick={() => handleAdd(true)}
               className="h-12 flex-1 rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90"
             >
-              Commander · {formatMoney(unitPrice * quantity, currency)}
+              {dict.product.orderNow} · {formatMoney(unitPrice * quantity, currency)}
             </button>
           </div>
         </>
       ) : (
         <p className="rounded-xl bg-surface-sunken px-4 py-3 text-sm text-ink-muted">
-          Les commandes en ligne sont temporairement fermées.
+          {dict.product.orderingClosed}
         </p>
       )}
     </div>

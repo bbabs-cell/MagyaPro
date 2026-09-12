@@ -19,12 +19,20 @@ import {
 import { useI18n } from '@/components/site/i18n-provider';
 
 /**
- * Tunnel de commande.
+ * Tunnel de commande — une seule vue.
  *
- * Deux temps : le panier (modifiable), puis les coordonnées. À chaque
- * changement susceptible d'affecter le prix, le total est redemandé au serveur
- * — c'est lui qui fait autorité, l'estimation locale ne sert qu'à éviter un
- * écran vide pendant l'appel.
+ * Le parcours se faisait auparavant en deux temps : le panier, puis, après un
+ * clic sur « Continuer », les coordonnées. Le client ne pouvait donc pas
+ * savoir ce qui l'attendait — trois champs ou quinze — avant de s'engager, et
+ * chaque aller-retour entre les deux écrans coûtait un clic de plus.
+ *
+ * Tout est désormais affiché d'emblée. À gauche ce qu'il commande et ce que
+ * cela coûte, à droite qui il est et comment il valide ; sur téléphone, les
+ * deux colonnes s'empilent dans cet ordre.
+ *
+ * À chaque changement susceptible d'affecter le prix, le total est redemandé
+ * au serveur — c'est lui qui fait autorité, l'estimation locale ne sert qu'à
+ * éviter un écran vide pendant l'appel.
  */
 
 type Zone = {
@@ -92,8 +100,6 @@ export function CheckoutFlow({
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoting, setQuoting] = useState(false);
-
-  const [step, setStep] = useState<'cart' | 'details'>('cart');
 
   // Coordonnées retenues du dernier passage. Lues après le montage : le rendu
   // serveur n'a pas accès au stockage du navigateur, et les pré-remplir
@@ -272,7 +278,14 @@ export function CheckoutFlow({
   const belowMinimum = (quote?.subtotal ?? estimatedSubtotal) < minOrderAmount;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+    // Une seule vue, deux colonnes : à gauche ce que je commande et ce que
+    // cela coûte, à droite qui je suis et comment je confirme. Le formulaire
+    // était auparavant caché derrière un bouton « Continuer » : il fallait
+    // cliquer pour découvrir ce qui restait à faire, sans savoir si
+    // c'était trois champs ou quinze. Sur téléphone, les deux colonnes
+    // s'empilent dans cet ordre, qui répond aux questions du client l'une
+    // après l'autre — ce que je prends, combien, où, qui je suis, je valide.
+    <div className="grid gap-8 lg:grid-cols-[1fr_380px] lg:items-start">
       <div className="space-y-6">
         {/* ------------------------------------------------------- Articles */}
         <section aria-label={dict.cartPage.cartItemsLabel}>
@@ -397,165 +410,16 @@ export function CheckoutFlow({
           </p>
         </section>
 
-        {/* ------------------------------------------------------ Coordonnées */}
-        {step === 'details' && (
-          <section aria-label={dict.cartPage.yourDetails} className="rounded-2xl border border-surface-border p-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h2 className="text-sm font-medium">{dict.cartPage.yourDetails}</h2>
-              {/* Un téléphone se prête, et une commande livrée à la mauvaise
-                  adresse coûte cher au restaurant comme au client. Il faut
-                  donc pouvoir dire « ce n'est pas moi » d'un seul geste. */}
-              {saved && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    forgetCustomer(restaurantId);
-                    setSaved(null);
-                  }}
-                  className="text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
-                >
-                  {dict.cartPage.notYou}
-                </button>
-              )}
-            </div>
-
-            <form id="checkout-form" onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
-              {submitError && (
-                <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-                  {submitError}
-                </div>
-              )}
-
-              <Field label={dict.cartPage.fullName} htmlFor="customerName" required error={fieldErrors.customerName}>
-                <input
-                  id="customerName"
-                  name="customerName"
-                  required
-                  autoComplete="name"
-                  defaultValue={saved?.name ?? ''}
-                  className={inputClass}
-                />
-              </Field>
-
-              <Field
-                label={dict.cartPage.phone}
-                htmlFor="customerPhone"
-                required
-                hint={dict.cartPage.phoneHint}
-                error={fieldErrors.customerPhone}
-              >
-                <input
-                  id="customerPhone"
-                  name="customerPhone"
-                  type="tel"
-                  required
-                  autoComplete="tel"
-                  defaultValue={saved?.phone ?? ''}
-                  className={inputClass}
-                />
-              </Field>
-
-              <Field label={dict.cartPage.email} htmlFor="customerEmail" error={fieldErrors.customerEmail}>
-                <input
-                  id="customerEmail"
-                  name="customerEmail"
-                  type="email"
-                  autoComplete="email"
-                  defaultValue={saved?.email ?? ''}
-                  className={inputClass}
-                />
-              </Field>
-
-              {fulfillment === 'DELIVERY' && (
-                <Field
-                  label={dict.cartPage.deliveryAddress}
-                  htmlFor="deliveryAddress"
-                  required
-                  error={fieldErrors.deliveryAddress}
-                >
-                  <textarea
-                    id="deliveryAddress"
-                    name="deliveryAddress"
-                    required
-                    rows={2}
-                    autoComplete="street-address"
-                    defaultValue={saved?.address ?? ''}
-                    className={inputClass}
-                  />
-                </Field>
-              )}
-
-              {fulfillment === 'DELIVERY' && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={shareLocation}
-                    disabled={locating}
-                    className="inline-flex h-10 items-center rounded-xl border border-surface-border px-3.5 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
-                  >
-                    {position
-                      ? dict.cartPage.locationShared
-                      : locating
-                        ? dict.cartPage.locating
-                        : dict.cartPage.shareLocation}
-                  </button>
-                  {locationError && (
-                    <p className="mt-1.5 text-xs text-ink-faint">{locationError}</p>
-                  )}
-                </div>
-              )}
-
-              <Field label={dict.cartPage.instructions} htmlFor="instructions">
-                <textarea
-                  id="instructions"
-                  name="instructions"
-                  rows={2}
-                  placeholder={dict.cartPage.instructionsPlaceholder}
-                  className={inputClass}
-                />
-              </Field>
-
-              <fieldset>
-                <legend className="text-sm font-medium">{dict.cartPage.paymentMethod}</legend>
-                {providers.length === 0 ? (
-                  <p className="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    {dict.cartPage.noProviders}
-                  </p>
-                ) : (
-                  <div className="mt-2 space-y-1.5">
-                    {providers.map((provider) => (
-                      <label
-                        key={provider.id}
-                        className="flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border px-4 py-3 text-sm hover:border-ink"
-                      >
-                        <input
-                          type="radio"
-                          name="paymentProvider"
-                          value={provider.id}
-                          checked={providerId === provider.id}
-                          onChange={() => setProviderId(provider.id)}
-                          className="mt-0.5 h-4 w-4 accent-ink"
-                        />
-                        <span>
-                          <span className="block font-medium">{provider.label}</span>
-                          <span className="block text-ink-muted">
-                            {provider.description}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-            </form>
-          </section>
-        )}
-      </div>
-
-      {/* ----------------------------------------------------------- Résumé */}
-      <aside className="lg:sticky lg:top-24 lg:self-start">
-        <div className="rounded-2xl border border-surface-border p-4">
-          <h2 className="text-sm font-medium">{dict.cartPage.summary}</h2>
+        {/* ---------------------------------------------- Ce que ça coûte */}
+        {/* Le titre sert de nom accessible à la section : un `aria-label`
+            reprenant le même mot le doublerait à l'oreille du lecteur d'écran. */}
+        <section
+          aria-labelledby="recap-total"
+          className="rounded-2xl border border-surface-border p-4"
+        >
+          <h2 id="recap-total" className="text-sm font-medium">
+            {dict.cartPage.summary}
+          </h2>
 
           <form onSubmit={applyPromo} className="mt-3 flex gap-2">
             <label htmlFor="promo" className="sr-only">
@@ -623,38 +487,190 @@ export function CheckoutFlow({
               {dict.cartPage.minOrderNotice(formatMoney(minOrderAmount, currency))}
             </p>
           )}
+        </section>
+      </div>
 
-          {step === 'cart' ? (
-            <button
-              type="button"
-              onClick={() => setStep('details')}
-              disabled={!quote || belowMinimum || quoting}
-              className="mt-4 h-12 w-full rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+      {/* ------------------------------------ Coordonnées et confirmation */}
+      {/* Pas de `sticky` ici : la colonne contient maintenant tout le
+          formulaire et dépasse souvent la hauteur de l'écran. Une colonne
+          collante plus haute que la fenêtre garde son bas hors de portée —
+          et le bas, c'est précisément le bouton de validation. */}
+      <aside className="space-y-4">
+        <section aria-label={dict.cartPage.yourDetails} className="rounded-2xl border border-surface-border p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 className="text-sm font-medium">{dict.cartPage.yourDetails}</h2>
+            {/* Un téléphone se prête, et une commande livrée à la mauvaise
+                adresse coûte cher au restaurant comme au client. Il faut
+                donc pouvoir dire « ce n'est pas moi » d'un seul geste. */}
+            {saved && (
+              <button
+                type="button"
+                onClick={() => {
+                  forgetCustomer(restaurantId);
+                  setSaved(null);
+                }}
+                className="text-xs text-ink-muted underline underline-offset-4 hover:text-ink"
+              >
+                {dict.cartPage.notYou}
+              </button>
+            )}
+          </div>
+
+          <form id="checkout-form" onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
+            {submitError && (
+              <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+                {submitError}
+              </div>
+            )}
+
+            <Field label={dict.cartPage.fullName} htmlFor="customerName" required error={fieldErrors.customerName}>
+              <input
+                id="customerName"
+                name="customerName"
+                required
+                autoComplete="name"
+                defaultValue={saved?.name ?? ''}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field
+              label={dict.cartPage.phone}
+              htmlFor="customerPhone"
+              required
+              hint={dict.cartPage.phoneHint}
+              error={fieldErrors.customerPhone}
             >
-              {dict.cartPage.continue}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              form="checkout-form"
-              disabled={submitting || !quote || belowMinimum || providers.length === 0}
-              aria-busy={submitting || undefined}
-              className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-            >
-              {submitting && (
-                <span
-                  aria-hidden="true"
-                  className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+              <input
+                id="customerPhone"
+                name="customerPhone"
+                type="tel"
+                required
+                autoComplete="tel"
+                defaultValue={saved?.phone ?? ''}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label={dict.cartPage.email} htmlFor="customerEmail" error={fieldErrors.customerEmail}>
+              <input
+                id="customerEmail"
+                name="customerEmail"
+                type="email"
+                autoComplete="email"
+                defaultValue={saved?.email ?? ''}
+                className={inputClass}
+              />
+            </Field>
+
+            {fulfillment === 'DELIVERY' && (
+              <Field
+                label={dict.cartPage.deliveryAddress}
+                htmlFor="deliveryAddress"
+                required
+                error={fieldErrors.deliveryAddress}
+              >
+                <textarea
+                  id="deliveryAddress"
+                  name="deliveryAddress"
+                  required
+                  rows={2}
+                  autoComplete="street-address"
+                  defaultValue={saved?.address ?? ''}
+                  className={inputClass}
                 />
-              )}
-              {submitting ? dict.cartPage.sending : dict.cartPage.placeOrder}
-            </button>
-          )}
+              </Field>
+            )}
 
-          <p className="mt-3 text-center text-xs text-ink-faint">
-            {dict.cartPage.finalAmountNote}
-          </p>
-        </div>
+            {fulfillment === 'DELIVERY' && (
+              <div>
+                <button
+                  type="button"
+                  onClick={shareLocation}
+                  disabled={locating}
+                  className="inline-flex h-10 items-center rounded-xl border border-surface-border px-3.5 text-sm font-medium hover:bg-surface-sunken disabled:opacity-50"
+                >
+                  {position
+                    ? dict.cartPage.locationShared
+                    : locating
+                      ? dict.cartPage.locating
+                      : dict.cartPage.shareLocation}
+                </button>
+                {locationError && (
+                  <p className="mt-1.5 text-xs text-ink-faint">{locationError}</p>
+                )}
+              </div>
+            )}
+
+            <Field label={dict.cartPage.instructions} htmlFor="instructions">
+              <textarea
+                id="instructions"
+                name="instructions"
+                rows={2}
+                placeholder={dict.cartPage.instructionsPlaceholder}
+                className={inputClass}
+              />
+            </Field>
+
+            <fieldset>
+              <legend className="text-sm font-medium">{dict.cartPage.paymentMethod}</legend>
+              {providers.length === 0 ? (
+                <p className="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {dict.cartPage.noProviders}
+                </p>
+              ) : (
+                <div className="mt-2 space-y-1.5">
+                  {providers.map((provider) => (
+                    <label
+                      key={provider.id}
+                      className="flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border px-4 py-3 text-sm hover:border-ink"
+                    >
+                      <input
+                        type="radio"
+                        name="paymentProvider"
+                        value={provider.id}
+                        checked={providerId === provider.id}
+                        onChange={() => setProviderId(provider.id)}
+                        className="mt-0.5 h-4 w-4 accent-ink"
+                      />
+                      <span>
+                        <span className="block font-medium">{provider.label}</span>
+                        <span className="block text-ink-muted">
+                          {provider.description}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </fieldset>
+          </form>
+        </section>
+
+        {/* Le montant est repris sur le bouton : sur téléphone, le récapitulatif
+            est remonté loin au-dessus du formulaire, et personne ne valide un
+            paiement sans revoir la somme au moment d'appuyer. */}
+        <button
+          type="submit"
+          form="checkout-form"
+          disabled={submitting || !quote || belowMinimum || providers.length === 0}
+          aria-busy={submitting || undefined}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+        >
+          {submitting && (
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+            />
+          )}
+          {submitting
+            ? dict.cartPage.sending
+            : `${dict.cartPage.placeOrder} · ${formatMoney(displayTotal, currency)}`}
+        </button>
+
+        <p className="text-center text-xs text-ink-faint">
+          {dict.cartPage.finalAmountNote}
+        </p>
       </aside>
     </div>
   );

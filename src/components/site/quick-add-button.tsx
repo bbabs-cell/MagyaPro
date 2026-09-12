@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { useCart } from '@/components/site/cart-context';
+import { useI18n } from '@/components/site/i18n-provider';
 import { cx } from '@/components/ui';
 import type { MenuProduct } from '@/components/site/templates';
 
@@ -14,6 +15,11 @@ import type { MenuProduct } from '@/components/site/templates';
  * client fasse un choix : le bouton devient alors un lien vers sa fiche,
  * comme le reste de la carte. Toujours un élément séparé du `Link` qui
  * enveloppe la carte — un bouton ne peut pas être imbriqué dans un lien.
+ *
+ * Les libellés étaient écrits en français directement dans le composant, alors
+ * que la vitrine se traduit en anglais et en arabe. Un visiteur qui avait
+ * changé de langue voyait donc toute la carte traduite… et « + Ajouter » en
+ * français sur chaque plat, sur le seul bouton qui déclenche une commande.
  */
 export function QuickAddButton({
   product,
@@ -25,6 +31,7 @@ export function QuickAddButton({
   style?: React.CSSProperties;
 }) {
   const { addLine } = useCart();
+  const { dict } = useI18n();
   const [added, setAdded] = useState(false);
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
@@ -39,11 +46,11 @@ export function QuickAddButton({
       <Link
         href={product.href}
         onClick={(event) => event.stopPropagation()}
-        aria-label={`Choisir les options de ${product.name}`}
+        aria-label={dict.product.chooseOptions(product.name)}
         className={className}
         style={style}
       >
-        + Ajouter
+        {dict.product.quickAdd}
       </Link>
     );
   }
@@ -67,7 +74,7 @@ export function QuickAddButton({
         });
         setAdded(true);
       }}
-      aria-label={`Ajouter ${product.name} au panier`}
+      aria-label={dict.product.addNamed(product.name)}
       className={cx(
         className,
         'transition-transform active:scale-90',
@@ -76,7 +83,7 @@ export function QuickAddButton({
       )}
       style={style}
     >
-      {added ? 'Ajouté ✓' : '+ Ajouter'}
+      {added ? dict.product.added : dict.product.quickAdd}
     </button>
   );
 }
