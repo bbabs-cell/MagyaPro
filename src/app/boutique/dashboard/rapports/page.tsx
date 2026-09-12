@@ -521,7 +521,7 @@ async function FournisseursReport({ storeId, currency }: { storeId: string; curr
             <th className="px-4 py-3 font-medium">Fournisseur</th>
             <th className="px-4 py-3 text-right font-medium">Total acheté</th>
             <th className="px-4 py-3 text-right font-medium">Total payé</th>
-            <th className="px-4 py-3 text-right font-medium">Dette actuelle</th>
+            <th className="px-4 py-3 text-right font-medium">Reste à régler</th>
           </tr>
         </thead>
         <tbody>
@@ -540,8 +540,8 @@ async function FournisseursReport({ storeId, currency }: { storeId: string; curr
                 </td>
                 <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPurchased, currency)}</td>
                 <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPaid, currency)}</td>
-                <td className={`px-4 py-3 text-right font-medium ${supplier.debtBalance > 0 ? 'text-state-warn' : ''}`}>
-                  {formatMoney(supplier.debtBalance, currency)}
+                <td className={`px-4 py-3 text-right font-medium ${supplier.outstanding > 0 ? 'text-state-warn' : ''}`}>
+                  {formatMoney(supplier.outstanding, currency)}
                 </td>
               </tr>
             ))

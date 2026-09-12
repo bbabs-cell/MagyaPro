@@ -341,12 +341,11 @@ export async function receivePurchaseOrder(params: {
         : { status: 'PARTIALLY_RECEIVED' },
     });
 
-    if (receivedCost > 0) {
-      await tx.supplier.update({
-        where: { id: purchaseOrder.supplierId },
-        data: { debtBalance: { increment: receivedCost } },
-      });
-    }
+    // Le compteur `Supplier.debtBalance` n'est plus alimenté ici. Ce que le
+    // fournisseur peut réclamer se déduit désormais de ses commandes — valeur
+    // livrée moins règlements rattachés, voir `purchase-payment.ts`. Un
+    // compteur qui résume des faits déjà écrits ailleurs finit par s'en
+    // écarter, et rien ne le signale.
   });
 
   await recordAudit({
@@ -363,9 +362,15 @@ export async function receivePurchaseOrder(params: {
 }
 
 /**
- * Paiement à un fournisseur — solde tout ou partie de sa dette, rattaché ou
- * non à une commande précise. Ne modifie jamais `debtBalance` autrement que
- * par cette écriture ou par la réception d'une commande.
+ * Règlement d'une commande fournisseur.
+ *
+ * Le règlement se rattache à une commande précise : c'est ce qui permet de
+ * dire, commande par commande, si elle est payée, payée en partie, ou pas
+ * encore. Un versement flottant, rattaché au seul fournisseur, ne répondait à
+ * aucune question qu'un commerçant se pose devant sa pile de bons de
+ * livraison.
+ *
+ * Aucun compteur n'est mis à jour : le reste dû se déduit de ces règlements.
  */
 export async function addSupplierPayment(params: {
   storeId: string;
@@ -386,21 +391,15 @@ export async function addSupplierPayment(params: {
     if (!purchaseOrder) throw new NotFoundError('Commande introuvable pour ce fournisseur.');
   }
 
-  const [payment] = await prisma.$transaction([
-    prisma.supplierPayment.create({
-      data: {
-        storeId,
-        supplierId,
-        purchaseOrderId: input.purchaseOrderId ?? null,
-        amount: input.amount,
-        note: input.note ?? null,
-      },
-    }),
-    prisma.supplier.update({
-      where: { id: supplierId },
-      data: { debtBalance: { decrement: input.amount } },
-    }),
-  ]);
+  const payment = await prisma.supplierPayment.create({
+    data: {
+      storeId,
+      supplierId,
+      purchaseOrderId: input.purchaseOrderId ?? null,
+      amount: input.amount,
+      note: input.note ?? null,
+    },
+  });
 
   await recordAudit({
     action: AUDIT_ACTIONS.SUPPLIER_PAYMENT_CREATED,

@@ -13,7 +13,7 @@ export const GET = route(async (_request, { params }: Params) => {
   const purchaseOrder = await prisma.purchaseOrder.findFirst({
     where: { id, storeId: store.id },
     include: {
-      supplier: { select: { id: true, name: true, debtBalance: true } },
+      supplier: { select: { id: true, name: true } },
       items: {
         include: { productVariant: { select: { sku: true, product: { select: { name: true } } } } },
       },

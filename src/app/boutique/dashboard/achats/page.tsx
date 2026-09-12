@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
+import { purchaseBalance } from '@/lib/boutique/purchase-payment';
+import { listSupplierBalances } from '@/lib/boutique/purchase-payment-load';
 import { toQty } from '@/lib/boutique/quantity';
 import { PageHeader } from '@/components/ui';
 import { PurchasesManager } from '@/components/boutique/purchases-manager';
@@ -19,7 +21,7 @@ export default async function BoutiquePurchasesPage() {
     prisma.supplier.findMany({
       where: { storeId: context.store.id },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, debtBalance: true },
+      select: { id: true, name: true },
     }),
     prisma.storeProductVariant.findMany({
       where: { product: { storeId: context.store.id } },
@@ -42,11 +44,13 @@ export default async function BoutiquePurchasesPage() {
       orderBy: { createdAt: 'desc' },
       include: {
         supplier: { select: { id: true, name: true } },
+        payments: { select: { amount: true } },
         items: {
           select: {
             id: true,
             quantityOrdered: true,
             quantityReceived: true,
+            unitFactor: true,
             unitCost: true,
             discount: true,
             productVariant: { select: { product: { select: { name: true } } } },
@@ -61,6 +65,10 @@ export default async function BoutiquePurchasesPage() {
     }),
   ]);
 
+  // Reste dû par fournisseur, sur toutes leurs commandes livrées — y compris
+  // celles que l'historique de cette page ne montre plus.
+  const balances = await listSupplierBalances(context.store.id);
+
   return (
     <>
       <PageHeader
@@ -68,7 +76,10 @@ export default async function BoutiquePurchasesPage() {
         description="Vos commandes en cours d'abord, puis les trois derniers mois."
       />
       <PurchasesManager
-        initialSuppliers={suppliers}
+        initialSuppliers={suppliers.map((supplier) => ({
+          ...supplier,
+          outstanding: balances.get(supplier.id)?.remaining ?? 0,
+        }))}
         initialProducts={variants.map((v) => ({ variantId: v.id, name: v.product.name }))}
         initialOrders={orders.map((order) => ({
           id: order.id,
@@ -77,11 +88,13 @@ export default async function BoutiquePurchasesPage() {
           extraFees: order.extraFees,
           expectedAt: order.expectedAt?.toISOString() ?? null,
           supplier: order.supplier,
+          payment: purchaseBalance(order.items, order.payments),
           items: order.items.map((item) => ({
             id: item.id,
             productName: item.productVariant.product.name,
             quantityOrdered: toQty(item.quantityOrdered),
             quantityReceived: toQty(item.quantityReceived),
+            unitFactor: toQty(item.unitFactor),
             unitCost: item.unitCost,
             discount: item.discount,
           })),

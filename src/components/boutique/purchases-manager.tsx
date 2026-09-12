@@ -7,8 +7,14 @@ import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMinor } from '@/lib/money';
 import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/labels';
+import {
+  PURCHASE_PAYMENT_LABELS,
+  PURCHASE_PAYMENT_TONES,
+  type PurchasePaymentState,
+} from '@/lib/boutique/purchase-payment';
 
-type Supplier = { id: string; name: string; debtBalance: number };
+/** `outstanding` : reste dû, déduit des commandes livrées — plus un compteur. */
+type Supplier = { id: string; name: string; outstanding: number };
 type ProductOption = { variantId: string; name: string };
 type Warehouse = { id: string; name: string; isDefault: boolean };
 type PurchaseOrderItem = {
@@ -16,6 +22,7 @@ type PurchaseOrderItem = {
   productName: string;
   quantityOrdered: number;
   quantityReceived: number;
+  unitFactor: number;
   unitCost: number;
   discount: number;
 };
@@ -26,6 +33,8 @@ type PurchaseOrder = {
   extraFees: number;
   expectedAt: string | null;
   supplier: { id: string; name: string };
+  /** Livré, réglé, reste — calculé côté serveur, jamais stocké. */
+  payment: { due: number; paid: number; remaining: number; state: PurchasePaymentState };
   items: PurchaseOrderItem[];
 };
 
@@ -187,12 +196,12 @@ export function PurchasesManager({
               <li key={supplier.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                 <span>{supplier.name}</span>
                 <span className="flex items-center gap-3">
-                  <span className={cx(supplier.debtBalance > 0 && 'font-medium text-state-warn')}>
-                    {supplier.debtBalance > 0
-                      ? `Dette : ${formatMoney(supplier.debtBalance, currency)}`
-                      : 'Aucune dette'}
+                  <span className={cx(supplier.outstanding > 0 && 'font-medium text-state-warn')}>
+                    {supplier.outstanding > 0
+                      ? `Reste à régler : ${formatMoney(supplier.outstanding, currency)}`
+                      : 'À jour'}
                   </span>
-                  {canManage && supplier.debtBalance > 0 && (
+                  {canManage && supplier.outstanding > 0 && (
                     <Button size="sm" variant="ghost" onClick={() => setPayingSupplier(supplier)}>
                       Enregistrer un paiement
                     </Button>
@@ -257,6 +266,22 @@ export function PurchasesManager({
                       <Badge tone={PURCHASE_STATUS_TONES[order.status]}>
                         {PURCHASE_STATUS_LABELS[order.status]}
                       </Badge>
+                      {/* Livraison et règlement sont deux questions distinctes.
+                          Elles se lisaient auparavant dans un compteur unique,
+                          chez le fournisseur, où l'on ne pouvait plus dire
+                          quelle commande restait à payer. */}
+                      {order.payment.due > 0 && (
+                        <span className="mt-1 block">
+                          <Badge tone={PURCHASE_PAYMENT_TONES[order.payment.state]}>
+                            {PURCHASE_PAYMENT_LABELS[order.payment.state]}
+                          </Badge>
+                          {order.payment.remaining > 0 && (
+                            <span className="mt-0.5 block text-xs text-ink-muted">
+                              Reste {formatMoney(order.payment.remaining, currency)}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </td>
                     <td data-label="Total" className="px-4 py-3 text-right font-medium">
                       {formatMoney(total, currency)}
@@ -740,6 +765,10 @@ function SupplierPaymentForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Seules les commandes qui doivent encore quelque chose : proposer une
+  // commande déjà soldée ne mène qu'à un règlement en trop.
+  const unsettled = orders.filter((order) => order.payment.remaining > 0);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -763,7 +792,7 @@ function SupplierPaymentForm({
     <Card className="p-5">
       <h2 className="text-lg font-medium">Paiement — {supplier.name}</h2>
       <p className="mt-1 text-sm text-ink-muted">
-        Dette actuelle : {formatMoney(supplier.debtBalance, currency)}
+        Reste à régler chez ce fournisseur : {formatMoney(supplier.outstanding, currency)}
       </p>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4" noValidate>
         {error && (
@@ -775,12 +804,21 @@ function SupplierPaymentForm({
           <Field label="Montant" htmlFor="amount" required>
             <input id="amount" name="amount" type="number" min={0.01} step="0.01" required className={inputClass} />
           </Field>
-          <Field label="Commande liée (facultatif)" htmlFor="purchaseOrderId">
-            <select id="purchaseOrderId" name="purchaseOrderId" className={inputClass}>
-              <option value="">Aucune — règlement global</option>
-              {orders.map((order) => (
+          {/* Le règlement se rattache à une commande. Un versement flottant,
+              rattaché au seul fournisseur, ne permettait de dire d'aucune
+              commande si elle était payée — et c'est la question que le
+              commerçant se pose devant sa pile de bons de livraison. */}
+          <Field
+            label="Commande réglée"
+            htmlFor="purchaseOrderId"
+            hint="Seules les commandes livrées et non soldées apparaissent ici."
+            required
+          >
+            <select id="purchaseOrderId" name="purchaseOrderId" required className={inputClass}>
+              <option value="">Choisir une commande</option>
+              {unsettled.map((order) => (
                 <option key={order.id} value={order.id}>
-                  {order.reference}
+                  {order.reference} — reste {formatMoney(order.payment.remaining, currency)}
                 </option>
               ))}
             </select>

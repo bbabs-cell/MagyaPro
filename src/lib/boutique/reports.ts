@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { purchaseBalance } from '@/lib/boutique/purchase-payment';
 import { toQty } from '@/lib/boutique/quantity';
 
 /**
@@ -129,18 +130,34 @@ export type SupplierReportRow = {
   id: string;
   name: string;
   phone: string | null;
+  /** Valeur de tout ce qui a été commandé, livré ou non. */
   totalPurchased: number;
   totalPaid: number;
-  debtBalance: number;
+  /** Reste dû : valeur livrée moins règlements. Déduit, jamais stocké. */
+  outstanding: number;
 };
 
 export async function getSuppliersReport(storeId: string): Promise<SupplierReportRow[]> {
   const suppliers = await prisma.supplier.findMany({
     where: { storeId },
-    orderBy: { debtBalance: 'desc' },
+    orderBy: { name: 'asc' },
     include: {
-      purchaseOrders: { select: { items: { select: { quantityOrdered: true, unitCost: true, discount: true } }, extraFees: true } },
-      payments: { select: { amount: true } },
+      purchaseOrders: {
+        select: {
+          status: true,
+          extraFees: true,
+          items: {
+            select: {
+              quantityOrdered: true,
+              quantityReceived: true,
+              unitFactor: true,
+              unitCost: true,
+              discount: true,
+            },
+          },
+          payments: { select: { amount: true } },
+        },
+      },
     },
   });
 
@@ -152,16 +169,25 @@ export async function getSuppliersReport(storeId: string): Promise<SupplierRepor
         order.extraFees,
       0,
     );
-    const totalPaid = supplier.payments.reduce((sum, p) => sum + p.amount, 0);
+    // Réglé et reste dû se déduisent des commandes, avec la même règle que
+    // l'écran Achats — une seule définition du « dû » dans tout le produit.
+    let totalPaid = 0;
+    let outstanding = 0;
+    for (const order of supplier.purchaseOrders) {
+      const balance = purchaseBalance(order.items, order.payments);
+      totalPaid += balance.paid;
+      outstanding += balance.remaining;
+    }
+
     return {
       id: supplier.id,
       name: supplier.name,
       phone: supplier.phone,
       totalPurchased,
       totalPaid,
-      debtBalance: supplier.debtBalance,
+      outstanding,
     };
-  });
+  }).sort((a, b) => b.outstanding - a.outstanding || a.name.localeCompare(b.name, 'fr'));
 }
 
 export type ExpenseReportRow = {
