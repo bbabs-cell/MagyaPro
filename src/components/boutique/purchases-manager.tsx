@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { startTransition, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMinor } from '@/lib/money';
-import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/labels';
 import {
   PURCHASE_PAYMENT_LABELS,
@@ -89,51 +90,60 @@ export function PurchasesManager({
   canManage: boolean;
 }) {
   const router = useRouter();
-  const [suppliers] = useState(initialSuppliers);
-  const [products] = useState(initialProducts);
-  const [orders] = useState(initialOrders);
+  /**
+   * Données du serveur, lues telles quelles.
+   *
+   * Elles étaient auparavant recopiées dans un `useState` sans jamais être
+   * remises à jour. Or `useState` ignore sa valeur initiale à tous les rendus
+   * suivants : la liste restait figée sur son contenu du premier affichage.
+   * Chaque `router.refresh()` de cet écran renvoyait donc des données
+   * fraîches que rien ne montrait — un produit créé, un prix corrigé, une
+   * ligne supprimée n'apparaissaient qu'après un rechargement complet de la
+   * page.
+   */
+  const suppliers = initialSuppliers;
+  const products = initialProducts;
+  const orders = initialOrders;
   const sortedOrders = sortOrders(orders, today);
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
   const [payingSupplier, setPayingSupplier] = useState<Supplier | null>(null);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
-  async function confirmOrder(orderId: string) {
-    setPendingAction(orderId);
-    setError(null);
-    try {
-      await api.post(`/api/boutique/purchase-orders/${orderId}/confirm`);
+  /**
+   * Refermeture d'un formulaire après enregistrement.
+   *
+   * Le rafraîchissement passe par une transition : sans elle, la liste
+   * derrière le formulaire restait figée sur son ancien contenu le temps du
+   * nouveau rendu, puis sautait. Le fournisseur tout juste créé apparaissait
+   * une seconde après la fermeture de sa fiche.
+   */
+  function closeAndRefresh(close: () => void) {
+    close();
+    startTransition(() => {
       router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'La confirmation a échoué.');
-    } finally {
-      setPendingAction(null);
-    }
+    });
   }
 
-  async function cancelOrder(orderId: string) {
+  function confirmOrder(orderId: string) {
+    mutation.run(() => api.post(`/api/boutique/purchase-orders/${orderId}/confirm`), {
+      key: `${orderId}:confirm`,
+      failureMessage: 'La confirmation a échoué.',
+    });
+  }
+
+  function cancelOrder(orderId: string) {
     if (!window.confirm('Annuler cette commande ?')) return;
-    setPendingAction(orderId);
-    setError(null);
-    try {
-      await api.post(`/api/boutique/purchase-orders/${orderId}/cancel`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "L'annulation a échoué.");
-    } finally {
-      setPendingAction(null);
-    }
+    mutation.run(() => api.post(`/api/boutique/purchase-orders/${orderId}/cancel`), {
+      key: `${orderId}:cancel`,
+      failureMessage: "L'annulation a échoué.",
+    });
   }
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} />
 
       {canManage && (
         <div className="flex flex-wrap gap-2">
@@ -154,10 +164,7 @@ export function PurchasesManager({
 
       {showSupplierForm && (
         <SupplierForm
-          onDone={() => {
-            setShowSupplierForm(false);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setShowSupplierForm(false))}
           onCancel={() => setShowSupplierForm(false)}
         />
       )}
@@ -167,10 +174,7 @@ export function PurchasesManager({
           suppliers={suppliers}
           products={products}
           currency={currency}
-          onDone={() => {
-            setShowOrderForm(false);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setShowOrderForm(false))}
           onCancel={() => setShowOrderForm(false)}
         />
       )}
@@ -180,10 +184,7 @@ export function PurchasesManager({
           supplier={payingSupplier}
           orders={orders.filter((o) => o.supplier.id === payingSupplier.id)}
           currency={currency}
-          onDone={() => {
-            setPayingSupplier(null);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setPayingSupplier(null))}
           onCancel={() => setPayingSupplier(null)}
         />
       )}
@@ -291,9 +292,14 @@ export function PurchasesManager({
                         <div className="flex flex-wrap justify-end gap-1.5">
                           {order.status === 'DRAFT' && (
                             <>
+                              {/* Chaque bouton porte sa propre clé : les deux
+                                  tournaient auparavant ensemble, et rien ne
+                                  disait laquelle des deux actions était
+                                  partie. */}
                               <Button
                                 size="sm"
-                                loading={pendingAction === order.id}
+                                loading={mutation.isPending(`${order.id}:confirm`)}
+                                disabled={mutation.pending}
                                 onClick={() => confirmOrder(order.id)}
                               >
                                 Confirmer
@@ -301,7 +307,8 @@ export function PurchasesManager({
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                loading={pendingAction === order.id}
+                                loading={mutation.isPending(`${order.id}:cancel`)}
+                                disabled={mutation.pending}
                                 onClick={() => cancelOrder(order.id)}
                               >
                                 Annuler
@@ -309,7 +316,13 @@ export function PurchasesManager({
                             </>
                           )}
                           {order.status === 'ORDERED' && !anyReceived && (
-                            <Button size="sm" variant="ghost" loading={pendingAction === order.id} onClick={() => cancelOrder(order.id)}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              loading={mutation.isPending(`${order.id}:cancel`)}
+                              disabled={mutation.pending}
+                              onClick={() => cancelOrder(order.id)}
+                            >
                               Annuler
                             </Button>
                           )}
@@ -333,10 +346,7 @@ export function PurchasesManager({
         <ReceiveForm
           order={receivingOrder}
           warehouses={warehouses}
-          onDone={() => {
-            setReceivingOrder(null);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setReceivingOrder(null))}
           onCancel={() => setReceivingOrder(null)}
         />
       )}

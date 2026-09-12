@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney } from '@/lib/money';
-import { Button, Card } from '@/components/ui';
+import { AlertMessage, Button, Card } from '@/components/ui';
 
 type DeliveryOrder = {
   id: string;
@@ -41,13 +42,22 @@ export function DeliveryBoard({
 }) {
   const [pool, setPool] = useState(initialPool);
   const [mine, setMine] = useState(initialMine);
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [codeInputs, setCodeInputs] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
   const [sharingLocation, setSharingLocation] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentAtRef = useRef(0);
+  const mutation = useServerMutation();
+  /**
+   * Le relevé périodique est suspendu pendant qu'une prise en charge ou une
+   * confirmation est en cours.
+   *
+   * Une réponse partie avant l'appui arrive après lui et rapporte l'état
+   * d'avant : la course tout juste prise réapparaissait alors dans la liste
+   * « à prendre », et le livreur la reprenait — ou croyait l'avoir perdue au
+   * profit d'un collègue.
+   */
+  const inFlightRef = useRef(0);
 
   // Partage de position : actif tant qu'au moins une livraison est en
   // cours. `watchPosition` reste ouvert en continu (plus réactif qu'un
@@ -91,7 +101,7 @@ export function DeliveryBoard({
     async function poll() {
       try {
         const data = await api.get<{ pool: DeliveryOrder[]; mine: DeliveryOrder[] }>('/api/livraisons');
-        if (!cancelled) {
+        if (!cancelled && inFlightRef.current === 0) {
           setPool(data.pool);
           setMine(data.mine);
         }
@@ -108,41 +118,54 @@ export function DeliveryBoard({
     };
   }, []);
 
-  async function claim(order: DeliveryOrder) {
-    setPendingId(order.id);
-    setError(null);
-    try {
-      await api.post(`/api/livraisons/${order.id}/prendre`, {});
-      setPool((current) => current.filter((o) => o.id !== order.id));
-      setMine((current) => [...current, order]);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Cette livraison n'a pas pu être prise en charge.");
-    } finally {
-      setPendingId(null);
-    }
+  function claim(order: DeliveryOrder) {
+    mutation.run(
+      async () => {
+        inFlightRef.current += 1;
+        try {
+          // Course entre livreurs : deux d'entre eux peuvent viser la même
+          // commande. La liste n'est donc pas déplacée d'avance — c'est le
+          // serveur qui tranche, et lui seul. Un déplacement anticipé
+          // annoncerait au perdant une course qu'il n'a pas obtenue.
+          await api.post(`/api/livraisons/${order.id}/prendre`, {});
+          setPool((current) => current.filter((o) => o.id !== order.id));
+          setMine((current) => [...current, order]);
+        } finally {
+          inFlightRef.current -= 1;
+        }
+      },
+      {
+        key: order.id,
+        skipRefresh: true,
+        failureMessage: "Cette livraison n'a pas pu être prise en charge.",
+      },
+    );
   }
 
-  async function confirm(order: DeliveryOrder) {
+  function confirm(order: DeliveryOrder) {
     const code = (codeInputs[order.id] ?? '').trim();
-    setPendingId(order.id);
-    setError(null);
-    try {
-      await api.post(`/api/livraisons/${order.id}/livrer`, { code });
-      setMine((current) => current.filter((o) => o.id !== order.id));
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "La livraison n'a pas pu être confirmée.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(
+      async () => {
+        inFlightRef.current += 1;
+        try {
+          await api.post(`/api/livraisons/${order.id}/livrer`, { code });
+          setMine((current) => current.filter((o) => o.id !== order.id));
+          setCodeInputs((current) => {
+            const next = { ...current };
+            delete next[order.id];
+            return next;
+          });
+        } finally {
+          inFlightRef.current -= 1;
+        }
+      },
+      { key: order.id, skipRefresh: true, failureMessage: "La livraison n'a pas pu être confirmée." },
+    );
   }
 
   return (
     <div className="space-y-8">
-      {error && (
-        <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} />
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -215,7 +238,8 @@ export function DeliveryBoard({
                   </div>
                   <Button
                     size="sm"
-                    disabled={pendingId === order.id || (codeInputs[order.id] ?? '').length !== 6}
+                    loading={mutation.isPending(order.id)}
+                    disabled={mutation.pending || (codeInputs[order.id] ?? '').length !== 6}
                     onClick={() => confirm(order)}
                   >
                     Confirmer
@@ -247,7 +271,8 @@ export function DeliveryBoard({
                 <Button
                   size="sm"
                   className="mt-3"
-                  disabled={pendingId === order.id}
+                  loading={mutation.isPending(order.id)}
+                  disabled={mutation.pending}
                   onClick={() => claim(order)}
                 >
                   Prendre cette livraison

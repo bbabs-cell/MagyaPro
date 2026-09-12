@@ -251,6 +251,38 @@ export function ErrorState({
   );
 }
 
+/**
+ * Bandeau d'échec au-dessus d'un écran ou d'un formulaire.
+ *
+ * La même boîte rouge était réécrite à la main dans une cinquantaine
+ * d'endroits, avec des marges et des nuances qui divergeaient déjà. Elle est
+ * ici une fois : quand l'action échoue, l'utilisateur voit la même chose
+ * partout dans le produit.
+ *
+ * Ne rend rien si `message` est vide, pour que l'appelant écrive
+ * `<AlertMessage message={error} />` sans condition autour.
+ */
+export function AlertMessage({
+  message,
+  className,
+}: {
+  message: string | null | undefined;
+  className?: string;
+}) {
+  if (!message) return null;
+  return (
+    <div
+      role="alert"
+      className={cx(
+        'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800',
+        className,
+      )}
+    >
+      {message}
+    </div>
+  );
+}
+
 // --- Indicateurs -----------------------------------------------------------
 
 type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'brand';

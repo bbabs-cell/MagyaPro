@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { startTransition, useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -174,9 +174,35 @@ export function ProductManager({
   now: number;
 }) {
   const router = useRouter();
-  const [categories] = useState(initialCategories);
-  const [brands] = useState(initialBrands);
-  const [products] = useState(initialProducts);
+
+  /**
+   * Referme un formulaire et laisse la liste derrière lui se remettre à jour.
+   *
+   * La transition évite que le catalogue reste figé sur son ancien contenu
+   * pendant le nouveau rendu, puis saute : le produit enregistré n'apparaît
+   * plus une seconde après la fermeture de sa fiche.
+   */
+  function closeAndRefresh(close: () => void) {
+    close();
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  /**
+   * Données du serveur, lues telles quelles.
+   *
+   * Elles étaient auparavant recopiées dans un `useState` sans jamais être
+   * remises à jour. Or `useState` ignore sa valeur initiale à tous les rendus
+   * suivants : la liste restait figée sur son contenu du premier affichage.
+   * Chaque `router.refresh()` de cet écran renvoyait donc des données
+   * fraîches que rien ne montrait — un produit créé, un prix corrigé, une
+   * ligne supprimée n'apparaissaient qu'après un rechargement complet de la
+   * page.
+   */
+  const categories = initialCategories;
+  const brands = initialBrands;
+  const products = initialProducts;
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [withdrawing, setWithdrawing] = useState<Product | null>(null);
@@ -349,10 +375,7 @@ export function ProductManager({
           placeholder="Vêtements homme"
           endpoint="/api/boutique/categories"
           field="name"
-          onDone={() => {
-            setShowCategoryForm(false);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setShowCategoryForm(false))}
           onCancel={() => setShowCategoryForm(false)}
         />
       )}
@@ -363,10 +386,7 @@ export function ProductManager({
           placeholder="Nike"
           endpoint="/api/boutique/brands"
           field="name"
-          onDone={() => {
-            setShowBrandForm(false);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setShowBrandForm(false))}
           onCancel={() => setShowBrandForm(false)}
         />
       )}
@@ -378,10 +398,7 @@ export function ProductManager({
           storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
-          onDone={() => {
-            setShowForm(false);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setShowForm(false))}
           onCancel={() => setShowForm(false)}
         />
       )}
@@ -394,10 +411,7 @@ export function ProductManager({
           storeUnits={storeUnits}
           currency={currency}
           businessType={businessType}
-          onDone={() => {
-            setEditingProduct(null);
-            router.refresh();
-          }}
+          onDone={() => closeAndRefresh(() => setEditingProduct(null))}
           onCancel={() => setEditingProduct(null)}
         />
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { startTransition, useMemo, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -407,7 +407,20 @@ export function Pos({
       );
       setLastReceipt({ number: sale.number, total: sale.total });
       resetCart();
-      router.refresh();
+      // Rafraîchissement en arrière-plan, volontairement non bloquant.
+      //
+      // Ailleurs dans le produit, un bouton reste occupé jusqu'à ce que
+      // l'écran soit à jour. Pas ici : le seul intérêt de ce rendu est de
+      // recalculer les stocks affichés dans le catalogue, et faire patienter
+      // un caissier devant sa file pour cette raison serait absurde. Le
+      // reçu et le panier vidé disent déjà que la vente est passée.
+      //
+      // Le passage par une transition évite en revanche que le nouveau
+      // catalogue remplace l'ancien d'un coup sous les doigts du vendeur :
+      // React garde l'écran actuel utilisable pendant le calcul.
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (err) {
       // Panne réseau : la vente est mise en attente localement plutôt que
       // perdue — voir `offline-queue.ts`. Toute autre erreur (stock

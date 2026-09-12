@@ -39,7 +39,18 @@ export function ExpensesManager({
   canManage: boolean;
 }) {
   const router = useRouter();
-  const [expenses] = useState(initialExpenses);
+  /**
+   * Données du serveur, lues telles quelles.
+   *
+   * Elles étaient auparavant recopiées dans un `useState` sans jamais être
+   * remises à jour. Or `useState` ignore sa valeur initiale à tous les rendus
+   * suivants : la liste restait figée sur son contenu du premier affichage.
+   * Chaque `router.refresh()` de cet écran renvoyait donc des données
+   * fraîches que rien ne montrait — un produit créé, un prix corrigé, une
+   * ligne supprimée n'apparaissaient qu'après un rechargement complet de la
+   * page.
+   */
+  const expenses = initialExpenses;
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [pending, setPending] = useState(false);

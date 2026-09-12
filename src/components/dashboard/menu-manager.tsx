@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { startTransition, useOptimistic, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import {
+  AlertMessage,
   Badge,
   Button,
   Card,
@@ -88,41 +90,70 @@ export function MenuManager({
 }) {
   const router = useRouter();
 
-  const [categories] = useState(initialCategories);
-  const [products] = useState(initialProducts);
+  /**
+   * Données du serveur, lues telles quelles.
+   *
+   * Elles étaient auparavant recopiées dans un `useState` sans jamais être
+   * remises à jour. Or `useState` ignore sa valeur initiale à tous les rendus
+   * suivants : la liste restait figée sur son contenu du premier affichage.
+   * Chaque `router.refresh()` de cet écran renvoyait donc des données
+   * fraîches que rien ne montrait — un produit créé, un prix corrigé, une
+   * ligne supprimée n'apparaissaient qu'après un rechargement complet de la
+   * page.
+   */
+  const categories = initialCategories;
+  const products = initialProducts;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     initialCategories[0]?.id ?? null,
   );
 
   const [categoryForm, setCategoryForm] = useState<Category | 'new' | null>(null);
   const [productForm, setProductForm] = useState<Product | 'new' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const mutation = useServerMutation();
+
+  /**
+   * « Marquer épuisé » bascule à l'écran dès l'appui.
+   *
+   * C'est le geste le plus fréquent de la journée, et le plus pressé : il se
+   * fait en plein service, quand un plat vient de manquer et que les commandes
+   * continuent d'arriver. Attendre le serveur pour voir le badge changer
+   * conduisait à rappuyer, donc à remettre le plat en vente.
+   */
+  const [shownProducts, setAvailabilityLocally] = useOptimistic(
+    products,
+    (current: Product[], change: { id: string; isAvailable: boolean }) =>
+      current.map((product) =>
+        product.id === change.id ? { ...product, isAvailable: change.isAvailable } : product,
+      ),
+  );
 
   const visibleProducts = selectedCategory
-    ? products.filter((product) => product.categoryId === selectedCategory)
-    : products;
+    ? shownProducts.filter((product) => product.categoryId === selectedCategory)
+    : shownProducts;
 
-  function handleError(err: unknown, fallback: string) {
-    setError(err instanceof ApiError ? err.message : fallback);
-  }
-
-  async function toggleAvailability(product: Product) {
-    setPendingId(product.id);
-    setError(null);
-    try {
-      await api.patch(`/api/menu/produits/${product.id}`, {
-        isAvailable: !product.isAvailable,
-      });
+  /** Referme un formulaire et laisse la liste se remettre à jour sans à-coup. */
+  function closeAndRefresh(close: () => void) {
+    close();
+    startTransition(() => {
       router.refresh();
-    } catch (err) {
-      handleError(err, "La disponibilité n'a pas pu être modifiée.");
-    } finally {
-      setPendingId(null);
-    }
+    });
   }
 
-  async function deleteCategory(category: Category) {
+  function toggleAvailability(product: Product) {
+    const isAvailable = !product.isAvailable;
+    mutation.run(
+      async () => {
+        setAvailabilityLocally({ id: product.id, isAvailable });
+        await api.patch(`/api/menu/produits/${product.id}`, { isAvailable });
+      },
+      {
+        key: `${product.id}:dispo`,
+        failureMessage: "La disponibilité n'a pas pu être modifiée.",
+      },
+    );
+  }
+
+  function deleteCategory(category: Category) {
     if (
       !window.confirm(
         `Supprimer la catégorie « ${category.name} » ? Cette action est définitive.`,
@@ -131,19 +162,13 @@ export function MenuManager({
       return;
     }
 
-    setPendingId(category.id);
-    setError(null);
-    try {
-      await api.delete(`/api/menu/categories/${category.id}`);
-      router.refresh();
-    } catch (err) {
-      handleError(err, "La catégorie n'a pas pu être supprimée.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/menu/categories/${category.id}`), {
+      key: category.id,
+      failureMessage: "La catégorie n'a pas pu être supprimée.",
+    });
   }
 
-  async function deleteProduct(product: Product) {
+  function deleteProduct(product: Product) {
     if (
       !window.confirm(
         `Supprimer « ${product.name} » ? Les commandes passées conservent le détail de ce plat.`,
@@ -152,16 +177,10 @@ export function MenuManager({
       return;
     }
 
-    setPendingId(product.id);
-    setError(null);
-    try {
-      await api.delete(`/api/menu/produits/${product.id}`);
-      router.refresh();
-    } catch (err) {
-      handleError(err, "Le plat n'a pas pu être supprimé.");
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(() => api.delete(`/api/menu/produits/${product.id}`), {
+      key: `${product.id}:suppr`,
+      failureMessage: "Le plat n'a pas pu être supprimé.",
+    });
   }
 
   if (categoryForm) {
@@ -169,10 +188,7 @@ export function MenuManager({
       <CategoryForm
         category={categoryForm === 'new' ? null : categoryForm}
         onClose={() => setCategoryForm(null)}
-        onSaved={() => {
-          setCategoryForm(null);
-          router.refresh();
-        }}
+        onSaved={() => closeAndRefresh(() => setCategoryForm(null))}
       />
     );
   }
@@ -185,21 +201,14 @@ export function MenuManager({
         defaultCategoryId={selectedCategory}
         currency={currency}
         onClose={() => setProductForm(null)}
-        onSaved={() => {
-          setProductForm(null);
-          router.refresh();
-        }}
+        onSaved={() => closeAndRefresh(() => setProductForm(null))}
       />
     );
   }
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} />
 
       {/* ------------------------------------------------------- Catégories */}
       <Card className="p-4 sm:p-5">
@@ -258,7 +267,8 @@ export function MenuManager({
                     </button>
                     <button
                       type="button"
-                      disabled={pendingId === category.id}
+                      disabled={mutation.pending}
+                      aria-busy={mutation.isPending(category.id) || undefined}
                       onClick={() => deleteCategory(category)}
                       className="rounded p-1 text-xs text-ink-faint hover:text-red-600 disabled:opacity-50"
                     >
@@ -361,7 +371,8 @@ export function MenuManager({
                     <Button
                       size="sm"
                       variant="secondary"
-                      disabled={pendingId === product.id}
+                      loading={mutation.isPending(`${product.id}:dispo`)}
+                      disabled={mutation.pending}
                       onClick={() => toggleAvailability(product)}
                     >
                       {product.isAvailable ? 'Marquer épuisé' : 'Remettre en vente'}
@@ -376,7 +387,8 @@ export function MenuManager({
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={pendingId === product.id}
+                      loading={mutation.isPending(`${product.id}:suppr`)}
+                      disabled={mutation.pending}
                       onClick={() => deleteProduct(product)}
                     >
                       Supprimer

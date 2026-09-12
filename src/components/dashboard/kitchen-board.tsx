@@ -1,9 +1,25 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useOptimistic, useRef, useState } from 'react';
 
-import { ApiError, api } from '@/lib/client/api';
-import { Card } from '@/components/ui';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { AlertMessage, Card } from '@/components/ui';
+
+/**
+ * Écran cuisine — trois colonnes, une fiche par commande.
+ *
+ * ## Pourquoi la fiche change de colonne avant la réponse du serveur
+ *
+ * En cuisine, l'écran est consulté les mains occupées, souvent à distance, et
+ * l'appui se fait en passant. La fiche restait auparavant dans sa colonne
+ * jusqu'au retour du serveur : sur une connexion lente, le cuisinier voyait
+ * son plat toujours « à préparer » et rappuyait. L'action partait deux fois.
+ *
+ * La fiche part donc dans la colonne suivante dès l'appui. React tient cette
+ * position le temps de l'appel et la remplace par l'état réel ensuite : si le
+ * serveur refuse, la fiche revient à sa place et l'erreur s'affiche.
+ */
 
 type KitchenOrder = {
   id: string;
@@ -35,9 +51,19 @@ function elapsedMinutes(placedAt: string): number {
 
 export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] }) {
   const [orders, setOrders] = useState(initialOrders);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Le relevé périodique ne doit pas ramener un statut périmé par-dessus une
+  // avancée en cours : une réponse partie avant l'appui arrive après lui.
+  const inFlightRef = useRef(0);
+
+  const [shownOrders, moveLocally] = useOptimistic(
+    orders,
+    (current: KitchenOrder[], change: { id: string; status: KitchenOrder['status'] }) =>
+      current.map((order) =>
+        order.id === change.id ? { ...order, status: change.status } : order,
+      ),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +71,7 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
     async function poll() {
       try {
         const data = await api.get<{ orders: KitchenOrder[] }>('/api/cuisine');
-        if (!cancelled) setOrders(data.orders);
+        if (!cancelled && inFlightRef.current === 0) setOrders(data.orders);
       } catch {
         // Une erreur ponctuelle n'efface pas l'écran : on retentera au tour suivant.
       }
@@ -59,32 +85,38 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
     };
   }, []);
 
-  async function advance(order: KitchenOrder, next: KitchenOrder['status']) {
-    setPendingId(order.id);
-    setError(null);
-    try {
-      await api.patch(`/api/commandes/${order.id}`, { status: next });
-      setOrders((current) =>
-        current.map((o) => (o.id === order.id ? { ...o, status: next } : o)),
-      );
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Le statut n'a pas pu être mis à jour.");
-    } finally {
-      setPendingId(null);
-    }
+  function advance(order: KitchenOrder, next: KitchenOrder['status']) {
+    mutation.run(
+      async () => {
+        moveLocally({ id: order.id, status: next });
+        inFlightRef.current += 1;
+        try {
+          await api.patch(`/api/commandes/${order.id}`, { status: next });
+          setOrders((current) =>
+            current.map((o) => (o.id === order.id ? { ...o, status: next } : o)),
+          );
+        } finally {
+          inFlightRef.current -= 1;
+        }
+      },
+      {
+        key: order.id,
+        // Cet écran tient sa propre liste et la rafraîchit tout seul toutes
+        // les douze secondes : lui redemander un rendu complet du serveur
+        // n'apporterait rien et ferait clignoter les trois colonnes.
+        skipRefresh: true,
+        failureMessage: "Le statut n'a pas pu être mis à jour.",
+      },
+    );
   }
 
   return (
     <div>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       <div className="grid gap-4 md:grid-cols-3">
         {COLUMNS.map((column) => {
-          const columnOrders = orders.filter((order) => order.status === column.status);
+          const columnOrders = shownOrders.filter((order) => order.status === column.status);
           return (
             <div key={column.status}>
               <h2 className="mb-2 flex items-center justify-between text-sm font-medium">
@@ -123,7 +155,8 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                     {column.next && (
                       <button
                         type="button"
-                        disabled={pendingId === order.id}
+                        disabled={mutation.pending}
+                        aria-busy={mutation.isPending(order.id) || undefined}
                         onClick={() => advance(order, column.next!)}
                         className="mt-2.5 h-9 w-full rounded-lg bg-ink text-sm font-medium text-white hover:bg-ink/90 disabled:opacity-50"
                       >

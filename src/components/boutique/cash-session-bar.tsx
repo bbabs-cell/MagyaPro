@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMinor } from '@/lib/money';
-import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 
 type Session = {
   id: string;
@@ -16,85 +16,104 @@ type Session = {
 } | null;
 
 export function CashSessionBar({ session, currency }: { session: Session; currency: string }) {
-  const router = useRouter();
   const [mode, setMode] = useState<'idle' | 'open' | 'close' | 'movement'>('idle');
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * Écart constaté à la dernière fermeture.
+   *
+   * Il s'affichait auparavant dans un `window.alert`. Deux défauts : la boîte
+   * native fige la page — le rafraîchissement lancé juste avant restait
+   * suspendu tant que le caissier n'avait pas appuyé sur « OK » — et son
+   * contenu disparaissait définitivement à la fermeture. Or un écart de caisse
+   * est précisément le chiffre qu'on veut relire, noter, montrer au patron.
+   */
+  const [closingReport, setClosingReport] = useState<string | null>(null);
+  const mutation = useServerMutation();
+  const pending = mutation.pending;
 
-  async function openSession(event: FormEvent<HTMLFormElement>) {
+  function openSession(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
-    setError(null);
     const formData = new FormData(event.currentTarget);
-    try {
-      await api.post('/api/boutique/cash-sessions', {
-        openingBalance: toMinor(String(formData.get('openingBalance') ?? '0'), currency),
-      });
-      setMode('idle');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "L'ouverture a échoué.");
-    } finally {
-      setPending(false);
-    }
+    mutation.run(
+      () =>
+        api.post('/api/boutique/cash-sessions', {
+          openingBalance: toMinor(String(formData.get('openingBalance') ?? '0'), currency),
+        }),
+      { onSuccess: () => setMode('idle'), failureMessage: "L'ouverture a échoué." },
+    );
   }
 
-  async function closeSession(event: FormEvent<HTMLFormElement>) {
+  function closeSession(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session) return;
-    setPending(true);
-    setError(null);
     const formData = new FormData(event.currentTarget);
-    try {
-      const { session: closed } = await api.post<{
-        session: { expectedBalance: number; countedBalance: number; difference: number };
-      }>(`/api/boutique/cash-sessions/${session.id}/close`, {
-        countedBalance: toMinor(String(formData.get('countedBalance') ?? '0'), currency),
-      });
-      setMode('idle');
-      router.refresh();
-      const sign = closed.difference > 0 ? '+' : '';
-      window.alert(
-        `Caisse fermée. Écart : ${sign}${formatMoney(closed.difference, currency)}.`,
-      );
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'La fermeture a échoué.');
-    } finally {
-      setPending(false);
-    }
+    mutation.run(
+      () =>
+        api.post<{
+          session: { expectedBalance: number; countedBalance: number; difference: number };
+        }>(`/api/boutique/cash-sessions/${session.id}/close`, {
+          countedBalance: toMinor(String(formData.get('countedBalance') ?? '0'), currency),
+        }),
+      {
+        failureMessage: 'La fermeture a échoué.',
+        onSuccess: ({ session: closed }) => {
+          setMode('idle');
+          const sign = closed.difference > 0 ? '+' : '';
+          setClosingReport(
+            closed.difference === 0
+              ? `Caisse fermée. Le compte est juste : ${formatMoney(closed.countedBalance, currency)}.`
+              : `Caisse fermée. Compté ${formatMoney(closed.countedBalance, currency)} pour ${formatMoney(closed.expectedBalance, currency)} attendus — écart de ${sign}${formatMoney(closed.difference, currency)}.`,
+          );
+        },
+      },
+    );
   }
 
-  async function recordMovement(event: FormEvent<HTMLFormElement>) {
+  function recordMovement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session) return;
-    setPending(true);
-    setError(null);
     const formData = new FormData(event.currentTarget);
-    try {
-      await api.post(`/api/boutique/cash-sessions/${session.id}/movements`, {
-        type: String(formData.get('type') ?? 'DEPOSIT'),
-        amount: toMinor(String(formData.get('amount') ?? '0'), currency),
-        reason: String(formData.get('reason') ?? '') || undefined,
-      });
-      setMode('idle');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "L'enregistrement a échoué.");
-    } finally {
-      setPending(false);
-    }
+    mutation.run(
+      () =>
+        api.post(`/api/boutique/cash-sessions/${session.id}/movements`, {
+          type: String(formData.get('type') ?? 'DEPOSIT'),
+          amount: toMinor(String(formData.get('amount') ?? '0'), currency),
+          reason: String(formData.get('reason') ?? '') || undefined,
+        }),
+      { onSuccess: () => setMode('idle'), failureMessage: "L'enregistrement a échoué." },
+    );
   }
 
   if (!session) {
     return (
-      <Card className="mb-6 flex flex-wrap items-center justify-between gap-3 p-4">
+      <Card className="mb-6 p-4">
+        {/* Le relevé de la fermeture qui vient d'avoir lieu, affiché tant que
+            le caissier ne l'a pas écarté — il n'y a pas d'autre endroit dans
+            l'écran où relire l'écart constaté. */}
+        {closingReport && (
+          <div
+            role="status"
+            className="mb-3 flex items-start gap-3 rounded-xl border border-surface-border bg-surface-sunken px-4 py-3 text-sm text-ink"
+          >
+            <p className="min-w-0 flex-1">{closingReport}</p>
+            <button
+              type="button"
+              onClick={() => setClosingReport(null)}
+              className="shrink-0 text-ink-faint hover:text-ink"
+              aria-label="Masquer le relevé de fermeture"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-medium text-ink">Caisse fermée</p>
           <p className="text-sm text-ink-muted">Ouvrez une session pour commencer à encaisser.</p>
         </div>
         {mode === 'open' ? (
           <form onSubmit={openSession} className="flex flex-wrap items-end gap-2">
-            {error && <p role="alert" className="w-full text-sm text-state-bad">{error}</p>}
+            <AlertMessage message={mutation.error} className="w-full" />
             <Field label={`Fond de caisse initial (${currency})`} htmlFor="openingBalance">
               <input
                 id="openingBalance"
@@ -116,6 +135,7 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
             Ouvrir la caisse
           </Button>
         )}
+        </div>
       </Card>
     );
   }
@@ -152,11 +172,7 @@ export function CashSessionBar({ session, currency }: { session: Session; curren
         </div>
       </div>
 
-      {error && (
-        <p role="alert" className="mt-3 text-sm text-state-bad">
-          {error}
-        </p>
-      )}
+      <AlertMessage message={mutation.error} className="mt-3" />
 
       {mode === 'movement' && (
         <form onSubmit={recordMovement} className="mt-4 flex flex-wrap items-end gap-2 border-t border-surface-border pt-4">

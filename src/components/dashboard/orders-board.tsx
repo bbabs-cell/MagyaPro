@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useOptimistic } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { OrderStatus, PaymentStatus } from '@prisma/client';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
+import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney } from '@/lib/money';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { PAYMENT_STATUS_LABELS } from '@/lib/payments/status';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
-import { Badge, Button } from '@/components/ui';
+import { AlertMessage, Badge, Button } from '@/components/ui';
 
 /**
  * Liste des commandes avec avancement du statut.
@@ -22,6 +22,19 @@ import { Badge, Button } from '@/components/ui';
  * En dessous de `md`, le tableau devient une pile de fiches (`table-stack`) :
  * un tableau à six colonnes est illisible sur un téléphone, et c'est
  * précisément là que le service consulte ses commandes.
+ *
+ * ## Affichage anticipé du statut
+ *
+ * Le badge et les boutons de la ligne prennent le nouveau statut **dès
+ * l'appui**, sans attendre le serveur. En salle, la question posée à l'écran
+ * est « est-ce que mon appui a été pris en compte », et un badge qui ne bouge
+ * pas pendant deux secondes répond non — le serveur, lui, dira oui.
+ *
+ * Ce n'est pas un affichage inventé : React tient la valeur anticipée le temps
+ * de la transition et la remplace par la réponse réelle du serveur, quelle
+ * qu'elle soit. Si l'appel échoue, la ligne revient d'elle-même à son ancien
+ * statut et le bandeau d'erreur explique pourquoi. Jamais l'écran ne reste sur
+ * une valeur que la base ne porte pas.
  */
 
 type Order = {
@@ -49,11 +62,25 @@ export function OrdersBoard({
   canCancel: boolean;
   canUpdate: boolean;
 }) {
-  const router = useRouter();
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useServerMutation();
 
-  async function changeStatus(order: Order, status: OrderStatus) {
+  // La liste affichée est celle du serveur, éventuellement corrigée par la
+  // ligne en cours de modification.
+  const [shownOrders, applyLocally] = useOptimistic(
+    orders,
+    (current: Order[], change: { id: string; status?: OrderStatus; paid?: boolean }) =>
+      current.map((order) =>
+        order.id === change.id
+          ? {
+              ...order,
+              status: change.status ?? order.status,
+              paymentStatus: change.paid ? ('PAID' as PaymentStatus) : order.paymentStatus,
+            }
+          : order,
+      ),
+  );
+
+  function changeStatus(order: Order, status: OrderStatus) {
     // L'annulation est irréversible et visible du client : elle mérite une
     // confirmation explicite.
     if (status === 'CANCELLED') {
@@ -63,48 +90,36 @@ export function OrdersBoard({
       if (!confirmed) return;
     }
 
-    setPendingId(order.id);
-    setError(null);
-
-    try {
-      await api.patch(`/api/commandes/${order.id}`, { status });
-      router.refresh();
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Le statut n'a pas pu être modifié. Réessayez.",
-      );
-    } finally {
-      setPendingId(null);
-    }
+    mutation.run(
+      async () => {
+        applyLocally({ id: order.id, status });
+        await api.patch(`/api/commandes/${order.id}`, { status });
+      },
+      {
+        key: `${order.id}:${status}`,
+        failureMessage: "Le statut n'a pas pu être modifié. Réessayez.",
+      },
+    );
   }
 
-  async function confirmPayment(order: Order) {
-    setPendingId(order.id);
-    setError(null);
-
-    try {
-      await api.post(`/api/commandes/${order.id}/payer`);
-      router.refresh();
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Le paiement n'a pas pu être confirmé. Réessayez.",
-      );
-    } finally {
-      setPendingId(null);
-    }
+  function confirmPayment(order: Order) {
+    mutation.run(
+      async () => {
+        // Cette action fait deux choses d'un coup : elle encaisse et elle
+        // termine la commande. Les deux doivent apparaître ensemble.
+        applyLocally({ id: order.id, status: 'COMPLETED', paid: true });
+        await api.post(`/api/commandes/${order.id}/payer`);
+      },
+      {
+        key: `${order.id}:paiement`,
+        failureMessage: "Le paiement n'a pas pu être confirmé. Réessayez.",
+      },
+    );
   }
 
   return (
     <>
-      {error && (
-        <div role="alert" className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mb-4" />
 
       <div className="overflow-x-auto">
         <table className="table-stack w-full border-collapse text-sm">
@@ -123,14 +138,34 @@ export function OrdersBoard({
           </thead>
 
           <tbody>
-            {orders.map((order) => {
+            {shownOrders.map((order) => {
               const nextStatuses = ORDER_TRANSITIONS[order.status].filter(
                 (status) => status !== 'CANCELLED' || canCancel,
               );
-              const isPending = pendingId === order.id;
+              // Le tour de roue ne tourne que sur le bouton réellement
+              // pressé ; tous les autres sont seulement inactifs le temps que
+              // l'action se termine. Deux commandes modifiées en même temps se
+              // chevaucheraient à l'écran sans qu'on sache laquelle a abouti.
+              const isLocked = mutation.pending;
+              // La ligne affiche déjà son nouveau statut, mais celui-ci n'est
+              // pas encore confirmé par le serveur. `aria-busy` le dit aux
+              // lecteurs d'écran, et l'opacité réduite le dit aux autres :
+              // le statut affiché ici est en cours de validation, pas acquis.
+              // Sans cela, une ligne « Payé » affichée par anticipation serait
+              // indiscernable d'une ligne réellement encaissée.
+              const isSettling =
+                mutation.isPending(`${order.id}:paiement`) ||
+                nextStatuses.some((status) => mutation.isPending(`${order.id}:${status}`)) ||
+                mutation.isPending(`${order.id}:CANCELLED`);
 
               return (
-                <tr key={order.id} className="border-b border-surface-border align-middle">
+                <tr
+                  key={order.id}
+                  aria-busy={isSettling || undefined}
+                  className={`border-b border-surface-border align-middle transition-opacity ${
+                    isSettling ? 'opacity-60' : ''
+                  }`}
+                >
                   <td data-label="Commande" className="py-3 pr-3">
                     <Link
                       href={`/dashboard/commandes/${order.id}`}
@@ -188,7 +223,8 @@ export function OrdersBoard({
                         <Button
                           type="button"
                           size="sm"
-                          loading={isPending}
+                          loading={mutation.isPending(`${order.id}:paiement`)}
+                          disabled={isLocked}
                           onClick={() => confirmPayment(order)}
                         >
                           Marquer payé et terminer
@@ -198,7 +234,8 @@ export function OrdersBoard({
                             type="button"
                             size="sm"
                             variant="ghost"
-                            disabled={isPending}
+                            loading={mutation.isPending(`${order.id}:CANCELLED`)}
+                            disabled={isLocked}
                             onClick={() => changeStatus(order, 'CANCELLED')}
                           >
                             Annuler
@@ -213,7 +250,8 @@ export function OrdersBoard({
                             type="button"
                             size="sm"
                             variant={status === 'CANCELLED' ? 'ghost' : 'secondary'}
-                            disabled={isPending}
+                            loading={mutation.isPending(`${order.id}:${status}`)}
+                            disabled={isLocked}
                             onClick={() => changeStatus(order, status)}
                           >
                             {status === 'CANCELLED'
