@@ -120,6 +120,15 @@ enum MembershipRole {
   OWNER
   ADMIN
   EMPLOYEE
+  /// Accès restreint au seul écran cuisine — voir `KITCHEN_PERMISSIONS` dans
+  /// `src/lib/rbac.ts`.
+  ///
+  /// Ce rôle existe parce qu'il n'y en avait aucun qui convienne : pour faire
+  /// travailler un cuisinier sur l'écran de préparation, il fallait lui
+  /// donner « Employé », et donc, du même geste, le fichier clients, les
+  /// réservations, le plan de salle et les livraisons. Une cuisine n'a besoin
+  /// que de savoir quoi préparer.
+  KITCHEN
   /// Accès restreint à la seule section livraisons — voir `COURIER_PERMISSIONS`
   /// dans `src/lib/rbac.ts`. Le tableau de bord d'un livreur n'affiche même
   /// pas la barre latérale complète : inutile de lui montrer des rubriques

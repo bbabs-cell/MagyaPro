@@ -71,15 +71,20 @@ série de nombres. Séparer les devises demande de toucher aussi les composants
 de graphique du Super Admin, ce qui dépasse un correctif ponctuel. À traiter
 avec les écrans d'analyse.
 
-### I2. Un cuisinier voit trop de choses
+### I2. Un cuisinier voit trop de choses — **corrigé en phase 9**
 
 Relevé en phase 2, confirmé : l'écran cuisine exige la permission de changer le
 statut d'une commande, qu'un employé possède — avec sept autres. Un cuisinier
 en rôle « Employé » accède au fichier clients, aux réservations, aux tables et
 aux livraisons.
 
-Traité en phase 9, sur le modèle du rôle Livreur qui, lui, est correctement
-cloisonné.
+**Corrigé** par l'ajout d'un rôle **Cuisine** portant la seule permission
+`orders:update_status`, sur le modèle du rôle Livreur. Le rôle « Employé » n'a
+pas été rogné : un serveur de salle a réellement besoin des tables, des
+réservations et du fichier clients. Il manquait un rôle, pas une permission.
+
+Le cloisonnement est désormais vérifié par test — `tests/rbac-roles.test.ts`
+énumère nommément les permissions que le rôle ne doit jamais reprendre.
 
 ---
 

@@ -2,14 +2,23 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import type { MembershipRole } from '@prisma/client';
 
 import { ApiError, api } from '@/lib/client/api';
-import { ROLE_LABELS } from '@/lib/rbac';
+import {
+  ASSIGNABLE_ROLES,
+  ROLE_DESCRIPTIONS,
+  ROLE_LABELS,
+  type AssignableRole,
+} from '@/lib/rbac';
 import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
 
 type Member = {
   id: string;
-  role: 'OWNER' | 'ADMIN' | 'EMPLOYEE' | 'COURIER';
+  // Le type vient de Prisma plutôt que d'une liste recopiée : la liste
+  // recopiée oublie fatalement le rôle suivant, et l'oubli ne se voit qu'au
+  // moment où quelqu'un porte ce rôle.
+  role: MembershipRole;
   extraPermissions: string[];
   userId: string;
   name: string;
@@ -36,12 +45,12 @@ export function TeamManager({
   currentUserId: string;
   maxUsers?: number;
   permissions: Array<{ value: string; label: string }>;
-  rolePermissions: Record<'ADMIN' | 'EMPLOYEE' | 'COURIER', string[]>;
+  rolePermissions: Record<AssignableRole, string[]>;
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
-  const [role, setRole] = useState<'ADMIN' | 'EMPLOYEE' | 'COURIER'>('EMPLOYEE');
+  const [role, setRole] = useState<AssignableRole>('EMPLOYEE');
   const [extras, setExtras] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +174,7 @@ export function TeamManager({
           <fieldset>
             <legend className="text-sm font-medium">Rôle</legend>
             <div className="mt-2 space-y-1.5">
-              {(['ADMIN', 'EMPLOYEE', 'COURIER'] as const).map((value) => (
+              {ASSIGNABLE_ROLES.map((value) => (
                 <label
                   key={value}
                   className="flex cursor-pointer items-start gap-3 rounded-xl border border-surface-border px-4 py-3 text-sm hover:border-ink"
@@ -183,13 +192,11 @@ export function TeamManager({
                   />
                   <span>
                     <span className="block font-medium">{ROLE_LABELS[value]}</span>
+                    {/* La description vient de `rbac` : c'est là que les
+                        permissions du rôle sont définies, et deux textes
+                        entretenus séparément finissent par se contredire. */}
                     <span className="block text-ink-muted">
-                      {value === 'ADMIN' &&
-                        'Gère le restaurant, le menu, les commandes et les réglages.'}
-                      {value === 'EMPLOYEE' &&
-                        'Consulte le menu et traite les commandes du service.'}
-                      {value === 'COURIER' &&
-                        "Espace dédié, limité aux livraisons — n'accède à rien d'autre."}
+                      {ROLE_DESCRIPTIONS[value]}
                     </span>
                   </span>
                 </label>

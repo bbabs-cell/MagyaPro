@@ -4,13 +4,13 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { ConflictError, NotFoundError } from '@/lib/errors';
-import { PERMISSIONS } from '@/lib/rbac';
+import { ASSIGNABLE_ROLES, PERMISSIONS } from '@/lib/rbac';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 
 type Params = { params: Promise<{ id: string }> };
 
 const updateSchema = z.object({
-  role: z.enum(['ADMIN', 'EMPLOYEE', 'COURIER']),
+  role: z.enum(ASSIGNABLE_ROLES),
   extraPermissions: z
     .array(z.enum(PERMISSIONS as unknown as [string, ...string[]]))
     .max(PERMISSIONS.length)

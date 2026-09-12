@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import type { MembershipRole } from '@prisma/client';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
@@ -308,7 +309,7 @@ export function DashboardShell({
 }: {
   platformLogoUrl: string | null;
   /** `null` en accès support (Super Admin) : traité comme un membre normal. */
-  role: 'OWNER' | 'ADMIN' | 'EMPLOYEE' | 'COURIER' | null;
+  role: MembershipRole | null;
   user: { name: string; email: string; isSuperAdmin: boolean };
   restaurant: {
     id: string;
@@ -367,11 +368,18 @@ export function DashboardShell({
     router.refresh();
   }
 
-  // Un livreur n'a qu'une seule permission (`deliveries:drive`) : lui montrer
-  // la barre latérale complète n'aurait de sens que pour afficher des
-  // rubriques auxquelles il ne peut pas accéder. Un espace à part, réduit à
+  // Livreur et cuisine n'ont chacun qu'une permission : leur montrer la barre
+  // latérale complète n'aurait de sens que pour afficher des rubriques
+  // auxquelles ils ne peuvent pas accéder. Un espace à part, réduit à
   // l'essentiel, plutôt que la même coquille avec presque tout grisé.
-  if (role === 'COURIER') {
+  const focusedSpace =
+    role === 'COURIER'
+      ? { label: 'Espace livreur', width: 'max-w-2xl' }
+      : role === 'KITCHEN'
+        ? { label: 'Cuisine', width: 'max-w-6xl' }
+        : null;
+
+  if (focusedSpace) {
     return (
       <div className="min-h-screen bg-surface-sunken text-ink">
         <header className="sticky top-0 z-30 border-b border-surface-border bg-surface">
@@ -380,7 +388,9 @@ export function DashboardShell({
               <Logo src={platformLogoUrl} showText={false} className="h-8 w-8 shrink-0" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{restaurant.name}</p>
-                <p className="truncate text-xs text-ink-faint">Espace livreur — {user.name}</p>
+                <p className="truncate text-xs text-ink-faint">
+                  {focusedSpace.label} — {user.name}
+                </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -395,8 +405,11 @@ export function DashboardShell({
           </div>
         </header>
 
+        {/* La cuisine a besoin de largeur : ses trois colonnes de commandes
+            sont lues de loin, souvent sur un écran posé au mur. Le livreur,
+            lui, tient son téléphone à la main. */}
         <main id="contenu" className="p-4 sm:p-6">
-          <div className="mx-auto max-w-2xl">{children}</div>
+          <div className={cx('mx-auto', focusedSpace.width)}>{children}</div>
         </main>
       </div>
     );

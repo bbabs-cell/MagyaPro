@@ -4,7 +4,9 @@ import { useEffect, useOptimistic, useRef, useState } from 'react';
 
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
-import { AlertMessage, Card } from '@/components/ui';
+import { describeOptions, readOptions } from '@/lib/orders/option-snapshot';
+import type { KitchenOrder } from '@/lib/kitchen';
+import { AlertMessage, Card, cx } from '@/components/ui';
 
 /**
  * Écran cuisine — trois colonnes, une fiche par commande.
@@ -21,21 +23,12 @@ import { AlertMessage, Card } from '@/components/ui';
  * serveur refuse, la fiche revient à sa place et l'erreur s'affiche.
  */
 
-type KitchenOrder = {
-  id: string;
-  number: number;
-  status: 'CONFIRMED' | 'PREPARING' | 'READY';
-  fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
-  placedAt: string;
-  table: { label: string } | null;
-  items: Array<{
-    id: string;
-    productName: string;
-    variantName: string | null;
-    quantity: number;
-    options: unknown;
-  }>;
-};
+/**
+ * Au-delà de ce délai, une commande est signalée comme attendant depuis trop
+ * longtemps. Quinze minutes : au-dessous, c'est une préparation normale ; au
+ * -dessus, quelqu'un doit s'en occuper ou prévenir le client.
+ */
+const LATE_AFTER_MINUTES = 15;
 
 const POLL_INTERVAL_MS = 12_000;
 
@@ -133,38 +126,90 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                   </p>
                 )}
 
-                {columnOrders.map((order) => (
-                  <Card key={order.id} className="p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium">
-                        n°{order.number}
-                        {order.table && ` · ${order.table.label}`}
+                {columnOrders.map((order) => {
+                  const waited = elapsedMinutes(order.placedAt);
+                  const late = waited >= LATE_AFTER_MINUTES;
+
+                  return (
+                    <Card key={order.id} className="p-3.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        {/* Le numéro est lu de loin, souvent en criant « la
+                            douze est prête » à travers la cuisine. Il mérite
+                            d'être la chose la plus grosse de la fiche. */}
+                        <p className="text-lg font-semibold leading-none text-ink">
+                          n°{order.number}
+                        </p>
+                        <span
+                          className={cx(
+                            'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+                            late
+                              ? 'bg-state-warn-soft text-state-warn'
+                              : 'bg-surface-sunken text-ink-muted',
+                          )}
+                        >
+                          {waited} min
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-xs text-ink-faint">
+                        {order.table
+                          ? order.table.label
+                          : order.fulfillmentType === 'DELIVERY'
+                            ? 'Livraison'
+                            : 'À emporter'}
                       </p>
-                      <span className="text-xs text-ink-faint">
-                        {elapsedMinutes(order.placedAt)} min
-                      </span>
-                    </div>
-                    <ul className="mt-1.5 space-y-0.5 text-sm text-ink-muted">
-                      {order.items.map((item) => (
-                        <li key={item.id}>
-                          {item.quantity} × {item.productName}
-                          {item.variantName && ` (${item.variantName})`}
-                        </li>
-                      ))}
-                    </ul>
-                    {column.next && (
-                      <button
-                        type="button"
-                        disabled={mutation.pending}
-                        aria-busy={mutation.isPending(order.id) || undefined}
-                        onClick={() => advance(order, column.next!)}
-                        className="mt-2.5 h-9 w-full rounded-lg bg-ink text-sm font-medium text-white hover:bg-ink/90 disabled:opacity-50"
-                      >
-                        {column.status === 'CONFIRMED' ? 'Démarrer' : 'Marquer prête'}
-                      </button>
-                    )}
-                  </Card>
-                ))}
+
+                      <ul className="mt-2.5 space-y-1.5 text-sm">
+                        {order.items.map((item) => {
+                          const options = describeOptions(readOptions(item.options));
+                          return (
+                            <li key={item.id} className="flex gap-2">
+                              {/* La quantité est détachée du nom : « 3 × » perdu
+                                  au milieu d'une phrase se lit comme un « 8 »,
+                                  et on prépare trois plats de trop. */}
+                              <span className="shrink-0 font-semibold tabular-nums text-ink">
+                                {item.quantity}×
+                              </span>
+                              <span className="min-w-0">
+                                <span className="text-ink">{item.productName}</span>
+                                {item.variantName && (
+                                  <span className="text-ink-muted"> ({item.variantName})</span>
+                                )}
+                                {/* Les options étaient chargées depuis la base
+                                    et jamais affichées : « sans piment » ou
+                                    « bien cuit » n'atteignait pas la personne
+                                    qui cuisine. */}
+                                {options && (
+                                  <span className="mt-0.5 block text-xs font-medium text-state-warn">
+                                    {options}
+                                  </span>
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+
+                      {order.instructions && (
+                        <p className="mt-2.5 rounded-lg bg-state-warn-soft px-2.5 py-2 text-xs font-medium text-state-warn">
+                          {order.instructions}
+                        </p>
+                      )}
+
+                      {column.next && (
+                        <button
+                          type="button"
+                          disabled={mutation.pending}
+                          aria-busy={mutation.isPending(order.id) || undefined}
+                          onClick={() => advance(order, column.next!)}
+                          className="mt-3 h-11 w-full rounded-lg bg-ink text-sm font-medium text-white transition-transform hover:bg-ink/90 active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {column.status === 'CONFIRMED' ? 'Démarrer' : 'Marquer prête'}
+                        </button>
+                      )}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           );

@@ -65,11 +65,12 @@ const STAT_ICONS = {
 };
 
 export default async function DashboardPage() {
-  // Un livreur n'a pas `restaurant:view` : le renvoyer vers son propre
-  // espace plutôt que de le laisser heurter un refus de permission sur la
-  // vue d'ensemble, qui ne le concerne pas.
+  // Ni le livreur ni la cuisine n'ont `restaurant:view` : les renvoyer vers
+  // leur propre écran plutôt que de les laisser heurter un refus de permission
+  // sur la vue d'ensemble, qui ne les concerne pas.
   const preContext = await getTenantContext();
   if (preContext?.role === 'COURIER') redirect('/dashboard/livraisons');
+  if (preContext?.role === 'KITCHEN') redirect('/dashboard/cuisine');
 
   const { restaurant, user } = await requireTenant('restaurant:view');
   const currency = restaurant.currency;

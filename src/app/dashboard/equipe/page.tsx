@@ -3,7 +3,13 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
-import { PERMISSIONS, PERMISSION_LABELS, permissionsForRole } from '@/lib/rbac';
+import {
+  ASSIGNABLE_ROLES,
+  PERMISSIONS,
+  PERMISSION_LABELS,
+  permissionsForRole,
+  type AssignableRole,
+} from '@/lib/rbac';
 import { TeamManager } from '@/components/dashboard/team-manager';
 import { Card, LinkButton, PageHeader } from '@/components/ui';
 
@@ -56,11 +62,9 @@ export default async function TeamPage() {
           value: permission,
           label: PERMISSION_LABELS[permission],
         }))}
-        rolePermissions={{
-          ADMIN: permissionsForRole('ADMIN'),
-          EMPLOYEE: permissionsForRole('EMPLOYEE'),
-          COURIER: permissionsForRole('COURIER'),
-        }}
+        rolePermissions={Object.fromEntries(
+          ASSIGNABLE_ROLES.map((role) => [role, permissionsForRole(role)]),
+        ) as Record<AssignableRole, string[]>}
         members={members.map((member) => ({
           id: member.id,
           role: member.role,

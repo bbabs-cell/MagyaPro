@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { PASSWORD_MIN_LENGTH } from '@/lib/auth/password';
-import { PERMISSIONS } from '@/lib/rbac';
+import { ASSIGNABLE_ROLES, PERMISSIONS } from '@/lib/rbac';
 import { STORE_PERMISSIONS } from '@/lib/boutique/rbac';
 
 /**
@@ -466,7 +466,7 @@ export const deliveryConfirmationSchema = z.object({
 export const teamMemberSchema = z.object({
   email: emailSchema,
   name: nameSchema,
-  role: z.enum(['ADMIN', 'EMPLOYEE', 'COURIER']),
+  role: z.enum(ASSIGNABLE_ROLES),
   extraPermissions: z
     .array(z.enum(PERMISSIONS as unknown as [string, ...string[]]))
     .max(PERMISSIONS.length)

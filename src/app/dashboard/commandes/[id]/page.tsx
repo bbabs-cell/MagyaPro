@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/money';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { PAYMENT_STATUS_LABELS } from '@/lib/payments/service';
 import { getProvider } from '@/lib/payments/registry';
+import { readOptions } from '@/lib/orders/option-snapshot';
 import { env } from '@/lib/env';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { OrderActions } from '@/components/dashboard/order-actions';
@@ -113,9 +114,9 @@ export default async function OrderDetailPage({
             <h2 className="text-sm font-medium">Articles</h2>
             <ul className="mt-3 divide-y divide-surface-border">
               {order.items.map((item) => {
-                const options = Array.isArray(item.options)
-                  ? (item.options as Array<{ groupName: string; optionName: string }>)
-                  : [];
+                // Lecture vérifiée plutôt qu'une conversion `as` : une ligne
+                // mal formée passait pour valide et s'affichait vide.
+                const options = readOptions(item.options);
                 return (
                   <li key={item.id} className="flex justify-between gap-4 py-3 text-sm">
                     <div>

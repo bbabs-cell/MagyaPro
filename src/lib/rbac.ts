@@ -61,6 +61,22 @@ export type Permission = (typeof PERMISSIONS)[number];
 /// d'une commande, seulement la fiche de livraison de `/dashboard/livraisons`.
 const COURIER_PERMISSIONS: Permission[] = ['deliveries:drive'];
 
+/**
+ * Une cuisine a besoin de savoir quoi préparer, et rien d'autre.
+ *
+ * `orders:update_status` seul : il ouvre l'écran de préparation et autorise
+ * les deux gestes du poste — démarrer un plat, le marquer prêt. Pas
+ * `orders:view`, qui donnerait la liste complète des commandes avec les
+ * coordonnées et les montants ; pas `orders:cancel`, qui n'est pas une
+ * décision de cuisine.
+ *
+ * Ce rôle comble un manque qui coûtait cher. Faute de mieux, un cuisinier
+ * était déclaré « Employé » — et recevait alors, dans le même geste, le
+ * fichier clients complet, les réservations, le plan de salle et les
+ * livraisons. Sept accès pour un poste qui en demande un.
+ */
+const KITCHEN_PERMISSIONS: Permission[] = ['orders:update_status'];
+
 const EMPLOYEE_PERMISSIONS: Permission[] = [
   'restaurant:view',
   'menu:view',
@@ -100,8 +116,25 @@ const ROLE_PERMISSIONS: Record<MembershipRole, Permission[]> = {
   EMPLOYEE: EMPLOYEE_PERMISSIONS,
   ADMIN: ADMIN_PERMISSIONS,
   OWNER: OWNER_PERMISSIONS,
+  KITCHEN: KITCHEN_PERMISSIONS,
   COURIER: COURIER_PERMISSIONS,
 };
+
+/**
+ * Rôles qu'un responsable peut attribuer depuis l'écran Équipe.
+ *
+ * Tous sauf `OWNER` : la propriété d'un restaurant ne se donne pas depuis une
+ * liste déroulante.
+ *
+ * Cette liste était recopiée à quatre endroits — le sélecteur, la page Équipe,
+ * et les deux schémas de validation de l'invitation et de la modification.
+ * Quatre copies pour une même vérité, dont deux gardent la porte d'entrée :
+ * ajouter un rôle au sélecteur sans l'ajouter au schéma donne un choix que le
+ * serveur refuse, et l'inverse donne un rôle que personne ne peut attribuer.
+ */
+export const ASSIGNABLE_ROLES = ['ADMIN', 'EMPLOYEE', 'KITCHEN', 'COURIER'] as const;
+
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 export function permissionsForRole(role: MembershipRole): Permission[] {
   return ROLE_PERMISSIONS[role];
@@ -132,7 +165,24 @@ export const ROLE_LABELS: Record<MembershipRole, string> = {
   OWNER: 'Propriétaire',
   ADMIN: 'Administrateur',
   EMPLOYEE: 'Employé',
+  KITCHEN: 'Cuisine',
   COURIER: 'Livreur',
+};
+
+/**
+ * Ce que chaque rôle permet, en une phrase, pour l'écran d'invitation.
+ *
+ * Un propriétaire choisit un rôle dans une liste déroulante ; « Employé » ne
+ * dit pas qu'il ouvre le fichier clients, et c'est précisément comme cela
+ * qu'un cuisinier se retrouvait avec accès à tout.
+ */
+export const ROLE_DESCRIPTIONS: Record<MembershipRole, string> = {
+  OWNER: 'Tout, y compris la facturation et la suppression du restaurant.',
+  ADMIN: 'Tout le quotidien : carte, commandes, équipe, chiffres. Pas la facturation.',
+  EMPLOYEE:
+    'Salle et service : commandes, réservations, tables, fichier clients, livraisons.',
+  KITCHEN: 'Uniquement l’écran de préparation. Ni clients, ni chiffres, ni réglages.',
+  COURIER: 'Uniquement ses livraisons : prendre une course, encaisser, confirmer.',
 };
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
