@@ -10,6 +10,7 @@ import {
 } from '@/lib/boutique/purchases-service';
 import { createReturn } from '@/lib/boutique/returns-service';
 import { openCashSession, closeCashSession } from '@/lib/boutique/cash-service';
+import { purchaseBalance } from '@/lib/boutique/purchase-payment';
 
 /**
  * Achats, retours, caisse — le reste du cœur métier Boutique, même
@@ -134,8 +135,25 @@ describe('Achats', () => {
     const variant = await prisma.storeProductVariant.findUnique({ where: { id: shop.variant.id } });
     expect(variant!.cost).toBe(2667);
 
-    const updatedSupplier = await prisma.supplier.findUnique({ where: { id: supplier.id } });
-    expect(updatedSupplier!.debtBalance).toBe(25_000);
+    // Ce que le fournisseur peut réclamer n'est plus tenu par un compteur : il
+    // se déduit de ce qui a été livré, moins les règlements rattachés (voir
+    // `purchase-payment.ts`). Ce test vérifiait encore l'ancien compteur
+    // `Supplier.debtBalance`, abandonné depuis — il mesurait donc une valeur
+    // que plus personne n'écrit, et échouait pour la bonne raison.
+    const received = await prisma.purchaseOrderItem.findMany({
+      where: { purchaseOrderId: order.id },
+      select: { quantityReceived: true, unitFactor: true, unitCost: true, discount: true },
+    });
+    const payments = await prisma.supplierPayment.findMany({
+      where: { purchaseOrderId: order.id },
+      select: { amount: true },
+    });
+
+    const balance = purchaseBalance(received, payments);
+    expect(balance.due).toBe(25_000);
+    expect(balance.paid).toBe(0);
+    expect(balance.remaining).toBe(25_000);
+    expect(balance.state).toBe('unpaid');
   });
 
   it('permet une réception partielle, puis complète la commande au second passage', async () => {

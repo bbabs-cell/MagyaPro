@@ -27,8 +27,16 @@ export function BarChart({ data, max }: { data: BarPoint[]; max: number }) {
   return (
     <div className="flex h-40 gap-2">
       {data.map((point) => (
-        <div key={point.label} className="flex h-full flex-1 flex-col items-center gap-1.5">
-          <span className="text-[11px] text-white/50">{point.display}</span>
+        // `min-w-0` : la largeur plancher d'une colonne flex est sinon celle
+        // de son contenu — ici un montant formaté, qui est long. Les colonnes
+        // ne pouvaient pas se comprimer et le graphique poussait la page.
+        <div
+          key={point.label}
+          className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5"
+        >
+          <span className="w-full truncate text-center text-[11px] text-white/50">
+            {point.display}
+          </span>
           <div className="flex w-full flex-1 items-end">
             <div
               className="w-full rounded-t-md bg-white/80"
@@ -36,7 +44,9 @@ export function BarChart({ data, max }: { data: BarPoint[]; max: number }) {
               aria-hidden="true"
             />
           </div>
-          <span className="text-[11px] text-white/40">{point.label}</span>
+          <span className="w-full truncate text-center text-[11px] text-white/40">
+            {point.label}
+          </span>
         </div>
       ))}
     </div>
@@ -86,7 +96,10 @@ export function GroupedBarChart({
 
       <div className="mt-3 flex h-40 gap-2" aria-hidden="true">
         {data.map((point) => (
-          <div key={point.label} className="flex h-full flex-1 flex-col items-center gap-1.5">
+          <div
+            key={point.label}
+            className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5"
+          >
             <div className="flex w-full flex-1 items-end justify-center gap-0.5">
               <div
                 className="w-1/2 rounded-t-md bg-white/80"
@@ -97,7 +110,9 @@ export function GroupedBarChart({
                 style={{ height: `${Math.max(2, (point.second / max) * 100)}%` }}
               />
             </div>
-            <span className="text-[11px] text-white/40">{point.label}</span>
+            <span className="w-full truncate text-center text-[11px] text-white/40">
+              {point.label}
+            </span>
           </div>
         ))}
       </div>

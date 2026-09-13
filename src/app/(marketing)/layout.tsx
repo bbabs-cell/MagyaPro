@@ -57,10 +57,19 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
             <p className="text-xs text-ink-faint">
               © {new Date().getFullYear()} Magyapro. Tous droits réservés.
             </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
-              <Link href="/mentions-legales" className="hover:text-ink-muted">Mentions légales</Link>
-              <Link href="/conditions-generales" className="hover:text-ink-muted">CGU</Link>
-              <Link href="/confidentialite" className="hover:text-ink-muted">Confidentialité</Link>
+            {/* `py-1` : ces liens mesuraient 16 px de haut, sous le minimum de
+                24 px attendu pour une cible tactile. Le texte n'a pas grossi,
+                seule la zone touchable autour de lui. */}
+            <div className="flex flex-wrap gap-x-4 text-xs text-ink-faint">
+              <Link href="/mentions-legales" className="py-1 hover:text-ink-muted">
+                Mentions légales
+              </Link>
+              <Link href="/conditions-generales" className="py-1 hover:text-ink-muted">
+                CGU
+              </Link>
+              <Link href="/confidentialite" className="py-1 hover:text-ink-muted">
+                Confidentialité
+              </Link>
             </div>
           </div>
         </div>

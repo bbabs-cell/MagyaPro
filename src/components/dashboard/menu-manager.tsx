@@ -249,10 +249,15 @@ export function MenuManager({
 
                 {canManage && (
                   <>
+                    {/* 24 px au carré : ces deux boutons mesuraient 18 px de
+                        large et se touchaient, ce qui échoue au critère de
+                        taille de cible (WCAG 2.5.8) sans même pouvoir invoquer
+                        l'exception d'espacement. Le glyphe n'a pas grossi,
+                        seule la zone tactile autour de lui. */}
                     <button
                       type="button"
                       onClick={() => setCategoryForm(category)}
-                      className="rounded p-1 text-xs text-ink-faint hover:text-ink"
+                      className="flex h-6 w-6 items-center justify-center rounded text-xs text-ink-faint hover:text-ink"
                     >
                       <span aria-hidden="true">✎</span>
                       <span className="sr-only">Modifier {category.name}</span>
@@ -262,7 +267,7 @@ export function MenuManager({
                       disabled={mutation.pending}
                       aria-busy={mutation.isPending(category.id) || undefined}
                       onClick={() => deleteCategory(category)}
-                      className="rounded p-1 text-xs text-ink-faint hover:text-red-600 disabled:opacity-50"
+                      className="flex h-6 w-6 items-center justify-center rounded text-xs text-ink-faint hover:text-red-600 disabled:opacity-50"
                     >
                       <span aria-hidden="true">✕</span>
                       <span className="sr-only">Supprimer {category.name}</span>
@@ -339,7 +344,12 @@ export function MenuManager({
                   />
                 )}
 
-                <div className="min-w-0 flex-1">
+                {/* `min-w-[10rem]` plutôt que `min-w-0` : sans largeur
+                    plancher, ce bloc se comprimait jusqu'à zéro, la ligne
+                    « tenait » donc en apparence et le groupe de boutons —
+                    311 px, non compressible — débordait de l'écran au lieu de
+                    passer à la ligne. Mesuré à 320 px : 24 px hors cadre. */}
+                <div className="min-w-[10rem] flex-1">
                   <p className="flex flex-wrap items-center gap-2 font-medium">
                     {product.name}
                     {product.badge !== 'NONE' && (
@@ -359,7 +369,7 @@ export function MenuManager({
                 </div>
 
                 {canManage && (
-                  <div className="flex shrink-0 gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     <Button
                       size="sm"
                       variant="secondary"

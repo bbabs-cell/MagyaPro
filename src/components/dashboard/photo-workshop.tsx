@@ -7,7 +7,7 @@ import { ApiError, api, uploadFile } from '@/lib/client/api';
 import { cropAndDownscale } from '@/lib/client/crop-image';
 import { photoBrief } from '@/lib/images/briefs';
 import { CAPTURE_RATIOS } from '@/lib/images/framing';
-import { Card, EmptyState } from '@/components/ui';
+import { Button, Card, EmptyState } from '@/components/ui';
 
 type ProductWithoutPhoto = { id: string; name: string; categoryName: string };
 
@@ -109,17 +109,22 @@ export function PhotoWorkshop({ products }: { products: ProductWithoutPhoto[] })
             dragOver ? 'border-ink bg-surface-sunken' : 'border-surface-border'
           }`}
         >
-          <p className="font-medium">Glissez-déposez vos photos ici</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            Ou{' '}
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="underline underline-offset-4"
-            >
-              choisissez des fichiers
-            </button>
-            . Chaque photo est attribuée au prochain plat sans photo.
+          {/* Le glisser-déposer n'existe pas sur un téléphone : le bouton
+              ci-dessous y est donc le **seul** moyen d'ajouter une photo. Il
+              était rendu comme un lien de 20 px au milieu d'une phrase. Il
+              devient une vraie commande, et c'est l'invitation au
+              glisser-déposer qui passe au second plan sur petit écran. */}
+          <p className="font-medium max-sm:sr-only">Glissez-déposez vos photos ici</p>
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-3 max-sm:mt-0"
+            onClick={() => inputRef.current?.click()}
+          >
+            Choisir des photos
+          </Button>
+          <p className="mt-2 text-sm text-ink-muted">
+            Chaque photo est attribuée au prochain plat sans photo.
           </p>
           <input
             ref={inputRef}

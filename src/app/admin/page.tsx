@@ -349,14 +349,24 @@ export default async function AdminDashboardPage() {
           {revenue.byMonth.map((point) => {
             const amount = amountIn(point.byCurrency, currency);
             return (
-              <div key={point.month} className="flex flex-1 flex-col items-center gap-1.5">
+              // `min-w-0` : sans lui, la largeur plancher d'une colonne flex
+              // est celle de son contenu, donc du libellé « avr. 26 ». Les
+              // douze colonnes ne pouvaient pas se comprimer et le graphique
+              // débordait de 217 px sur un écran de 320. `truncate` restait
+              // inopérant pour la même raison. Mesuré, puis remesuré.
+              <div
+                key={point.month}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1.5"
+              >
                 <div className="flex h-16 w-full items-end">
                   <div
                     className={`w-full rounded-t ${amount > 0 ? 'bg-emerald-500/70' : 'bg-white/10'}`}
                     style={{ height: `${Math.max(2, Math.round((amount / peak) * 100))}%` }}
                   />
                 </div>
-                <span className="truncate text-[11px] text-white/40">{point.month}</span>
+                <span className="w-full truncate text-center text-[11px] text-white/40">
+                  {point.month}
+                </span>
               </div>
             );
           })}
