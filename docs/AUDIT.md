@@ -128,14 +128,17 @@ commandes en cours. Une autre ne l'est pas.
 
 ## 4. 🟡 Améliorations
 
-- **Typographie (§6)** — le prompt demande Manrope. Le produit a délibérément
-  choisi l'inverse il y a deux jours : police système pour le texte courant,
-  donc zéro octet téléchargé, et une police de caractère pour les seuls titres.
-  Décision à trancher, elle oppose le §6 au §8 et au §28.
-- **Direction photographique (§21)** — écrire les prompts image ne coûte rien.
-  Les générer consomme des crédits payants, ce que la règle du produit
-  interdit. Périmètre à confirmer.
-- **Super Admin (§23-27)** — la navigation a été réorganisée en cinq sections
+- **Typographie (§6)** — **tranché en phase 17, en faveur du §6.** Manrope est
+  adoptée pour le corps de texte : 24 Ko de plus au premier chargement, mesurés
+  dans le build. Le conflit avec le §8 est amorti par le repli aux métriques
+  ajustées de `next/font` — le texte change de dessin sans se déplacer. Voir
+  docs/TYPOGRAPHIE.md.
+- **Direction photographique (§21)** — **tranché en phase 15** : outillage
+  produit et briefs, pas d'images générées. Voir docs/PHOTOS.md.
+- **Super Admin (§23-27)** — **traité en phase 16.** La navigation a été
+  regroupée en deux univers de premier niveau, et trois défauts sur les
+  chiffres ont été corrigés en chemin. Voir docs/SUPER-ADMIN.md.
+  Note d'origine : la navigation a été réorganisée en cinq sections
   il y a deux jours. Le prompt demande deux univers de premier niveau,
   Restaurants et Boutiques. C'est une évolution de ce qui existe, pas une
   reprise à zéro.

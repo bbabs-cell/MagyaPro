@@ -162,35 +162,44 @@ export function DocumentLines({
   currency: string;
 }) {
   return (
-    <table className="mt-6 w-full text-sm">
-      <thead>
-        <tr className="border-b-2 border-ink text-start text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-          <th className="py-2 text-start font-semibold">Article</th>
-          <th className="py-2 text-end font-semibold">Qté</th>
-          <th className="py-2 text-end font-semibold">Prix unitaire</th>
-          <th className="py-2 text-end font-semibold">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {lines.map((line) => (
-          // `break-inside` : une ligne d'article ne doit pas être coupée en
-          // deux par un saut de page.
-          <tr key={line.id} className="break-inside-avoid border-b border-surface-border">
-            <td className="py-2.5 pe-3">
-              <span className="text-ink">{line.label}</span>
-              {line.detail && <span className="text-ink-muted"> · {line.detail}</span>}
-            </td>
-            <td className="py-2.5 text-end tabular-nums">{line.quantity}</td>
-            <td className="py-2.5 text-end tabular-nums text-ink-muted">
-              {formatMoney(line.unitPrice, currency)}
-            </td>
-            <td className="py-2.5 text-end font-medium tabular-nums">
-              {formatMoney(line.total, currency)}
-            </td>
+    // Quatre colonnes de prix ne rentrent pas toujours sur un téléphone
+    // étroit. Un document ne peut pas être empilé comme un tableau de bord —
+    // c'est une facture, elle garde sa forme — il défile donc
+    // horizontalement plutôt que de pousser la page entière.
+    //
+    // `overflow-x` n'a aucun effet à l'impression : le contenu y est paginé,
+    // pas contraint par une fenêtre. La mise en page papier est intacte.
+    <div className="mt-6 overflow-x-auto">
+      <table className="w-full min-w-[22rem] text-sm">
+        <thead>
+          <tr className="border-b-2 border-ink text-start text-[11px] uppercase tracking-[0.12em] text-ink-muted">
+            <th className="py-2 text-start font-semibold">Article</th>
+            <th className="py-2 text-end font-semibold">Qté</th>
+            <th className="py-2 text-end font-semibold">Prix unitaire</th>
+            <th className="py-2 text-end font-semibold">Total</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {lines.map((line) => (
+            // `break-inside` : une ligne d'article ne doit pas être coupée en
+            // deux par un saut de page.
+            <tr key={line.id} className="break-inside-avoid border-b border-surface-border">
+              <td className="py-2.5 pe-3">
+                <span className="text-ink">{line.label}</span>
+                {line.detail && <span className="text-ink-muted"> · {line.detail}</span>}
+              </td>
+              <td className="py-2.5 text-end tabular-nums">{line.quantity}</td>
+              <td className="py-2.5 text-end tabular-nums text-ink-muted">
+                {formatMoney(line.unitPrice, currency)}
+              </td>
+              <td className="py-2.5 text-end font-medium tabular-nums">
+                {formatMoney(line.total, currency)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -4,20 +4,23 @@
 
 @layer base {
   :root {
-    /* Pile système, et rien d'autre.
-       « Inter » figurait en tête de cette liste sans jamais être chargée :
-       aucun import `next/font`, aucun lien vers un fournisseur de polices.
-       Elle ne s'affichait donc que chez les rares visiteurs l'ayant installée
-       sur leur machine ; tous les autres — c'est-à-dire tout le monde —
-       recevaient déjà la police système. La retirer ne change rien à l'écran,
-       et supprime une déclaration qui décrivait une typographie inexistante.
+    /* Manrope, puis la pile système.
+       Le §6 demande Manrope pour le corps de texte ; le produit était sur la
+       pile système seule, pour ne rien télécharger sur des connexions
+       irrégulières. La décision a été prise d'adopter Manrope malgré ce coût.
 
-       Ce choix est maintenu volontairement : zéro octet de police à
-       télécharger pour le corps de texte, sur des téléphones à connexion
-       irrégulière. La signature vient des titres, qui ont leur propre police
-       (voir `src/lib/fonts.ts`). */
-    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-      'Helvetica Neue', sans-serif;
+       La pile système reste derrière, et ce n'est pas décoratif : elle
+       s'affiche pendant le chargement de Manrope, et c'est elle qui dessine
+       l'arabe, que Manrope ne couvre pas — le navigateur bascule alors glyphe
+       par glyphe, sans qu'aucune règle n'ait à le prévoir.
+
+       `--font-manrope` est posée par `next/font` (voir `src/lib/fonts.ts`),
+       qui héberge le fichier avec le reste de l'application : aucune requête
+       vers un fournisseur tiers, donc aucune adresse de visiteur transmise
+       ailleurs. Les sites publics des restaurants, eux, remplacent
+       `--font-sans` par la police choisie par le commerçant. */
+    --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system,
+      'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 
     /* Neutres — source unique du produit entier.
        Ces valeurs existaient en double : ici, sous l'attribut de thème

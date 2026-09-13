@@ -31,29 +31,29 @@ typography:
     lineHeight: 1.15
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.01em"
   title:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.4
   body:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1.3
     letterSpacing: "0.05em"
   micro:
-    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Manrope, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 500
     lineHeight: 1.2
@@ -209,34 +209,43 @@ réservé au reçu imprimable, qui repasse volontairement en blanc à l'impressi
 ## Typography
 
 **Display Font:** Bricolage Grotesque (auto-hébergée, variable, repli sur la pile système)
-**Body Font:** la pile système — `ui-sans-serif`, `system-ui`, puis les polices natives
+**Body Font:** Manrope (auto-hébergée, variable, sous-ensemble latin, repli sur la pile système)
 **Receipt/Mono Font:** DM Mono, pour le ticket de caisse, le bon de cuisine, les identifiants et les codes
 
-**Character:** le corps de texte est délibérément **la police de l'appareil**.
-Un outil consulté toute la journée se lit mieux dans le caractère que le
-téléphone dessine le mieux, et rien n'est téléchargé pour lui — un choix qui
-compte sur des connexions irrégulières. Bricolage Grotesque, grotesque à axe
-optique variable, n'intervient qu'aux titres : ses formes se resserrent en
-grand et s'ouvrent en petit, elle a du caractère sans être décorative. DM Mono
-est la police du papier, pas du terminal : plus chaude qu'une police d'éditeur
-de code, elle convient aux deux seuls objets que ce produit imprime vraiment.
+**Character:** Manrope porte le corps de texte. Grotesque géométrique à
+terminaisons ouvertes, elle reste lisible en petit corps — ce que fait un
+tableau de bord toute la journée — et donne au produit un caractère qui ne
+dépend plus de l'appareil du lecteur.
 
-Le contraste entre un titre dessiné et un corps de texte natif est le seul
-geste typographique du système. Il n'en faut pas d'autre.
+Le produit a longtemps tenu le corps de texte sur la pile système, pour ne
+rien télécharger sur des connexions irrégulières. **Ce coût est réel et n'a pas
+disparu** : environ vingt-quatre kilo-octets au premier chargement, et un
+ressaut du texte pendant que la police arrive. Il a été accepté sciemment.
+Trois précautions le contiennent : sous-ensemble latin seul, `display: swap`
+pour que le texte soit lisible avant l'arrivée de la police, et police
+auto-hébergée par `next/font` — aucun appel vers un fournisseur tiers.
+
+Bricolage Grotesque, grotesque à axe optique variable, garde les titres : ses
+formes se resserrent en grand et s'ouvrent en petit. DM Mono est la police du
+papier, pas du terminal : plus chaude qu'une police d'éditeur de code, elle
+convient aux deux seuls objets que ce produit imprime vraiment.
+
+Le contraste entre un titre à axe optique et un corps de texte géométrique est
+le geste typographique du système.
 
 ### Hierarchy
 
 - **Display** (Bricolage Grotesque 600, 1.25rem montant à 2.25rem) : le titre
   de page, et lui seul dans les tableaux de bord. Sur les pages publiques, elle
   porte aussi les titres de section et les grands nombres.
-- **Headline** (système 600, 1.5rem) : titre de section à l'intérieur d'une page.
-- **Title** (système 500, 0.875rem) : intitulé de carte, en-tête de tableau,
+- **Headline** (Manrope 600, 1.5rem) : titre de section à l'intérieur d'une page.
+- **Title** (Manrope 500, 0.875rem) : intitulé de carte, en-tête de tableau,
   entrée de navigation.
-- **Body** (système 400, 0.9375rem, interligne 1.6) : le texte courant. Les
+- **Body** (Manrope 400, 0.9375rem, interligne 1.6) : le texte courant. Les
   paragraphes explicatifs ne dépassent pas 70 caractères par ligne.
-- **Label** (système 500, 0.75rem, interlettrage 0.05em, en capitales) :
+- **Label** (Manrope 500, 0.75rem, interlettrage 0.05em, en capitales) :
   intitulés de statistiques et de cellules sur mobile.
-- **Micro** (système 500, 0.6875rem) : le dernier degré avant l'illisible.
+- **Micro** (Manrope 500, 0.6875rem) : le dernier degré avant l'illisible.
   Réservé à deux emplois sur grand écran — les étiquettes d'axe d'un graphique
   et les intertitres de la barre latérale. Jamais sur un écran tactile, jamais
   pour une information qu'on ne peut pas retrouver ailleurs.
@@ -249,15 +258,24 @@ geste typographique du système. Il n'en faut pas d'autre.
 total — porte `tabular-nums`. Un total qui ne s'aligne pas avec celui du dessus
 se compare à l'œil, donc mal.
 
-**La règle du corps natif.** Le texte courant reste sur la pile système et
-aucune police n'est chargée pour lui. Déclarer une famille qu'on ne télécharge
-pas revient à décrire une typographie qui n'existe pas : c'était le cas ici
-pendant longtemps, « Inter » figurant en tête de la pile sans jamais être
-servie. Une famille nommée dans ce fichier est une famille réellement chargée.
+**La règle de la famille réellement chargée.** Déclarer une famille qu'on ne
+télécharge pas revient à décrire une typographie qui n'existe pas : c'était le
+cas ici pendant longtemps, « Inter » figurant en tête de la pile sans jamais
+être servie. **Une famille nommée dans ce fichier est une famille réellement
+chargée.** Manrope l'est, par `next/font`.
 
-**La règle de l'arabe.** Bricolage Grotesque ne couvre pas l'arabe. En lecture
-inversée, les titres reprennent la pile système : mieux vaut une hiérarchie
-plus plate qu'un caractère de substitution imposé par le navigateur.
+Cette règle a remplacé « la règle du corps natif », qui prescrivait l'inverse —
+aucune police pour le texte courant. Le §6 demandait Manrope ; l'arbitrage a
+été rendu en faveur du §6, en connaissance du coût. Le raisonnement de
+l'ancienne règle reste valable et est conservé ci-dessus, dans **Character** :
+il explique ce que cette décision coûte, ce qui est plus utile que de le taire.
+
+**La règle de l'arabe.** Ni Manrope ni Bricolage Grotesque ne couvrent l'arabe,
+et c'est pour cela que la pile système reste derrière les deux plutôt que
+d'être remplacée. Le navigateur bascule glyphe par glyphe : un texte arabe est
+dessiné par la police du système, sans qu'aucune règle CSS n'ait à le prévoir.
+Pour les titres, cela produit une hiérarchie plus plate en lecture inversée —
+mieux vaut cela qu'un caractère de substitution imposé.
 
 **La règle du repli sans serif.** `--font-display` retombe sur la pile sans
 empattement, jamais sur une serif générique : les sites publics des restaurants
