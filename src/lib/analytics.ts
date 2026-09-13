@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { sumByCurrency, type MoneyByCurrency } from '@/lib/money';
 
 /**
  * Statistiques.
@@ -321,7 +322,11 @@ export async function getPlatformMetrics() {
     prisma.restaurant.count({ where: { status: 'SUSPENDED', ...NOT_DEMO_RESTAURANT } }),
     prisma.user.count(),
     prisma.order.count({ where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT } }),
-    prisma.order.aggregate({
+    // Groupé par devise plutôt qu'agrégé en un seul total : additionner des
+    // francs CFA de l'Ouest et du Centre donne un nombre qui ne veut rien
+    // dire, et rien à l'écran ne le signalait.
+    prisma.order.groupBy({
+      by: ['currency'],
       where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT },
       _sum: { total: true },
     }),
@@ -341,9 +346,11 @@ export async function getPlatformMetrics() {
     suspendedRestaurants,
     users,
     orders,
-    // Volume brut traité par la plateforme, toutes devises confondues : à ne
-    // pas confondre avec le revenu de Magyapro, qui provient des abonnements.
-    grossVolume: revenue._sum.total ?? 0,
+    // Volume brut traité par la plateforme, tenu par devise : à ne pas
+    // confondre avec le revenu de MagyaPro, qui provient des abonnements.
+    grossVolumeByCurrency: sumByCurrency(
+      revenue.map((row) => ({ amount: row._sum.total ?? 0, currency: row.currency })),
+    ),
     subscriptionsByStatus: Object.fromEntries(
       subscriptions.map((row) => [row.status, row._count]),
     ) as Record<string, number>,
@@ -361,8 +368,8 @@ export type PlatformAnalytics = {
   mrrByCurrency: Record<string, number>;
   /** Nouveaux restaurants par mois, sur les `months` derniers mois (dont le mois en cours). */
   signupsByMonth: Array<{ month: string; count: number }>;
-  /** Volume brut traité (hors commandes annulées) par mois, toutes devises confondues. */
-  gmvByMonth: Array<{ month: string; amount: number }>;
+  /** Volume brut traité (hors commandes annulées) par mois, tenu par devise. */
+  gmvByMonth: Array<{ month: string; byCurrency: MoneyByCurrency }>;
   /** Répartition des abonnements actifs par plan, avec leur contribution au MRR. */
   byPlan: Array<{ planId: string; planName: string; count: number; mrr: number; currency: string }>;
   /** Résiliations dans les 30 derniers jours vs abonnements actifs au début de la période. */
@@ -401,7 +408,7 @@ export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytic
       }),
       prisma.order.findMany({
         where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo }, restaurant: NOT_DEMO_RESTAURANT },
-        select: { placedAt: true, total: true },
+        select: { placedAt: true, total: true, currency: true },
       }),
       prisma.subscription.count({
         where: {
@@ -459,10 +466,13 @@ export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytic
     if (signupCounts.has(key)) signupCounts.set(key, (signupCounts.get(key) ?? 0) + 1);
   }
 
-  const gmvSums = new Map(monthKeys.map((key) => [key, 0]));
+  // Un seau par mois, et dans chaque seau un montant par devise.
+  const gmvSums = new Map<string, MoneyByCurrency>(monthKeys.map((key) => [key, {}]));
   for (const order of orders) {
-    const key = monthKeyOf(order.placedAt);
-    if (gmvSums.has(key)) gmvSums.set(key, (gmvSums.get(key) ?? 0) + order.total);
+    const bucket = gmvSums.get(monthKeyOf(order.placedAt));
+    if (!bucket) continue;
+    const code = order.currency.toUpperCase();
+    bucket[code] = (bucket[code] ?? 0) + order.total;
   }
 
   const MONTH_LABELS = [
@@ -482,7 +492,7 @@ export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytic
     })),
     gmvByMonth: monthKeys.map((key) => ({
       month: labelFor(key),
-      amount: gmvSums.get(key) ?? 0,
+      byCurrency: gmvSums.get(key) ?? {},
     })),
     byPlan: [...byPlanMap.values()].sort((a, b) => b.mrr - a.mrr),
     churn: {

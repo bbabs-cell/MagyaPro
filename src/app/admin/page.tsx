@@ -10,7 +10,13 @@ import {
   SUBSCRIPTION_STATUSES,
   SUBSCRIPTION_STATUS_LABELS,
 } from '@/lib/subscription-labels';
-import { amountIn, formatMoney, primaryCurrency } from '@/lib/money';
+import {
+  amountIn,
+  formatMoney,
+  hasSeveralCurrencies,
+  primaryCurrency,
+  type MoneyByCurrency,
+} from '@/lib/money';
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
 import { StatusPill } from '@/components/admin/state-badge';
@@ -83,6 +89,29 @@ const STAT_ICONS = {
     </svg>
   ),
 };
+
+/**
+ * Volume affiché sur une carte de synthèse.
+ *
+ * Une carte ne porte qu'un chiffre. Tant qu'une seule devise circule, c'est
+ * celle-là ; dès qu'il y en a plusieurs, la carte montre la dominante et
+ * l'infobulle énumère le reste — **jamais** une somme des deux, qui serait un
+ * nombre sans signification affiché comme s'il en avait une.
+ */
+function volumeValue(amounts: MoneyByCurrency): string {
+  const currency = primaryCurrency(amounts);
+  return formatMoney(amountIn(amounts, currency), currency);
+}
+
+function volumeHint(amounts: MoneyByCurrency, base: string): string {
+  if (!hasSeveralCurrencies(amounts)) return base;
+  const currency = primaryCurrency(amounts);
+  const others = Object.keys(amounts)
+    .filter((code) => code !== currency && amounts[code] !== 0)
+    .map((code) => formatMoney(amounts[code]!, code))
+    .join(' · ');
+  return `${base} · aussi ${others}`;
+}
 
 export default async function AdminDashboardPage() {
   await requireSuperAdmin();
@@ -398,9 +427,9 @@ export default async function AdminDashboardPage() {
         <AdminStat label="Commandes" value={String(metrics.orders)} icon={STAT_ICONS.orders} />
         <AdminStat
           label="Volume traité"
-          value={formatMoney(metrics.grossVolume, 'XOF')}
+          value={volumeValue(metrics.grossVolumeByCurrency)}
           icon={STAT_ICONS.volume}
-          hint="Toutes commandes, hors annulées"
+          hint={volumeHint(metrics.grossVolumeByCurrency, 'Toutes commandes, hors annulées')}
         />
         <AdminStat
           label="Abonnements actifs"
@@ -509,9 +538,9 @@ export default async function AdminDashboardPage() {
         <AdminStat label="Ventes" value={String(storeMetrics.sales)} icon={STAT_ICONS.orders} />
         <AdminStat
           label="Volume traité"
-          value={formatMoney(storeMetrics.grossVolume, 'XOF')}
+          value={volumeValue(storeMetrics.grossVolumeByCurrency)}
           icon={STAT_ICONS.volume}
-          hint="Toutes ventes, hors annulées"
+          hint={volumeHint(storeMetrics.grossVolumeByCurrency, 'Toutes ventes, hors annulées')}
         />
         <AdminStat
           label="Abonnements actifs"

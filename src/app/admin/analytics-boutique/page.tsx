@@ -2,7 +2,13 @@ import type { Metadata } from 'next';
 
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformStoreAnalytics } from '@/lib/boutique/platform-analytics';
-import { formatMoney } from '@/lib/money';
+import {
+  amountIn,
+  formatMoney,
+  hasSeveralCurrencies,
+  mergeByCurrency,
+  primaryCurrency,
+} from '@/lib/money';
 import { BarChart, Metric } from '@/components/admin/charts';
 
 export const metadata: Metadata = { title: 'Analytics Boutique' };
@@ -14,7 +20,15 @@ export default async function AdminStoreAnalyticsPage() {
   const analytics = await getPlatformStoreAnalytics(6);
   const currencies = Object.keys(analytics.mrrByCurrency);
   const maxSignups = Math.max(1, ...analytics.signupsByMonth.map((m) => m.count));
-  const maxGmv = Math.max(1, ...analytics.gmvByMonth.map((m) => m.amount));
+  // Une seule série tracée, dans la devise dominante ; les autres sont
+  // énoncées sous le graphique au lieu d'y être fondues.
+  const volumeTotals = mergeByCurrency(...analytics.gmvByMonth.map((m) => m.byCurrency));
+  const volumeCurrency = primaryCurrency(volumeTotals);
+  const gmvSeries = analytics.gmvByMonth.map((m) => ({
+    label: m.month,
+    amount: amountIn(m.byCurrency, volumeCurrency),
+  }));
+  const maxGmv = Math.max(1, ...gmvSeries.map((m) => m.amount));
 
   return (
     <>
@@ -60,13 +74,28 @@ export default async function AdminStoreAnalyticsPage() {
           <h2 id="gmv" className="text-sm font-medium">Volume de ventes traité par mois</h2>
           <div className="mt-3 rounded-2xl border border-white/10 p-4">
             <BarChart
-              data={analytics.gmvByMonth.map((m) => ({ label: m.month, value: m.amount, display: m.amount > 0 ? formatMoney(m.amount, 'XOF') : '0' }))}
+              data={gmvSeries.map((m) => ({
+                label: m.label,
+                value: m.amount,
+                display: m.amount > 0 ? formatMoney(m.amount, volumeCurrency) : '0',
+              }))}
               max={maxGmv}
             />
           </div>
           <p className="mt-2 text-xs text-white/40">
-            Volume brut, toutes devises confondues affichées en XOF — à ne pas confondre avec le
-            revenu d&apos;abonnement de Magyapro.
+            Volume brut en {volumeCurrency} — à ne pas confondre avec le revenu
+            d&apos;abonnement de MagyaPro.
+            {hasSeveralCurrencies(volumeTotals) && (
+              <>
+                {' '}
+                Les autres devises ne sont pas dans le graphique :{' '}
+                {Object.keys(volumeTotals)
+                  .filter((code) => code !== volumeCurrency && volumeTotals[code] !== 0)
+                  .map((code) => formatMoney(volumeTotals[code]!, code))
+                  .join(' · ')}
+                .
+              </>
+            )}
           </p>
         </section>
       </div>

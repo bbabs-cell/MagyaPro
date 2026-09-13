@@ -5,6 +5,7 @@ import {
   currencySymbol,
   formatMoney,
   hasSeveralCurrencies,
+  mergeByCurrency,
   primaryCurrency,
   sumByCurrency,
   toMajor,
@@ -110,6 +111,33 @@ describe('Cumul par devise', () => {
   it('lit un montant dans une devise absente comme zéro, sans échouer', () => {
     expect(amountIn({ XOF: 400 }, 'XAF')).toBe(0);
     expect(amountIn({ XOF: 400 }, 'xof')).toBe(400);
+  });
+
+  it('fusionne plusieurs répartitions sans jamais croiser les devises', () => {
+    expect(
+      mergeByCurrency({ XOF: 100, XAF: 50 }, { XOF: 25 }, { EUR: 7 }),
+    ).toEqual({ XOF: 125, XAF: 50, EUR: 7 });
+  });
+
+  it('fusionne en normalisant la casse, comme le cumul', () => {
+    expect(mergeByCurrency({ xof: 100 }, { XOF: 50 })).toEqual({ XOF: 150 });
+  });
+
+  it('fusionne zéro répartition en un ensemble vide', () => {
+    expect(mergeByCurrency()).toEqual({});
+    // Le cas réel : douze mois sans aucune vente.
+    expect(mergeByCurrency({}, {}, {})).toEqual({});
+    expect(primaryCurrency(mergeByCurrency())).toBe('XOF');
+  });
+
+  it('ne modifie pas les répartitions fusionnées', () => {
+    // Les seaux mensuels sont réutilisés pour tracer le graphique après avoir
+    // servi à trouver la devise dominante : les corrompre fausserait le tracé.
+    const first = { XOF: 100 };
+    const second = { XOF: 50 };
+    mergeByCurrency(first, second);
+    expect(first).toEqual({ XOF: 100 });
+    expect(second).toEqual({ XOF: 50 });
   });
 
   it('ne signale un mélange que si deux devises portent réellement un montant', () => {

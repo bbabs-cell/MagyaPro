@@ -169,6 +169,23 @@ export function amountIn(amounts: MoneyByCurrency, currency: string): number {
   return amounts[currency.toUpperCase()] ?? 0;
 }
 
+/**
+ * Fusionne plusieurs répartitions par devise, devise par devise.
+ *
+ * Sert notamment à retrouver la devise dominante d'une série mensuelle : il
+ * faut d'abord réunir tous les mois avant de savoir laquelle pèse le plus.
+ */
+export function mergeByCurrency(...amounts: MoneyByCurrency[]): MoneyByCurrency {
+  const total: MoneyByCurrency = {};
+  for (const part of amounts) {
+    for (const [code, value] of Object.entries(part)) {
+      const key = code.toUpperCase();
+      total[key] = (total[key] ?? 0) + value;
+    }
+  }
+  return total;
+}
+
 /** Vrai dès que plus d'une devise est en jeu — donc qu'un total unique mentirait. */
 export function hasSeveralCurrencies(amounts: MoneyByCurrency): boolean {
   return Object.keys(amounts).filter((code) => amounts[code] !== 0).length > 1;

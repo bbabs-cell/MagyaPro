@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { sumByCurrency, type MoneyByCurrency } from '@/lib/money';
 
 /**
  * Analytics plateforme pour MagyaPro Boutique — équivalent de
@@ -17,12 +18,29 @@ function monthlyEquivalent(price: number, interval: 'MONTH' | 'YEAR'): number {
   return interval === 'YEAR' ? Math.round(price / 12) : price;
 }
 
+/**
+ * Devise de repli quand une boutique a disparu entre l'agrégation des ventes
+ * et la lecture des boutiques. Mieux vaut ranger le montant sous la devise la
+ * plus probable que le perdre ou l'attribuer au hasard.
+ */
+const DEFAULT_STORE_CURRENCY = 'XOF';
+
+/** Devise de chaque boutique citée, en une requête. */
+async function storeCurrencies(storeIds: string[]): Promise<Map<string, string>> {
+  if (storeIds.length === 0) return new Map();
+  const stores = await prisma.store.findMany({
+    where: { id: { in: storeIds } },
+    select: { id: true, currency: true },
+  });
+  return new Map(stores.map((store) => [store.id, store.currency]));
+}
+
 export type PlatformStoreMetrics = {
   stores: number;
   activeStores: number;
   suspendedStores: number;
   sales: number;
-  grossVolume: number;
+  grossVolumeByCurrency: MoneyByCurrency;
   subscriptionsByStatus: Record<string, number>;
   newStores: number;
 };
@@ -38,7 +56,11 @@ export async function getPlatformStoreMetrics(): Promise<PlatformStoreMetrics> {
       prisma.store.count({ where: { status: 'ACTIVE', ...NOT_DEMO_STORE } }),
       prisma.store.count({ where: { status: 'SUSPENDED', ...NOT_DEMO_STORE } }),
       prisma.sale.count({ where: { ...COUNTED_SALES, store: NOT_DEMO_STORE } }),
-      prisma.sale.aggregate({
+      // `Sale` ne porte pas de devise : elle est celle de sa boutique. On
+      // remonte donc la boutique plutôt que d'additionner à l'aveugle des
+      // montants de monnaies différentes.
+      prisma.sale.groupBy({
+        by: ['storeId'],
         where: { ...COUNTED_SALES, store: NOT_DEMO_STORE },
         _sum: { total: true },
       }),
@@ -50,12 +72,19 @@ export async function getPlatformStoreMetrics(): Promise<PlatformStoreMetrics> {
       prisma.store.count({ where: { createdAt: { gte: thirtyDaysAgo }, ...NOT_DEMO_STORE } }),
     ]);
 
+  const currencyByStore = await storeCurrencies(revenue.map((row) => row.storeId));
+
   return {
     stores,
     activeStores,
     suspendedStores,
     sales,
-    grossVolume: revenue._sum.total ?? 0,
+    grossVolumeByCurrency: sumByCurrency(
+      revenue.map((row) => ({
+        amount: row._sum.total ?? 0,
+        currency: currencyByStore.get(row.storeId) ?? DEFAULT_STORE_CURRENCY,
+      })),
+    ),
     subscriptionsByStatus: Object.fromEntries(subscriptions.map((row) => [row.status, row._count])),
     newStores,
   };
@@ -64,7 +93,8 @@ export async function getPlatformStoreMetrics(): Promise<PlatformStoreMetrics> {
 export type PlatformStoreAnalytics = {
   mrrByCurrency: Record<string, number>;
   signupsByMonth: Array<{ month: string; count: number }>;
-  gmvByMonth: Array<{ month: string; amount: number }>;
+  /** Volume brut par mois, tenu par devise — jamais additionné entre monnaies. */
+  gmvByMonth: Array<{ month: string; byCurrency: MoneyByCurrency }>;
   byPlan: Array<{ planId: string; planName: string; count: number; mrr: number; currency: string }>;
   churn: { cancelledLast30: number; activeAtPeriodStart: number; rate: number | null };
 };
@@ -93,7 +123,7 @@ export async function getPlatformStoreAnalytics(months = 6): Promise<PlatformSto
       }),
       prisma.sale.findMany({
         where: { ...COUNTED_SALES, createdAt: { gte: monthsAgo }, store: NOT_DEMO_STORE },
-        select: { createdAt: true, total: true },
+        select: { createdAt: true, total: true, storeId: true },
       }),
       prisma.storeSubscription.count({
         where: { createdAt: { lt: thirtyDaysAgo }, status: { not: 'CANCELLED' }, store: NOT_DEMO_STORE },
@@ -135,10 +165,15 @@ export async function getPlatformStoreAnalytics(months = 6): Promise<PlatformSto
     if (signupCounts.has(key)) signupCounts.set(key, (signupCounts.get(key) ?? 0) + 1);
   }
 
-  const gmvSums = new Map(monthKeys.map((key) => [key, 0]));
+  const saleCurrencies = await storeCurrencies([...new Set(sales.map((sale) => sale.storeId))]);
+
+  // Un seau par mois, et dans chaque seau un montant par devise.
+  const gmvSums = new Map<string, MoneyByCurrency>(monthKeys.map((key) => [key, {}]));
   for (const sale of sales) {
-    const key = monthKeyOf(sale.createdAt);
-    if (gmvSums.has(key)) gmvSums.set(key, (gmvSums.get(key) ?? 0) + sale.total);
+    const bucket = gmvSums.get(monthKeyOf(sale.createdAt));
+    if (!bucket) continue;
+    const code = (saleCurrencies.get(sale.storeId) ?? DEFAULT_STORE_CURRENCY).toUpperCase();
+    bucket[code] = (bucket[code] ?? 0) + sale.total;
   }
 
   const MONTH_LABELS = [
@@ -153,7 +188,7 @@ export async function getPlatformStoreAnalytics(months = 6): Promise<PlatformSto
   return {
     mrrByCurrency,
     signupsByMonth: monthKeys.map((key) => ({ month: labelFor(key), count: signupCounts.get(key) ?? 0 })),
-    gmvByMonth: monthKeys.map((key) => ({ month: labelFor(key), amount: gmvSums.get(key) ?? 0 })),
+    gmvByMonth: monthKeys.map((key) => ({ month: labelFor(key), byCurrency: gmvSums.get(key) ?? {} })),
     byPlan: [...byPlanMap.values()].sort((a, b) => b.mrr - a.mrr),
     churn: {
       cancelledLast30,

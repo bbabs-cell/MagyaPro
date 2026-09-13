@@ -67,8 +67,11 @@ export default async function AdminSubscriptionsPage({
       _sum: { amount: true },
     }),
     getPlatformSettings(),
+    // Même filtre que le compteur de la vue d'ensemble : une demande de
+    // démonstration n'a pas à être soumise à validation, et la liste doit
+    // porter exactement ce que le compteur annonce.
     prisma.subscriptionPayment.findMany({
-      where: { status: 'PENDING' },
+      where: { status: 'PENDING', restaurant: { isDemo: false } },
       orderBy: { createdAt: 'asc' },
       include: {
         plan: { select: { name: true } },

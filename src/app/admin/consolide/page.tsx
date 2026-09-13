@@ -4,7 +4,13 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { getPlatformAnalytics } from '@/lib/analytics';
 import { getPlatformStoreAnalytics } from '@/lib/boutique/platform-analytics';
 import { getPlatformRevenue } from '@/lib/platform-revenue';
-import { amountIn, formatMoney, primaryCurrency } from '@/lib/money';
+import {
+  amountIn,
+  formatMoney,
+  hasSeveralCurrencies,
+  mergeByCurrency,
+  primaryCurrency,
+} from '@/lib/money';
 import { BarChart, GroupedBarChart, Metric } from '@/components/admin/charts';
 
 export const metadata: Metadata = { title: 'Vue consolidée' };
@@ -57,10 +63,18 @@ export default async function AdminConsolidatedPage() {
     first: point.count,
     second: store.signupsByMonth[index]?.count ?? 0,
   }));
+  // Le graphique compare deux produits sur une même échelle : les deux séries
+  // doivent donc être dans la même devise. On prend la dominante des deux
+  // réunies, et l'on signale sous le graphique ce qui n'y figure pas.
+  const volumeTotals = mergeByCurrency(
+    ...restaurant.gmvByMonth.map((point) => point.byCurrency),
+    ...store.gmvByMonth.map((point) => point.byCurrency),
+  );
+  const volumeCurrency = primaryCurrency(volumeTotals);
   const volumes = restaurant.gmvByMonth.map((point, index) => ({
     label: point.month,
-    first: point.amount,
-    second: store.gmvByMonth[index]?.amount ?? 0,
+    first: amountIn(point.byCurrency, volumeCurrency),
+    second: amountIn(store.gmvByMonth[index]?.byCurrency ?? {}, volumeCurrency),
   }));
 
   const allPlans = [...restaurant.byPlan, ...store.byPlan].sort((a, b) => b.mrr - a.mrr);
@@ -179,14 +193,25 @@ export default async function AdminConsolidatedPage() {
           <div className="mt-3 rounded-2xl border border-white/10 p-4">
             <GroupedBarChart
               data={volumes}
-              format={(value) => formatMoney(value, currency)}
+              format={(value) => formatMoney(value, volumeCurrency)}
               firstLabel="Commandes"
               secondLabel="Ventes"
             />
           </div>
           <p className="mt-2 text-xs text-white/40">
             L&apos;argent qui passe dans les caisses de vos clients, pas le
-            vôtre.
+            vôtre. En {volumeCurrency}.
+            {hasSeveralCurrencies(volumeTotals) && (
+              <>
+                {' '}
+                Hors graphique :{' '}
+                {Object.keys(volumeTotals)
+                  .filter((code) => code !== volumeCurrency && volumeTotals[code] !== 0)
+                  .map((code) => formatMoney(volumeTotals[code]!, code))
+                  .join(' · ')}
+                .
+              </>
+            )}
           </p>
         </section>
       </div>

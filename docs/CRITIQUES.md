@@ -52,7 +52,7 @@ Version passée de 15.5.23 à 15.5.25. Plus aucune vulnérabilité critique.
 
 ## 🟠 Important
 
-### I1. Les volumes de la plateforme mélangent aussi les devises
+### I1. Les volumes de la plateforme mélangent aussi les devises — **corrigé en phase 16**
 
 `boutique/platform-analytics.ts`, `analytics.ts`
 
@@ -64,12 +64,19 @@ ces calculs et qu'aucun commerce réel n'est hors zone ouest-africaine. Le
 chiffre est donc exact aujourd'hui. Il cessera de l'être le jour d'une
 inscription camerounaise.
 
-**Toujours ouvert** après le correctif de C1. Contrairement à ce que cette
-page annonçait, il ne suit pas du même changement : les briques nécessaires
-existent maintenant, mais le graphique de volume ne sait afficher qu'une seule
-série de nombres. Séparer les devises demande de toucher aussi les composants
-de graphique du Super Admin, ce qui dépasse un correctif ponctuel. À traiter
-avec les écrans d'analyse.
+**Corrigé en phase 16**, et le défaut était pire que décrit ici : le total
+n'était pas seulement ambigu, il était **affiché avec une devise écrite en
+dur** — `formatMoney(metrics.grossVolume, 'XOF')`. Un nombre qui additionnait
+plusieurs monnaies affirmait donc en être une.
+
+Les volumes sont désormais tenus par devise de bout en bout. Le graphique ne
+sachant tracer qu'une série, il trace la devise dominante et **énonce les
+autres sous le graphique** plutôt que de les y fondre. Trouvé au passage : le
+graphique de volume de la vue consolidée était libellé avec la devise du
+*revenu d'abonnement*, sans rapport avec les montants tracés.
+
+`tests/platform-figures.test.ts` interdit désormais toute devise écrite en dur
+dans un écran du Super Admin.
 
 ### I2. Un cuisinier voit trop de choses — **corrigé en phase 9**
 

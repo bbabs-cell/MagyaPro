@@ -63,8 +63,9 @@ export default async function AdminStoreSubscriptionsPage({
       deadline,
       page,
     }),
+    // Même filtre que le compteur de la vue d'ensemble.
     prisma.storeSubscriptionPayment.findMany({
-      where: { status: 'PENDING' },
+      where: { status: 'PENDING', store: { isDemo: false } },
       orderBy: { createdAt: 'asc' },
       include: {
         plan: { select: { name: true, price: true, currency: true } },

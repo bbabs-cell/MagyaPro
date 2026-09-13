@@ -79,6 +79,18 @@ type ApprovedPayment = { amount: number; currency: string; reviewedAt: Date | nu
 
 const APPROVED_SELECT = { amount: true, currency: true, reviewedAt: true } as const;
 
+/**
+ * Les vitrines de démonstration sont exclues de tous les chiffres, comme dans
+ * `analytics.ts`. Elles ne l'étaient pas ici, et cela se voyait : le jeu de
+ * démonstration crée des abonnements actifs valables trente jours, si bien
+ * qu'un mois après leur création la vue d'ensemble signalait des
+ * « abonnements dont la période est dépassée » qui n'appartenaient à aucun
+ * client. Une alerte qui demande d'agir sur des comptes fictifs est pire
+ * qu'une alerte absente.
+ */
+const NOT_DEMO_RESTAURANT = { restaurant: { isDemo: false } };
+const NOT_DEMO_STORE = { store: { isDemo: false } };
+
 export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> {
   const now = new Date();
 
@@ -93,32 +105,36 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
   const [restaurantPayments, storePayments, restaurantTotals, storeTotals, pendingRestaurant, pendingStore, overdueRestaurant, overdueStore] =
     await Promise.all([
       prisma.subscriptionPayment.findMany({
-        where: { status: 'APPROVED', reviewedAt: { gte: windowStart } },
+        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...NOT_DEMO_RESTAURANT },
         select: APPROVED_SELECT,
       }),
       prisma.storeSubscriptionPayment.findMany({
-        where: { status: 'APPROVED', reviewedAt: { gte: windowStart } },
+        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...NOT_DEMO_STORE },
         select: APPROVED_SELECT,
       }),
       // Le cumul depuis toujours est agrégé par la base : il porte sur toutes
       // les lignes, y compris celles hors de la fenêtre de douze mois.
       prisma.subscriptionPayment.groupBy({
         by: ['currency'],
-        where: { status: 'APPROVED' },
+        where: { status: 'APPROVED', ...NOT_DEMO_RESTAURANT },
         _sum: { amount: true },
       }),
       prisma.storeSubscriptionPayment.groupBy({
         by: ['currency'],
-        where: { status: 'APPROVED' },
+        where: { status: 'APPROVED', ...NOT_DEMO_STORE },
         _sum: { amount: true },
       }),
-      prisma.subscriptionPayment.count({ where: { status: 'PENDING' } }),
-      prisma.storeSubscriptionPayment.count({ where: { status: 'PENDING' } }),
+      prisma.subscriptionPayment.count({
+        where: { status: 'PENDING', ...NOT_DEMO_RESTAURANT },
+      }),
+      prisma.storeSubscriptionPayment.count({
+        where: { status: 'PENDING', ...NOT_DEMO_STORE },
+      }),
       prisma.subscription.count({
-        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now } },
+        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...NOT_DEMO_RESTAURANT },
       }),
       prisma.storeSubscription.count({
-        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now } },
+        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...NOT_DEMO_STORE },
       }),
     ]);
 
