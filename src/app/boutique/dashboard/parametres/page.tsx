@@ -5,6 +5,7 @@ import { requireStore } from '@/lib/boutique/store-tenant';
 import { PageHeader } from '@/components/ui';
 import { TaxSettingsPanel } from '@/components/boutique/tax-settings-panel';
 import { StockSettingsPanel } from '@/components/boutique/stock-settings-panel';
+import { IdentitySettingsPanel } from '@/components/boutique/identity-settings-panel';
 import { SectorSettingsPanel } from '@/components/boutique/sector-settings-panel';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
 import { toQty } from '@/lib/boutique/quantity';
@@ -45,9 +46,21 @@ export default async function BoutiqueSettingsPage() {
     <>
       <PageHeader
         title="Réglages"
-        description="Secteur, unités, TVA, stock et moyens de paiement de votre boutique."
+        description="Identité, secteur, unités, TVA, stock et moyens de paiement de votre boutique."
       />
       <div className="space-y-6">
+        {/* En premier : c'est ce que voient les clients sur chaque facture. */}
+        <IdentitySettingsPanel
+          store={{
+            name: context.store.name,
+            phone: context.store.phone,
+            addressLine: context.store.addressLine,
+            city: context.store.city,
+            country: context.store.country,
+            legalId: context.store.legalId,
+          }}
+          canManage={canManage}
+        />
         <SectorSettingsPanel
           businessType={context.store.businessType}
           units={units.map((unit) => ({

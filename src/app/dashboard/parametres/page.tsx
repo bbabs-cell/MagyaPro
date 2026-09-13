@@ -48,6 +48,7 @@ export default async function SettingsPage() {
           phone: context.restaurant.phone,
           email: context.restaurant.email,
           addressLine: context.restaurant.addressLine,
+          legalId: context.restaurant.legalId,
           city: context.restaurant.city,
           country: context.restaurant.country,
           latitude: context.restaurant.latitude,

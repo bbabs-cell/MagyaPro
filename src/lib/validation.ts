@@ -131,6 +131,9 @@ export const restaurantProfileSchema = z.object({
   addressLine: optionalText(240),
   city: optionalText(120),
   country: optionalText(120),
+  /// NINEA, RCCM, IFU — le format varie d'un pays à l'autre, on ne le
+  /// contraint donc pas au-delà d'une longueur raisonnable.
+  legalId: optionalText(60),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
   facebookUrl: urlSchema.optional().or(z.literal('').transform(() => undefined)),
@@ -857,6 +860,24 @@ export const storeReturnSchema = z.object({
 });
 
 /** Réglage de TVA d'une boutique — `taxRate` en dixièmes de %, voir `Store.taxRate`. */
+/**
+ * Identité d'une boutique — ce qui figure sur ses factures.
+ *
+ * Ces champs n'étaient saisis qu'à l'inscription et n'avaient plus aucun
+ * écran pour les corriger ensuite. Un commerçant qui déménageait, changeait de
+ * numéro ou avait fait une faute de frappe la voyait sur chaque facture remise
+ * à un client, sans pouvoir rien y faire.
+ */
+export const storeIdentitySchema = z.object({
+  name: nameSchema,
+  phone: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
+  addressLine: optionalText(240),
+  city: optionalText(120),
+  country: optionalText(120),
+  /// NINEA, RCCM, IFU — format libre, il varie d'un pays à l'autre.
+  legalId: optionalText(60),
+});
+
 export const storeTaxSchema = z.object({
   taxEnabled: z.boolean(),
   taxRate: z.number().int().min(0).max(1000),

@@ -3,8 +3,19 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { getTenantContext } from '@/lib/tenant';
-import { formatMoney } from '@/lib/money';
+import { readOptions, describeOptions } from '@/lib/orders/option-snapshot';
+import { getProvider } from '@/lib/payments/registry';
 import { PrintButton } from '@/components/dashboard/print-button';
+import {
+  DocumentFooter,
+  DocumentHeader,
+  DocumentLines,
+  DocumentParty,
+  DocumentPayments,
+  DocumentToolbar,
+  DocumentTotals,
+  type DocumentTotalRow,
+} from '@/components/documents';
 
 export const metadata: Metadata = { title: 'Reçu de commande' };
 export const dynamic = 'force-dynamic';
@@ -21,7 +32,13 @@ export default async function OrderReceiptPage({
   const [order, settings] = await Promise.all([
     prisma.order.findFirst({
       where: { id, restaurantId: context.restaurant.id },
-      include: { items: true },
+      include: {
+        items: true,
+        // Le règlement n'était pas lu par ce reçu : il ne disait ni si la
+        // commande avait été payée, ni comment. C'est pourtant ce qu'un
+        // client vient y chercher.
+        payments: { orderBy: { createdAt: 'asc' } },
+      },
     }),
     prisma.restaurantSettings.findUnique({
       where: { restaurantId: context.restaurant.id },
@@ -33,102 +50,116 @@ export default async function OrderReceiptPage({
   const restaurant = context.restaurant;
   const currency = order.currency;
 
-  // Les prix restent TTC : le taux ne sert qu'à isoler la part de TVA déjà
+  // Les prix restent TTC : le taux ne sert qu'à isoler la part de taxe déjà
   // comprise dans le total, pour la comptabilité du restaurateur.
   const taxIncluded =
     settings?.taxEnabled && settings.taxRate
-      ? order.total - order.total / (1 + settings.taxRate / 100)
+      ? Math.round(order.total - order.total / (1 + settings.taxRate / 100))
       : null;
+
+  // Un règlement encaissé par le livreur compte comme versé par le client :
+  // c'est son point de vue que le reçu adopte. Voir `delivery-collection`.
+  const settled = order.payments
+    .filter((payment) => payment.status === 'PAID' || payment.status === 'PROCESSING')
+    .reduce((sum, payment) => sum + payment.amount, 0);
+
+  const rows: DocumentTotalRow[] = [
+    { label: 'Sous-total', amount: order.subtotal },
+    ...(order.discount > 0
+      ? [
+          {
+            label: order.promoCode ? `Remise (${order.promoCode})` : 'Remise',
+            amount: order.discount,
+            negative: true,
+          },
+        ]
+      : []),
+    ...(order.fulfillmentType === 'DELIVERY'
+      ? [
+          {
+            label: 'Livraison',
+            amount: order.deliveryFee,
+            ...(order.deliveryFee === 0 ? { text: 'Offerte' } : {}),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between gap-4 print:hidden">
-        <p className="text-sm text-ink-muted">Aperçu du reçu — imprimable ou exportable en PDF.</p>
+      <DocumentToolbar hint="Aperçu du reçu — imprimable ou exportable en PDF.">
         <PrintButton />
-      </div>
+      </DocumentToolbar>
 
-      <div className="flex items-start justify-between gap-4 border-b border-ink pb-4">
-        <div>
-          <p className="text-lg font-bold">{restaurant.name}</p>
-          {restaurant.addressLine && <p className="text-sm text-ink-muted">{restaurant.addressLine}</p>}
-          {(restaurant.city || restaurant.country) && (
-            <p className="text-sm text-ink-muted">
-              {[restaurant.city, restaurant.country].filter(Boolean).join(', ')}
-            </p>
-          )}
-          {restaurant.phone && <p className="text-sm text-ink-muted">{restaurant.phone}</p>}
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-ink-faint">Reçu</p>
-          <p className="text-lg font-bold">n°{order.number}</p>
-          <p className="text-sm text-ink-muted">
-            {order.placedAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
-          </p>
-        </div>
-      </div>
+      <DocumentHeader
+        issuer={{
+          name: restaurant.name,
+          logoUrl: restaurant.logoUrl,
+          addressLine: restaurant.addressLine,
+          city: restaurant.city,
+          country: restaurant.country,
+          phone: restaurant.phone,
+          taxId: restaurant.legalId,
+        }}
+        kind="Reçu"
+        number={`n°${order.number}`}
+        date={order.placedAt}
+      />
 
-      <div className="mt-6">
-        <p className="text-xs uppercase tracking-wide text-ink-faint">Client</p>
-        <p className="mt-1 text-sm">{order.customerName}</p>
-        <p className="text-sm text-ink-muted">{order.customerPhone}</p>
-      </div>
+      <DocumentParty
+        label="Client"
+        name={order.customerName}
+        lines={[order.customerPhone, order.deliveryAddress]}
+      />
 
-      <table className="mt-6 w-full text-sm">
-        <thead>
-          <tr className="border-b border-ink-faint text-left text-xs uppercase tracking-wide text-ink-faint">
-            <th className="py-2 font-medium">Article</th>
-            <th className="py-2 text-right font-medium">Qté</th>
-            <th className="py-2 text-right font-medium">Prix unitaire</th>
-            <th className="py-2 text-right font-medium">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {order.items.map((item) => (
-            <tr key={item.id} className="border-b border-surface-border">
-              <td className="py-2">
-                {item.productName}
-                {item.variantName && <span className="text-ink-muted"> · {item.variantName}</span>}
-              </td>
-              <td className="py-2 text-right">{item.quantity}</td>
-              <td className="py-2 text-right">{formatMoney(item.unitPrice, currency)}</td>
-              <td className="py-2 text-right">{formatMoney(item.lineTotal, currency)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DocumentLines
+        currency={currency}
+        lines={order.items.map((item) => ({
+          id: item.id,
+          label: item.productName,
+          // Les options choisies figuraient en base et n'étaient nulle part sur
+          // le reçu : un client qui a payé un supplément doit le voir facturé.
+          detail: [item.variantName, describeOptions(readOptions(item.options))]
+            .filter(Boolean)
+            .join(' · '),
+          quantity: String(item.quantity),
+          unitPrice: item.unitPrice,
+          total: item.lineTotal,
+        }))}
+      />
 
-      <div className="mt-4 ml-auto max-w-xs space-y-1.5 text-sm">
-        <div className="flex justify-between">
-          <span className="text-ink-muted">Sous-total</span>
-          <span>{formatMoney(order.subtotal, currency)}</span>
-        </div>
-        {order.discount > 0 && (
-          <div className="flex justify-between">
-            <span className="text-ink-muted">Remise{order.promoCode && ` (${order.promoCode})`}</span>
-            <span>−{formatMoney(order.discount, currency)}</span>
-          </div>
-        )}
-        {order.fulfillmentType === 'DELIVERY' && (
-          <div className="flex justify-between">
-            <span className="text-ink-muted">Livraison</span>
-            <span>{order.deliveryFee === 0 ? 'Offerte' : formatMoney(order.deliveryFee, currency)}</span>
-          </div>
-        )}
-        <div className="flex justify-between border-t border-ink pt-1.5 text-base font-bold">
-          <span>Total</span>
-          <span>{formatMoney(order.total, currency)}</span>
-        </div>
-        {taxIncluded !== null && (
-          <div className="flex justify-between text-xs text-ink-faint">
-            <span>dont {settings!.taxLabel} ({settings!.taxRate}%)</span>
-            <span>{formatMoney(Math.round(taxIncluded), currency)}</span>
-          </div>
-        )}
-      </div>
+      <DocumentTotals
+        rows={rows}
+        total={order.total}
+        currency={currency}
+        after={
+          taxIncluded !== null
+            ? [
+                {
+                  label: `dont ${settings!.taxLabel} (${settings!.taxRate} %)`,
+                  amount: taxIncluded,
+                },
+              ]
+            : undefined
+        }
+      />
 
-      <p className="mt-10 text-center text-xs text-ink-faint">
-        Généré par Magyapro pour {restaurant.name}
-      </p>
+      <DocumentPayments
+        currency={currency}
+        remaining={Math.max(0, order.total - settled)}
+        emptyLabel="Aucun règlement enregistré pour cette commande."
+        payments={order.payments
+          .filter((payment) => payment.status === 'PAID' || payment.status === 'PROCESSING')
+          .map((payment) => ({
+            id: payment.id,
+            label: getProvider(payment.provider)?.label ?? payment.provider,
+            detail:
+              payment.status === 'PROCESSING' ? 'encaissé par le livreur' : null,
+            amount: payment.amount,
+          }))}
+      />
+
+      <DocumentFooter issuerName={restaurant.name} />
     </div>
   );
 }

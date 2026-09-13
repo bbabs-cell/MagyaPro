@@ -27,6 +27,7 @@ type Restaurant = {
   phone: string | null;
   email: string | null;
   addressLine: string | null;
+  legalId: string | null;
   city: string | null;
   country: string | null;
   latitude: number | null;
@@ -152,6 +153,7 @@ export function SettingsPanels({
         phone: String(formData.get('phone') ?? ''),
         email: String(formData.get('email') ?? ''),
         addressLine: String(formData.get('addressLine') ?? ''),
+        legalId: String(formData.get('legalId') ?? ''),
         city: String(formData.get('city') ?? ''),
         country: String(formData.get('country') ?? ''),
         latitude: lat ? Number(lat) : null,
@@ -313,6 +315,22 @@ export function SettingsPanels({
                 id="addressLine"
                 name="addressLine"
                 defaultValue={restaurant.addressLine ?? ''}
+                className={inputClass}
+              />
+            </Field>
+
+            {/* Sans ce champ, la colonne ajoutée en base serait restée vide et
+                les factures n'auraient jamais pu porter d'identifiant légal. */}
+            <Field
+              label="Numéro d'identification (facultatif)"
+              htmlFor="legalId"
+              hint="NINEA, RCCM, IFU… Il apparaîtra sur vos factures et reçus."
+              error={fieldErrors.legalId}
+            >
+              <input
+                id="legalId"
+                name="legalId"
+                defaultValue={restaurant.legalId ?? ''}
                 className={inputClass}
               />
             </Field>

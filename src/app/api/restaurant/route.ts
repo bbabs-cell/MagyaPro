@@ -23,6 +23,7 @@ export const PATCH = route(async (request) => {
     phone: context.restaurant.phone,
     email: context.restaurant.email,
     addressLine: context.restaurant.addressLine,
+    legalId: context.restaurant.legalId,
     city: context.restaurant.city,
     country: context.restaurant.country,
   };
@@ -39,6 +40,7 @@ export const PATCH = route(async (request) => {
       addressLine: input.addressLine ?? null,
       city: input.city ?? null,
       country: input.country ?? null,
+      legalId: input.legalId ?? null,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
       facebookUrl: input.facebookUrl ?? null,
@@ -65,6 +67,7 @@ export const PATCH = route(async (request) => {
         phone: restaurant.phone,
         email: restaurant.email,
         addressLine: restaurant.addressLine,
+        legalId: restaurant.legalId,
         city: restaurant.city,
         country: restaurant.country,
       }),

@@ -558,8 +558,11 @@
     break-after: avoid;
   }
 
-  /* Les fonds colorés des pastilles d'état ne sont pas imprimés par défaut :
-     un « Payée » vert deviendrait un texte pâle sur blanc. */
+  /* Les fonds colorés ne sont pas imprimés par défaut : un « Payée » vert
+     deviendrait un texte pâle sur blanc, et le filet d'en-tête d'un reçu
+     disparaîtrait. `print-keep-colors` est posée explicitement sur les
+     éléments dont la couleur porte du sens — les fonds inline, que ce
+     sélecteur ne peut pas atteindre autrement, en font partie. */
   .print-keep-colors,
   [class*='bg-state-'] {
     -webkit-print-color-adjust: exact;

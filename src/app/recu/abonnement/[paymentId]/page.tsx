@@ -3,16 +3,20 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { getTenantContext } from '@/lib/tenant';
-import { formatMoney } from '@/lib/money';
+import { getProvider } from '@/lib/payments/registry';
 import { PrintButton } from '@/components/dashboard/print-button';
+import {
+  DocumentFooter,
+  DocumentHeader,
+  DocumentLines,
+  DocumentParty,
+  DocumentPayments,
+  DocumentToolbar,
+  DocumentTotals,
+} from '@/components/documents';
 
 export const metadata: Metadata = { title: "Reçu d'abonnement" };
 export const dynamic = 'force-dynamic';
-
-const PROVIDER_LABELS: Record<string, string> = {
-  wave_manual: 'Wave',
-  orange_money_manual: 'Orange Money',
-};
 
 export default async function SubscriptionReceiptPage({
   params,
@@ -33,62 +37,56 @@ export default async function SubscriptionReceiptPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between gap-4 print:hidden">
-        <p className="text-sm text-ink-muted">Aperçu du reçu — imprimable ou exportable en PDF.</p>
+      <DocumentToolbar hint="Aperçu du reçu — imprimable ou exportable en PDF.">
         <PrintButton />
-      </div>
+      </DocumentToolbar>
 
-      <div className="flex items-start justify-between gap-4 border-b border-ink pb-4">
-        <div>
-          <p className="text-lg font-bold">Magyapro</p>
-          <p className="text-sm text-ink-muted">Reçu d&apos;abonnement plateforme</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-ink-faint">Reçu</p>
-          <p className="text-sm text-ink-muted break-all">{payment.id}</p>
-          <p className="text-sm text-ink-muted">
-            {(payment.reviewedAt ?? payment.createdAt).toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
-        </div>
-      </div>
+      {/* L'émetteur est ici MagyaPro et non le restaurant : c'est la
+          plateforme qui facture son abonnement, et le restaurant qui le
+          règle. Le sens des deux blocs est inversé par rapport aux autres
+          documents, mais leur forme reste la même. */}
+      <DocumentHeader
+        issuer={{ name: 'MagyaPro', addressLine: "Reçu d'abonnement plateforme" }}
+        kind="Reçu"
+        number={`n°${payment.id.slice(-8).toUpperCase()}`}
+        date={payment.reviewedAt ?? payment.createdAt}
+      />
 
-      <div className="mt-6">
-        <p className="text-xs uppercase tracking-wide text-ink-faint">Facturé à</p>
-        <p className="mt-1 text-sm">{restaurant.name}</p>
-        {restaurant.email && <p className="text-sm text-ink-muted">{restaurant.email}</p>}
-      </div>
+      <DocumentParty
+        label="Facturé à"
+        name={restaurant.name}
+        lines={[restaurant.email, restaurant.phone]}
+      />
 
-      <table className="mt-6 w-full text-sm">
-        <thead>
-          <tr className="border-b border-ink-faint text-left text-xs uppercase tracking-wide text-ink-faint">
-            <th className="py-2 font-medium">Description</th>
-            <th className="py-2 text-right font-medium">Moyen</th>
-            <th className="py-2 text-right font-medium">Montant</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-surface-border">
-            <td className="py-2">Abonnement — {payment.plan.name}</td>
-            <td className="py-2 text-right">
-              {PROVIDER_LABELS[payment.provider] ?? payment.provider}
-            </td>
-            <td className="py-2 text-right">{formatMoney(payment.amount, payment.currency)}</td>
-          </tr>
-        </tbody>
-      </table>
+      <DocumentLines
+        currency={payment.currency}
+        lines={[
+          {
+            id: payment.id,
+            label: `Abonnement — ${payment.plan.name}`,
+            detail: getProvider(payment.provider)?.label ?? payment.provider,
+            quantity: '1',
+            unitPrice: payment.amount,
+            total: payment.amount,
+          },
+        ]}
+      />
 
-      <div className="mt-4 ml-auto max-w-xs space-y-1.5 text-sm">
-        <div className="flex justify-between border-t border-ink pt-1.5 text-base font-bold">
-          <span>Total payé</span>
-          <span>{formatMoney(payment.amount, payment.currency)}</span>
-        </div>
-      </div>
+      <DocumentTotals rows={[]} total={payment.amount} currency={payment.currency} />
 
-      <p className="mt-10 text-center text-xs text-ink-faint">Généré par Magyapro</p>
+      <DocumentPayments
+        currency={payment.currency}
+        remaining={0}
+        payments={[
+          {
+            id: payment.id,
+            label: getProvider(payment.provider)?.label ?? payment.provider,
+            amount: payment.amount,
+          },
+        ]}
+      />
+
+      <DocumentFooter issuerName={restaurant.name} />
     </div>
   );
 }

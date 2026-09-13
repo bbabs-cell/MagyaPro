@@ -196,6 +196,10 @@ model Restaurant {
   country     String?
   latitude    Float?
   longitude   Float?
+  /// Identifiant légal du commerce — NINEA, RCCM, IFU selon le pays.
+  /// Imprimé tel quel sur les factures et reçus quand il est renseigné : le
+  /// format varie d'un pays à l'autre, et le produit n'a pas à en imposer un.
+  legalId     String?
 
   // Réseaux sociaux
   facebookUrl    String?
@@ -1407,6 +1411,10 @@ model Store {
   addressLine String?
   city        String?
   country     String?
+  /// Identifiant légal du commerce — NINEA, RCCM, IFU selon le pays.
+  /// Imprimé tel quel sur les factures et reçus quand il est renseigné : le
+  /// format varie d'un pays à l'autre, et le produit n'a pas à en imposer un.
+  legalId     String?
 
   currency String @default("XOF")
   timezone String @default("Africa/Abidjan")
