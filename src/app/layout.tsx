@@ -1,4 +1,8 @@
+import { headers } from 'next/headers';
 import type { Metadata, Viewport } from 'next';
+
+import { DEFAULT_LOCALE, dirFor, type Locale } from '@/lib/i18n/locales';
+import { resolveLocale } from '@/lib/i18n/server';
 
 import { env } from '@/lib/env';
 import { platformLogoUrl } from '@/lib/storage';
@@ -48,13 +52,37 @@ export const viewport: Viewport = {
   colorScheme: 'light',
 };
 
-export default function RootLayout({
+/**
+ * Langue et sens de lecture du document.
+ *
+ * `<html lang>` était figé sur « fr ». Un visiteur qui passait une vitrine en
+ * arabe recevait donc une page **déclarée française mais écrite en arabe** :
+ * un lecteur d'écran la prononçait avec une voix française, et un moteur de
+ * recherche l'indexait comme du français.
+ *
+ * Seules les vitrines changent de langue — le tableau de bord reste en
+ * français. Le middleware marque les requêtes concernées ; ailleurs, la
+ * préférence du visiteur ne doit pas déteindre sur l'interface du
+ * commerçant.
+ */
+async function documentLanguage(): Promise<{ lang: Locale; dir: 'ltr' | 'rtl' }> {
+  const requestHeaders = await headers();
+  if (requestHeaders.get('x-public-site') !== '1') {
+    return { lang: DEFAULT_LOCALE, dir: 'ltr' };
+  }
+  const locale = await resolveLocale();
+  return { lang: locale, dir: dirFor(locale) };
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { lang, dir } = await documentLanguage();
+
   return (
-    <html lang="fr" className={fontVariables}>
+    <html lang={lang} dir={dir} className={fontVariables}>
       <body>
         {env.sentryDsn && (
           // Le DSN Sentry n'est pas un secret (voir `env.ts`), mais il n'est

@@ -1,6 +1,16 @@
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import type { Metadata } from 'next';
+
+import { LOCALES } from '@/lib/i18n/locales';
+import {
+  OG_LOCALES,
+  languageAlternates,
+  localeUrl,
+  pathWithinSite,
+  publicSiteBase,
+} from '@/lib/site/public-url';
 
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { getTemplate } from '@/lib/templates/registry';
@@ -62,6 +72,16 @@ export async function generateMetadata({
     return { title: 'Restaurant introuvable' };
   }
 
+  // Adresse de référence de la vitrine, et chemin courant à l'intérieur.
+  // Sans `canonical`, une même page est joignable par le domaine du
+  // restaurant et par `/r/<slug>` sur la plateforme : un moteur y voit deux
+  // sites identiques et partage le crédit entre les deux.
+  const requestHeaders = await headers();
+  const pathname = requestHeaders.get('x-pathname') ?? `/r/${host}`;
+  const base = publicSiteBase(requestHeaders.get('host') ?? '', pathname, host);
+  const path = pathWithinSite(pathname, host);
+  const locale = await resolveLocale();
+
   const title = restaurant.seoTitle || restaurant.name;
   const description =
     restaurant.seoDescription ||
@@ -77,12 +97,25 @@ export async function generateMetadata({
     manifest: `/r/${host}/manifest.webmanifest`,
     appleWebApp: { capable: true, title: restaurant.name, statusBarStyle: 'default' },
     icons: restaurant.faviconUrl ? { icon: restaurant.faviconUrl } : undefined,
+    // `canonical` désigne la page de référence ; `languages` publie une
+    // adresse par langue. Le français garde l'URL nue, les autres portent
+    // `?lang=`. C'est ce qui rend enfin indexables les traductions écrites en
+    // phase 14 : jusqu'ici elles n'étaient servies qu'à qui envoyait le bon
+    // cookie, ce qu'aucun robot ne fait.
+    alternates: {
+      canonical: localeUrl(base, path, locale),
+      languages: languageAlternates(base, path),
+    },
     openGraph: {
       type: 'website',
       title,
       description,
       siteName: restaurant.name,
-      locale: 'fr_FR',
+      url: localeUrl(base, path, locale),
+      locale: OG_LOCALES[locale],
+      alternateLocale: LOCALES.filter((other) => other !== locale).map(
+        (other) => OG_LOCALES[other],
+      ),
       images: image ? [image] : undefined,
     },
     twitter: {

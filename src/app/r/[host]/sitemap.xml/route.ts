@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { loadPublicMenu, resolvePublicRestaurant } from '@/lib/site/resolve';
-import { env } from '@/lib/env';
+import { DEFAULT_LOCALE } from '@/lib/i18n/locales';
+import { languageAlternates, localeUrl, publicSiteBase } from '@/lib/site/public-url';
 
 /**
  * Sitemap propre à chaque restaurant.
@@ -36,23 +37,18 @@ export async function GET(
   // Un restaurant de démonstration ne doit pas être soumis aux moteurs.
   if (restaurant.isDemo) {
     return new NextResponse(
-      '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+      '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"></urlset>',
       { headers: { 'Content-Type': 'application/xml' } },
     );
   }
 
   const categories = await loadPublicMenu(restaurant.id);
 
-  // L'hôte réel de la requête est utilisé s'il diffère du domaine racine :
-  // le sitemap doit refléter l'adresse par laquelle le site est servi.
-  const requestHost = new URL(request.url).host;
-  const protocol = env.isProduction ? 'https' : 'http';
-  const origin = requestHost.includes('/r/')
-    ? env.appUrl
-    : `${protocol}://${requestHost}`;
-
-  const isPreview = new URL(request.url).pathname.startsWith('/r/');
-  const base = isPreview ? `${env.appUrl}/r/${host}` : origin;
+  // L'adresse de référence vient du même module que les métadonnées : la
+  // règle recopiée à deux endroits finit par diverger, et un sitemap qui
+  // n'annonce pas les URL portées par `canonical` se contredit lui-même.
+  const requestUrl = new URL(request.url);
+  const base = publicSiteBase(requestUrl.host, requestUrl.pathname, host);
 
   const entries: Array<{ path: string; priority: string; changefreq: string }> = [
     { path: '', priority: '1.0', changefreq: 'weekly' },
@@ -70,11 +66,17 @@ export async function GET(
   const lastmod = new Date().toISOString().slice(0, 10);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${entries
   .map(
     (entry) => `  <url>
-    <loc>${escapeXml(base + entry.path)}</loc>
+    <loc>${escapeXml(localeUrl(base, entry.path, DEFAULT_LOCALE))}</loc>
+${Object.entries(languageAlternates(base, entry.path))
+  .map(
+    ([code, href]) =>
+      `    <xhtml:link rel="alternate" hreflang="${code}" href="${escapeXml(href)}" />`,
+  )
+  .join('\n')}
     <lastmod>${lastmod}</lastmod>
     <changefreq>${entry.changefreq}</changefreq>
     <priority>${entry.priority}</priority>
