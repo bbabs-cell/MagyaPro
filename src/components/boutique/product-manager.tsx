@@ -1,6 +1,8 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+
+import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
@@ -23,7 +25,7 @@ import {
   type ExpiryState,
 } from '@/lib/boutique/expiry';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
-import { Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 
 /**
  * Catalogue MagyaPro Boutique — première version : un produit = une seule
@@ -705,6 +707,51 @@ function QuickAddForm({
   );
 }
 
+/**
+ * Section repliée par défaut, pour ce qui ne concerne pas tout le monde.
+ *
+ * Le §10 le dit sans détour : le formulaire expose trop d'options et peut
+ * créer de la confusion. Quatre encadrés « (facultatif) » étaient dépliés en
+ * permanence — conditionnements, réapprovisionnement, attributs — et le
+ * commerçant qui voulait simplement enregistrer un savon à 500 F devait les
+ * traverser tous pour trouver le bouton d'enregistrement.
+ *
+ * Rien n'est retiré : ce qui servait sert toujours, mais se demande. La
+ * section s'ouvre d'elle-même quand elle contient déjà quelque chose, sans
+ * quoi une modification cacherait des données que le produit possède.
+ */
+function OptionalSection({
+  title,
+  hint,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  hint: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="rounded-xl border border-surface-border [&[open]>summary]:border-b [&[open]>summary]:border-surface-border"
+    >
+      <summary className="cursor-pointer list-none p-4 [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center justify-between gap-3">
+          <span>
+            <span className="block text-sm font-medium text-ink">{title}</span>
+            <span className="mt-0.5 block text-xs text-ink-faint">{hint}</span>
+          </span>
+          <span aria-hidden="true" className="shrink-0 text-ink-faint">
+            +
+          </span>
+        </span>
+      </summary>
+      <div className="p-4">{children}</div>
+    </details>
+  );
+}
+
 function ProductForm({
   product,
   categories,
@@ -727,9 +774,9 @@ function ProductForm({
 }) {
   const isEdit = Boolean(product);
   const variant = product?.variants[0];
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const mutation = useServerMutation();
+  const pending = mutation.pending;
+  const fieldErrors = mutation.fieldErrors;
   const [attr1Label, attr2Label] = attributeSuggestionsFor(businessType);
   /** Axes typiques du métier — proposés en un clic, jamais imposés. */
   const suggestedAxes = SECTOR_VARIANT_AXES[businessType] ?? [];
@@ -768,13 +815,29 @@ function ProductForm({
   }
 
   /**
-   * (Re)génère la matrice complète des combinaisons. Les déclinaisons déjà
-   * saisies sont conservées telles quelles — prix, stock et identifiant — et
-   * seules les combinaisons manquantes sont ajoutées : régénérer après avoir
-   * ajouté une taille ne doit pas effacer le travail déjà fait.
+   * Dresse la liste des versions à partir de ce qui varie.
+   *
+   * Se déclenche seule, dès qu'un critère est complet. Il fallait auparavant
+   * appuyer sur « Générer les combinaisons » — un bouton qui ne produisait
+   * rien de visible tant qu'on n'y pensait pas, et dont le nom n'apprenait à
+   * personne ce qu'il ferait. Le §11 demande un aperçu des versions ; un
+   * aperçu qui attend un clic n'en est pas un.
+   *
+   * Le travail déjà saisi est conservé — prix, référence, stock — et seules
+   * les versions manquantes s'ajoutent : ajouter une taille n'efface pas les
+   * prix des couleurs déjà remplies.
    */
-  function generateMatrix() {
-    const usable = axes.filter((axis) => axis.name.trim() && axis.values.length > 0);
+  const usableAxes = axes.filter((axis) => axis.name.trim() && axis.values.length > 0);
+  // Signature du contenu, et non des objets : un rendu qui recrée le tableau
+  // `axes` à l'identique ne doit pas relancer le calcul.
+  const axesSignature = JSON.stringify(
+    usableAxes.map((axis) => [axis.name.trim(), axis.values]),
+  );
+
+  useEffect(() => {
+    const usable: VariantAxis[] = JSON.parse(axesSignature).map(
+      ([name, values]: [string, string[]]) => ({ name, values }),
+    );
     if (usable.length === 0) return;
 
     setDeclinations((current) => {
@@ -792,7 +855,7 @@ function ProductForm({
           },
       );
     });
-  }
+  }, [axesSignature]);
 
   function updateDeclination(key: string, patch: Partial<DeclinationDraft>) {
     setDeclinations((current) =>
@@ -861,12 +924,8 @@ function ProductForm({
     : null;
   const largestFactor = largestDraft ? Number(largestDraft.factor) : 0;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
-    setError(null);
-    setFieldErrors({});
-
     const formData = new FormData(event.currentTarget);
     const categoryId = String(formData.get('categoryId') ?? '');
     const brandId = String(formData.get('brandId') ?? '');
@@ -935,7 +994,8 @@ function ProductForm({
       variants: cleanDeclinations,
     };
 
-    try {
+    mutation.run(
+      async () => {
       if (isEdit && product) {
         await api.patch(`/api/boutique/products/${product.id}`, shared);
       } else {
@@ -954,16 +1014,15 @@ function ProductForm({
           initialStockExpiryDate: String(formData.get('initialStockExpiryDate') ?? '') || undefined,
         });
       }
-      onDone();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.fieldErrors ?? {});
-      } else {
-        setError("L'enregistrement a échoué.");
-      }
-      setPending(false);
-    }
+      },
+      {
+        // Le parent affiche la confirmation et demande le nouveau rendu en
+        // refermant le formulaire ; le redemander ici le ferait deux fois.
+        skipRefresh: true,
+        onSuccess: onDone,
+        failureMessage: "L'enregistrement a échoué.",
+      },
+    );
   }
 
   return (
@@ -971,11 +1030,7 @@ function ProductForm({
       <h2 className="text-lg font-medium">{isEdit ? `Modifier « ${product!.name} »` : 'Nouveau produit'}</h2>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
-        {error && (
-          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
-            {error}
-          </div>
-        )}
+        <AlertMessage message={mutation.error} />
 
         <Field label="Nom" htmlFor="name" required error={fieldErrors.name}>
           <input id="name" name="name" required className={inputClass} placeholder="T-shirt col rond" defaultValue={product?.name} />
@@ -1032,10 +1087,19 @@ function ProductForm({
         </div>
 
         <fieldset className="rounded-xl border border-surface-border p-4">
-          <legend className="px-1 text-sm font-medium">Déclinaisons (facultatif)</legend>
+          {/* Le §11 est explicite sur le vocabulaire : « déclinaison », « axe »,
+              « valeurs », « générer les combinaisons » sont des mots de
+              logiciel, pas des mots de commerçant. La section pose désormais
+              une question et donne un exemple, plutôt que de nommer un
+              concept. */}
+          <legend className="px-1 text-sm font-medium">
+            Ce produit existe en plusieurs versions ?
+          </legend>
           <p className="text-xs text-ink-faint">
-            Tailles, pointures, couleurs… Chaque combinaison a son propre stock et peut avoir son
-            propre prix. Laissez vide pour un produit sans déclinaison.
+            Une version, c&apos;est le même produit décliné : le même tee-shirt en rouge et en
+            bleu, la même huile en 1 L et en 5 L. Chaque version a son propre stock et peut avoir
+            son propre prix. Laissez vide si votre produit n&apos;existe qu&apos;en une seule
+            version.
           </p>
 
           {axes.length > 0 && (
@@ -1043,7 +1107,9 @@ function ProductForm({
               {axes.map((axis, index) => (
                 <li key={index} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
                   <label className="block">
-                    <span className="mb-1 block text-xs text-ink-muted">Nom de l&apos;axe</span>
+                    <span className="mb-1 block text-xs text-ink-muted">
+                      Qu&apos;est-ce qui change ?
+                    </span>
                     <input
                       value={axis.name}
                       onChange={(event) => updateAxis(index, { name: event.target.value })}
@@ -1053,7 +1119,7 @@ function ProductForm({
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-xs text-ink-muted">
-                      Valeurs, séparées par une virgule
+                      Les possibilités, séparées par une virgule
                     </span>
                     <input
                       defaultValue={axis.values.join(', ')}
@@ -1072,7 +1138,7 @@ function ProductForm({
                   <button
                     type="button"
                     onClick={() => setAxes((current) => current.filter((_, i) => i !== index))}
-                    aria-label="Retirer cet axe"
+                    aria-label="Ne plus faire varier ce critère"
                     className="self-end px-2 pb-2.5 text-ink-faint hover:text-state-bad"
                   >
                     ✕
@@ -1090,7 +1156,7 @@ function ProductForm({
                 variant="secondary"
                 onClick={() => setAxes(suggestedAxes.map((axis) => ({ ...axis })))}
               >
-                Utiliser {suggestedAxes.map((axis) => axis.name.toLowerCase()).join(' et ')}
+                Mon produit varie par {suggestedAxes.map((axis) => axis.name.toLowerCase()).join(' et ')}
               </Button>
             )}
             {axes.length < 3 && (
@@ -1100,12 +1166,7 @@ function ProductForm({
                 variant="secondary"
                 onClick={() => setAxes((current) => [...current, { name: '', values: [] }])}
               >
-                + Ajouter un axe
-              </Button>
-            )}
-            {hasAxes && (
-              <Button type="button" size="sm" variant="secondary" onClick={generateMatrix}>
-                Générer les combinaisons
+                + Autre chose qui change
               </Button>
             )}
           </div>
@@ -1115,7 +1176,7 @@ function ProductForm({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
-                    <th className="py-2 pr-3 font-medium">Déclinaison</th>
+                    <th className="py-2 pr-3 font-medium">Version</th>
                     <th className="py-2 pr-3 font-medium">Réf.</th>
                     <th className="py-2 pr-3 font-medium">Code-barres</th>
                     <th className="py-2 pr-3 font-medium">Prix</th>
@@ -1187,7 +1248,7 @@ function ProductForm({
                         <button
                           type="button"
                           onClick={() => removeDeclination(draft.key)}
-                          aria-label="Retirer cette déclinaison"
+                          aria-label="Retirer cette version"
                           className="text-ink-faint hover:text-state-bad"
                         >
                           ✕
@@ -1199,21 +1260,24 @@ function ProductForm({
               </table>
               {isEdit && (
                 <p className="mt-2 text-xs text-ink-faint">
-                  Le stock des déclinaisons se modifie depuis les mouvements de stock, pas ici.
-                  Une déclinaison retirée est désactivée, jamais supprimée : ses ventes passées la
-                  référencent toujours.
+                  Le stock de chaque version se modifie depuis les entrées et sorties, pas ici.
+                  Une version retirée est désactivée, jamais supprimée : les ventes déjà
+                  enregistrées la mentionnent toujours.
                 </p>
               )}
             </div>
           )}
         </fieldset>
 
-        <fieldset className="rounded-xl border border-surface-border p-4">
-          <legend className="px-1 text-sm font-medium">Conditionnements (facultatif)</legend>
+        <OptionalSection
+          title="Vendez-vous aussi par carton, sac ou paquet ?"
+          hint="Pour acheter ou vendre en gros, avec un prix différent de l'unité."
+          defaultOpen={unitDrafts.length > 0}
+        >
           <p className="text-xs text-ink-faint">
-            Un carton, une palette, un rouleau… Le stock reste toujours compté en{' '}
-            <strong>{baseUnit?.labelPlural ?? 'unités de base'}</strong> ; ces unités servent à
-            acheter, vendre et afficher. Chaque conditionnement a son propre prix — un carton peut
+            Le stock reste toujours compté en{' '}
+            <strong>{baseUnit?.labelPlural ?? 'unités de base'}</strong> ; ces conditionnements
+            servent à acheter, vendre et afficher. Chacun a son propre prix — un carton peut
             coûter moins cher que son contenu vendu à l&apos;unité.
           </p>
 
@@ -1298,18 +1362,32 @@ function ProductForm({
             </Button>
           ) : (
             availableUnits.length === 0 && (
+              // Le §10 demande de prévoir discrètement « autre unité » pour
+              // les cas particuliers. C'est possible — mais depuis les
+              // réglages, et rien ici ne le disait : le commerçant restait
+              // devant une phrase qui constate sans indiquer la sortie.
               <p className="mt-3 text-xs text-ink-faint">
-                Aucune autre unité disponible dans cette boutique.
+                Aucune autre unité dans cette boutique.{' '}
+                <Link
+                  href="/boutique/dashboard/parametres"
+                  className="underline underline-offset-4 hover:text-ink"
+                >
+                  En ajouter une
+                </Link>{' '}
+                — sac, carton, bidon, ou la vôtre.
               </p>
             )
           )}
-        </fieldset>
+        </OptionalSection>
 
-        <fieldset className="rounded-xl border border-surface-border p-4">
-          <legend className="px-1 text-sm font-medium">Réapprovisionnement (facultatif)</legend>
+        <OptionalSection
+          title="Voulez-vous être prévenu avant la rupture ?"
+          hint="Le délai de votre fournisseur sert à calculer quand recommander."
+          defaultOpen={Boolean(product?.supplierLeadDays)}
+        >
           <p className="text-xs text-ink-faint">
             Sert à prévoir les ruptures depuis vos ventes réelles, et à calculer la quantité à
-            commander. Voir l&apos;écran <strong>Prévisions</strong>.
+            commander. Voir l&apos;écran <strong>Ruptures à venir</strong>.
           </p>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Field
@@ -1344,7 +1422,7 @@ function ProductForm({
               />
             </Field>
           </div>
-        </fieldset>
+        </OptionalSection>
 
         {isEdit || hasAxes ? (
           <Field
@@ -1488,9 +1566,18 @@ function ProductForm({
             celui-ci n'est pas passé au moteur d'unités. */}
         <input type="hidden" name="unit" value={product?.unit ?? 'UNIT'} />
 
-        <fieldset>
-          <legend className="text-sm font-medium">Attributs (facultatif)</legend>
-          <div className="mt-2 grid gap-4 sm:grid-cols-2">
+        {/* Ces deux champs ne créent pas de versions : ils décrivent le
+            produit, pour le retrouver et l'afficher. Leurs intitulés viennent
+            du secteur de la boutique — « Matière » et « Origine » chez un
+            épicier, « Marque » et « Modèle » chez un vendeur d'électronique. */}
+        <OptionalSection
+          title={`Préciser ${attr1Label.toLowerCase()} ou ${attr2Label.toLowerCase()} ?`}
+          hint="Deux détails pour décrire ce produit. Facultatif."
+          defaultOpen={Boolean(
+            variant?.attributes[attr1Label] || variant?.attributes[attr2Label],
+          )}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label={attr1Label} htmlFor="attr1">
               <input id="attr1" name="attr1" className={inputClass} defaultValue={variant?.attributes[attr1Label] ?? undefined} />
             </Field>
@@ -1498,7 +1585,7 @@ function ProductForm({
               <input id="attr2" name="attr2" className={inputClass} defaultValue={variant?.attributes[attr2Label] ?? undefined} />
             </Field>
           </div>
-        </fieldset>
+        </OptionalSection>
 
         <Field label="Statut" htmlFor="status">
           <select id="status" name="status" className={inputClass} defaultValue={product?.status ?? 'DRAFT'}>

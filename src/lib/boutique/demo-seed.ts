@@ -28,8 +28,8 @@ import type { Prisma, StoreBusinessType } from '@prisma/client';
  *    faire.
  * 3. **Lisibilité des états.** Chaque boutique contient volontairement des
  *    produits en stock normal, en stock faible, en rupture imminente, en
- *    rupture et dormants — les quatre niveaux de l'écran Prévisions et la
- *    liste de l'écran Analyses ne sont jamais vides.
+ *    rupture et dormants — les quatre niveaux de l'écran « Ruptures à venir »
+ *    et la liste de l'écran « Marges et stock » ne sont jamais vides.
  */
 
 /** Conditionnement d'un produit : un carton, un paquet, un rouleau… */

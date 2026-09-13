@@ -139,8 +139,9 @@ export default async function BoutiqueDashboardPage() {
       />
 
       {/* --- Ce qui demande une action ---------------------------------
-          Ces informations existaient, réparties entre Prévisions, Produits et
-          Analyses : il fallait ouvrir trois écrans pour savoir s'il y avait un
+          Ces informations existaient, réparties entre « Ruptures à venir »,
+          Produits et « Marges et stock » : il fallait ouvrir trois écrans pour
+          savoir s'il y avait un
           problème. Elles remontent ici, avec le lien qui mène au bon endroit. */}
       {alertItems.length > 0 ? (
         <section aria-label="À traiter" className="mb-6">
