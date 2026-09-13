@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
-import { DAY_NAMES, computeOpenState } from '@/lib/site/hours';
+import { computeOpenState, dayNames } from '@/lib/site/hours';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -20,7 +20,14 @@ export default async function InfoPage({ params }: Props) {
   const restaurant = await resolvePublicRestaurant(host);
   if (!restaurant) notFound();
 
-  const openState = computeOpenState(restaurant.openingHours, restaurant.timezone);
+  const { locale, dict } = await getServerDictionary();
+  const openState = computeOpenState(
+    restaurant.openingHours,
+    restaurant.timezone,
+    dict.templates,
+    locale,
+  );
+  const days = dayNames(locale);
   const today = new Date().getDay();
 
   const entitlements = await getEntitlements(restaurant.id);
@@ -50,7 +57,6 @@ export default async function InfoPage({ params }: Props) {
     { label: 'TikTok', url: restaurant.tiktokUrl },
   ].filter((social): social is { label: string; url: string } => Boolean(social.url));
 
-  const { dict } = await getServerDictionary();
 
   const mapUrl =
     restaurant.latitude !== null && restaurant.longitude !== null
@@ -95,7 +101,7 @@ export default async function InfoPage({ params }: Props) {
                     hour.dayOfWeek === today ? 'font-medium text-ink' : 'text-ink-muted'
                   }`}
                 >
-                  <dt>{DAY_NAMES[hour.dayOfWeek]}</dt>
+                  <dt>{days[hour.dayOfWeek]}</dt>
                   <dd>
                     {hour.isClosed ? dict.info.closed : `${hour.opensAt} – ${hour.closesAt}`}
                   </dd>

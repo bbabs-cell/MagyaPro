@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useI18n } from '@/components/site/i18n-provider';
 
 /** Compte à rebours jusqu'à `endsAt`, remis à jour chaque seconde côté client. */
 function remaining(endsAt: string): { h: string; m: string; s: string; over: boolean } {
@@ -19,6 +20,7 @@ function remaining(endsAt: string): { h: string; m: string; s: string; over: boo
 }
 
 export function OfferCountdown({ endsAt }: { endsAt: string }) {
+  const { dict } = useI18n();
   const [time, setTime] = useState(() => remaining(endsAt));
 
   useEffect(() => {
@@ -31,9 +33,9 @@ export function OfferCountdown({ endsAt }: { endsAt: string }) {
   return (
     <div className="flex gap-3">
       {[
-        { label: 'Heures', value: time.h },
-        { label: 'Minutes', value: time.m },
-        { label: 'Secondes', value: time.s },
+        { label: dict.templates.hours, value: time.h },
+        { label: dict.templates.minutes, value: time.m },
+        { label: dict.templates.seconds, value: time.s },
       ].map((item) => (
         <div key={item.label} className="rounded-2xl bg-black/25 px-4 py-2.5 text-center backdrop-blur">
           <span className="block font-display text-2xl font-bold tabular-nums">{item.value}</span>

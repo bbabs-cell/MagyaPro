@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useI18n } from '@/components/site/i18n-provider';
 
 type GalleryImage = { id: string; imageUrl: string; caption: string | null };
 
@@ -10,6 +11,7 @@ type GalleryImage = { id: string; imageUrl: string; caption: string | null };
  * (galPop), sans dépendance externe (juste un peu d'état React).
  */
 export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
+  const { dict } = useI18n();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const current = openIndex !== null ? images[openIndex] : null;
 
@@ -55,14 +57,14 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Photo agrandie"
+          aria-label={dict.templates.galleryZoomed}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={close}
         >
           <button
             type="button"
             onClick={close}
-            aria-label="Fermer"
+            aria-label={dict.templates.galleryClose}
             className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
           >
             ✕
@@ -75,7 +77,7 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
                 event.stopPropagation();
                 prev();
               }}
-              aria-label="Photo précédente"
+              aria-label={dict.templates.galleryPrevious}
               className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
             >
               ←
@@ -104,7 +106,7 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
                 event.stopPropagation();
                 next();
               }}
-              aria-label="Photo suivante"
+              aria-label={dict.templates.galleryNext}
               className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
             >
               →

@@ -6,14 +6,23 @@ import Link from 'next/link';
 import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
 import { QuickAddButton } from '@/components/site/quick-add-button';
+import { useI18n } from '@/components/site/i18n-provider';
 import type { MenuCategoryData } from '@/components/site/templates';
+import type { Dictionary } from '@/lib/i18n/dictionary';
 
-const BADGE_LABELS: Record<string, string> = {
-  POPULAR: 'Populaire',
-  NEW: 'Nouveau',
-  PROMOTION: 'Promo',
-  SOLD_OUT: 'Épuisé',
-};
+/**
+ * Les libellés de badge étaient une constante de module, donc figée en
+ * français. Ils dépendent maintenant de la langue et se construisent dans le
+ * composant.
+ */
+function badgeLabels(dict: Dictionary): Record<string, string> {
+  return {
+    POPULAR: dict.templates.badgePopular,
+    NEW: dict.templates.badgeNew,
+    PROMOTION: dict.templates.badgePromoShort,
+    SOLD_OUT: dict.menuPage.unavailable,
+  };
+}
 
 /**
  * Grille de plats filtrable par catégorie, à la manière d'une carte de
@@ -27,6 +36,8 @@ export function StreetFoodMenuFilter({
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  const { dict } = useI18n();
+  const BADGE_LABELS = badgeLabels(dict);
   const [active, setActive] = useState<string>('all');
 
   const visible =
@@ -44,7 +55,7 @@ export function StreetFoodMenuFilter({
               active === 'all' ? 'bg-ink text-surface' : 'text-ink hover:bg-surface-sunken',
             )}
           >
-            Tout
+            {dict.templates.all}
           </button>
           {categories.map((category) => (
             <button
@@ -109,7 +120,7 @@ export function StreetFoodMenuFilter({
                         {product.description && (
                           <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
                         )}
-                        {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
+                        {unavailable && <p className="mt-1 text-xs text-ink-faint">{dict.templates.unavailable}</p>}
                       </div>
                     </Link>
                     <div className="px-4 pb-4">

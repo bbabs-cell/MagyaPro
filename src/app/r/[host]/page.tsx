@@ -57,11 +57,16 @@ export default async function RestaurantHomePage({ params }: Props) {
   if (!restaurant) notFound();
 
   const categories = await loadPublicMenu(restaurant.id);
-  const openState = computeOpenState(restaurant.openingHours, restaurant.timezone);
+  const { locale, dict } = await getServerDictionary();
+  const openState = computeOpenState(
+    restaurant.openingHours,
+    restaurant.timezone,
+    dict.templates,
+    locale,
+  );
 
   const base = `/r/${host}`;
   const orderingEnabled = restaurant.settings?.orderingEnabled ?? true;
-  const { locale, dict } = await getServerDictionary();
 
   // Aperçu de la carte sur l'accueil : les deux premières catégories suffisent
   // à donner envie, la page menu porte l'intégralité.

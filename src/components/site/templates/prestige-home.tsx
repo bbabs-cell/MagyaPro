@@ -2,10 +2,12 @@ import Link from 'next/link';
 
 import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
-import { DAY_NAMES } from '@/lib/site/hours';
+import { dayNames } from '@/lib/site/hours';
 import { QuickAddButton } from '@/components/site/quick-add-button';
 import type { ElegantHomeData } from '@/components/site/templates/elegant-home';
 import type { MenuCategoryData } from '@/components/site/templates';
+import { getServerDictionary } from '@/lib/i18n/server';
+import type { Dictionary } from '@/lib/i18n/dictionary';
 
 /**
  * Page d'accueil dédiée au template « prestige » — une seule page qui
@@ -18,7 +20,8 @@ const GOLD = '#cda45e';
 const BG = '#0c0b09';
 const SURFACE = '#18150f';
 
-export function PrestigeHomePage({ data }: { data: ElegantHomeData }) {
+export async function PrestigeHomePage({ data }: { data: ElegantHomeData }) {
+  const { locale, dict } = await getServerDictionary();
   const hasStory = Boolean(data.story);
   const hasChef = Boolean(data.chef?.name);
   const hasGallery = data.gallery.length > 0;
@@ -26,15 +29,22 @@ export function PrestigeHomePage({ data }: { data: ElegantHomeData }) {
 
   return (
     <div style={{ backgroundColor: BG }} className="text-white">
-      <PrestigeHero data={data.hero} />
+      <PrestigeHero data={data.hero} dict={dict} />
 
-      {hasStory && <StorySection story={data.story!} />}
-      {hasChef && <ChefSection chef={data.chef!} />}
+      {hasStory && <StorySection story={data.story!} dict={dict} />}
+      {hasChef && <ChefSection chef={data.chef!} dict={dict} />}
 
-      <MenuSection categories={data.menuCategories} currency={data.currency} menuHref={data.menuHref} />
+      <MenuSection
+        categories={data.menuCategories}
+        currency={data.currency}
+        menuHref={data.menuHref}
+        dict={dict}
+      />
 
-      {hasGallery && <GallerySection images={data.gallery} />}
-      {hasReviews && <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} />}
+      {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
+      {hasReviews && (
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
+      )}
 
       <LocationSection
         location={data.location}
@@ -42,6 +52,8 @@ export function PrestigeHomePage({ data }: { data: ElegantHomeData }) {
         today={data.today}
         isOpenNow={data.hero.isOpenNow}
         openLabel={data.hero.openLabel}
+        dict={dict}
+        locale={locale}
       />
     </div>
   );
@@ -65,7 +77,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PrestigeHero({ data }: { data: ElegantHomeData['hero'] }) {
+function PrestigeHero({ data, dict }: { data: ElegantHomeData['hero']; dict: Dictionary }) {
   const hasPhoto = Boolean(data.coverUrl);
 
   return (
@@ -91,7 +103,7 @@ function PrestigeHero({ data }: { data: ElegantHomeData['hero'] }) {
 
       <div className="container-page relative py-28 sm:py-36">
         <div className="mx-auto max-w-2xl text-center">
-          <Eyebrow>{data.city ?? 'Restaurant gastronomique'}</Eyebrow>
+          <Eyebrow>{data.city ?? dict.templates.fineDining}</Eyebrow>
           <h1 className="mt-6 font-display text-6xl font-semibold tracking-tight sm:text-7xl">
             {data.name}
           </h1>
@@ -106,7 +118,9 @@ function PrestigeHero({ data }: { data: ElegantHomeData['hero'] }) {
               href={data.menuHref}
               className="inline-flex h-14 items-center border border-[#cda45e] px-10 text-sm font-medium uppercase tracking-widest text-[#cda45e] transition-colors hover:bg-[#cda45e] hover:text-black"
             >
-              {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
+              {data.orderingEnabled
+                ? dict.templates.ctaReserveOrOrder
+                : dict.templates.ctaSeeMenu}
             </Link>
             <p className="flex items-center gap-2 text-xs text-white/60">
               <span
@@ -122,12 +136,12 @@ function PrestigeHero({ data }: { data: ElegantHomeData['hero'] }) {
   );
 }
 
-function StorySection({ story }: { story: string }) {
+function StorySection({ story, dict }: { story: string; dict: Dictionary }) {
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
       <div className="container-page py-20 sm:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <Eyebrow>Notre histoire</Eyebrow>
+          <Eyebrow>{dict.templates.sectionStory}</Eyebrow>
           <p className="mx-auto mt-8 max-w-xl font-display text-2xl leading-relaxed sm:text-3xl">
             {story}
           </p>
@@ -139,8 +153,10 @@ function StorySection({ story }: { story: string }) {
 
 function ChefSection({
   chef,
+  dict,
 }: {
   chef: { name: string; bio: string | null; photoUrl: string | null };
+  dict: Dictionary;
 }) {
   const hasPhoto = Boolean(chef.photoUrl);
 
@@ -163,7 +179,7 @@ function ChefSection({
 
       <div className="container-page relative py-20 sm:py-28">
         <div className="mx-auto max-w-lg text-center">
-          <Eyebrow>Le chef</Eyebrow>
+          <Eyebrow>{dict.templates.sectionChef}</Eyebrow>
           {!hasPhoto && (
             <span
               aria-hidden="true"
@@ -185,17 +201,19 @@ function MenuSection({
   categories,
   currency,
   menuHref,
+  dict,
 }: {
   categories: MenuCategoryData[];
   currency: string;
   menuHref: string;
+  dict: Dictionary;
 }) {
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
       <div className="container-page py-20 sm:py-28">
         <div className="text-center">
-          <Eyebrow>La carte</Eyebrow>
-          <h2 className="mt-3 font-display text-4xl">Notre sélection</h2>
+          <Eyebrow>{dict.templates.sectionMenu}</Eyebrow>
+          <h2 className="mt-3 font-display text-4xl">{dict.templates.sectionSelection}</h2>
         </div>
 
         {categories.length === 0 ? (
@@ -266,7 +284,7 @@ function MenuSection({
             className="inline-flex h-12 items-center border-b text-sm font-medium uppercase tracking-widest"
             style={{ borderColor: GOLD, color: GOLD }}
           >
-            Voir la carte complète
+            {dict.menuPage.seeAll}
           </Link>
         </div>
       </div>
@@ -276,15 +294,17 @@ function MenuSection({
 
 function GallerySection({
   images,
+  dict,
 }: {
   images: Array<{ id: string; imageUrl: string; caption: string | null }>;
+  dict: Dictionary;
 }) {
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)', backgroundColor: SURFACE }}>
       <div className="container-page py-20 sm:py-28">
         <div className="text-center">
-          <Eyebrow>Galerie</Eyebrow>
-          <h2 className="mt-3 font-display text-4xl">L&apos;ambiance</h2>
+          <Eyebrow>{dict.templates.sectionGallery}</Eyebrow>
+          <h2 className="mt-3 font-display text-4xl">{dict.templates.sectionAmbience}</h2>
         </div>
         <div className="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {images.map((image) => (
@@ -307,21 +327,23 @@ function GallerySection({
 function ReviewsSection({
   reviews,
   averageRating,
+  dict,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
+  dict: Dictionary;
 }) {
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
       <div className="container-page py-20 sm:py-28">
         <div className="text-center">
-          <Eyebrow>Ce qu&apos;on en dit</Eyebrow>
+          <Eyebrow>{dict.templates.sectionReviews}</Eyebrow>
           {averageRating !== null && (
             <p className="mt-4" style={{ color: GOLD }}>
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-white/20">{'★'.repeat(5 - Math.round(averageRating))}</span>
               <span className="ms-2 text-sm text-white/50">
-                {averageRating.toFixed(1)} sur 5 · {reviews.length} avis
+                {dict.templates.ratingOutOf(averageRating.toFixed(1), reviews.length)}
               </span>
             </p>
           )}
@@ -350,18 +372,23 @@ function LocationSection({
   today,
   isOpenNow,
   openLabel,
+  dict,
+  locale,
 }: {
   location: ElegantHomeData['location'];
   openingHours: ElegantHomeData['openingHours'];
   today: number;
   isOpenNow: boolean;
   openLabel: string;
+  dict: Dictionary;
+  locale: string;
 }) {
+  const days = dayNames(locale);
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)', backgroundColor: SURFACE }}>
       <div className="container-page grid gap-10 py-20 sm:py-28 lg:grid-cols-2">
         <div>
-          <Eyebrow>Nous trouver</Eyebrow>
+          <Eyebrow>{dict.templates.sectionFind}</Eyebrow>
 
           <p className="mt-8 flex items-center gap-2 text-sm text-white/70">
             <span aria-hidden="true" className={cx('h-1.5 w-1.5 rounded-full', isOpenNow ? 'bg-emerald-400' : 'bg-red-400')} />
@@ -381,8 +408,12 @@ function LocationSection({
                 className={cx('flex justify-between border-b pb-2', hour.dayOfWeek === today ? 'text-white' : 'text-white/45')}
                 style={{ borderColor: 'rgba(205,164,94,0.15)' }}
               >
-                <dt>{DAY_NAMES[hour.dayOfWeek]}</dt>
-                <dd>{hour.isClosed ? 'Fermé' : `${hour.opensAt} – ${hour.closesAt}`}</dd>
+                <dt>{days[hour.dayOfWeek]}</dt>
+                <dd>
+                  {hour.isClosed
+                    ? dict.templates.closed
+                    : `${hour.opensAt} – ${hour.closesAt}`}
+                </dd>
               </div>
             ))}
           </dl>
@@ -415,7 +446,7 @@ function LocationSection({
         <div className="relative min-h-[320px] overflow-hidden border" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
           {location.mapEmbedSrc ? (
             <iframe
-              title="Localisation du restaurant"
+              title={dict.templates.mapTitle}
               src={location.mapEmbedSrc}
               className="h-full min-h-[320px] w-full border-0"
               loading="lazy"
@@ -428,7 +459,7 @@ function LocationSection({
               rel="noopener noreferrer"
               className="flex h-full min-h-[320px] w-full items-center justify-center text-sm text-white/70 hover:text-white"
             >
-              Voir sur la carte →
+              {dict.templates.viewOnMap}
             </a>
           ) : null}
         </div>

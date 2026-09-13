@@ -13,9 +13,33 @@ export type OpeningHourRow = {
   closesAt: string;
 };
 
+/**
+ * Noms de jours du tableau de bord, qui reste en français.
+ * Le site public, lui, passe par `dayNames(locale)`.
+ */
 export const DAY_NAMES = [
   'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi',
 ] as const;
+
+/**
+ * Noms de jours dans la langue du visiteur, obtenus du navigateur/Node plutôt
+ * que d'une liste recopiée par langue : `Intl` les connaît déjà, y compris en
+ * arabe, et une liste de plus serait une liste de plus à maintenir.
+ *
+ * Le 4 janvier 1970 était un dimanche : les sept dates suivantes couvrent la
+ * semaine dans l'ordre attendu par `dayOfWeek` (0 = dimanche).
+ */
+export function dayNames(locale: string): string[] {
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' });
+  } catch {
+    return [...DAY_NAMES];
+  }
+  return Array.from({ length: 7 }, (_, day) =>
+    format.format(new Date(Date.UTC(1970, 0, 4 + day))),
+  );
+}
 
 /** Jour et heure locale du restaurant, à partir de son fuseau IANA. */
 function localNow(timezone: string): { day: number; minutes: number } {
@@ -58,12 +82,35 @@ export type OpenState = {
   label: string;
 };
 
+/**
+ * Les six phrases affichées par la pastille « ouvert / fermé ». Elles sont
+ * passées en paramètre plutôt que lues ici : `computeOpenState` est une
+ * fonction pure, testée sans rendu ni cookie.
+ */
+export type OpenStateLabels = {
+  hoursUnknown: string;
+  closed: string;
+  /** `{time}` — heure de fermeture du jour. */
+  openUntil: string;
+  /** `{time}` — heure d'ouverture du jour. */
+  closedUntilToday: string;
+  /** `{day}` et `{time}` — prochaine ouverture dans la semaine. */
+  closedUntilDay: string;
+  tomorrow: string;
+};
+
+function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
+
 export function computeOpenState(
   hours: OpeningHourRow[],
   timezone: string,
+  labels: OpenStateLabels,
+  locale: string,
 ): OpenState {
   if (hours.length === 0) {
-    return { isOpen: false, label: 'Horaires non renseignés' };
+    return { isOpen: false, label: labels.hoursUnknown };
   }
 
   const { day, minutes } = localNow(timezone);
@@ -74,10 +121,10 @@ export function computeOpenState(
     const closes = toMinutes(today.closesAt);
 
     if (minutes >= opens && minutes < closes) {
-      return { isOpen: true, label: `Ouvert · ferme à ${today.closesAt}` };
+      return { isOpen: true, label: fill(labels.openUntil, { time: today.closesAt }) };
     }
     if (minutes < opens) {
-      return { isOpen: false, label: `Fermé · ouvre à ${today.opensAt}` };
+      return { isOpen: false, label: fill(labels.closedUntilToday, { time: today.opensAt }) };
     }
   }
 
@@ -86,10 +133,13 @@ export function computeOpenState(
     const nextDay = (day + offset) % 7;
     const next = hours.find((hour) => hour.dayOfWeek === nextDay);
     if (next && !next.isClosed) {
-      const dayLabel = offset === 1 ? 'demain' : DAY_NAMES[nextDay]!.toLowerCase();
-      return { isOpen: false, label: `Fermé · ouvre ${dayLabel} à ${next.opensAt}` };
+      const dayLabel = offset === 1 ? labels.tomorrow : dayNames(locale)[nextDay]!.toLowerCase();
+      return {
+        isOpen: false,
+        label: fill(labels.closedUntilDay, { day: dayLabel, time: next.opensAt }),
+      };
     }
   }
 
-  return { isOpen: false, label: 'Fermé' };
+  return { isOpen: false, label: labels.closed };
 }

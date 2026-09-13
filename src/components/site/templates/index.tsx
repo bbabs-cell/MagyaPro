@@ -4,6 +4,8 @@ import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
 import { DEFAULT_TEMPLATE_KEY } from '@/lib/templates/registry';
 import { QuickAddButton } from '@/components/site/quick-add-button';
+import { getServerDictionary } from '@/lib/i18n/server';
+import type { Dictionary } from '@/lib/i18n/dictionary';
 
 /**
  * Rendus de templates.
@@ -54,12 +56,20 @@ export type MenuCategoryData = {
   products: MenuProduct[];
 };
 
-const BADGE_LABELS: Record<string, string> = {
-  POPULAR: 'Populaire',
-  NEW: 'Nouveau',
-  PROMOTION: 'Promotion',
-  SOLD_OUT: 'Épuisé',
-};
+/**
+ * Libellés de badge, par langue.
+ *
+ * C'était une constante de module, donc figée en français quelle que soit la
+ * langue choisie par le visiteur.
+ */
+function badgeLabels(dict: Dictionary): Record<string, string> {
+  return {
+    POPULAR: dict.templates.badgePopular,
+    NEW: dict.templates.badgeNew,
+    PROMOTION: dict.templates.badgePromotion,
+    SOLD_OUT: dict.menuPage.unavailable,
+  };
+}
 
 // --------------------------------------------------------------------- Héros
 
@@ -68,7 +78,8 @@ const BADGE_LABELS: Record<string, string> = {
  * de statut flottant sur la photo. Le langage visuel dominant du web produit
  * moderne (2025-2026) — typographie surdimensionnée, formes douces, calme.
  */
-function HeroModern({ data }: { data: HeroData }) {
+async function HeroModern({ data }: { data: HeroData }) {
+  const { dict } = await getServerDictionary();
   return (
     <section className="relative overflow-hidden bg-surface">
       <div className="container-page grid gap-10 py-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12 lg:py-24">
@@ -99,14 +110,14 @@ function HeroModern({ data }: { data: HeroData }) {
               className="inline-flex h-14 items-center gap-2 rounded-full px-7 font-semibold text-white transition-transform hover:scale-[1.03]"
               style={{ backgroundColor: data.primaryColor }}
             >
-              {data.orderingEnabled ? 'Commander maintenant' : 'Voir le menu'}
+              {data.orderingEnabled ? dict.templates.ctaOrderNow : dict.templates.ctaSeeMenu}
               <span aria-hidden="true">→</span>
             </Link>
             <Link
               href={data.infosHref}
               className="text-sm font-medium text-ink underline decoration-surface-border underline-offset-4 hover:decoration-ink"
             >
-              Infos pratiques
+              {dict.nav.info}
             </Link>
           </div>
         </div>
@@ -142,7 +153,8 @@ function HeroModern({ data }: { data: HeroData }) {
  * cadre décalé autour de la photo, typographie serif à large espacement.
  * Le vocabulaire du restaurant premium — retenue plutôt qu'ostentation.
  */
-function HeroAfricanPremium({ data }: { data: HeroData }) {
+async function HeroAfricanPremium({ data }: { data: HeroData }) {
+  const { dict } = await getServerDictionary();
   return (
     <section className="relative overflow-hidden border-b border-black/20 bg-[#1c1512] text-white">
       <div
@@ -160,7 +172,7 @@ function HeroAfricanPremium({ data }: { data: HeroData }) {
             style={{ color: data.primaryColor }}
           >
             <span aria-hidden="true" className="h-px w-10" style={{ backgroundColor: data.primaryColor }} />
-            {data.city ?? 'Bienvenue'}
+            {data.city ?? dict.templates.welcome}
           </p>
           <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
             {data.name}
@@ -181,13 +193,13 @@ function HeroAfricanPremium({ data }: { data: HeroData }) {
               className="inline-flex h-14 items-center rounded-full px-8 font-semibold text-[#1c1512] transition-transform hover:scale-[1.03]"
               style={{ backgroundColor: data.primaryColor }}
             >
-              {data.orderingEnabled ? 'Découvrir la carte' : 'Voir le menu'}
+              {data.orderingEnabled ? dict.templates.ctaDiscoverMenu : dict.templates.ctaSeeMenu}
             </Link>
             <Link
               href={data.infosHref}
               className="inline-flex h-14 items-center rounded-full border border-white/25 px-8 font-medium text-white transition-colors hover:bg-white/5"
             >
-              Nous trouver
+              {dict.templates.sectionFind}
             </Link>
           </div>
         </div>
@@ -221,7 +233,8 @@ function HeroAfricanPremium({ data }: { data: HeroData }) {
  * décalées façon autocollant, bouton XXL. Le registre visuel du street-food
  * et du fast-casual 2025-2026 — direct, ludique, impossible à ignorer.
  */
-function HeroFastFood({ data }: { data: HeroData }) {
+async function HeroFastFood({ data }: { data: HeroData }) {
+  const { dict } = await getServerDictionary();
   return (
     <section
       className="relative overflow-hidden text-white"
@@ -283,7 +296,7 @@ function HeroFastFood({ data }: { data: HeroData }) {
           href={data.menuHref}
           className="mt-2 inline-flex h-16 items-center rounded-full bg-black px-10 text-lg font-black uppercase tracking-wide text-white shadow-[6px_6px_0_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)]"
         >
-          {data.orderingEnabled ? 'Commander maintenant' : 'Voir le menu'}
+          {data.orderingEnabled ? dict.templates.ctaOrderNow : dict.templates.ctaSeeMenu}
         </Link>
       </div>
     </section>
@@ -295,7 +308,8 @@ function HeroFastFood({ data }: { data: HeroData }) {
  * salle : la photo porte l'ambiance, le texte reste minimal et lisible grâce
  * à un dégradé plutôt qu'un voile uniforme (qui aplatirait l'image).
  */
-function HeroTraditional({ data }: { data: HeroData }) {
+async function HeroTraditional({ data }: { data: HeroData }) {
+  const { dict } = await getServerDictionary();
   return (
     <section className="relative isolate overflow-hidden bg-[#1c1712]">
       <div className="relative h-[78vh] min-h-[560px] w-full">
@@ -341,13 +355,13 @@ function HeroTraditional({ data }: { data: HeroData }) {
               href={data.menuHref}
               className="inline-flex h-12 items-center rounded-full bg-white px-7 font-medium text-black transition-transform hover:scale-[1.03]"
             >
-              {data.orderingEnabled ? 'Voir le menu et commander' : 'Voir le menu'}
+              {data.orderingEnabled ? dict.templates.ctaSeeMenuAndOrder : dict.templates.ctaSeeMenu}
             </Link>
             <Link
               href={data.infosHref}
               className="inline-flex h-12 items-center rounded-full border border-white/50 px-7 font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/10"
             >
-              Nous trouver
+              {dict.templates.sectionFind}
             </Link>
           </div>
         </div>
@@ -412,7 +426,8 @@ function TraditionalInfoStrip({ data }: { data: HeroData }) {
  * bouton à angles droits, silence typographique. La retenue devient elle-même
  * le signe de standing — l'inverse du bruit visuel des autres templates.
  */
-function HeroElegant({ data }: { data: HeroData }) {
+async function HeroElegant({ data }: { data: HeroData }) {
+  const { dict } = await getServerDictionary();
   return (
     <section className="relative overflow-hidden bg-surface">
       <span
@@ -425,7 +440,7 @@ function HeroElegant({ data }: { data: HeroData }) {
       <div className="container-page relative py-24 sm:py-32">
         <div className="mx-auto max-w-xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-ink-faint">
-            {data.city ?? 'Restaurant'}
+            {data.city ?? dict.templates.restaurant}
           </p>
           <h1 className="mt-6 font-display text-6xl font-normal tracking-tight sm:text-7xl">
             {data.name}
@@ -441,7 +456,7 @@ function HeroElegant({ data }: { data: HeroData }) {
               href={data.menuHref}
               className="inline-flex h-14 items-center rounded-none border border-ink px-10 text-sm font-medium uppercase tracking-widest text-ink transition-colors hover:bg-ink hover:text-surface"
             >
-              {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
+              {data.orderingEnabled ? dict.templates.ctaReserveOrOrder : dict.templates.ctaSeeMenu}
             </Link>
             <p className="flex items-center gap-2 text-xs text-ink-faint">
               <span
@@ -471,13 +486,14 @@ function HeroElegant({ data }: { data: HeroData }) {
  * (photo pleine tuile, texte en surimpression), les suivants une tuile
  * simple — une hiérarchie visuelle immédiate sans avoir à l'expliquer.
  */
-function MenuBento({
+async function MenuBento({
   categories,
   currency,
 }: {
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  const { dict } = await getServerDictionary();
   return (
     <div className="space-y-16">
       {categories.map((category) => (
@@ -495,6 +511,7 @@ function MenuBento({
                 product={product}
                 currency={currency}
                 featured={index === 0}
+                dict={dict}
               />
             ))}
           </div>
@@ -508,10 +525,14 @@ function BentoProductCard({
   product,
   currency,
   featured,
+  dict,
 }: {
   product: MenuProduct;
   currency: string;
   featured: boolean;
+  // Passé en propriété plutôt que relu : ces cartes sont rendues en boucle,
+  // et relire la langue à chaque plat n'apporterait rien.
+  dict: Dictionary;
 }) {
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
@@ -537,9 +558,9 @@ function BentoProductCard({
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
         />
-        {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+        {product.badge !== 'NONE' && badgeLabels(dict)[product.badge] && (
           <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black">
-            {BADGE_LABELS[product.badge]}
+            {badgeLabels(dict)[product.badge]}
           </span>
         )}
         <div className="absolute inset-x-0 bottom-0 p-3 text-white">
@@ -568,13 +589,14 @@ function BentoProductCard({
  * chiffre en filigrane, filet pointillé entre le nom et le prix, vignette
  * photo quand le plat en a une (sans photo, la mise en page reste intacte).
  */
-function MenuNumbered({
+async function MenuNumbered({
   categories,
   currency,
 }: {
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  // Aucun texte fixe ici : la numérotation et les prix parlent seuls.
   return (
     <div className="mx-auto max-w-3xl space-y-14">
       {categories.map((category) => (
@@ -636,13 +658,14 @@ function MenuNumbered({
 }
 
 /** Colonne unique, silencieuse : nom et prix seuls, sans image ni bordure. */
-function MenuElegant({
+async function MenuElegant({
   categories,
   currency,
 }: {
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  // Aucun texte fixe ici non plus : nom et prix, rien d'autre.
   return (
     <div className="mx-auto max-w-2xl space-y-16">
       {categories.map((category) => (
@@ -709,18 +732,19 @@ function MenuElegant({
  * d'intérêt qu'à partir de deux catégories — l'aperçu d'accueil n'en affiche
  * généralement qu'une ou deux, la page menu complète en profite pleinement.
  */
-function MenuTraditional({
+async function MenuTraditional({
   categories,
   currency,
 }: {
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  const { dict } = await getServerDictionary();
   return (
     <div className="space-y-14">
       {categories.length > 1 && (
         <nav
-          aria-label="Catégories du menu"
+          aria-label={dict.templates.menuCategories}
           className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-surface/95 px-4 py-3 backdrop-blur"
         >
           {categories.map((category) => (
@@ -749,7 +773,12 @@ function MenuTraditional({
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {category.products.map((product) => (
-              <TraditionalProductCard key={product.id} product={product} currency={currency} />
+              <TraditionalProductCard
+                key={product.id}
+                product={product}
+                currency={currency}
+                dict={dict}
+              />
             ))}
           </div>
         </section>
@@ -761,11 +790,14 @@ function MenuTraditional({
 function TraditionalProductCard({
   product,
   currency,
+  dict,
 }: {
   product: MenuProduct;
   currency: string;
+  dict: Dictionary;
 }) {
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
+  const badges = badgeLabels(dict);
 
   return (
     <div
@@ -787,9 +819,9 @@ function TraditionalProductCard({
           ) : (
             <div aria-hidden="true" className="h-full w-full" />
           )}
-          {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+          {product.badge !== 'NONE' && badges[product.badge] && (
             <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-black shadow-sm">
-              {BADGE_LABELS[product.badge]}
+              {badges[product.badge]}
             </span>
           )}
         </div>
@@ -812,7 +844,7 @@ function TraditionalProductCard({
               {formatMoney(product.compareAtPrice, currency)}
             </span>
           )}
-          {unavailable && <span className="ms-2 text-xs text-ink-faint">Indisponible</span>}
+          {unavailable && <span className="ms-2 text-xs text-ink-faint">{dict.menuPage.unavailable}</span>}
         </div>
         <QuickAddButton
           product={product}
@@ -827,13 +859,14 @@ function TraditionalProductCard({
  * Cartes contour épais + prix en pastille décalée façon autocollant :
  * le même vocabulaire ludique que le héros, jusque dans la carte.
  */
-function MenuFastFood({
+async function MenuFastFood({
   categories,
   currency,
 }: {
   categories: MenuCategoryData[];
   currency: string;
 }) {
+  const { dict } = await getServerDictionary();
   return (
     <div className="space-y-14">
       {categories.map((category) => (
@@ -846,7 +879,12 @@ function MenuFastFood({
           </h2>
           <div className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {category.products.map((product) => (
-              <FastFoodProductCard key={product.id} product={product} currency={currency} />
+              <FastFoodProductCard
+                key={product.id}
+                product={product}
+                currency={currency}
+                dict={dict}
+              />
             ))}
           </div>
         </section>
@@ -858,9 +896,11 @@ function MenuFastFood({
 function FastFoodProductCard({
   product,
   currency,
+  dict,
 }: {
   product: MenuProduct;
   currency: string;
+  dict: Dictionary;
 }) {
   const unavailable = !product.isAvailable || product.badge === 'SOLD_OUT';
 
@@ -882,9 +922,9 @@ function FastFoodProductCard({
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : null}
-          {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
+          {product.badge !== 'NONE' && badgeLabels(dict)[product.badge] && (
             <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-black px-2.5 py-1 text-xs font-bold uppercase text-white">
-              {BADGE_LABELS[product.badge]}
+              {badgeLabels(dict)[product.badge]}
             </span>
           )}
           <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
@@ -896,7 +936,7 @@ function FastFoodProductCard({
           {product.description && (
             <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{product.description}</p>
           )}
-          {unavailable && <p className="mt-1 text-xs text-ink-faint">Indisponible</p>}
+          {unavailable && <p className="mt-1 text-xs text-ink-faint">{dict.menuPage.unavailable}</p>}
         </div>
       </Link>
 
@@ -912,12 +952,16 @@ function FastFoodProductCard({
 
 // ------------------------------------------------------------------ Registre
 
+/**
+ * Les composants de template sont asynchrones : ils lisent la langue du
+ * visiteur côté serveur. Le type l'admet explicitement.
+ */
 type TemplateRenderer = {
-  Hero: (props: { data: HeroData }) => React.ReactElement;
+  Hero: (props: { data: HeroData }) => Promise<React.ReactElement>;
   Menu: (props: {
     categories: MenuCategoryData[];
     currency: string;
-  }) => React.ReactElement;
+  }) => Promise<React.ReactElement>;
 };
 
 const TEMPLATE_RENDERERS: Record<string, TemplateRenderer> = {

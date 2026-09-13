@@ -1,11 +1,13 @@
 import Link from 'next/link';
 
 import { cx } from '@/components/ui';
-import { DAY_NAMES } from '@/lib/site/hours';
+import { dayNames } from '@/lib/site/hours';
 import { OfferCountdown } from '@/components/site/templates/offer-countdown';
 import { StreetFoodMenuFilter } from '@/components/site/templates/street-food-menu-filter';
 import { GalleryLightbox } from '@/components/site/templates/gallery-lightbox';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
+import { getServerDictionary } from '@/lib/i18n/server';
+import type { Dictionary } from '@/lib/i18n/dictionary';
 
 /**
  * Page d'accueil dédiée au template « street-food » — une seule page qui
@@ -44,7 +46,8 @@ export type StreetFoodHomeData = {
   };
 };
 
-export function StreetFoodHomePage({ data }: { data: StreetFoodHomeData }) {
+export async function StreetFoodHomePage({ data }: { data: StreetFoodHomeData }) {
+  const { locale, dict } = await getServerDictionary();
   const hasStory = Boolean(data.story);
   const hasChef = Boolean(data.chef?.name);
   const hasGallery = data.gallery.length > 0;
@@ -53,18 +56,30 @@ export function StreetFoodHomePage({ data }: { data: StreetFoodHomeData }) {
 
   return (
     <>
-      <StreetFoodHero data={data.hero} averageRating={data.averageRating} reviewCount={data.reviews.length} />
+      <StreetFoodHero
+        data={data.hero}
+        averageRating={data.averageRating}
+        reviewCount={data.reviews.length}
+        dict={dict}
+      />
 
       {categoryNames.length > 0 && <MarqueeStrip items={categoryNames} />}
 
-      {hasStory && <StorySection story={data.story!} />}
-      {hasChef && <ChefSection chef={data.chef!} />}
+      {hasStory && <StorySection story={data.story!} dict={dict} />}
+      {hasChef && <ChefSection chef={data.chef!} dict={dict} />}
 
-      <MenuSection categories={data.menuCategories} currency={data.currency} menuHref={data.menuHref} />
+      <MenuSection
+        categories={data.menuCategories}
+        currency={data.currency}
+        menuHref={data.menuHref}
+        dict={dict}
+      />
 
-      {data.offer && <OfferSection offer={data.offer} />}
-      {hasGallery && <GallerySection images={data.gallery} />}
-      {hasReviews && <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} />}
+      {data.offer && <OfferSection offer={data.offer} dict={dict} />}
+      {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
+      {hasReviews && (
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
+      )}
 
       <LocationSection
         location={data.location}
@@ -74,6 +89,8 @@ export function StreetFoodHomePage({ data }: { data: StreetFoodHomeData }) {
         openLabel={data.hero.openLabel}
         menuHref={data.menuHref}
         orderingEnabled={data.hero.orderingEnabled}
+        dict={dict}
+        locale={locale}
       />
     </>
   );
@@ -85,10 +102,12 @@ function StreetFoodHero({
   data,
   averageRating,
   reviewCount,
+  dict,
 }: {
   data: HeroData;
   averageRating: number | null;
   reviewCount: number;
+  dict: Dictionary;
 }) {
   return (
     <section className="relative overflow-hidden text-white" style={{ backgroundColor: 'var(--brand)' }}>
@@ -117,13 +136,15 @@ function StreetFoodHero({
               href={data.menuHref}
               className="inline-flex h-14 items-center rounded-full bg-black px-8 text-sm font-black uppercase tracking-wide text-white shadow-[6px_6px_0_rgba(0,0,0,0.3)] transition-transform hover:-translate-y-0.5 hover:shadow-[8px_8px_0_rgba(0,0,0,0.3)]"
             >
-              {data.orderingEnabled ? 'Commander maintenant' : 'Voir le menu'}
+              {data.orderingEnabled
+                ? dict.templates.ctaOrderNow
+                : dict.templates.ctaSeeMenu}
             </Link>
             <Link
               href={data.infosHref}
               className="inline-flex h-14 items-center rounded-full border-2 border-white px-8 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-white/10"
             >
-              Nous trouver
+              {dict.templates.sectionFind}
             </Link>
           </div>
         </div>
@@ -143,7 +164,9 @@ function StreetFoodHero({
               <span className="text-lg">★</span>
               <div className="leading-tight">
                 <span className="block text-sm font-black">{averageRating.toFixed(1)}/5</span>
-                <span className="block text-[0.65rem] text-ink-muted">{reviewCount} avis</span>
+                <span className="block text-[0.65rem] text-ink-muted">
+                  {dict.templates.reviewCount(reviewCount)}
+                </span>
               </div>
             </div>
           )}
@@ -153,7 +176,7 @@ function StreetFoodHero({
               aria-hidden="true"
               className={cx('h-2.5 w-2.5 rounded-full', data.isOpenNow ? 'bg-emerald-500' : 'bg-red-500')}
             />
-            <span className="text-sm font-black">{data.isOpenNow ? 'Ouvert' : 'Fermé'}</span>
+            <span className="text-sm font-black">{data.isOpenNow ? dict.templates.open : dict.templates.closed}</span>
           </div>
         </div>
       </div>
@@ -181,13 +204,13 @@ export function MarqueeStrip({ items }: { items: string[] }) {
 
 // ----------------------------------------------------------------- Sections
 
-function StorySection({ story }: { story: string }) {
+function StorySection({ story, dict }: { story: string; dict: Dictionary }) {
   return (
     <section className="border-b border-surface-border bg-surface">
       <div className="container-page py-16 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--brand)' }}>
-            Notre histoire
+            {dict.templates.sectionStory}
           </span>
           <p className="mx-auto mt-6 max-w-xl font-display text-2xl font-medium leading-relaxed sm:text-3xl">
             {story}
@@ -200,8 +223,10 @@ function StorySection({ story }: { story: string }) {
 
 function ChefSection({
   chef,
+  dict,
 }: {
   chef: { name: string; bio: string | null; photoUrl: string | null };
+  dict: Dictionary;
 }) {
   return (
     <section className="border-b border-surface-border bg-surface-sunken">
@@ -225,7 +250,9 @@ function ChefSection({
             </span>
           )}
           <div>
-            <span className="text-xs font-bold uppercase tracking-[0.3em] text-ink-faint">Aux fourneaux</span>
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-ink-faint">
+              {dict.templates.sectionKitchen}
+            </span>
             <p className="mt-2 font-display text-3xl font-semibold">{chef.name}</p>
             {chef.bio && <p className="mt-3 leading-relaxed text-ink-muted">{chef.bio}</p>}
           </div>
@@ -239,23 +266,27 @@ function MenuSection({
   categories,
   currency,
   menuHref,
+  dict,
 }: {
   categories: MenuCategoryData[];
   currency: string;
   menuHref: string;
+  dict: Dictionary;
 }) {
   return (
     <section id="menu" className="border-b border-surface-border bg-surface">
       <div className="container-page py-16 sm:py-20">
         <div className="mb-10 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--brand)' }}>
-            Ce qui cuisine
+            {dict.templates.sectionWhatsCooking}
           </span>
-          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">Notre menu</h2>
+          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">
+            {dict.templates.sectionOurMenu}
+          </h2>
         </div>
 
         {categories.length === 0 ? (
-          <p className="text-center text-ink-muted">La carte est en préparation.</p>
+          <p className="text-center text-ink-muted">{dict.templates.menuPreparing}</p>
         ) : (
           <StreetFoodMenuFilter categories={categories} currency={currency} />
         )}
@@ -265,7 +296,7 @@ function MenuSection({
             href={menuHref}
             className="inline-flex h-12 items-center rounded-full border-2 border-ink px-8 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-ink hover:text-surface"
           >
-            Voir la carte complète
+            {dict.menuPage.seeAll}
           </Link>
         </div>
       </div>
@@ -273,18 +304,22 @@ function MenuSection({
   );
 }
 
-function OfferSection({ offer }: { offer: { code: string; label: string; endsAt: string } }) {
+function OfferSection({
+  offer,
+  dict,
+}: {
+  offer: { code: string; label: string; endsAt: string };
+  dict: Dictionary;
+}) {
   return (
     <section className="relative overflow-hidden bg-[#141110] text-white">
       <div className="container-page relative grid gap-8 py-16 sm:py-20 lg:grid-cols-2 lg:items-center">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide">
-            Offre limitée
+            {dict.templates.offerLimited}
           </span>
           <h2 className="mt-4 font-display text-4xl font-black leading-tight sm:text-5xl">{offer.label}</h2>
-          <p className="mt-4 text-white/70">
-            Code <span className="font-mono font-bold text-white">{offer.code}</span> à mentionner lors de votre commande.
-          </p>
+          <p className="mt-4 text-white/70">{dict.templates.offerCodeNote(offer.code)}</p>
         </div>
         <div className="flex justify-start lg:justify-end">
           <OfferCountdown endsAt={offer.endsAt} />
@@ -296,17 +331,21 @@ function OfferSection({ offer }: { offer: { code: string; label: string; endsAt:
 
 function GallerySection({
   images,
+  dict,
 }: {
   images: Array<{ id: string; imageUrl: string; caption: string | null }>;
+  dict: Dictionary;
 }) {
   return (
     <section className="border-b border-surface-border bg-surface-sunken">
       <div className="container-page py-16 sm:py-20">
         <div className="mb-10 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--brand)' }}>
-            En cuisine
+            {dict.templates.sectionInKitchen}
           </span>
-          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">Galerie</h2>
+          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">
+            {dict.templates.sectionGallery}
+          </h2>
         </div>
         <GalleryLightbox images={images} />
       </div>
@@ -317,23 +356,29 @@ function GallerySection({
 function ReviewsSection({
   reviews,
   averageRating,
+  dict,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
+  dict: Dictionary;
 }) {
   return (
     <section className="border-b border-surface-border bg-surface">
       <div className="container-page py-16 sm:py-20">
         <div className="mb-10 text-center">
           <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: 'var(--brand)' }}>
-            Avis clients
+            {dict.templates.sectionCustomerReviews}
           </span>
-          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">Ils en parlent</h2>
+          <h2 className="mt-3 font-display text-4xl font-black uppercase tracking-tight">
+            {dict.templates.sectionTheyTalk}
+          </h2>
           {averageRating !== null && (
             <p className="mt-3 text-amber-500">
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-surface-border">{'★'.repeat(5 - Math.round(averageRating))}</span>
-              <span className="ms-2 text-sm text-ink-muted">{averageRating.toFixed(1)} sur 5</span>
+              <span className="ms-2 text-sm text-ink-muted">
+                {dict.templates.ratingSimple(averageRating.toFixed(1))}
+              </span>
             </p>
           )}
         </div>
@@ -362,6 +407,8 @@ function LocationSection({
   openLabel,
   menuHref,
   orderingEnabled,
+  dict,
+  locale,
 }: {
   location: StreetFoodHomeData['location'];
   openingHours: StreetFoodHomeData['openingHours'];
@@ -370,12 +417,17 @@ function LocationSection({
   openLabel: string;
   menuHref: string;
   orderingEnabled: boolean;
+  dict: Dictionary;
+  locale: string;
 }) {
+  const days = dayNames(locale);
   return (
     <section className="bg-[#141110] text-white">
       <div className="container-page grid gap-10 py-16 sm:py-20 lg:grid-cols-[1fr_auto_1fr]">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-white/50">Horaires &amp; Localisation</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-white/50">
+            {dict.templates.sectionHours}
+          </span>
 
           <p className="mt-6 flex items-center gap-2 text-sm text-white/80">
             <span aria-hidden="true" className={cx('h-2 w-2 rounded-full', isOpenNow ? 'bg-emerald-400' : 'bg-red-400')} />
@@ -397,8 +449,12 @@ function LocationSection({
                   hour.dayOfWeek === today ? 'text-white' : 'text-white/50',
                 )}
               >
-                <dt>{DAY_NAMES[hour.dayOfWeek]}</dt>
-                <dd>{hour.isClosed ? 'Fermé' : `${hour.opensAt} – ${hour.closesAt}`}</dd>
+                <dt>{days[hour.dayOfWeek]}</dt>
+                <dd>
+                  {hour.isClosed
+                    ? dict.templates.closed
+                    : `${hour.opensAt} – ${hour.closesAt}`}
+                </dd>
               </div>
             ))}
           </dl>
@@ -432,20 +488,22 @@ function LocationSection({
           style={{ backgroundColor: 'var(--brand)' }}
         >
           <span aria-hidden="true" className="text-3xl">🛵</span>
-          <h3 className="font-display text-xl font-black uppercase">Commander en ligne</h3>
-          <p className="text-sm text-white/85">Livré chaud, prêt en quelques minutes.</p>
+          <h3 className="font-display text-xl font-black uppercase">
+            {dict.templates.sectionOrderOnline}
+          </h3>
+          <p className="text-sm text-white/85">{dict.templates.hotAndFast}</p>
           <Link
             href={menuHref}
             className="mt-2 inline-flex h-11 items-center rounded-full bg-black px-6 text-sm font-black uppercase tracking-wide text-white"
           >
-            {orderingEnabled ? 'Commander' : 'Voir le menu'}
+            {orderingEnabled ? dict.templates.ctaOrder : dict.templates.ctaSeeMenu}
           </Link>
         </div>
 
         <div className="relative min-h-[320px] overflow-hidden rounded-2xl border-2 border-white/15">
           {location.mapEmbedSrc ? (
             <iframe
-              title="Localisation du restaurant"
+              title={dict.templates.mapTitle}
               src={location.mapEmbedSrc}
               className="h-full min-h-[320px] w-full border-0"
               loading="lazy"
@@ -458,7 +516,7 @@ function LocationSection({
               rel="noopener noreferrer"
               className="flex h-full min-h-[320px] w-full items-center justify-center text-sm text-white/70 hover:text-white"
             >
-              Voir sur la carte →
+              {dict.templates.viewOnMap}
             </a>
           ) : null}
         </div>

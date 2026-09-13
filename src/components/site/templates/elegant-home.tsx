@@ -2,9 +2,11 @@ import Link from 'next/link';
 
 import { formatMoney } from '@/lib/money';
 import { cx } from '@/components/ui';
-import { DAY_NAMES } from '@/lib/site/hours';
+import { dayNames } from '@/lib/site/hours';
 import { QuickAddButton } from '@/components/site/quick-add-button';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
+import { getServerDictionary } from '@/lib/i18n/server';
+import type { Dictionary } from '@/lib/i18n/dictionary';
 
 /**
  * Page d'accueil dédiée au template « elegant » — une seule page qui défile,
@@ -42,28 +44,30 @@ export type ElegantHomeData = {
 
 const SECTION_LABEL_CLASS = 'text-xs font-semibold uppercase tracking-[0.4em] text-ink-faint';
 
-export function ElegantHomePage({ data }: { data: ElegantHomeData }) {
+export async function ElegantHomePage({ data }: { data: ElegantHomeData }) {
+  const { locale, dict } = await getServerDictionary();
   const hasStory = Boolean(data.story);
   const hasChef = Boolean(data.chef?.name);
   const hasGallery = data.gallery.length > 0;
   const hasReviews = data.reviewsEnabled && data.reviews.length > 0;
 
-  const sections = [
-    hasStory && { id: 'histoire', label: 'Histoire' },
-    hasChef && { id: 'chef', label: 'Chef' },
-    { id: 'carte', label: 'Carte' },
-    hasGallery && { id: 'galerie', label: 'Galerie' },
-    hasReviews && { id: 'avis', label: 'Avis' },
-    { id: 'localisation', label: 'Nous trouver' },
-  ].filter((section): section is { id: string; label: string } => Boolean(section));
+  type Section = { id: string; label: string };
+  const sections = ([
+    hasStory && { id: 'histoire', label: dict.templates.navStory },
+    hasChef && { id: 'chef', label: dict.templates.navChef },
+    { id: 'carte', label: dict.templates.navMenu },
+    hasGallery && { id: 'galerie', label: dict.templates.navGallery },
+    hasReviews && { id: 'avis', label: dict.templates.navReviews },
+    { id: 'localisation', label: dict.templates.navFind },
+  ] as Array<Section | false>).filter((section): section is Section => Boolean(section));
 
   return (
     <>
-      <ElegantHero data={data.hero} />
+      <ElegantHero data={data.hero} dict={dict} />
 
       {sections.length > 1 && (
         <nav
-          aria-label="Sections de la page"
+          aria-label={dict.templates.pageSections}
           className="sticky top-16 z-10 flex justify-center gap-6 overflow-x-auto border-b border-surface-border bg-surface/95 px-4 py-3 backdrop-blur"
         >
           {sections.map((section) => (
@@ -78,18 +82,19 @@ export function ElegantHomePage({ data }: { data: ElegantHomeData }) {
         </nav>
       )}
 
-      {hasStory && <StorySection story={data.story!} />}
-      {hasChef && <ChefSection chef={data.chef!} />}
+      {hasStory && <StorySection story={data.story!} dict={dict} />}
+      {hasChef && <ChefSection chef={data.chef!} dict={dict} />}
 
       <MenuSection
         categories={data.menuCategories}
         currency={data.currency}
         menuHref={data.menuHref}
+        dict={dict}
       />
 
-      {hasGallery && <GallerySection images={data.gallery} />}
+      {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
       {hasReviews && (
-        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} />
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
       )}
 
       <LocationSection
@@ -98,12 +103,14 @@ export function ElegantHomePage({ data }: { data: ElegantHomeData }) {
         today={data.today}
         isOpenNow={data.hero.isOpenNow}
         openLabel={data.hero.openLabel}
+        dict={dict}
+        locale={locale}
       />
     </>
   );
 }
 
-function ElegantHero({ data }: { data: HeroData }) {
+function ElegantHero({ data, dict }: { data: HeroData; dict: Dictionary }) {
   const hasPhoto = Boolean(data.coverUrl);
 
   return (
@@ -143,7 +150,7 @@ function ElegantHero({ data }: { data: HeroData }) {
               hasPhoto ? 'text-white/70' : 'text-ink-faint',
             )}
           >
-            {data.city ?? 'Restaurant'}
+            {data.city ?? dict.templates.restaurant}
           </p>
           <h1 className="mt-6 font-display text-6xl font-normal tracking-tight sm:text-7xl">
             {data.name}
@@ -172,7 +179,9 @@ function ElegantHero({ data }: { data: HeroData }) {
                   : 'border-ink text-ink hover:bg-ink hover:text-surface',
               )}
             >
-              {data.orderingEnabled ? 'Réserver ou commander' : 'Voir le menu'}
+              {data.orderingEnabled
+                ? dict.templates.ctaReserveOrOrder
+                : dict.templates.ctaSeeMenu}
             </Link>
             <p
               className={cx(
@@ -193,13 +202,13 @@ function ElegantHero({ data }: { data: HeroData }) {
   );
 }
 
-function StorySection({ story }: { story: string }) {
+function StorySection({ story, dict }: { story: string; dict: Dictionary }) {
   return (
     <section id="histoire" aria-labelledby="histoire-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <div className="mx-auto max-w-2xl text-center">
           <h2 id="histoire-titre" className={SECTION_LABEL_CLASS}>
-            Notre histoire
+            {dict.templates.sectionStory}
           </h2>
           <p className="mx-auto mt-8 max-w-xl font-display text-2xl leading-relaxed sm:text-3xl">
             {story}
@@ -212,8 +221,10 @@ function StorySection({ story }: { story: string }) {
 
 function ChefSection({
   chef,
+  dict,
 }: {
   chef: { name: string; bio: string | null; photoUrl: string | null };
+  dict: Dictionary;
 }) {
   const hasPhoto = Boolean(chef.photoUrl);
 
@@ -250,7 +261,7 @@ function ChefSection({
               hasPhoto ? 'text-white/70' : 'text-ink-faint',
             )}
           >
-            Le chef
+            {dict.templates.sectionChef}
           </h2>
           {!hasPhoto && (
             <span
@@ -276,20 +287,22 @@ function MenuSection({
   categories,
   currency,
   menuHref,
+  dict,
 }: {
   categories: MenuCategoryData[];
   currency: string;
   menuHref: string;
+  dict: Dictionary;
 }) {
   return (
     <section id="carte" aria-labelledby="carte-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <h2 id="carte-titre" className={cx(SECTION_LABEL_CLASS, 'text-center')}>
-          La carte
+          {dict.templates.sectionMenu}
         </h2>
 
         {categories.length === 0 ? (
-          <p className="mt-8 text-center text-ink-muted">La carte est en préparation.</p>
+          <p className="mt-8 text-center text-ink-muted">{dict.templates.menuPreparing}</p>
         ) : (
           <div className="mx-auto mt-12 max-w-2xl space-y-14">
             {categories.map((category) => (
@@ -347,7 +360,7 @@ function MenuSection({
             href={menuHref}
             className="inline-flex h-12 items-center border-b border-ink text-sm font-medium uppercase tracking-widest text-ink"
           >
-            Voir la carte complète
+            {dict.menuPage.seeAll}
           </Link>
         </div>
       </div>
@@ -357,14 +370,16 @@ function MenuSection({
 
 function GallerySection({
   images,
+  dict,
 }: {
   images: Array<{ id: string; imageUrl: string; caption: string | null }>;
+  dict: Dictionary;
 }) {
   return (
     <section id="galerie" aria-labelledby="galerie-titre" className="border-t border-surface-border bg-surface-sunken">
       <div className="container-page py-20 sm:py-28">
         <h2 id="galerie-titre" className={cx(SECTION_LABEL_CLASS, 'text-center')}>
-          Galerie
+          {dict.templates.sectionGallery}
         </h2>
         <div className="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {images.map((image) => (
@@ -387,16 +402,18 @@ function GallerySection({
 function ReviewsSection({
   reviews,
   averageRating,
+  dict,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
+  dict: Dictionary;
 }) {
   return (
     <section id="avis" aria-labelledby="avis-titre" className="border-t border-surface-border bg-surface">
       <div className="container-page py-20 sm:py-28">
         <div className="text-center">
           <h2 id="avis-titre" className={SECTION_LABEL_CLASS}>
-            Ce qu&apos;on en dit
+            {dict.templates.sectionReviews}
           </h2>
           {averageRating !== null && (
             <p className="mt-4 text-amber-500">
@@ -405,7 +422,7 @@ function ReviewsSection({
                 {'★'.repeat(5 - Math.round(averageRating))}
               </span>
               <span className="ms-2 text-sm text-ink-muted">
-                {averageRating.toFixed(1)} sur 5 · {reviews.length} avis
+                {dict.templates.ratingOutOf(averageRating.toFixed(1), reviews.length)}
               </span>
             </p>
           )}
@@ -434,13 +451,18 @@ function LocationSection({
   today,
   isOpenNow,
   openLabel,
+  dict,
+  locale,
 }: {
   location: ElegantHomeData['location'];
   openingHours: ElegantHomeData['openingHours'];
   today: number;
   isOpenNow: boolean;
   openLabel: string;
+  dict: Dictionary;
+  locale: string;
 }) {
+  const days = dayNames(locale);
   return (
     <section
       id="localisation"
@@ -450,7 +472,7 @@ function LocationSection({
       <div className="container-page grid gap-10 py-20 sm:py-28 lg:grid-cols-2">
         <div>
           <h2 id="localisation-titre" className="text-xs font-semibold uppercase tracking-[0.4em] text-white/50">
-            Nous trouver
+            {dict.templates.sectionFind}
           </h2>
 
           <p className="mt-8 flex items-center gap-2 text-sm text-white/70">
@@ -473,8 +495,12 @@ function LocationSection({
                   hour.dayOfWeek === today ? 'text-white' : 'text-white/50',
                 )}
               >
-                <dt>{DAY_NAMES[hour.dayOfWeek]}</dt>
-                <dd>{hour.isClosed ? 'Fermé' : `${hour.opensAt} – ${hour.closesAt}`}</dd>
+                <dt>{days[hour.dayOfWeek]}</dt>
+                <dd>
+                  {hour.isClosed
+                    ? dict.templates.closed
+                    : `${hour.opensAt} – ${hour.closesAt}`}
+                </dd>
               </div>
             ))}
           </dl>
@@ -506,7 +532,7 @@ function LocationSection({
         <div className="relative min-h-[320px] overflow-hidden">
           {location.mapEmbedSrc ? (
             <iframe
-              title="Localisation du restaurant"
+              title={dict.templates.mapTitle}
               src={location.mapEmbedSrc}
               className="h-full min-h-[320px] w-full border-0"
               loading="lazy"
@@ -519,7 +545,7 @@ function LocationSection({
               rel="noopener noreferrer"
               className="flex h-full min-h-[320px] w-full items-center justify-center border border-white/15 text-sm text-white/70 hover:text-white"
             >
-              Voir sur la carte →
+              {dict.templates.viewOnMap}
             </a>
           ) : null}
         </div>
