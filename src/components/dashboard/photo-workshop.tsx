@@ -4,7 +4,9 @@ import { useRef, useState, type DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api, uploadFile } from '@/lib/client/api';
-import { downscaleImage } from '@/lib/client/downscale-image';
+import { cropAndDownscale } from '@/lib/client/crop-image';
+import { photoBrief } from '@/lib/images/briefs';
+import { CAPTURE_RATIOS } from '@/lib/images/framing';
 import { Card, EmptyState } from '@/components/ui';
 
 type ProductWithoutPhoto = { id: string; name: string; categoryName: string };
@@ -18,6 +20,7 @@ export function PhotoWorkshop({ products }: { products: ProductWithoutPhoto[] })
   const [results, setResults] = useState<AssignmentResult[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const brief = photoBrief('product');
 
   async function processFiles(files: FileList | File[]) {
     const images = Array.from(files).filter((file) => file.type.startsWith('image/'));
@@ -41,7 +44,18 @@ export function PhotoWorkshop({ products }: { products: ProductWithoutPhoto[] })
       try {
         // Envoi en lot : c'est ici que le poids compte le plus, une série de
         // photos de téléphone partant à la suite sur un réseau instable.
-        const prepared = await downscaleImage(file, 'product');
+        //
+        // Le cadrage est centré et non réglable : un import de vingt photos ne
+        // peut pas demander vingt arbitrages. Il ramène au moins toutes les
+        // photos aux mêmes proportions, ce qui suffit à rendre la grille
+        // régulière. Le réglage fin reste possible plat par plat, depuis la
+        // carte.
+        const prepared = await cropAndDownscale(
+          file,
+          'product',
+          CAPTURE_RATIOS.product.ratio,
+          { x: 0.5, y: 0.5 },
+        );
         const formData = new FormData();
         formData.append('file', prepared);
         formData.append('folder', 'products');
@@ -119,6 +133,21 @@ export function PhotoWorkshop({ products }: { products: ProductWithoutPhoto[] })
             }}
           />
           {processing && <p className="mt-3 text-sm text-ink-muted">Envoi en cours…</p>}
+        </div>
+
+        <div className="mt-4 rounded-xl bg-surface-sunken p-3">
+          <p className="text-xs font-medium text-ink">{brief.intent}</p>
+          <p className="mt-1 text-xs text-ink-muted">{brief.framing}</p>
+          <ul className="mt-2 space-y-1 text-xs text-ink-muted">
+            {brief.tips.map((tip) => (
+              <li key={tip} className="flex gap-2">
+                <span aria-hidden="true" className="text-ink-faint">
+                  ·
+                </span>
+                {tip}
+              </li>
+            ))}
+          </ul>
         </div>
       </Card>
 

@@ -71,8 +71,11 @@ export function GalleryManager({ images }: { images: Image[] }) {
         <ImageUploadField
           label="Ajouter une photo"
           folder="covers"
+          role="gallery"
           value={null}
-          hint={uploading ? 'Envoi en cours…' : 'Format paysage recommandé. 5 Mo maximum.'}
+          // La galerie affiche en carré : conseiller le paysage revenait à
+          // annoncer un cadrage que l'affichage ne respecte pas.
+          hint={uploading ? 'Envoi en cours…' : 'Affichée en carré. 5 Mo maximum.'}
           onChange={handleUpload}
         />
       </Card>

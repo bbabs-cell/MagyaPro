@@ -3,8 +3,10 @@
 import { useRef, useState } from 'react';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
-import { downscaleImage, type ImageTarget } from '@/lib/client/downscale-image';
+import { type ImageTarget } from '@/lib/client/downscale-image';
 import { Button } from '@/components/ui';
+import { PhotoFramer } from '@/components/dashboard/photo-framer';
+import type { ImageRole } from '@/lib/images/framing';
 
 /**
  * Champ de téléversement d'image.
@@ -26,39 +28,66 @@ const TARGET_BY_FOLDER: Record<string, ImageTarget> = {
   chef: 'product',
 };
 
+/**
+ * Où l'image sera affichée, donc comment elle sera rognée et quelles consignes
+ * de prise de vue montrer. Distinct de la cible de réduction ci-dessus : deux
+ * images peuvent peser pareil et être cadrées très différemment.
+ */
+const ROLE_BY_FOLDER: Record<string, ImageRole> = {
+  logos: 'logo',
+  covers: 'cover',
+  products: 'product',
+  categories: 'product',
+  // L'image de partage est une carte 1,91:1, pas une couverture de page.
+  seo: 'social',
+  chef: 'chef',
+};
+
 export function ImageUploadField({
   label,
   folder,
   value,
   hint,
+  role,
   onChange,
 }: {
   label: string;
   folder: 'logos' | 'covers' | 'products' | 'categories' | 'seo' | 'chef';
   value: string | null;
   hint?: string;
+  /**
+   * Où l'image sera affichée, quand le dossier de rangement ne suffit pas à
+   * le deviner : les photos de galerie sont rangées avec les couvertures mais
+   * affichées en carré, et seraient cadrées pour rien en 3:2.
+   */
+  role?: ImageRole;
   onChange: (url: string | null) => void | Promise<void>;
 }) {
+  const imageRole = role ?? ROLE_BY_FOLDER[folder] ?? 'product';
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Le fichier choisi attend d'être cadré : rien n'est envoyé tant que le
+  // commerçant n'a pas vu ce qui sera coupé.
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-  async function handleFile(file: File) {
+  function clearInput() {
+    // Réinitialiser permet de re-sélectionner le même fichier après une erreur.
+    if (inputRef.current) inputRef.current.value = '';
+  }
+
+  async function upload(prepared: File) {
     setUploading(true);
     setError(null);
 
     try {
-      // Réduite sur l'appareil avant l'envoi : une photo de téléphone brute
-      // partait telle quelle et était servie à l'identique à chaque visiteur
-      // du site public. Voir `downscale-image.ts`.
-      const prepared = await downscaleImage(file, TARGET_BY_FOLDER[folder]);
-
       const formData = new FormData();
       formData.append('file', prepared);
       formData.append('folder', folder);
 
       const result = await uploadFile<{ url: string }>('/api/upload', formData);
       await onChange(result.url);
+      setPendingFile(null);
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -67,8 +96,7 @@ export function ImageUploadField({
       );
     } finally {
       setUploading(false);
-      // Réinitialiser permet de re-sélectionner le même fichier après une erreur.
-      if (inputRef.current) inputRef.current.value = '';
+      clearInput();
     }
   }
 
@@ -107,7 +135,7 @@ export function ImageUploadField({
             className="sr-only"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) void handleFile(file);
+              if (file) setPendingFile(file);
             }}
           />
           <Button
@@ -133,6 +161,20 @@ export function ImageUploadField({
           )}
         </div>
       </div>
+
+      {pendingFile && (
+        <PhotoFramer
+          file={pendingFile}
+          role={imageRole}
+          target={TARGET_BY_FOLDER[folder]!}
+          busy={uploading}
+          onConfirm={(framed) => upload(framed)}
+          onCancel={() => {
+            setPendingFile(null);
+            clearInput();
+          }}
+        />
+      )}
 
       {error && (
         <p role="alert" className="text-xs font-medium text-red-600">
