@@ -87,7 +87,15 @@ const STAT_ICONS = {
 export default async function AdminDashboardPage() {
   await requireSuperAdmin();
 
-  const [metrics, storeMetrics, revenue, recentRestaurants, recentStores, recentLogs] = await Promise.all([
+  const [
+    metrics,
+    storeMetrics,
+    revenue,
+    recentRestaurants,
+    recentStores,
+    recentLogs,
+    pendingDomains,
+  ] = await Promise.all([
     getPlatformMetrics(),
     getPlatformStoreMetrics(),
     getPlatformRevenue(),
@@ -125,6 +133,20 @@ export default async function AdminDashboardPage() {
         action: true,
         actorEmail: true,
         createdAt: true,
+      },
+    }),
+    // Domaines dont le restaurateur a prouvé la propriété, mais qui restent à
+    // déclarer chez l'hébergeur. Sans cette lecture, sa demande n'aurait aucun
+    // endroit où atterrir.
+    prisma.domain.findMany({
+      where: { type: 'CUSTOM', status: 'VERIFIED' },
+      orderBy: { verifiedAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        hostname: true,
+        verifiedAt: true,
+        restaurant: { select: { name: true } },
       },
     }),
   ]);
@@ -195,6 +217,49 @@ export default async function AdminDashboardPage() {
           <MailTestButton />
         </div>
       </section>
+
+      {/* --- Domaines à activer chez l'hébergeur -------------------------
+          Un domaine vérifié prouve que le restaurateur en est propriétaire.
+          Il ne suffit pas à rendre le site joignable : l'adresse doit encore
+          être déclarée chez l'hébergeur, ce que Magyapro ne fait pas
+          automatiquement. L'écran du restaurateur l'invite à écrire ; sans
+          cette liste, la demande n'aurait aucun endroit où atterrir. */}
+      {pendingDomains.length > 0 && (
+        <section
+          aria-labelledby="domaines-a-activer"
+          className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4"
+        >
+          <h2 id="domaines-a-activer" className="text-sm font-medium text-white">
+            {pendingDomains.length} domaine{pendingDomains.length > 1 ? 's' : ''} vérifié
+            {pendingDomains.length > 1 ? 's' : ''}, à déclarer chez l&apos;hébergeur
+          </h2>
+          <p className="mt-1 text-sm text-amber-100/80">
+            Le propriétaire a prouvé qu&apos;il possède l&apos;adresse et a créé ses
+            enregistrements DNS. Tant qu&apos;elle n&apos;est pas ajoutée au projet chez
+            l&apos;hébergeur, elle ne sert à rien et le certificat de sécurité n&apos;est pas
+            émis.
+          </p>
+          <ul className="mt-3 divide-y divide-white/10 rounded-xl border border-white/10">
+            {pendingDomains.map((domain) => (
+              <li
+                key={domain.id}
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 text-sm"
+              >
+                <span className="font-mono">{domain.hostname}</span>
+                <span className="text-white/60">{domain.restaurant.name}</span>
+                <span className="text-white/40">
+                  vérifié le{' '}
+                  {domain.verifiedAt?.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* --- Recette réelle de MagyaPro ----------------------------------
           Le chiffre que le propriétaire de la plateforme vient chercher, et

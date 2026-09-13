@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
-import { ApiError, api } from '@/lib/client/api';
+import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { toMajor, toMinor } from '@/lib/money';
 import { DAY_NAMES } from '@/lib/site/hours';
-import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { CopyButton } from '@/components/ui/copy-button';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 import { SoundUploadField } from '@/components/account/sound-upload';
 
@@ -940,6 +940,30 @@ export function SettingsPanels({
 
 // ------------------------------------------------------------------- Domaines
 
+/**
+ * « Mon domaine » — connecter sa propre adresse à son site.
+ *
+ * ## Ce que le §19 demande, et ce qui manquait
+ *
+ * L'écran affichait bien les deux enregistrements DNS à créer, mais sous forme
+ * de deux phrases dans un pavé gris, et **sans bouton pour copier**. Un jeton
+ * de vérification fait une trentaine de caractères sans structure : recopié à
+ * la main dans la console d'un bureau d'enregistrement, il est faux une fois
+ * sur trois — et l'erreur ne se voit qu'après une propagation qui dure des
+ * heures.
+ *
+ * Le parcours est maintenant numéroté, comme le demande le §19, et chaque
+ * valeur se copie d'un geste.
+ *
+ * ## Une limite dite plutôt que cachée
+ *
+ * La vérification par enregistrement TXT prouve que le restaurateur possède
+ * bien le domaine. Elle ne suffit pas à rendre le site joignable : il reste à
+ * déclarer l'adresse auprès de l'hébergeur, ce que Magyapro ne fait pas encore
+ * automatiquement. L'écran l'annonce au lieu de laisser croire que tout est
+ * terminé — l'ancienne version promettait un certificat « émis
+ * automatiquement », ce qui n'était pas vrai.
+ */
 function DomainsPanel({
   domains,
   cnameTarget,
@@ -949,140 +973,124 @@ function DomainsPanel({
   cnameTarget: string;
   allowed: boolean;
 }) {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [detail, setDetail] = useState<string | null>(null);
+  const mutation = useServerMutation();
+  const [checked, setChecked] = useState<Record<string, string>>({});
 
-  async function addDomain(event: FormEvent<HTMLFormElement>) {
+  function addDomain(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    const formData = new FormData(form);
+    const hostname = String(new FormData(form).get('hostname') ?? '');
 
-    setPending(true);
-    setError(null);
-    setDetail(null);
-
-    try {
-      await api.post('/api/domaines', {
-        hostname: String(formData.get('hostname') ?? ''),
-      });
-      form.reset();
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Le domaine n'a pas pu être ajouté.");
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.post('/api/domaines', { hostname }), {
+      key: 'ajout',
+      onSuccess: () => form.reset(),
+      successMessage: 'Domaine ajouté. Suivez les étapes pour le connecter.',
+      failureMessage: "Le domaine n'a pas pu être ajouté.",
+    });
   }
 
-  async function verify(domain: Domain) {
-    setPending(true);
-    setError(null);
-    setDetail(null);
-
-    try {
-      const result = await api.post<{ verified: boolean; detail: string }>(
-        `/api/domaines/${domain.id}`,
-      );
-      setDetail(result.detail);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'La vérification a échoué.');
-    } finally {
-      setPending(false);
-    }
+  function verify(domain: Domain) {
+    mutation.run(
+      () => api.post<{ verified: boolean; detail: string }>(`/api/domaines/${domain.id}`),
+      {
+        key: domain.id,
+        onSuccess: (result) =>
+          setChecked((current) => ({ ...current, [domain.id]: result.detail })),
+        failureMessage: 'La vérification a échoué.',
+      },
+    );
   }
 
-  async function remove(domain: Domain) {
+  function remove(domain: Domain) {
     if (!window.confirm(`Retirer le domaine « ${domain.hostname} » ?`)) return;
-
-    setPending(true);
-    setError(null);
-    try {
-      await api.delete(`/api/domaines/${domain.id}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Le domaine n'a pas pu être retiré.");
-    } finally {
-      setPending(false);
-    }
+    mutation.run(() => api.delete(`/api/domaines/${domain.id}`), {
+      key: `${domain.id}:suppr`,
+      successMessage: 'Domaine retiré.',
+      failureMessage: "Le domaine n'a pas pu être retiré.",
+    });
   }
+
+  const custom = domains.filter((domain) => domain.type === 'CUSTOM');
 
   return (
     <Card className="p-4 sm:p-5">
-      <h2 className="text-sm font-medium">Domaines</h2>
+      <h2 className="text-sm font-medium">Mon domaine</h2>
+      <p className="mt-1 text-sm text-ink-muted">
+        Votre site est déjà en ligne à votre adresse Magyapro. Vous pouvez en plus y brancher
+        votre propre nom de domaine, si vous en avez acheté un.
+      </p>
 
-      {error && (
-        <div role="alert" className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
-        </div>
-      )}
-      {detail && (
-        <div role="status" className="mt-3 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900">
-          {detail}
-        </div>
-      )}
+      <AlertMessage message={mutation.error} className="mt-3" />
 
-      <ul className="mt-4 divide-y divide-surface-border">
-        {domains.map((domain) => (
-          <li key={domain.id} className="py-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 font-mono text-sm">
+      <ul className="mt-4 space-y-4">
+        {domains.map((domain) => {
+          const connected = domain.status === 'VERIFIED';
+          const isPlatform = domain.type === 'SUBDOMAIN';
+
+          return (
+            <li key={domain.id} className="rounded-xl border border-surface-border p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="flex min-w-0 flex-wrap items-center gap-2 font-mono text-sm">
                   {domain.hostname}
-                  {domain.type === 'SUBDOMAIN' && <Badge tone="neutral">Magyapro</Badge>}
-                  {domain.status === 'VERIFIED' && <Badge tone="success">Vérifié</Badge>}
-                  {domain.status === 'PENDING' && <Badge tone="warning">En attente</Badge>}
-                  {domain.status === 'FAILED' && <Badge tone="danger">Échec</Badge>}
+                  {isPlatform && <Badge tone="neutral">Adresse Magyapro</Badge>}
                 </p>
+                {!isPlatform && (
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      loading={mutation.isPending(domain.id)}
+                      disabled={mutation.pending}
+                      onClick={() => verify(domain)}
+                    >
+                      {domain.status === 'FAILED' ? 'Réessayer' : 'Vérifier'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={mutation.isPending(`${domain.id}:suppr`)}
+                      disabled={mutation.pending}
+                      onClick={() => remove(domain)}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {domain.type === 'CUSTOM' && (
-                <div className="flex shrink-0 gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={pending}
-                    onClick={() => verify(domain)}
-                  >
-                    Vérifier
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={pending}
-                    onClick={() => remove(domain)}
-                  >
-                    Retirer
-                  </Button>
-                </div>
+              {/* Le §19 veut des phrases, pas des codes d'état. */}
+              {!isPlatform && (
+                <p
+                  className={cx(
+                    'mt-2 text-sm font-medium',
+                    connected ? 'text-state-ok' : 'text-state-warn',
+                  )}
+                >
+                  {connected
+                    ? 'Votre domaine est vérifié.'
+                    : 'Nous attendons encore la configuration DNS.'}
+                </p>
               )}
-            </div>
 
-            {domain.type === 'CUSTOM' && domain.status !== 'VERIFIED' && (
-              <div className="mt-3 space-y-2 rounded-xl bg-surface-sunken p-3 text-xs">
-                <p className="font-medium">Configuration DNS à effectuer :</p>
-                <p>
-                  1. Enregistrement <span className="font-mono">TXT</span> sur{' '}
-                  <span className="font-mono break-all">{domain.recordName}</span> avec la
-                  valeur{' '}
-                  <span className="font-mono break-all">{domain.verificationToken}</span>
+              {checked[domain.id] && (
+                <p className="mt-1 text-xs text-ink-muted">{checked[domain.id]}</p>
+              )}
+
+              {!isPlatform && !connected && (
+                <DomainSteps domain={domain} cnameTarget={cnameTarget} />
+              )}
+
+              {!isPlatform && connected && (
+                <p className="mt-3 rounded-lg bg-surface-sunken px-3 py-2.5 text-xs text-ink-muted">
+                  Il reste une dernière étape, que nous faisons pour vous : écrivez-nous pour
+                  que votre adresse soit activée chez notre hébergeur. Le certificat de
+                  sécurité (le cadenas <strong>https</strong>) est posé à ce moment-là, sans
+                  action de votre part.
                 </p>
-                <p>
-                  2. Enregistrement <span className="font-mono">CNAME</span> de{' '}
-                  <span className="font-mono">{domain.hostname}</span> vers{' '}
-                  <span className="font-mono">{cnameTarget}</span>
-                </p>
-                <p className="text-ink-muted">
-                  La propagation DNS peut prendre jusqu&apos;à 24 heures. Le
-                  certificat TLS est émis automatiquement une fois le domaine
-                  vérifié.
-                </p>
-              </div>
-            )}
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {allowed ? (
@@ -1097,7 +1105,7 @@ function DomainsPanel({
             placeholder="www.mon-restaurant.com"
             className={cx(inputClass, 'flex-1 min-w-52')}
           />
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={mutation.isPending('ajout')} disabled={mutation.pending}>
             Ajouter
           </Button>
         </form>
@@ -1107,6 +1115,92 @@ function DomainsPanel({
           Votre adresse Magyapro reste disponible et fonctionnelle.
         </p>
       )}
+
+      {allowed && custom.length === 0 && (
+        <p className="mt-3 text-xs text-ink-faint">
+          Vous n&apos;avez pas encore de nom de domaine ? Il s&apos;achète chez un revendeur
+          (une dizaine de milliers de francs par an) et s&apos;ajoute ici ensuite.
+        </p>
+      )}
     </Card>
+  );
+}
+
+/**
+ * Le parcours en quatre étapes du §19.
+ *
+ * Numéroté, avec une valeur à copier par étape. Les deux enregistrements ne
+ * font pas la même chose et le disent : l'un prouve que le domaine est à vous,
+ * l'autre amène les visiteurs sur votre site. Un restaurateur qui ne sait pas
+ * lequel sert à quoi ne saura pas non plus lequel corriger.
+ */
+function DomainSteps({ domain, cnameTarget }: { domain: Domain; cnameTarget: string }) {
+  const steps = [
+    {
+      title: 'Ouvrez le site où vous avez acheté votre domaine',
+      body: (
+        <p className="text-ink-muted">
+          Cherchez la rubrique « DNS », « Zone DNS » ou « Enregistrements ». C&apos;est là que
+          se font les deux ajouts ci-dessous.
+        </p>
+      ),
+    },
+    {
+      title: 'Ajoutez un enregistrement TXT — il prouve que le domaine est à vous',
+      body: (
+        <div className="space-y-1.5">
+          <ValueRow label="Nom" value={domain.recordName} />
+          <ValueRow label="Valeur" value={domain.verificationToken} />
+        </div>
+      ),
+    },
+    {
+      title: 'Ajoutez un enregistrement CNAME — il amène les visiteurs sur votre site',
+      body: (
+        <div className="space-y-1.5">
+          <ValueRow label="Nom" value={domain.hostname} />
+          <ValueRow label="Cible" value={cnameTarget} />
+        </div>
+      ),
+    },
+    {
+      title: 'Revenez ici et appuyez sur « Vérifier »',
+      body: (
+        <p className="text-ink-muted">
+          Si rien n&apos;est trouvé, ce n&apos;est pas forcément une erreur : un changement DNS
+          met de quelques minutes à quelques heures à se propager. Réessayez plus tard.
+        </p>
+      ),
+    },
+  ];
+
+  return (
+    <ol className="mt-3 space-y-3 rounded-xl bg-surface-sunken p-3.5 text-xs">
+      {steps.map((step, index) => (
+        <li key={step.title} className="flex gap-3">
+          <span
+            aria-hidden="true"
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-surface"
+          >
+            {index + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-ink">{step.title}</p>
+            <div className="mt-1">{step.body}</div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Une valeur à recopier chez le bureau d'enregistrement, et son bouton. */
+function ValueRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5">
+      <span className="shrink-0 text-ink-faint">{label}</span>
+      <span className="min-w-0 flex-1 break-all font-mono text-ink">{value}</span>
+      <CopyButton value={value} />
+    </div>
   );
 }

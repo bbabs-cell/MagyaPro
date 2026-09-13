@@ -9,8 +9,18 @@ import { env, rootHostname } from '@/lib/env';
  * contrôle la zone DNS du domaine peut le créer. Une simple requête HTTP vers
  * le domaine ne prouverait rien — n'importe qui peut faire pointer un CNAME.
  *
- * Le certificat TLS est délivré par la plateforme d'hébergement une fois le
- * domaine vérifié et le DNS propagé ; Magyapro n'émet pas de certificat lui-même.
+ * ## Ce que la vérification prouve, et ce qu'elle ne fait pas
+ *
+ * Elle établit que le restaurateur possède bien le domaine. Elle **ne rend pas
+ * le site joignable pour autant** : l'adresse doit encore être déclarée auprès
+ * de l'hébergeur, faute de quoi un visiteur tombe sur une erreur de
+ * l'hébergeur et non sur le restaurant. Magyapro ne fait pas cette déclaration
+ * automatiquement aujourd'hui — les domaines vérifiés en attente sont listés
+ * sur la vue d'ensemble de l'administration, pour être traités à la main.
+ *
+ * Le certificat TLS est posé par l'hébergeur à ce moment-là, pas à la
+ * vérification. L'ancienne rédaction de ce commentaire laissait entendre
+ * l'inverse, et l'écran du restaurateur le répétait.
  */
 
 export type DomainVerification = {
