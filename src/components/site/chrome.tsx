@@ -7,6 +7,7 @@ import { useCart } from '@/components/site/cart-context';
 import { useI18n } from '@/components/site/i18n-provider';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { dirFor } from '@/lib/i18n/locales';
+import { siteFontStack, siteFontVariables } from '@/lib/site/fonts';
 import { cx } from '@/components/ui';
 import { CookieConsent } from '@/components/site/cookie-consent';
 
@@ -19,13 +20,6 @@ import { CookieConsent } from '@/components/site/cookie-consent';
  * qui interdit d'y glisser du CSS arbitraire.
  */
 
-const FONT_STACKS: Record<string, string> = {
-  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
-  Poppins: "'Poppins', ui-sans-serif, system-ui, sans-serif",
-  'DM Sans': "'DM Sans', ui-sans-serif, system-ui, sans-serif",
-  'Space Grotesk': "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
-  'Playfair Display': "'Playfair Display', ui-serif, Georgia, serif",
-};
 
 export function SiteChrome({
   restaurant,
@@ -69,18 +63,25 @@ export function SiteChrome({
   return (
     <div
       dir={dirFor(locale)}
-      className="flex min-h-screen flex-col bg-surface text-ink"
+      // Les variables des cinq polices sont déclarées ici ; seule celle
+      // effectivement appliquée est téléchargée par le navigateur.
+      // `font-sans` (et non la seule redéfinition de `--font-sans` ci-dessous) :
+      // une propriété personnalisée redéfinie sur un descendant ne change pas
+      // la `font-family` déjà calculée sur `body` — ce nœud en héritait, donc
+      // la police choisie par le restaurateur n'était jamais appliquée. Il
+      // faut redemander ici la résolution de la variable.
+      className={`${siteFontVariables} font-sans flex min-h-screen flex-col bg-surface text-ink`}
       data-template={templateKey}
       style={
         {
           '--brand': restaurant.primaryColor,
           '--brand-ink': '#ffffff',
-          '--font-sans': FONT_STACKS[restaurant.fontFamily] ?? FONT_STACKS.Inter,
+          '--font-sans': siteFontStack(restaurant.fontFamily),
           // Police des titres : distincte du choix de police du restaurant,
           // pour que les templates qui misent sur un contraste serif/sans
           // (`traditional`, `elegant`, `african-premium`) gardent cet effet
           // quelle que soit la police de corps de texte choisie.
-          '--font-display': FONT_STACKS['Playfair Display'],
+          '--font-display': siteFontStack('Playfair Display'),
         } as React.CSSProperties
       }
     >

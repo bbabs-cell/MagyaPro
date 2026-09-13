@@ -34,24 +34,6 @@ type Props = {
  * changeait rien à l'affichage : la variable CSS pointait vers une police
  * jamais téléchargée, silencieusement remplacée par le système.
  */
-const GOOGLE_FONT_FAMILIES: Record<string, string> = {
-  Inter: 'Inter:wght@400;500;600;700',
-  Poppins: 'Poppins:wght@300;400;500;600;700',
-  'DM Sans': 'DM+Sans:wght@400;500;600;700',
-  'Space Grotesk': 'Space+Grotesk:wght@400;500;600;700',
-  'Playfair Display': 'Playfair+Display:wght@500;600;700',
-};
-
-function googleFontsHref(bodyFont: string): string {
-  // Playfair Display est toujours chargée : c'est la police des titres
-  // (`--font-display`), commune à tous les templates qui l'utilisent.
-  const families = new Set<string>([GOOGLE_FONT_FAMILIES['Playfair Display']!]);
-  const body = GOOGLE_FONT_FAMILIES[bodyFont];
-  if (body) families.add(body);
-
-  const query = [...families].map((family) => `family=${family}`).join('&');
-  return `https://fonts.googleapis.com/css2?${query}&display=swap`;
-}
 
 /**
  * Métadonnées du site public.
@@ -147,7 +129,6 @@ export default async function PublicSiteLayout({ params, children }: Props) {
           remonté par Next.js dans le `<head>` du document. */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link rel="stylesheet" href={googleFontsHref(restaurant.fontFamily)} />
 
       {/* Suivi propre au restaurant — ses identifiants, jamais ceux de
           Magyapro. Absent tant qu'il n'en a configuré aucun. */}

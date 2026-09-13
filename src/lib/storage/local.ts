@@ -1,4 +1,4 @@
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, sep } from 'node:path';
 
 import { env } from '@/lib/env';
@@ -29,6 +29,36 @@ function safePath(key: string): string {
     throw new Error('Clé de stockage invalide.');
   }
   return resolved;
+}
+
+/**
+ * Lit un fichier stocké localement, ou `null` s'il n'existe pas.
+ *
+ * Les fichiers vivent sous `public/uploads`, mais **Next.js ne sert de
+ * `public/` que ce qui s'y trouvait au démarrage du serveur** : un fichier
+ * téléversé après coup répondait 404 jusqu'au redémarrage suivant. Toutes les
+ * photos envoyées par les commerçants étaient donc invisibles sur leur site,
+ * alors que l'envoi lui-même avait réussi.
+ *
+ * Elles sont désormais servies par une route dédiée, qui passe par ici. Le
+ * contrôle de chemin est le même qu'à l'écriture : une clé ne peut pas sortir
+ * du répertoire d'upload.
+ */
+export async function readLocalUpload(key: string): Promise<Buffer | null> {
+  let target: string;
+  try {
+    target = safePath(key);
+  } catch {
+    return null;
+  }
+
+  try {
+    return await readFile(target);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'EISDIR') return null;
+    throw error;
+  }
 }
 
 export const localStorageDriver: StorageDriver = {
