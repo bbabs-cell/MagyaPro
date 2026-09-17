@@ -1,5 +1,49 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Couleur pilotée par une variable CSS, **et qui accepte un modificateur
+ * d'opacité**.
+ *
+ * Toutes les couleurs du thème s'écrivaient `'var(--ink, #211d16)'`. Tailwind
+ * accepte cette forme, mais il ne sait pas en dériver une variante d'opacité :
+ * il ne peut pas insérer un canal alpha dans une valeur qu'il ne lit pas. Et
+ * il ne le signale pas — il **n'émet simplement aucune règle**.
+ *
+ * Conséquence, mesurée dans la feuille de style produite : `.bg-ink` existe,
+ * `.bg-ink\/90` n'existe pas. Vingt-neuf classes du produit étaient donc
+ * inertes, sans qu'aucune erreur ne l'indique :
+ *
+ * - `hover:bg-ink/90` sur une quinzaine de boutons — le survol ne changeait
+ *   rien, alors que le code dit le contraire ;
+ * - `bg-ink/25` sur les barres inactives de l'histogramme horaire : une barre
+ *   sans fond est une barre **invisible**, donc un graphique qui n'affiche que
+ *   son heure de pointe ;
+ * - `bg-ink/20` sur les filets décoratifs de deux gabarits de vitrine, hauts
+ *   d'un pixel et sans couleur : invisibles eux aussi ;
+ * - `border-state-warn/30` sur le bandeau d'échéance ajouté hier, qui
+ *   retombait sur la bordure neutre globale.
+ *
+ * `color-mix` fait ce que Tailwind ne peut pas faire ici : mélanger la couleur
+ * — quelle que soit sa valeur au moment du rendu, thème clair, thème sombre ou
+ * palette de restaurant — avec du transparent. Sans modificateur, la valeur
+ * reste exactement celle d'avant, pour ne rien changer aux règles qui
+ * fonctionnaient.
+ */
+function themed(variable: string, fallback: string): string {
+  const value = `var(${variable}, ${fallback})`;
+  const resolve = ({ opacityValue }: { opacityValue?: string } = {}) =>
+    opacityValue === undefined
+      ? value
+      : `color-mix(in srgb, ${value} ${Number(opacityValue) * 100}%, transparent)`;
+
+  // Tailwind appelle bien cette fonction à la génération — c'est la forme
+  // documentée pour une couleur qui doit connaître l'opacité demandée. Ses
+  // types publiés, eux, n'annoncent qu'une chaîne pour une couleur imbriquée.
+  // La conversion est donc un défaut de déclaration, pas un contournement du
+  // fonctionnement : la vérification ci-dessous porte sur le CSS produit.
+  return resolve as unknown as string;
+}
+
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
@@ -8,9 +52,9 @@ const config: Config = {
         // Public restaurant sites drive these from the tenant's own palette,
         // injected as CSS custom properties by the template renderer.
         brand: {
-          DEFAULT: 'var(--brand, #ff5e2e)',
-          soft: 'var(--brand-soft, #fff1e6)',
-          ink: 'var(--brand-ink, #ffffff)',
+          DEFAULT: themed('--brand', '#ff5e2e'),
+          soft: themed('--brand-soft', '#fff1e6'),
+          ink: themed('--brand-ink', '#ffffff'),
         },
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
@@ -31,41 +75,41 @@ const config: Config = {
         // l'impression, et le tableau de bord Boutique propose un thème
         // sombre.
         ink: {
-          DEFAULT: 'var(--ink, #211d16)',
-          muted: 'var(--ink-muted, #6a6153)',
-          faint: 'var(--ink-faint, #948b7b)',
+          DEFAULT: themed('--ink', '#211d16'),
+          muted: themed('--ink-muted', '#6a6153'),
+          faint: themed('--ink-faint', '#948b7b'),
         },
         surface: {
-          DEFAULT: 'var(--surface, #fbf8f2)',
-          sunken: 'var(--surface-sunken, #ece5d8)',
-          border: 'var(--surface-border, #ddd3c1)',
+          DEFAULT: themed('--surface', '#fbf8f2'),
+          sunken: themed('--surface-sunken', '#ece5d8'),
+          border: themed('--surface-border', '#ddd3c1'),
           // Surface légèrement surélevée au-dessus d'une carte (en-tête de
           // tableau, ligne survolée) — la profondeur vient d'un empilement de
           // valeurs, pas d'une ombre seule.
-          raised: 'var(--surface-raised, #ffffff)',
+          raised: themed('--surface-raised', '#ffffff'),
         },
         // Barre latérale et menu du tableau de bord Boutique. Séparés de
         // `surface` parce qu'ils restent foncés dans les deux thèmes : la
         // navigation doit rester un repère stable quand le contenu, lui,
         // s'éclaircit ou s'assombrit.
         nav: {
-          DEFAULT: 'var(--nav, #2a2118)',
-          raised: 'var(--nav-raised, #35291d)',
-          ink: 'var(--nav-ink, #f5efe3)',
-          muted: 'var(--nav-muted, #b3a894)',
-          border: 'var(--nav-border, rgba(245,239,227,0.10))',
+          DEFAULT: themed('--nav', '#2a2118'),
+          raised: themed('--nav-raised', '#35291d'),
+          ink: themed('--nav-ink', '#f5efe3'),
+          muted: themed('--nav-muted', '#b3a894'),
+          border: themed('--nav-border', 'rgba(245,239,227,0.10)'),
         },
         // Couleurs sémantiques, indépendantes de l'accent de marque : elles
         // disent un état (stock sain, seuil franchi, rupture), jamais une
         // identité. Le brief demande explicitement des états de stock
         // lisibles d'un coup d'œil.
         state: {
-          ok: 'var(--state-ok, #047857)',
-          'ok-soft': 'var(--state-ok-soft, #ecfdf5)',
-          warn: 'var(--state-warn, #b45309)',
-          'warn-soft': 'var(--state-warn-soft, #fffbeb)',
-          bad: 'var(--state-bad, #b91c1c)',
-          'bad-soft': 'var(--state-bad-soft, #fef2f2)',
+          ok: themed('--state-ok', '#047857'),
+          'ok-soft': themed('--state-ok-soft', '#ecfdf5'),
+          warn: themed('--state-warn', '#b45309'),
+          'warn-soft': themed('--state-warn-soft', '#fffbeb'),
+          bad: themed('--state-bad', '#b91c1c'),
+          'bad-soft': themed('--state-bad-soft', '#fef2f2'),
         },
       },
       boxShadow: {
