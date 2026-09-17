@@ -181,7 +181,13 @@ export default async function SubscriptionPage() {
       <div className="mt-6">
         <SubscriptionPaymentFlow
           canManage={context.permissions.has('subscription:manage')}
-          currentPlanKey={entitlements.planKey}
+          /* `screen.currentPlanKey` et non `entitlements.planKey` : le
+             chargeur n'y met un plan que si l'accès est encore actif. En
+             passant la clé brute, cette page marquait « Actuel » un plan
+             expiré et lui retirait son bouton — le restaurateur ne pouvait
+             pas reprendre le sien. Le mur, lui, lisait déjà la bonne valeur,
+             d'où deux écrans qui se contredisaient. */
+          currentPlanKey={screen.currentPlanKey}
           availableProviders={availableProviders}
           pendingPayment={pendingPayment}
           /* Mêmes plans, mêmes montants que le mur : un seul chargeur les
