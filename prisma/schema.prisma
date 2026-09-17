@@ -2081,9 +2081,6 @@ model Supplier {
   email        String?
   address      String?
   paymentTerms String?
-  /// Dette envers ce fournisseur, en unité mineure — recalculée à chaque
-  /// commande reçue et à chaque paiement, jamais modifiée à la main.
-  debtBalance  Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

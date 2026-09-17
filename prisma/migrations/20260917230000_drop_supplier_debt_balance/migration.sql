@@ -1,0 +1,23 @@
+-- Suppression de `boutique_suppliers."debtBalance"`.
+--
+-- Ce compteur additionnait la dette envers un fournisseur : augmenté à chaque
+-- réception de commande, diminué à chaque règlement. Il a été abandonné parce
+-- qu'il constituait une seconde vérité — il résumait des faits qui existent
+-- déjà ailleurs (valeur livrée d'une commande, moins les règlements qui s'y
+-- rattachent), et un résumé de ce genre finit toujours par diverger de ce
+-- qu'il résume.
+--
+-- Ce que le fournisseur peut réclamer se déduit désormais des commandes
+-- elles-mêmes : voir `src/lib/boutique/purchase-payment.ts`.
+--
+-- La colonne n'est plus ni lue ni écrite par le produit. Les valeurs qu'elle
+-- contient encore sont figées depuis cet abandon : elles ne décrivent donc
+-- plus aucune dette réelle, et les conserver reviendrait à garder un chiffre
+-- faux à portée de main.
+--
+-- Cette migration est irréversible : les valeurs sont perdues. Elles ne sont
+-- pas récupérables autrement, et n'ont pas à l'être — la dette réelle se
+-- recalcule intégralement à partir des commandes et des règlements, qui eux
+-- sont intacts.
+
+ALTER TABLE "boutique_suppliers" DROP COLUMN IF EXISTS "debtBalance";
