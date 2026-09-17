@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Button, Card, Field, cx, inputClass } from '@/components/ui';
-import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
+import { formatCompositeStock, stepForUnit, type UnitOption } from '@/lib/boutique/units';
 
 /**
  * Retrait de stock avec motif.
@@ -105,7 +105,8 @@ export function StockWithdrawalForm({
               id="withdraw-qty"
               type="number"
               min="0"
-              step={unit?.isDecimal && unit.isBase ? '0.000001' : '1'}
+              // Même pas partagé que la caisse et le formulaire produit.
+              step={String(stepForUnit({ isDecimal: !!unit?.isDecimal, isBase: !!unit?.isBase }))}
               required
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}

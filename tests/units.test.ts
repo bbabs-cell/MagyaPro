@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DECIMAL_STEP,
   isDecimalUnit,
+  quantityStep,
   splitIntoUnits,
   stepForUnit,
   stockState,
@@ -156,15 +158,36 @@ describe('Pas de saisie', () => {
     expect(isDecimalUnit('PACK')).toBe(false);
   });
 
-  it('ne propose jamais un pas nul ou négatif', () => {
-    // Un pas nul fige le champ de saisie : les flèches ne font plus rien.
+  it('ne propose jamais un pas inutilisable au comptoir', () => {
+    // Ce test exigeait seulement un pas strictement positif. 0,000001 le
+    // satisfaisait — et c'était précisément la valeur en place : appuyer sur
+    // un produit au litre ajoutait un millionième de litre au panier. Un
+    // seuil trop bas ne prouve rien ; celui-ci exige une quantité qu'un
+    // commerce vend réellement.
     for (const unit of [
       { isDecimal: true, isBase: true },
       { isDecimal: false, isBase: true },
       { isDecimal: true, isBase: false },
       { isDecimal: false, isBase: false },
     ]) {
-      expect(stepForUnit(unit)).toBeGreaterThan(0);
+      expect(stepForUnit(unit)).toBeGreaterThanOrEqual(DECIMAL_STEP);
     }
+  });
+
+  it('avance par demi sur les unités fractionnables, par un ailleurs', () => {
+    expect(stepForUnit({ isDecimal: true, isBase: true })).toBe(0.5);
+    // Un carton ou un pack ne se vend pas au demi : le pas reste entier.
+    expect(stepForUnit({ isDecimal: true, isBase: false })).toBe(1);
+    expect(stepForUnit({ isDecimal: false, isBase: true })).toBe(1);
+  });
+
+  it('donne la même granularité par les deux chemins', () => {
+    // Les deux fonctions répondaient à la même question avec des valeurs
+    // différentes (0,001 et 0,000001), ce qui est la façon habituelle dont
+    // une règle finit par diverger d'elle-même.
+    expect(quantityStep('LITER')).toBe(stepForUnit({ isDecimal: true, isBase: true }));
+    expect(quantityStep('KG')).toBe(DECIMAL_STEP);
+    expect(quantityStep('UNIT')).toBe(1);
+    expect(quantityStep('PACK')).toBe(1);
   });
 });

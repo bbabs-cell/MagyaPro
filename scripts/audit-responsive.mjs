@@ -40,12 +40,18 @@ const CHROMIUM =
     ? `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium`
     : undefined);
 
-const VIEWPORTS = [
-  { name: '320 (petit téléphone)', width: 320, height: 700 },
-  { name: '375 (iPhone SE/13 mini)', width: 375, height: 780 },
-  { name: '414 (grand téléphone)', width: 414, height: 850 },
-  { name: '768 (tablette)', width: 768, height: 1024 },
-];
+/**
+ * Largeurs mesurées. `WIDTHS=360,390` en surcharge la liste.
+ *
+ * 360 et 390 figurent par défaut depuis qu'un débordement a été signalé sur
+ * l'administration : ce sont les largeurs Android et iPhone les plus
+ * répandues, et elles ne faisaient pas partie du premier jeu.
+ */
+const DEFAULT_WIDTHS = [320, 360, 375, 390, 414, 768];
+const VIEWPORTS = (process.env.WIDTHS
+  ? process.env.WIDTHS.split(',').map((w) => Number(w.trim()))
+  : DEFAULT_WIDTHS
+).map((width) => ({ name: `${width}`, width, height: width < 768 ? 800 : 1024 }));
 
 const args = process.argv.slice(2);
 const loginIndex = args.indexOf('--login');

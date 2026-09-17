@@ -7,12 +7,7 @@ import Link from 'next/link';
 import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
-import {
-  STOCK_RAIL,
-  formatCompositeStock,
-  stockState,
-  type UnitOption,
-} from '@/lib/boutique/units';
+import { STOCK_RAIL, formatCompositeStock, stepForUnit, stockState, type UnitOption } from '@/lib/boutique/units';
 import { buildCombinations, combinationKey, type VariantAxis } from '@/lib/boutique/variants';
 import { StockWithdrawalForm } from '@/components/boutique/stock-withdrawal-form';
 import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
@@ -1469,7 +1464,10 @@ function ProductForm({
                     name="initialStockUnits"
                     type="number"
                     min="0"
-                    step={baseUnit?.isDecimal ? '0.000001' : '1'}
+                    // Le pas vient du module d'unités, et non d'une valeur
+                    // recopiée ici : c'est cette recopie qui faisait saisir des
+                    // millionièmes de litre là où un demi suffit.
+                    step={String(stepForUnit({ isDecimal: !!baseUnit?.isDecimal, isBase: true }))}
                     className={inputClass}
                     defaultValue="0"
                   />

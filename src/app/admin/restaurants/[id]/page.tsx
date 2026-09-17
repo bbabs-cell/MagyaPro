@@ -143,8 +143,11 @@ export default async function AdminRestaurantDetailPage({
         </section>
       )}
 
+      {/* `min-w-0` sur les deux colonnes : la largeur plancher d'un élément de
+          grille est celle de son contenu, si bien qu'une colonne refusait de
+          se comprimer et débordait de 40 px sur un écran de 320. Mesuré. */}
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="actions">
+        <section aria-labelledby="actions" className="min-w-0">
           <h2 id="actions" className="text-sm font-medium">
             Actions d&apos;administration
           </h2>
@@ -160,7 +163,7 @@ export default async function AdminRestaurantDetailPage({
           </div>
         </section>
 
-        <section aria-labelledby="abonnement">
+        <section aria-labelledby="abonnement" className="min-w-0">
           <h2 id="abonnement" className="text-sm font-medium">
             Abonnement
           </h2>

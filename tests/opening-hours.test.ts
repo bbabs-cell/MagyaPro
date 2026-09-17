@@ -23,10 +23,15 @@ const WEEK: OpeningHourRow[] = Array.from({ length: 7 }, (_, day) => ({
 }));
 
 /**
- * Un fuseau fixe est indispensable : sans lui, le résultat dépendrait de
- * l'heure à laquelle la suite est lancée. `Etc/GMT-14` et `Etc/GMT+11` sont
- * choisis pour être, à toute heure UTC, l'un en journée et l'autre non — la
- * paire couvre donc les deux branches quel que soit le moment du test.
+ * Raccourci pour les tests qui ne portent **pas** sur l'état d'ouverture
+ * lui-même — libellés, langue, gabarits — et auxquels le fuseau est donc
+ * indifférent.
+ *
+ * Cette ligne affirmait auparavant que `Etc/GMT-14` et `Etc/GMT+11` sont, à
+ * toute heure UTC, l'un en journée et l'autre non. C'est faux : à midi UTC
+ * les deux sont hors de la plage 9 h–17 h. Un test s'appuyait sur cette
+ * affirmation et échouait selon l'heure de lancement ; il calcule désormais
+ * ses fuseaux (voir plus bas).
  */
 function stateAt(timezone: string, dict: typeof FR) {
   return computeOpenState(WEEK, timezone, dict, 'fr');
@@ -50,11 +55,39 @@ describe("Horaires d'ouverture", () => {
   });
 
   it('respecte le fuseau du restaurant et non celui du serveur', () => {
-    // Deux fuseaux distants de 25 heures ne peuvent pas être dans le même
-    // état d'ouverture au même instant sur une semaine 9h–17h.
-    const far = stateAt('Etc/GMT-14', FR);
-    const near = stateAt('Etc/GMT+11', FR);
-    expect(far.isOpen === near.isOpen && far.label === near.label).toBe(false);
+    /**
+     * Ce test choisissait deux fuseaux fixes distants de 25 heures, en
+     * supposant qu'ils ne pouvaient pas être dans le même état. C'était faux :
+     * lancé à 12 h UTC, il les trouve tous deux hors de la plage 9 h–17 h,
+     * fermés avec le même libellé — et il échouait, sans qu'aucun défaut
+     * n'existe. Un test qui dépend de l'heure à laquelle on le lance ne
+     * mesure rien de fiable.
+     *
+     * Les deux fuseaux sont donc calculés à partir de l'heure UTC courante,
+     * pour placer l'un en pleine journée et l'autre en pleine nuit. Les
+     * horaires couvrent les sept jours, afin que le quantième local — qui
+     * change lui aussi d'un fuseau à l'autre — n'entre pas en jeu.
+     */
+    const everyDay: OpeningHourRow[] = Array.from({ length: 7 }, (_, day) => ({
+      dayOfWeek: day,
+      isClosed: false,
+      opensAt: '09:00',
+      closesAt: '17:00',
+    }));
+
+    const utcHour = new Date().getUTCHours();
+    // `Etc/GMT+N` est décalé de **moins** N heures : le signe est inversé.
+    const zoneAt = (localHour: number) => {
+      const offset = ((localHour - utcHour) % 24 + 24) % 24;
+      const shift = offset > 12 ? offset - 24 : offset;
+      return `Etc/GMT${shift >= 0 ? '-' : '+'}${Math.abs(shift)}`;
+    };
+
+    const midday = computeOpenState(everyDay, zoneAt(12), FR, 'fr');
+    const midnight = computeOpenState(everyDay, zoneAt(0), FR, 'fr');
+
+    expect(midday.isOpen).toBe(true);
+    expect(midnight.isOpen).toBe(false);
   });
 
   it('retombe sur l\'heure du serveur si le fuseau enregistré est invalide', () => {

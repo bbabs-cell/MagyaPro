@@ -24,9 +24,23 @@ export function isDecimalUnit(unit: string): boolean {
   return DECIMAL_UNITS.has(unit);
 }
 
+/**
+ * Granularité des unités fractionnables : le demi.
+ *
+ * Le pas valait 0,001 ici et 0,000001 dans `stepForUnit` — deux valeurs
+ * différentes pour la même notion, et toutes deux inutilisables au comptoir :
+ * appuyer sur un produit au litre ajoutait **un millionième de litre** au
+ * panier. Le vendeur voyait « 0,000001 L » au lieu de « 1 L ».
+ *
+ * Un demi est la plus petite quantité qu'un commerce vend réellement au poids
+ * ou au volume : un demi-litre, un demi-kilo. En deçà, le pas ne correspond à
+ * aucun geste de vente et ne sert qu'à produire des nombres illisibles.
+ */
+export const DECIMAL_STEP = 0.5;
+
 /** Pas de saisie/incrément adapté à l'unité, pour les champs numériques. */
 export function quantityStep(unit: string): number {
-  return isDecimalUnit(unit) ? 0.001 : 1;
+  return isDecimalUnit(unit) ? DECIMAL_STEP : 1;
 }
 
 /**
@@ -49,9 +63,15 @@ export function unitLabelFor(unit: { label: string; labelPlural: string }, quant
   return Math.abs(quantity) >= 2 ? unit.labelPlural : unit.label;
 }
 
-/** Pas de saisie adapté à une unité résolue (le carton ne se vend pas au tiers). */
+/**
+ * Pas de saisie adapté à une unité résolue (le carton ne se vend pas au tiers).
+ *
+ * Même granularité que `quantityStep` : les deux répondaient à la même
+ * question avec des valeurs différentes, ce qui est la façon habituelle dont
+ * une règle finit par diverger d'elle-même.
+ */
 export function stepForUnit(unit: { isDecimal: boolean; isBase: boolean }): number {
-  return unit.isDecimal && unit.isBase ? 0.000001 : 1;
+  return unit.isDecimal && unit.isBase ? DECIMAL_STEP : 1;
 }
 
 /**
