@@ -23,56 +23,55 @@ const nextConfig: NextConfig = {
       : [],
   },
   async headers() {
-    // Hôte de stockage des images (uploads) : même variable que
-    // `images.remotePatterns` ci-dessus, pour que la CSP autorise
-    // effectivement les images réellement servies par l'application.
-    const storageHost = process.env.NEXT_PUBLIC_STORAGE_HOST;
-    const csp = [
-      "default-src 'self'",
-      // Next.js et les widgets embarqués (Turnstile) reposent sur des
-      // scripts injectés/inline au chargement : les interdire casserait
-      // l'hydratation et la vérification anti-robot. `object-src`/`base-uri`
-      // restent verrouillés, ce qui couvre l'essentiel du risque XSS.
-      // googletagmanager.com/connect.facebook.net : chargement conditionnel
-      // (après consentement) du Meta Pixel et Google Analytics — voir
-      // `cookie-consent.tsx` — utilisés à la fois par le site vitrine
-      // MagyaPro et par les réglages d'analytics propres à chaque tenant
-      // (`googleAnalyticsId`/`metaPixelId` sur les sites publics r/[host]).
-      "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net",
-      "style-src 'self' 'unsafe-inline'",
-      `img-src 'self' data: https:${storageHost ? ` https://${storageHost}` : ''}`,
-      // Sans cette directive, `media-src` retombe sur `default-src 'self'` et
-      // bloque silencieusement la lecture du son de notification personnalisé
-      // (hébergé sur le stockage objet, jamais sur ce domaine) — l'audio
-      // affiche alors 0:00 / 0:00 sans jamais charger, malgré un
-      // téléversement réussi côté serveur.
-      `media-src 'self'${storageHost ? ` https://${storageHost}` : ''}`,
-      "font-src 'self' data:",
-      "frame-src https://challenges.cloudflare.com",
-      "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "frame-ancestors 'self'",
-    ].join('; ');
-
+    /*
+     * La politique de sécurité du contenu (CSP) **n'est plus ici**.
+     *
+     * Elle vit dans `src/lib/security/csp.ts` et c'est le middleware qui la
+     * pose, parce qu'elle contient désormais un nonce : un jeton tiré au sort
+     * pour chaque réponse, qui remplace `unsafe-inline`. Les en-têtes déclarés
+     * dans ce fichier sont calculés une fois au démarrage et sont identiques
+     * pour toutes les requêtes — un nonce y serait fixe, donc aussi permissif
+     * qu'`unsafe-inline`, en moins lisible.
+     *
+     * Surtout, la laisser ici en plus ne serait pas neutre : deux en-têtes
+     * `Content-Security-Policy` ne se remplacent pas, ils s'additionnent en
+     * **intersection**. L'ancienne politique, dépourvue du nonce, interdirait
+     * exactement les scripts que la nouvelle autorise — c'est-à-dire tous.
+     *
+     * Les autres en-têtes restent ici, et continuent de couvrir l'ensemble des
+     * chemins, y compris ceux que le middleware ne traite pas.
+     */
     return [
       {
         source: '/:path*',
         headers: [
-          { key: 'Content-Security-Policy', value: csp },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           // Complète (sans le remplacer) le réglage HSTS de la zone Cloudflare :
           // l'en-tête applicatif garantit la protection même si ce réglage
-          // venait à changer côté Cloudflare. Pas de `includeSubDomains` : la
-          // plateforme héberge un sous-domaine par restaurant (et des
-          // domaines personnalisés), verrouiller tout le groupe d'un coup
-          // pour un an n'est pas une décision à prendre sans validation
-          // explicite de la couverture HTTPS de chacun.
+          // venait à changer côté Cloudflare.
+          //
+          // `includeSubDomains` étend la règle à tout le groupe de domaines —
+          // le sous-domaine Boutique, et un sous-domaine par restaurant. Sans
+          // lui, ces sous-domaines n'étaient pas couverts : c'est précisément
+          // là que vivent les sessions des commerçants.
+          //
+          // Ce n'est pas un réglage anodin, et il n'était pas à prendre seul :
+          // un navigateur le **mémorise un an**, et tout sous-domaine créé
+          // ensuite sans HTTPS devient inaccessible — sans message utile, et
+          // sans qu'on puisse revenir en arrière pour les visiteurs déjà
+          // venus. Il est activé sur confirmation explicite que l'ensemble des
+          // sous-domaines, actuels et à venir, passe par Vercel — qui sert
+          // exclusivement en HTTPS. Vérifié au moment de l'activation :
+          // magyapro.com, www et boutique répondent tous en HTTPS.
+          //
+          // À retenir avant d'ajouter un sous-domaine hors Vercel (messagerie,
+          // recette, outil tiers) : il devra être servi en HTTPS dès sa
+          // création.
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000',
+            value: 'max-age=31536000; includeSubDomains',
           },
           // `self` autorise nos propres pages à *demander* la permission —
           // il ne l'accorde pas : le navigateur affiche toujours sa fenêtre

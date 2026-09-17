@@ -4,6 +4,7 @@ import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
+import { nonceFromHeaders } from '@/lib/security/csp';
 
 /**
  * Chrome minimal du hub (`/`) et des pages légales (`/mentions-legales`,
@@ -13,7 +14,8 @@ import { CookieConsent } from '@/components/site/cookie-consent';
  * `/restaurant` (voir `restaurant/layout.tsx`) et `/boutique`
  * (`src/app/boutique/layout.tsx`).
  */
-export default function HubLayout({ children }: { children: React.ReactNode }) {
+export default async function HubLayout({ children }: { children: React.ReactNode }) {
+  const nonce = await nonceFromHeaders();
   const logoUrl = platformLogoUrl();
 
   return (
@@ -75,7 +77,11 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
 
-      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
+      <CookieConsent
+        metaPixelId={env.metaPixelId ?? null}
+        gaMeasurementId={env.gaMeasurementId ?? null}
+        nonce={nonce}
+      />
     </div>
   );
 }

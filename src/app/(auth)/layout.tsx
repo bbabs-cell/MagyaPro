@@ -4,6 +4,7 @@ import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
+import { nonceFromHeaders } from '@/lib/security/csp';
 
 /**
  * Connexion, inscription, mot de passe oublié : mêmes deux volets pour les
@@ -11,11 +12,12 @@ import { CookieConsent } from '@/components/site/cookie-consent';
  * l'identité de la page d'accueil — sur mobile il s'efface derrière un
  * simple en-tête, la place manquant pour les deux à la fois.
  */
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = await nonceFromHeaders();
   const logoUrl = platformLogoUrl();
 
   return (
@@ -71,7 +73,11 @@ export default function AuthLayout({
         </main>
       </div>
 
-      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
+      <CookieConsent
+        metaPixelId={env.metaPixelId ?? null}
+        gaMeasurementId={env.gaMeasurementId ?? null}
+        nonce={nonce}
+      />
     </div>
   );
 }

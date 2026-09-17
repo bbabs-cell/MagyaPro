@@ -6,12 +6,14 @@ import { Logo } from '@/components/ui/logo';
 import { platformLogoUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
+import { nonceFromHeaders } from '@/lib/security/csp';
 
 export default async function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = await nonceFromHeaders();
   const user = await getCurrentUser();
   const logoUrl = platformLogoUrl();
 
@@ -101,7 +103,11 @@ export default async function MarketingLayout({
         </div>
       </footer>
 
-      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
+      <CookieConsent
+        metaPixelId={env.metaPixelId ?? null}
+        gaMeasurementId={env.gaMeasurementId ?? null}
+        nonce={nonce}
+      />
     </div>
   );
 }

@@ -28,10 +28,20 @@ function readStoredConsent(): Consent | null {
 export function CookieConsent({
   metaPixelId = null,
   gaMeasurementId = null,
+  nonce = null,
 }: {
   /** IDs du site vitrine MagyaPro lui-même — jamais ceux d'un tenant. */
   metaPixelId?: string | null;
   gaMeasurementId?: string | null;
+  /**
+   * Jeton de la réponse en cours, lu par le composant serveur parent.
+   *
+   * La politique de sécurité n'autorise plus les scripts inline sans nonce.
+   * Next.js appose le sien sur ses propres scripts, mais pas sur ceux confiés
+   * à `next/script` : sans cette valeur, les deux amorces ci-dessous sont
+   * refusées par le navigateur et la mesure d'audience s'arrête sans bruit.
+   */
+  nonce?: string | null;
 }) {
   const [consent, setConsent] = useState<Consent | null>(null);
   const [ready, setReady] = useState(false);
@@ -60,8 +70,9 @@ export function CookieConsent({
               <Script
                 src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
                 strategy="afterInteractive"
+                nonce={nonce ?? undefined}
               />
-              <Script id="ga4-init" strategy="afterInteractive">
+              <Script id="ga4-init" strategy="afterInteractive" nonce={nonce ?? undefined}>
                 {`window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
@@ -70,7 +81,7 @@ export function CookieConsent({
             </>
           )}
           {metaPixelId && (
-            <Script id="meta-pixel-init" strategy="afterInteractive">
+            <Script id="meta-pixel-init" strategy="afterInteractive" nonce={nonce ?? undefined}>
               {`!function(f,b,e,v,n,t,s)
                 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
                 n.callMethod.apply(n,arguments):n.queue.push(arguments)};

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { boutiqueLandingAssetUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
+import { nonceFromHeaders } from '@/lib/security/csp';
 
 /**
  * Chrome de la vitrine publique MagyaPro Boutique (`/boutique`, `/boutique/tarifs`)
@@ -11,7 +12,8 @@ import { CookieConsent } from '@/components/site/cookie-consent';
  * Ne s'applique qu'à ce groupe de routes : connexion, inscription et le
  * tableau de bord gardent leur propre en-tête.
  */
-export default function BoutiquePublicLayout({ children }: { children: React.ReactNode }) {
+export default async function BoutiquePublicLayout({ children }: { children: React.ReactNode }) {
+  const nonce = await nonceFromHeaders();
   const logoUrl = boutiqueLandingAssetUrl();
 
   return (
@@ -100,7 +102,11 @@ export default function BoutiquePublicLayout({ children }: { children: React.Rea
         </div>
       </footer>
 
-      <CookieConsent metaPixelId={env.metaPixelId ?? null} gaMeasurementId={env.gaMeasurementId ?? null} />
+      <CookieConsent
+        metaPixelId={env.metaPixelId ?? null}
+        gaMeasurementId={env.gaMeasurementId ?? null}
+        nonce={nonce}
+      />
     </div>
   );
 }
