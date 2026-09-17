@@ -105,13 +105,13 @@ export function StreetFoodMenuFilter({
                         ) : null}
                         {product.badge !== 'NONE' && BADGE_LABELS[product.badge] && (
                           <span
-                            className="absolute left-2 top-2 -rotate-3 rounded-full px-2.5 py-1 text-xs font-bold uppercase text-white"
+                            className="absolute start-2 top-2 -rotate-3 rounded-full px-2.5 py-1 text-xs font-bold uppercase text-white"
                             style={{ backgroundColor: 'var(--brand)' }}
                           >
                             {BADGE_LABELS[product.badge]}
                           </span>
                         )}
-                        <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
+                        <span className="absolute -bottom-3 end-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
                           {formatMoney(product.price, currency)}
                         </span>
                       </div>

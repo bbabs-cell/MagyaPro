@@ -65,7 +65,9 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
             type="button"
             onClick={close}
             aria-label={dict.templates.galleryClose}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            // `end-4` et non `right-4` : en lecture arabe, la fin de ligne est
+            // à gauche, et c'est là qu'on cherche une croix de fermeture.
+            className="absolute end-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
           >
             ✕
           </button>
@@ -78,9 +80,19 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
                 prev();
               }}
               aria-label={dict.templates.galleryPrevious}
-              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              className="absolute start-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
             >
-              ←
+              {/**
+               * « Précédent » était cloué à gauche avec une flèche vers la
+               * gauche. En arabe, la lecture va de droite à gauche : le bouton
+               * marqué « السابق » se retrouvait du côté où l'on attend
+               * « suivant », avec une flèche qui désignait l'avant. Le visiteur
+               * reculait en croyant avancer.
+               *
+               * Le côté suit maintenant le sens de lecture (`start`), et la
+               * flèche se retourne avec lui.
+               */}
+              <span className="inline-block rtl:rotate-180">←</span>
             </button>
           )}
 
@@ -107,9 +119,9 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
                 next();
               }}
               aria-label={dict.templates.galleryNext}
-              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              className="absolute end-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
             >
-              →
+              <span className="inline-block rtl:rotate-180">→</span>
             </button>
           )}
         </div>

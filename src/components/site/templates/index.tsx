@@ -559,7 +559,7 @@ function BentoProductCard({
           className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
         />
         {product.badge !== 'NONE' && badgeLabels(dict)[product.badge] && (
-          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black">
+          <span className="absolute start-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black">
             {badgeLabels(dict)[product.badge]}
           </span>
         )}
@@ -578,7 +578,7 @@ function BentoProductCard({
 
       <QuickAddButton
         product={product}
-        className="absolute right-2 top-2 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black shadow-sm transition-colors hover:bg-white"
+        className="absolute end-2 top-2 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-black shadow-sm transition-colors hover:bg-white"
       />
     </div>
   );
@@ -820,7 +820,7 @@ function TraditionalProductCard({
             <div aria-hidden="true" className="h-full w-full" />
           )}
           {product.badge !== 'NONE' && badges[product.badge] && (
-            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-black shadow-sm">
+            <span className="absolute start-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-black shadow-sm">
               {badges[product.badge]}
             </span>
           )}
@@ -923,11 +923,11 @@ function FastFoodProductCard({
             />
           ) : null}
           {product.badge !== 'NONE' && badgeLabels(dict)[product.badge] && (
-            <span className="absolute left-2 top-2 -rotate-3 rounded-full bg-black px-2.5 py-1 text-xs font-bold uppercase text-white">
+            <span className="absolute start-2 top-2 -rotate-3 rounded-full bg-black px-2.5 py-1 text-xs font-bold uppercase text-white">
               {badgeLabels(dict)[product.badge]}
             </span>
           )}
-          <span className="absolute -bottom-3 right-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
+          <span className="absolute -bottom-3 end-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
             {formatMoney(product.price, currency)}
           </span>
         </div>
