@@ -12,12 +12,13 @@ import {
   getEntitlements,
   type Feature,
 } from '@/lib/entitlements';
-import { prisma } from '@/lib/db';
 import { getActiveAnnouncements } from '@/lib/announcements';
 import { platformLogoUrl } from '@/lib/storage';
 import { DashboardShell } from '@/components/dashboard/shell';
 import { ToastProvider } from '@/components/ui/toast';
 import { SubscriptionWall } from '@/components/account/subscription-wall';
+import { SubscriptionPaymentFlow } from '@/components/dashboard/subscription-payment-flow';
+import { loadSubscriptionScreen } from '@/lib/subscription-screen';
 
 export const metadata: Metadata = {
   manifest: '/dashboard/manifest.webmanifest',
@@ -68,10 +69,7 @@ export default async function DashboardLayout({
   const onSubscriptionPage = pathname.startsWith('/dashboard/abonnement');
 
   if (!entitlements.isActive && !onSubscriptionPage && !context.isSupportAccess) {
-    const plans = await prisma.plan.findMany({
-      where: { isActive: true, product: 'RESTAURANT' },
-      orderBy: { position: 'asc' },
-    });
+    const screen = await loadSubscriptionScreen(context.restaurant.id);
 
     return (
       <SubscriptionWall
@@ -80,15 +78,30 @@ export default async function DashboardLayout({
         subscribeHref="/dashboard/abonnement"
         featureLabel={(key) => FEATURE_LABELS[key as Feature] ?? key}
         limitLabel={(key) => LIMIT_LABELS[key as keyof typeof LIMIT_LABELS] ?? key}
-        plans={plans.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          description: plan.description,
-          price: plan.price,
-          currency: plan.currency,
-          features: plan.features,
-          limits: (plan.limits ?? {}) as Record<string, number | undefined>,
-        }))}
+        plans={[]}
+        /**
+         * Le formulaire de paiement est posé **sur le mur**, comme côté
+         * Boutique. Il n'y était pas : le mur Restaurant se contentait de
+         * cartes de présentation et d'un lien vers la page d'abonnement.
+         *
+         * Or ce lien pointe vers la page qui affiche ce mur. Tant que le
+         * chemin courant est correctement transmis, la page s'ouvre ; dès que
+         * cette information manque — et elle dépend d'un en-tête posé par le
+         * middleware, donc du déploiement — le lien ramène au mur. Le
+         * restaurateur bloqué tourne alors en rond, sans aucun moyen de payer.
+         *
+         * Avec le formulaire ici, il paie depuis l'écran qui le bloque, et
+         * plus rien ne dépend de cet aller-retour.
+         */
+        paymentSlot={
+          <SubscriptionPaymentFlow
+            canManage={context.permissions.has('subscription:manage')}
+            currentPlanKey={screen.currentPlanKey}
+            availableProviders={screen.availableProviders}
+            pendingPayment={screen.pendingPayment}
+            plans={screen.plans}
+          />
+        }
       />
     );
   }

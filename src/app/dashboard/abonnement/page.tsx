@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
-import { getEntitlements, FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
+import { FEATURE_LABELS, LIMIT_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
 import { formatMoney } from '@/lib/money';
 import { SubscriptionPaymentFlow } from '@/components/dashboard/subscription-payment-flow';
+import { loadSubscriptionScreen } from '@/lib/subscription-screen';
 import { PlanCountdown } from '@/components/dashboard/plan-countdown';
 import { Badge, Card, PageHeader } from '@/components/ui';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
@@ -17,23 +18,19 @@ export const dynamic = 'force-dynamic';
 export default async function SubscriptionPage() {
   const context = await requireTenant('subscription:view');
 
-  const [entitlements, plans, usage, platformSettings, pendingPayment, promo, paidPayments] =
+  // Le chargeur est isolé du reste : mêler son type à ceux des requêtes
+  // voisines dans un même `Promise.all` élargit le tuple en union et fait
+  // perdre l'inférence sur les autres résultats.
+  const screen = await loadSubscriptionScreen(context.restaurant.id);
+
+  const [usage, platformSettings, promo, paidPayments] =
     await Promise.all([
-      getEntitlements(context.restaurant.id),
-      prisma.plan.findMany({
-        where: { isActive: true, product: 'RESTAURANT' },
-        orderBy: { position: 'asc' },
-      }),
       Promise.all([
         prisma.product.count({ where: { restaurantId: context.restaurant.id } }),
         prisma.category.count({ where: { restaurantId: context.restaurant.id } }),
         prisma.restaurantUser.count({ where: { restaurantId: context.restaurant.id } }),
       ]),
       getPlatformSettings(),
-      prisma.subscriptionPayment.findFirst({
-        where: { restaurantId: context.restaurant.id, status: 'PENDING' },
-        include: { plan: { select: { name: true } } },
-      }),
       getActivePromo(),
       prisma.subscriptionPayment.findMany({
         where: { restaurantId: context.restaurant.id, status: 'APPROVED' },
@@ -42,17 +39,14 @@ export default async function SubscriptionPage() {
         include: { plan: { select: { name: true } } },
       }),
     ]);
-    const alreadyPaid = paidPayments.length > 0;
+  const alreadyPaid = paidPayments.length > 0;
+  const { entitlements, pendingPayment } = screen;
 
   const availableProviders: Array<'wave_manual' | 'orange_money_manual'> = [
     ...(platformSettings?.waveNumber ? (['wave_manual'] as const) : []),
     ...(platformSettings?.orangeMoneyNumber ? (['orange_money_manual'] as const) : []),
   ];
 
-  const receivingNumberFor = (provider: string) =>
-    provider === 'wave_manual'
-      ? (platformSettings?.waveNumber ?? '')
-      : (platformSettings?.orangeMoneyNumber ?? '');
 
   const [products, categories, users] = usage;
   const limits = entitlements.limits;
@@ -189,34 +183,11 @@ export default async function SubscriptionPage() {
           canManage={context.permissions.has('subscription:manage')}
           currentPlanKey={entitlements.planKey}
           availableProviders={availableProviders}
-          pendingPayment={
-            pendingPayment
-              ? {
-                  id: pendingPayment.id,
-                  planName: pendingPayment.plan.name,
-                  amountLabel: formatMoney(pendingPayment.amount, pendingPayment.currency),
-                  provider: pendingPayment.provider as 'wave_manual' | 'orange_money_manual',
-                  receivingNumber: receivingNumberFor(pendingPayment.provider),
-                  proofImageUrl: pendingPayment.proofImageUrl,
-                }
-              : null
-          }
-          plans={plans.map((plan) => ({
-            key: plan.key,
-            name: plan.name,
-            description: plan.description,
-            priceLabel: formatMoney(plan.price, plan.currency),
-            price: plan.price,
-            interval: plan.interval,
-            trialDays: plan.trialDays,
-            features: plan.features.map(
-              (feature) => FEATURE_LABELS[feature as Feature] ?? feature,
-            ),
-            limits: Object.entries((plan.limits ?? {}) as PlanLimits).map(
-              ([key, value]) =>
-                `${LIMIT_LABELS[key as keyof PlanLimits]} : ${value === -1 ? 'illimité' : value}`,
-            ),
-          }))}
+          pendingPayment={pendingPayment}
+          /* Mêmes plans, mêmes montants que le mur : un seul chargeur les
+             forme (`lib/subscription-screen.ts`). Assemblés séparément, les
+             deux écrans finiraient par annoncer des prix différents. */
+          plans={screen.plans}
         />
       </div>
 
