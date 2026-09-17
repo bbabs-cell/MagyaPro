@@ -309,7 +309,13 @@ export function StoreSubscriptionPaymentFlow({
                 </Button>
               )}
 
-              {canManage && !isLockedOut && !isCurrent && !isFree && !isPaying && (
+              {canManage && !isLockedOut && !isFree && !isPaying && (
+                /**
+                 * Même règle que côté Restaurant : le plan courant n'avait
+                 * aucun bouton, si bien qu'un abonnement ne pouvait pas être
+                 * reconduit avant son échéance. Seul le libellé distingue
+                 * reconduire son plan de changer de plan.
+                 */
                 <Button
                   variant="secondary"
                   className="mt-5 w-full"
@@ -318,7 +324,9 @@ export function StoreSubscriptionPaymentFlow({
                 >
                   {availableProviders.length === 0
                     ? 'Paiement indisponible'
-                    : `Payer et choisir ${plan.name}`}
+                    : isCurrent
+                      ? 'Reconduire mon abonnement'
+                      : `Payer et choisir ${plan.name}`}
                 </Button>
               )}
 

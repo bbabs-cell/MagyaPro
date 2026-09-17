@@ -11,6 +11,7 @@ import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
 import { StoreSwitcher } from '@/components/boutique/store-switcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
+import { SubscriptionAlert } from '@/components/account/subscription-alert';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ToastProvider } from '@/components/ui/toast';
@@ -298,6 +299,7 @@ export function DashboardShell({
   isSupportAccess = false,
   isDemoTour = false,
   announcements = [],
+  subscription,
   children,
 }: {
   platformLogoUrl: string | null;
@@ -315,6 +317,12 @@ export function DashboardShell({
   /** Visite guidée anonyme d'une boutique de démonstration — voir `getDemoTourContext`. */
   isDemoTour?: boolean;
   announcements?: Array<{ id: string; title: string; body: string; severity: 'INFO' | 'WARNING' | 'CRITICAL' }>;
+  /** Échéance d'abonnement, pour le bandeau. Absent en visite de démonstration. */
+  subscription?: {
+    isActive: boolean;
+    currentPeriodEnd: string | null;
+    canManage: boolean;
+  };
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -444,6 +452,18 @@ export function DashboardShell({
           Cette boutique est suspendue : son site public est hors ligne et les
           modifications sont bloquées.
         </div>
+      )}
+
+      {/* Même bandeau que côté Restaurant : l'échéance doit être visible sur
+          toutes les pages, pas seulement sur celle qu'on ne consulte jamais
+          tant que tout fonctionne. */}
+      {subscription && (
+        <SubscriptionAlert
+          currentPeriodEnd={subscription.currentPeriodEnd}
+          isActive={subscription.isActive}
+          href="/boutique/dashboard/abonnement"
+          canManage={subscription.canManage}
+        />
       )}
 
       <AnnouncementBanner announcements={announcements} />

@@ -180,6 +180,11 @@ export default async function BoutiqueDashboardLayout({
         userEmail={user.email}
         isSupportAccess={context.isSupportAccess}
         announcements={announcements}
+        subscription={{
+          isActive: entitlements.isActive,
+          currentPeriodEnd: entitlements.currentPeriodEnd?.toISOString() ?? null,
+          canManage: context.permissions.has('subscription:manage'),
+        }}
       >
         {children}
       </DashboardShell>

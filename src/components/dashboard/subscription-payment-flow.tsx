@@ -261,7 +261,17 @@ export function SubscriptionPaymentFlow({
                 </Button>
               )}
 
-              {canManage && !isCurrent && !isFree && !isPaying && (
+              {canManage && !isFree && !isPaying && (
+                /**
+                 * Le plan courant n'avait aucun bouton : on ne rachète pas ce
+                 * qu'on possède déjà. Mais un abonnement se **reconduit**, et
+                 * rien ne permettait de le faire avant l'échéance — il fallait
+                 * attendre d'être bloqué pour pouvoir payer.
+                 *
+                 * Le bouton existe donc dans les deux cas ; seul son libellé
+                 * change, parce que reconduire son plan et en changer ne sont
+                 * pas le même geste.
+                 */
                 <Button
                   variant="secondary"
                   className="mt-5 w-full"
@@ -270,7 +280,9 @@ export function SubscriptionPaymentFlow({
                 >
                   {availableProviders.length === 0
                     ? 'Paiement indisponible'
-                    : `Payer et choisir ${plan.name}`}
+                    : isCurrent
+                      ? 'Reconduire mon abonnement'
+                      : `Payer et choisir ${plan.name}`}
                 </Button>
               )}
 

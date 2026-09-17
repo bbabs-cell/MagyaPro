@@ -11,6 +11,7 @@ import { Logo } from '@/components/ui/logo';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
+import { SubscriptionAlert } from '@/components/account/subscription-alert';
 import type { Permission } from '@/lib/rbac';
 
 /**
@@ -323,7 +324,13 @@ export function DashboardShell({
   unreadCount: number;
   alertCount: number;
   notificationCount: number;
-  subscription: { planName: string; status: string; isActive: boolean };
+  subscription: {
+    planName: string;
+    status: string;
+    isActive: boolean;
+    /** Fin de la période en cours, au format ISO — alimente le bandeau. */
+    currentPeriodEnd: string | null;
+  };
   isSupportAccess: boolean;
   announcements: Array<{
     id: string;
@@ -502,6 +509,16 @@ export function DashboardShell({
           modifications sont bloquées.
         </div>
       )}
+
+      {/* Échéance d'abonnement : visible sur toutes les pages, et non plus
+          seulement sur la page Abonnement — la seule qu'on ne consulte jamais
+          tant que tout fonctionne. */}
+      <SubscriptionAlert
+        currentPeriodEnd={subscription.currentPeriodEnd}
+        isActive={subscription.isActive}
+        href="/dashboard/abonnement"
+        canManage={permissions.includes('subscription:manage')}
+      />
 
       <AnnouncementBanner announcements={announcements} />
 

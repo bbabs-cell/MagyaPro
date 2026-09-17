@@ -132,6 +132,7 @@ export default async function DashboardLayout({
           planName: entitlements.planName,
           status: entitlements.status,
           isActive: entitlements.isActive,
+          currentPeriodEnd: entitlements.currentPeriodEnd?.toISOString() ?? null,
         }}
         isSupportAccess={context.isSupportAccess}
         announcements={announcements}
