@@ -31,10 +31,29 @@ import type { Config } from 'tailwindcss';
  */
 function themed(variable: string, fallback: string): string {
   const value = `var(${variable}, ${fallback})`;
-  const resolve = ({ opacityValue }: { opacityValue?: string } = {}) =>
-    opacityValue === undefined
-      ? value
-      : `color-mix(in srgb, ${value} ${Number(opacityValue) * 100}%, transparent)`;
+  const resolve = ({ opacityValue }: { opacityValue?: string } = {}) => {
+    /**
+     * Tailwind appelle cette fonction dans **deux** cas, et c'est le piège.
+     *
+     * - `bg-ink/25` → `opacityValue` vaut `'0.25'`, un nombre ;
+     * - `bg-ink` tout court → `opacityValue` vaut `'var(--tw-bg-opacity)'`,
+     *   une expression CSS que seul le navigateur sait résoudre.
+     *
+     * Une première version faisait `Number(opacityValue) * 100` sans
+     * distinguer les deux. Sur le second cas cela donnait `NaN%`, donc une
+     * déclaration invalide, donc **aucune couleur** — sur chaque fond et
+     * chaque texte des deux produits et du site public. Le CSS se compilait
+     * sans erreur ; seul le navigateur jetait la règle, en silence.
+     *
+     * Une valeur d'opacité qui n'est pas un nombre n'a donc rien à faire dans
+     * un calcul : la couleur est rendue telle quelle, exactement comme avant
+     * l'introduction de cette fonction.
+     */
+    const alpha = opacityValue === undefined ? Number.NaN : Number(opacityValue);
+    return Number.isFinite(alpha)
+      ? `color-mix(in srgb, ${value} ${alpha * 100}%, transparent)`
+      : value;
+  };
 
   // Tailwind appelle bien cette fonction à la génération — c'est la forme
   // documentée pour une couleur qui doit connaître l'opacité demandée. Ses
