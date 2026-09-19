@@ -68,7 +68,7 @@ export async function ElegantHomePage({ data }: { data: ElegantHomeData }) {
       {sections.length > 1 && (
         <nav
           aria-label={dict.templates.pageSections}
-          className="sticky top-16 z-10 flex justify-center gap-6 overflow-x-auto border-b border-surface-border bg-surface/95 px-4 py-3 backdrop-blur"
+          className="sticky top-16 z-10 flex justify-center gap-6 overflow-x-auto border-b border-surface-border bg-surface/65 px-4 py-3 backdrop-blur-lg"
         >
           {sections.map((section) => (
             <a

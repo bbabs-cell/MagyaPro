@@ -91,7 +91,22 @@ export function SiteChrome({
         </p>
       )}
 
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/95 backdrop-blur">
+      {/**
+       * 65 % et non 95 % : l'en-tête doit laisser deviner ce qui défile
+       * dessous. La valeur est volontairement basse, et c'est un choix, pas un
+       * oubli.
+       *
+       * Historique utile à qui voudra la « corriger » : ces barres ont
+       * longtemps paru entièrement transparentes, parce que les modificateurs
+       * d'opacité du thème n'émettaient aucune règle — un défaut, corrigé
+       * depuis. Le rendu franc qui en résultait plaisait, mais il posait un
+       * vrai problème : sans fond, le texte de navigation devenait illisible
+       * dès que du contenu sombre passait derrière.
+       *
+       * 65 % avec un flou large garde l'effet de verre tout en maintenant le
+       * contraste du texte, sur fond clair comme sur fond sombre.
+       */}
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/65 backdrop-blur-lg">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href={base || '/'} className="flex min-w-0 items-center gap-2.5">
             {restaurant.logoUrl ? (

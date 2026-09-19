@@ -745,7 +745,7 @@ async function MenuTraditional({
       {categories.length > 1 && (
         <nav
           aria-label={dict.templates.menuCategories}
-          className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-surface/95 px-4 py-3 backdrop-blur"
+          className="sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-surface/65 px-4 py-3 backdrop-blur-lg"
         >
           {categories.map((category) => (
             <a
