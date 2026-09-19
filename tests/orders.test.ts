@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { prisma, createTestRestaurant, resetDatabase, type TestRestaurant } from './helpers';
-import { canTransition, createOrder, updateOrderStatus } from '@/lib/orders/service';
+import { canTransition, createOrder, markOrderPaid, updateOrderStatus } from '@/lib/orders/service';
 import { applyPaymentStatus, initiatePayment } from '@/lib/payments/service';
 import { availableProvidersFor, getProvider } from '@/lib/payments/registry';
 
@@ -209,6 +209,88 @@ describe('Cycle de vie des commandes', () => {
       const cancelled = await prisma.order.findUnique({ where: { id: order.id } });
       expect(cancelled!.cancelReason).toBe('Client injoignable');
       expect(cancelled!.cancelledAt).not.toBeNull();
+    });
+  });
+
+  describe('Encaissement', () => {
+    /** Commande à emporter, amenée jusqu'au statut voulu. */
+    async function pickupOrder(upTo: 'READY' | 'COMPLETED') {
+      const order = await createOrder({
+        restaurantId: shop.restaurant.id,
+        items: [{ productId: shop.product.id, quantity: 1 }],
+        fulfillmentType: 'PICKUP',
+        customerName: 'Client comptoir',
+        customerPhone: `+225 07 ${Math.floor(Math.random() * 90 + 10)} 44 44`,
+        paymentProvider: 'pay_at_store',
+      });
+      for (const status of ['CONFIRMED', 'PREPARING', 'READY'] as const) {
+        await updateOrderStatus({ restaurantId: shop.restaurant.id, orderId: order.id, status });
+      }
+      if (upTo === 'COMPLETED') {
+        await updateOrderStatus({
+          restaurantId: shop.restaurant.id,
+          orderId: order.id,
+          status: 'COMPLETED',
+        });
+      }
+      return order;
+    }
+
+    it('marque payée une commande que l\'on termine', async () => {
+      // Une commande emportée passait « Terminée » en gardant un paiement en
+      // attente : le restaurateur avait encaissé au comptoir, l'écran disait
+      // le contraire, et sa liste d'impayés se remplissait de commandes
+      // réglées.
+      const order = await pickupOrder('COMPLETED');
+
+      const settled = await prisma.order.findUnique({ where: { id: order.id } });
+      expect(settled!.status).toBe('COMPLETED');
+      expect(settled!.paymentStatus).toBe('PAID');
+    });
+
+    it('encaisse sans faire avancer le statut', async () => {
+      // On paie au comptoir avant d'être servi : constater l'argent ne doit
+      // pas déclarer la commande terminée, elle est encore à préparer.
+      const order = await pickupOrder('READY');
+
+      await markOrderPaid({ restaurantId: shop.restaurant.id, orderId: order.id });
+
+      const paid = await prisma.order.findUnique({ where: { id: order.id } });
+      expect(paid!.paymentStatus).toBe('PAID');
+      expect(paid!.status).toBe('READY');
+    });
+
+    it('refuse d\'encaisser une commande annulée', async () => {
+      const order = await pickupOrder('READY');
+      await updateOrderStatus({
+        restaurantId: shop.restaurant.id,
+        orderId: order.id,
+        status: 'CANCELLED',
+      });
+
+      await expect(
+        markOrderPaid({ restaurantId: shop.restaurant.id, orderId: order.id }),
+      ).rejects.toThrow();
+    });
+
+    it('ne ressuscite pas le paiement d\'une commande remboursée', async () => {
+      // Un remboursement a déjà tranché la question de l'argent, en sens
+      // inverse. Terminer la commande ensuite ne doit pas effacer ce fait.
+      const order = await pickupOrder('READY');
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { paymentStatus: 'REFUNDED' },
+      });
+
+      await updateOrderStatus({
+        restaurantId: shop.restaurant.id,
+        orderId: order.id,
+        status: 'COMPLETED',
+      });
+
+      const done = await prisma.order.findUnique({ where: { id: order.id } });
+      expect(done!.status).toBe('COMPLETED');
+      expect(done!.paymentStatus).toBe('REFUNDED');
     });
   });
 });

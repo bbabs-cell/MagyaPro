@@ -230,6 +230,7 @@ export async function updateOrderStatus(params: {
       status: true,
       number: true,
       customerPhone: true,
+      paymentStatus: true,
       restaurant: { select: { name: true } },
     },
   });
@@ -244,6 +245,23 @@ export async function updateOrderStatus(params: {
   }
 
   const now = new Date();
+
+  /**
+   * Terminer une commande, c'est aussi acter que l'argent est là.
+   *
+   * Une commande à emporter passait de « Prête » à « Terminée » sans que son
+   * paiement bouge : elle restait affichée « en attente de paiement » pour
+   * toujours, alors qu'elle était réglée au comptoir. Le restaurateur se
+   * retrouvait avec une liste de commandes terminées et impayées qui ne
+   * correspondait à rien — et une liste fausse finit par ne plus être lue.
+   *
+   * Un remboursement fait exception : il a déjà tranché la question de
+   * l'argent, en sens inverse. Le repasser à « payé » effacerait cette
+   * information.
+   */
+  const settlesPayment =
+    params.status === 'COMPLETED' && order.paymentStatus !== 'REFUNDED';
+
   const updated = await prisma.$transaction(async (tx) => {
     const result = await tx.order.update({
       where: { id: order.id },
@@ -254,8 +272,19 @@ export async function updateOrderStatus(params: {
         cancelledAt: params.status === 'CANCELLED' ? now : undefined,
         cancelReason:
           params.status === 'CANCELLED' ? (params.note ?? null) : undefined,
+        paymentStatus: settlesPayment ? 'PAID' : undefined,
       },
     });
+
+    // Le paiement enregistré doit suivre, sinon la commande se dit payée
+    // pendant que sa ligne de paiement reste en attente — deux vérités pour
+    // le même fait.
+    if (settlesPayment) {
+      await tx.payment.updateMany({
+        where: { orderId: order.id, status: { in: ['PENDING', 'PROCESSING'] } },
+        data: { status: 'PAID' },
+      });
+    }
 
     await tx.orderStatusEvent.create({
       data: {
@@ -568,13 +597,25 @@ async function recordCourierCollection(params: {
 }
 
 /**
- * Confirmation d'encaissement par le restaurant, une fois le livreur revenu
- * avec l'argent : seule action qui fait passer une commande `DELIVERED` à
- * `COMPLETED`. Volontairement distincte de `updateOrderStatus` générique —
- * elle encaisse le paiement dans le même geste, pour qu'une commande livrée
- * ne se retrouve jamais « terminée » avec un paiement resté en attente.
+ * Encaissement constaté par le restaurant — **sans toucher au statut**.
+ *
+ * Le paiement était auparavant soudé à la livraison : le seul bouton qui
+ * marquait une commande payée s'appelait « Marquer payé et terminer » et
+ * n'apparaissait que pour une commande `DELIVERED`. Une commande emportée au
+ * comptoir, elle, ne passe jamais par ce statut — il n'existait donc
+ * **aucun** moyen de la déclarer payée. Le restaurateur encaissait la main à
+ * la caisse et voyait « paiement en attente » à l'écran.
+ *
+ * Encaisser et terminer sont deux faits distincts, et ils n'arrivent pas
+ * toujours dans le même ordre : on paie d'avance au comptoir, on paie à la
+ * remise en livraison, et parfois on termine une commande dont l'argent est
+ * arrivé la veille. Chacun a donc son geste.
+ *
+ * Terminer une commande marque toujours le paiement (voir
+ * `updateOrderStatus`) : l'inverse — marquer payé — ne termine rien, car une
+ * commande payée d'avance est encore à préparer.
  */
-export async function confirmDeliveryPayment(params: {
+export async function markOrderPaid(params: {
   restaurantId: string;
   orderId: string;
   actorUserId?: string | null;
@@ -583,13 +624,22 @@ export async function confirmDeliveryPayment(params: {
 }) {
   const order = await prisma.order.findFirst({
     where: { id: params.orderId, restaurantId: params.restaurantId },
-    select: { id: true, status: true },
+    select: { id: true, number: true, status: true, paymentStatus: true },
   });
   if (!order) throw new NotFoundError('Commande introuvable.');
-  if (order.status !== 'DELIVERED') {
-    throw new ConflictError("Cette commande n'est pas en attente de confirmation de paiement.");
-  }
 
+  if (order.status === 'CANCELLED') {
+    throw new ConflictError("Une commande annulée ne peut pas être marquée payée.");
+  }
+  if (order.paymentStatus === 'REFUNDED') {
+    throw new ConflictError('Cette commande a été remboursée.');
+  }
+  if (order.paymentStatus === 'PAID') return order;
+
+  // La ligne de paiement existe pour les règlements en ligne et pour l'argent
+  // remis au livreur ; elle est absente d'un règlement au comptoir. Les deux
+  // cas sont normaux — on met à jour ce qui existe, on n'invente pas une
+  // transaction qui n'a pas eu lieu.
   const payment = await prisma.payment.findFirst({
     where: { orderId: order.id },
     orderBy: { createdAt: 'desc' },
@@ -604,14 +654,21 @@ export async function confirmDeliveryPayment(params: {
     });
   }
 
-  const updated = await updateOrderStatus({
-    restaurantId: params.restaurantId,
-    orderId: order.id,
-    status: 'COMPLETED',
-    userId: params.actorUserId,
-    actorEmail: params.actorEmail,
-    ip: params.ip,
+  const updated = await prisma.order.update({
+    where: { id: order.id },
+    data: { paymentStatus: 'PAID' },
   });
 
-  return { ...updated, paymentStatus: 'PAID' as const };
+  await recordAudit({
+    action: AUDIT_ACTIONS.ORDER_STATUS_CHANGED,
+    actorUserId: params.actorUserId,
+    actorEmail: params.actorEmail,
+    restaurantId: params.restaurantId,
+    targetType: 'order',
+    targetId: order.id,
+    ip: params.ip,
+    metadata: { payment: { from: order.paymentStatus, to: 'PAID' }, number: order.number },
+  });
+
+  return updated;
 }

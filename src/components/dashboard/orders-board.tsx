@@ -106,19 +106,24 @@ export function OrdersBoard({
     );
   }
 
-  function confirmPayment(order: Order) {
+  /**
+   * Encaisser, sans rien changer d'autre.
+   *
+   * Cette action terminait aussi la commande, et n'était proposée que sur une
+   * livraison. Une commande emportée au comptoir n'avait donc aucun bouton
+   * pour dire que l'argent était arrivé.
+   */
+  function markPaid(order: Order) {
     mutation.run(
       async () => {
-        // Cette action fait deux choses d'un coup : elle encaisse et elle
-        // termine la commande. Les deux doivent apparaître ensemble.
-        applyLocally({ id: order.id, status: 'COMPLETED', paid: true });
+        applyLocally({ id: order.id, paid: true });
         await api.post(`/api/commandes/${order.id}/payer`);
       },
       {
         key: `${order.id}:paiement`,
-        // De l'argent qui entre : celui-là se confirme, même si la ligne
-        // change aussi de couleur.
-        successMessage: 'Paiement encaissé, commande terminée.',
+        // De l'argent qui entre : celui-là se confirme, même si la colonne
+        // « Paiement » change aussi sous les yeux.
+        successMessage: 'Commande marquée payée.',
         failureMessage: "Le paiement n'a pas pu être confirmé. Réessayez.",
       },
     );
@@ -149,6 +154,12 @@ export function OrdersBoard({
               const nextStatuses = ORDER_TRANSITIONS[order.status].filter(
                 (status) => status !== 'CANCELLED' || canCancel,
               );
+              // Tant que l'argent n'est pas constaté et que la commande vit
+              // encore, l'encaissement reste proposé — quel que soit le stade.
+              const canMarkPaid =
+                order.status !== 'CANCELLED' &&
+                order.paymentStatus !== 'PAID' &&
+                order.paymentStatus !== 'REFUNDED';
               // Le tour de roue ne tourne que sur le bouton réellement
               // pressé ; tous les autres sont seulement inactifs le temps que
               // l'action se termine. Deux commandes modifiées en même temps se
@@ -231,32 +242,23 @@ export function OrdersBoard({
                   </td>
 
                   <td data-label="" className="py-3">
-                    {canUpdate && order.status === 'DELIVERED' ? (
+                    {canUpdate && (canMarkPaid || nextStatuses.length > 0) ? (
                       <div className="flex flex-wrap justify-end gap-1.5">
-                        <Button
-                          type="button"
-                          size="sm"
-                          loading={mutation.isPending(`${order.id}:paiement`)}
-                          disabled={isLocked}
-                          onClick={() => confirmPayment(order)}
-                        >
-                          Marquer payé et terminer
-                        </Button>
-                        {canCancel && (
+                        {/* Encaisser ne dépend plus du mode de retrait : une
+                            commande emportée se règle au comptoir, et n'a
+                            jamais de livreur pour rapporter l'argent. */}
+                        {canMarkPaid && (
                           <Button
                             type="button"
                             size="sm"
-                            variant="ghost"
-                            loading={mutation.isPending(`${order.id}:CANCELLED`)}
+                            variant={order.status === 'DELIVERED' ? 'primary' : 'secondary'}
+                            loading={mutation.isPending(`${order.id}:paiement`)}
                             disabled={isLocked}
-                            onClick={() => changeStatus(order, 'CANCELLED')}
+                            onClick={() => markPaid(order)}
                           >
-                            Annuler
+                            Marquer payé
                           </Button>
                         )}
-                      </div>
-                    ) : canUpdate && nextStatuses.length > 0 ? (
-                      <div className="flex flex-wrap justify-end gap-1.5">
                         {nextStatuses.map((status) => (
                           <Button
                             key={status}

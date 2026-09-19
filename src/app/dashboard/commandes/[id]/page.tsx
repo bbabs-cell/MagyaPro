@@ -104,6 +104,7 @@ export default async function OrderDetailPage({
               <OrderActions
                 orderId={order.id}
                 status={order.status}
+                paymentStatus={order.paymentStatus}
                 canUpdate={context.permissions.has('orders:update_status')}
                 canCancel={context.permissions.has('orders:cancel')}
               />

@@ -17,11 +17,11 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   // Pas de passage direct à COMPLETED : le livreur confirme la remise (code),
   // ce qui mène à DELIVERED, jamais COMPLETED — voir `confirmDelivery`.
   OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
-  // COMPLETED n'est atteint depuis ici que via la confirmation d'encaissement
-  // du restaurant (`confirmDeliveryPayment`, qui appelle ensuite
-  // `updateOrderStatus` — cette transition doit donc rester autorisée ici).
-  // L'interface ne propose pas de bouton générique pour ce passage : elle
-  // affiche « Marquer payé et terminer », qui appelle cette confirmation.
+  // Terminer une commande marque son paiement (voir `updateOrderStatus`) :
+  // une commande livrée ne peut donc pas finir « terminée » avec un paiement
+  // resté en attente, et l'interface affiche ici le bouton générique comme
+  // partout ailleurs. Encaisser reste un geste distinct, disponible à tout
+  // moment tant que la commande n'est ni payée ni annulée.
   DELIVERED: ['COMPLETED', 'CANCELLED'],
   COMPLETED: [],
   CANCELLED: [],
