@@ -92,21 +92,26 @@ export function SiteChrome({
       )}
 
       {/**
-       * 65 % et non 95 % : l'en-tête doit laisser deviner ce qui défile
-       * dessous. La valeur est volontairement basse, et c'est un choix, pas un
-       * oubli.
+       * 30 % — volontairement très bas. Ce n'est pas un oubli, et ce n'est pas
+       * la valeur qu'on met d'ordinaire sur un en-tête collant.
        *
-       * Historique utile à qui voudra la « corriger » : ces barres ont
+       * Historique, pour qui voudrait la « corriger » : ces barres ont
        * longtemps paru entièrement transparentes, parce que les modificateurs
-       * d'opacité du thème n'émettaient aucune règle — un défaut, corrigé
-       * depuis. Le rendu franc qui en résultait plaisait, mais il posait un
-       * vrai problème : sans fond, le texte de navigation devenait illisible
-       * dès que du contenu sombre passait derrière.
+       * d'opacité du thème n'émettaient aucune règle. C'était un défaut, mais
+       * le rendu qu'il produisait faisait l'identité visuelle du site, et il a
+       * été demandé de le retrouver.
        *
-       * 65 % avec un flou large garde l'effet de verre tout en maintenant le
-       * contraste du texte, sur fond clair comme sur fond sombre.
+       * Ce qui protège le texte ici n'est donc pas le fond, c'est **le flou**.
+       * À 40 px, ce qui passe derrière devient une masse uniforme sans contour
+       * lisible : le contraste du texte tient, alors même qu'on voit au
+       * travers. La saturation compense le délavage que produit un flou aussi
+       * large.
+       *
+       * Conséquence à connaître avant d'y toucher : baisser encore l'opacité
+       * **sans** garder ce flou ramènerait le défaut d'origine — un titre
+       * sombre passant sous la barre rendrait la navigation illisible.
        */}
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/65 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/30 backdrop-blur-2xl backdrop-saturate-150">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <Link href={base || '/'} className="flex min-w-0 items-center gap-2.5">
             {restaurant.logoUrl ? (
@@ -141,7 +146,7 @@ export function SiteChrome({
                 aria-current={pathname === item.href ? 'page' : undefined}
                 className={cx(
                   'transition-colors hover:text-ink',
-                  pathname === item.href ? 'font-medium text-ink' : 'text-ink-muted',
+                  pathname === item.href ? 'font-semibold text-ink' : 'text-ink',
                 )}
               >
                 {item.label}
@@ -184,7 +189,7 @@ export function SiteChrome({
               aria-current={pathname === item.href ? 'page' : undefined}
               className={cx(
                 'whitespace-nowrap',
-                pathname === item.href ? 'font-medium text-ink' : 'text-ink-muted',
+                pathname === item.href ? 'font-semibold text-ink' : 'text-ink',
               )}
             >
               {item.label}

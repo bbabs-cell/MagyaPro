@@ -20,7 +20,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/65 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/30 backdrop-blur-2xl backdrop-saturate-150">
         <nav
           className="container-page flex h-16 items-center justify-between"
           aria-label="Navigation principale"

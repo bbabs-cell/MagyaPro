@@ -19,7 +19,7 @@ export default async function MarketingLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/65 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-surface-border bg-surface/30 backdrop-blur-2xl backdrop-saturate-150">
         <nav
           className="container-page flex h-16 items-center justify-between"
           aria-label="Navigation principale"
@@ -28,7 +28,7 @@ export default async function MarketingLayout({
             <Logo src={logoUrl} />
           </Link>
 
-          <div className="hidden items-center gap-7 text-sm text-ink-muted md:flex">
+          <div className="hidden items-center gap-7 text-sm text-ink md:flex">
             <Link href="/restaurant#fonctionnalites" className="hover:text-ink">Fonctionnalités</Link>
             <Link href="/restaurant#fonctionnement" className="hover:text-ink">Fonctionnement</Link>
             <Link href="/restaurant#templates" className="hover:text-ink">Templates</Link>
@@ -39,7 +39,7 @@ export default async function MarketingLayout({
           <div className="flex items-center gap-2">
             <Link
               href="/boutique"
-              className="hidden px-3 py-2 text-sm text-ink-muted hover:text-ink lg:block"
+              className="hidden px-3 py-2 text-sm text-ink lg:block"
             >
               Vous gérez une boutique ?
             </Link>
@@ -51,7 +51,7 @@ export default async function MarketingLayout({
               <>
                 <Link
                   href="/connexion"
-                  className="hidden px-3 py-2 text-sm text-ink-muted hover:text-ink sm:block"
+                  className="hidden px-3 py-2 text-sm text-ink sm:block"
                 >
                   Se connecter
                 </Link>

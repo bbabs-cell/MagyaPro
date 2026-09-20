@@ -18,7 +18,7 @@ export default async function BoutiquePublicLayout({ children }: { children: Rea
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#1c1712]/70 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#1c1712]/35 backdrop-blur-2xl backdrop-saturate-150">
         <nav
           className="container-page flex h-16 items-center justify-between"
           aria-label="Navigation principale"
