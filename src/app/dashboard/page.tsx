@@ -72,7 +72,7 @@ export default async function DashboardPage() {
   if (preContext?.role === 'COURIER') redirect('/dashboard/livraisons');
   if (preContext?.role === 'KITCHEN') redirect('/dashboard/cuisine');
 
-  const { restaurant, user } = await requireTenant('restaurant:view');
+  const { restaurant, user, permissions } = await requireTenant('restaurant:view');
   const currency = restaurant.currency;
 
   const [metrics, today, series, popular, recentOrders, entitlements] = await Promise.all([
@@ -108,9 +108,19 @@ export default async function DashboardPage() {
         title={`Bonjour ${user.name.trim().split(' ')[0] || 'à vous'}`}
         description={`${restaurant.name} — voici votre journée et vos trente derniers jours.`}
         action={
-          <LinkButton href="/dashboard/commandes" variant="secondary" size="sm">
-            Voir les commandes
-          </LinkButton>
+          // Prendre une commande est le geste du service, pas une consultation :
+          // il porte l'accent, et il arrive en premier. Consulter la liste passe
+          // en retrait — c'est ce qu'on fait entre deux clients, pas pendant.
+          <div className="flex flex-wrap items-center gap-2">
+            {permissions.has('orders:create') && (
+              <LinkButton href="/dashboard/commandes/nouvelle" size="sm">
+                Nouvelle commande
+              </LinkButton>
+            )}
+            <LinkButton href="/dashboard/commandes" variant="secondary" size="sm">
+              Voir les commandes
+            </LinkButton>
+          </div>
         }
       />
 

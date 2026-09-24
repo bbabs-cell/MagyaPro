@@ -73,7 +73,7 @@ export default async function NewOrderPage() {
         action={
           <Link
             href="/dashboard/commandes"
-            className="text-sm text-ink-muted underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-sm text-ink-muted underline-offset-4 hover:underline"
           >
             Retour
           </Link>
