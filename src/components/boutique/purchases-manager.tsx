@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
-import { formatMoney, toMinor } from '@/lib/money';
+import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
 import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/labels';
 import {
@@ -15,7 +15,13 @@ import {
 
 /** `outstanding` : reste dû, déduit des commandes livrées — plus un compteur. */
 type Supplier = { id: string; name: string; outstanding: number };
-type ProductOption = { variantId: string; name: string };
+/** `cost` : dernier coût d'achat enregistré du produit, en unité mineure. */
+type ProductOption = {
+  variantId: string;
+  name: string;
+  categoryName: string | null;
+  cost: number;
+};
 type Warehouse = { id: string; name: string; isDefault: boolean };
 type PurchaseOrderItem = {
   id: string;
@@ -402,6 +408,25 @@ function SupplierForm({ onDone, onCancel }: { onDone: () => void; onCancel: () =
   );
 }
 
+/**
+ * Composition d'une commande fournisseur.
+ *
+ * Même disposition que la Caisse et que la prise de commande Restaurant :
+ * catalogue à gauche, commande à droite, visibles en même temps. C'est le
+ * même geste — composer une liste de produits — fait par la même personne.
+ * Trois écrans de saisie qui se ressemblent s'apprennent une fois.
+ *
+ * Ce que cela remplace : un tableau de lignes vides, où chaque produit se
+ * choisissait dans une liste déroulante de tout le catalogue, et où il fallait
+ * descendre pour lire le total puis remonter pour corriger une quantité.
+ *
+ * Une différence assumée avec la caisse : on n'achète pas au prix de vente.
+ * Chaque ligne garde donc son coût unitaire et sa remise, saisissables. Ils
+ * sont pré-remplis avec le dernier coût d'achat connu du produit, qui est une
+ * donnée réelle et non une estimation — à zéro quand il n'a jamais été
+ * renseigné, auquel cas le champ reste à zéro plutôt que d'afficher un montant
+ * inventé.
+ */
 function OrderForm({
   suppliers,
   products,
@@ -417,52 +442,92 @@ function OrderForm({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lines, setLines] = useState([{ productVariantId: '', quantity: 1, unitCost: '0', discount: '0' }]);
-  // Les frais annexes deviennent un état plutôt qu'un champ libre : ils
-  // entrent dans le total affiché, et un total qui ignore le transport n'est
-  // pas le total.
+  const [search, setSearch] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const [supplierId, setSupplierId] = useState(suppliers[0]?.id ?? '');
+  const [expectedAt, setExpectedAt] = useState('');
+  const [note, setNote] = useState('');
+  // Les frais annexes entrent dans le total affiché : un total qui ignore le
+  // transport n'est pas le total.
   const [extraFees, setExtraFees] = useState('0');
 
-  /**
-   * Total de la commande, mis à jour à chaque frappe.
-   *
-   * Le formulaire affichait le total de chaque ligne mais jamais celui de la
-   * commande : sur cinq lignes, le commerçant validait sans savoir ce qu'il
-   * engageait, et devait attendre la liste pour le découvrir. Le §13 demande
-   * de voir le total avant de valider.
-   */
+  const [lines, setLines] = useState<
+    Array<{ variantId: string; name: string; quantity: number; unitCost: string; discount: string }>
+  >([]);
+
+  const shown = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return products;
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(needle) ||
+        (product.categoryName ?? '').toLowerCase().includes(needle),
+    );
+  }, [products, search]);
+
   const linesTotal = lines.reduce((sum, line) => {
     const unitCost = Number(line.unitCost.replace(',', '.')) || 0;
     const discount = Number(line.discount.replace(',', '.')) || 0;
     return sum + Math.max(0, unitCost - discount) * (line.quantity || 0);
   }, 0);
   const feesValue = Number(extraFees.replace(',', '.')) || 0;
-  const filledLines = lines.filter((line) => line.productVariantId).length;
+  const total = linesTotal + feesValue;
 
-  function updateLine(index: number, patch: Partial<(typeof lines)[number]>) {
-    setLines((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)));
+  function addProduct(product: ProductOption) {
+    setLines((current) => {
+      const existing = current.find((line) => line.variantId === product.variantId);
+      if (existing) {
+        return current.map((line) =>
+          line.variantId === product.variantId ? { ...line, quantity: line.quantity + 1 } : line,
+        );
+      }
+      return [
+        ...current,
+        {
+          variantId: product.variantId,
+          name: product.name,
+          quantity: 1,
+          unitCost: String(toMajor(product.cost, currency)),
+          discount: '0',
+        },
+      ];
+    });
   }
 
-  async function submit(confirm: boolean, formEl: HTMLFormElement) {
+  function updateLine(
+    variantId: string,
+    patch: Partial<{ quantity: number; unitCost: string; discount: string }>,
+  ) {
+    setLines((current) =>
+      current.map((line) => (line.variantId === variantId ? { ...line, ...patch } : line)),
+    );
+  }
+
+  function setQuantity(variantId: string, quantity: number) {
+    setLines((current) =>
+      quantity <= 0
+        ? current.filter((line) => line.variantId !== variantId)
+        : current.map((line) => (line.variantId === variantId ? { ...line, quantity } : line)),
+    );
+  }
+
+  async function submit(confirm: boolean) {
     setPending(true);
     setError(null);
-    const formData = new FormData(formEl);
-
     try {
       await api.post('/api/boutique/purchase-orders', {
-        supplierId: String(formData.get('supplierId') ?? ''),
+        supplierId,
         confirm,
         extraFees: toMinor(extraFees || '0', currency),
-        expectedAt: formData.get('expectedAt') ? String(formData.get('expectedAt')) : undefined,
-        note: String(formData.get('note') ?? '') || undefined,
-        items: lines
-          .filter((line) => line.productVariantId)
-          .map((line) => ({
-            productVariantId: line.productVariantId,
-            quantity: line.quantity,
-            unitCost: toMinor(line.unitCost, currency),
-            discount: toMinor(line.discount, currency),
-          })),
+        expectedAt: expectedAt || undefined,
+        note: note || undefined,
+        items: lines.map((line) => ({
+          productVariantId: line.variantId,
+          quantity: line.quantity,
+          unitCost: toMinor(line.unitCost, currency),
+          discount: toMinor(line.discount, currency),
+        })),
       });
       onDone();
     } catch (err) {
@@ -471,26 +536,235 @@ function OrderForm({
     }
   }
 
+  const ready = lines.length > 0 && supplierId !== '';
+
   return (
-    <Card className="p-5">
-      <h2 className="text-lg font-medium">Nouvelle commande d&apos;achat</h2>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit(true, event.currentTarget);
-        }}
-        className="mt-5 space-y-4"
-        noValidate
+    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {/* Dégage la barre inférieure, qui recouvrirait les derniers produits. */}
+      <div className="max-lg:pb-24">
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Rechercher un produit…"
+          className={cx(inputClass, 'mb-4')}
+          autoFocus
+        />
+
+        {shown.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-surface-border px-4 py-8 text-center text-sm text-ink-muted">
+            {products.length === 0
+              ? 'Aucun produit au catalogue. Créez-en un avant de commander.'
+              : `Aucun produit ne correspond à « ${search.trim()} ».`}
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {shown.map((product: ProductOption) => {
+              const inOrder = lines.find((line) => line.variantId === product.variantId);
+              return (
+                <button
+                  key={product.variantId}
+                  type="button"
+                  onClick={() => addProduct(product)}
+                  style={{ touchAction: 'manipulation' }}
+                  className={cx(
+                    'flex items-start justify-between gap-3 rounded-xl border bg-surface-raised p-3 text-start transition-colors hover:bg-surface-sunken',
+                    inOrder ? 'border-ink' : 'border-surface-border',
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-ink">
+                      {product.name}
+                    </span>
+                    {product.categoryName && (
+                      <span className="mt-0.5 block truncate text-xs text-ink-faint">
+                        {product.categoryName}
+                      </span>
+                    )}
+                    <span className="mt-1.5 block text-sm tabular-nums text-ink-muted">
+                      {product.cost > 0
+                        ? `Dernier coût ${formatMoney(product.cost, currency)}`
+                        : 'Coût à saisir'}
+                    </span>
+                  </span>
+
+                  {inOrder && (
+                    <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium tabular-nums text-brand">
+                      ×{inOrder.quantity}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Voile derrière la feuille : un appui à côté referme. */}
+      {sheetOpen && (
+        <button
+          type="button"
+          aria-label="Fermer la commande"
+          onClick={() => setSheetOpen(false)}
+          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+        />
+      )}
+
+      <Card
+        className={cx(
+          'h-fit p-4 sm:p-5',
+          'lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto',
+          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh]',
+          'max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:rounded-b-none',
+          'max-lg:pb-[calc(1rem+env(safe-area-inset-bottom))]',
+          !sheetOpen && 'max-lg:hidden',
+        )}
       >
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-ink">Commande d&apos;achat</h2>
+          <button
+            type="button"
+            onClick={() => setSheetOpen(false)}
+            style={{ touchAction: 'manipulation' }}
+            className="-mr-2 rounded-lg px-3 py-2 text-sm text-ink-muted lg:hidden"
+          >
+            Fermer
+          </button>
+        </div>
+
         {error && (
-          <div role="alert" className="rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
+          <div role="alert" className="mt-3 rounded-xl bg-state-bad-soft px-4 py-3 text-sm text-state-bad">
             {error}
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        {lines.length === 0 ? (
+          <p className="mt-3 text-sm text-ink-muted">
+            Choisissez des produits dans le catalogue pour composer la commande.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {lines.map((line) => {
+              const unitCost = Number(line.unitCost.replace(',', '.')) || 0;
+              const discount = Number(line.discount.replace(',', '.')) || 0;
+              // Total de la ligne en clair : c'est le seul moyen de repérer
+              // d'un coup d'œil qu'on a interverti la quantité et le prix —
+              // 4500 articles à 12 F saute alors aux yeux.
+              const lineTotal = Math.max(0, unitCost - discount) * (line.quantity || 0);
+
+              return (
+                <li key={line.variantId} className="border-b border-surface-border pb-3 last:border-0">
+                  {/* Le nom occupe sa propre ligne : serré à côté des trois
+                      commandes de quantité, « Café Touba 250 g » se brisait en
+                      quatre lignes d'un mot. Les noms d'épicerie sont longs,
+                      et aucune largeur de colonne ne rattrapera cela. */}
+                  <p className="text-sm font-medium text-ink">{line.name}</p>
+
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Retirer un ${line.name}`}
+                        onClick={() => setQuantity(line.variantId, line.quantity - 1)}
+                        style={{ touchAction: 'manipulation' }}
+                        className="h-11 w-11 rounded-lg border border-surface-border text-lg leading-none text-ink transition-colors hover:bg-surface-sunken"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={0.001}
+                        step={0.001}
+                        value={line.quantity}
+                        aria-label={`Quantité de ${line.name}`}
+                        onChange={(event) =>
+                          updateLine(line.variantId, { quantity: Number(event.target.value) })
+                        }
+                        className={cx(inputClass, '!w-16 shrink-0 px-1 text-center tabular-nums')}
+                      />
+                      <button
+                        type="button"
+                        aria-label={`Ajouter un ${line.name}`}
+                        onClick={() => setQuantity(line.variantId, line.quantity + 1)}
+                        style={{ touchAction: 'manipulation' }}
+                        className="h-11 w-11 rounded-lg border border-surface-border text-lg leading-none text-ink transition-colors hover:bg-surface-sunken"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <p className="whitespace-nowrap text-sm tabular-nums">
+                      <span className="text-ink-muted">Total </span>
+                      <span className="font-semibold text-ink">
+                        {formatMoney(toMinor(String(lineTotal), currency), currency)}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <Field label={`Coût unitaire (${currency})`} htmlFor={`cost-${line.variantId}`}>
+                      <input
+                        id={`cost-${line.variantId}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="0.01"
+                        value={line.unitCost}
+                        onChange={(event) =>
+                          updateLine(line.variantId, { unitCost: event.target.value })
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label={`Remise / unité (${currency})`} htmlFor={`disc-${line.variantId}`}>
+                      <input
+                        id={`disc-${line.variantId}`}
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="0.01"
+                        value={line.discount}
+                        onChange={(event) =>
+                          updateLine(line.variantId, { discount: event.target.value })
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {lines.length > 0 && (
+          <div className="mt-3 border-t border-surface-border pt-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-sm text-ink-muted">
+                {lines.length} produit{lines.length > 1 ? 's' : ''}
+              </span>
+              <span className="text-lg font-semibold tabular-nums text-ink">
+                {formatMoney(toMinor(String(total), currency), currency)}
+              </span>
+            </div>
+            {feesValue > 0 && (
+              <p className="mt-0.5 text-end text-xs text-ink-faint">
+                dont {formatMoney(toMinor(String(feesValue), currency), currency)} de frais annexes
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3 border-t border-surface-border pt-4">
           <Field label="Fournisseur" htmlFor="supplierId" required>
-            <select id="supplierId" name="supplierId" required className={inputClass}>
+            <select
+              id="supplierId"
+              value={supplierId}
+              onChange={(event) => setSupplierId(event.target.value)}
+              className={inputClass}
+            >
               {suppliers.map((supplier) => (
                 <option key={supplier.id} value={supplier.id}>
                   {supplier.name}
@@ -498,136 +772,18 @@ function OrderForm({
               ))}
             </select>
           </Field>
-          <Field label="Livraison attendue (facultatif)" htmlFor="expectedAt">
-            <input id="expectedAt" name="expectedAt" type="date" className={inputClass} />
+
+          <Field label="Livraison attendue" htmlFor="expectedAt">
+            <input
+              id="expectedAt"
+              type="date"
+              value={expectedAt}
+              onChange={(event) => setExpectedAt(event.target.value)}
+              className={inputClass}
+            />
           </Field>
-        </div>
 
-        <div className="space-y-3">
-          {/* En-têtes de colonnes, sur grand écran seulement.
-              Les champs n'avaient pour toute étiquette qu'un texte d'invite,
-              qui disparaît dès la première frappe : une fois la ligne
-              remplie, on lisait « 12 · 4500 · 200 » sans savoir lequel était
-              la quantité et lequel le prix. Sur téléphone, où les champs
-              s'empilent, c'était pire encore. */}
-          <div className="hidden gap-2 px-1 text-xs font-medium uppercase tracking-wide text-ink-faint sm:grid sm:grid-cols-[1fr_90px_120px_120px_110px_auto]">
-            <span>Produit</span>
-            <span>Quantité</span>
-            <span>Coût unitaire</span>
-            <span>Remise / unité</span>
-            <span className="text-end">Total ligne</span>
-            <span className="sr-only">Retirer</span>
-          </div>
-
-          {lines.map((line, index) => {
-            const quantity = Number(line.quantity) || 0;
-            const unitCost = Number(String(line.unitCost).replace(',', '.')) || 0;
-            const discount = Number(String(line.discount).replace(',', '.')) || 0;
-            // Total de la ligne, affiché en clair : c'est le seul moyen de
-            // vérifier d'un coup d'œil qu'on n'a pas interverti la quantité
-            // et le prix — 4500 articles à 12 F saute alors aux yeux.
-            const lineTotal = Math.max(0, unitCost - discount) * quantity;
-
-            return (
-              <div
-                key={index}
-                className="grid gap-2 rounded-xl border border-surface-border p-3 sm:grid-cols-[1fr_90px_120px_120px_110px_auto] sm:items-center sm:border-0 sm:p-0"
-              >
-                <label className="sm:contents">
-                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
-                    Produit
-                  </span>
-                  <select
-                    value={line.productVariantId}
-                    onChange={(event) => updateLine(index, { productVariantId: event.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="">Choisir un produit</option>
-                    {products.map((product) => (
-                      <option key={product.variantId} value={product.variantId}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="sm:contents">
-                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
-                    Quantité
-                  </span>
-                  <input
-                    type="number"
-                    min={0.001}
-                    step={0.001}
-                    value={line.quantity}
-                    onChange={(event) => updateLine(index, { quantity: Number(event.target.value) })}
-                    className={inputClass}
-                  />
-                </label>
-
-                <label className="sm:contents">
-                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
-                    Coût unitaire ({currency})
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={line.unitCost}
-                    onChange={(event) => updateLine(index, { unitCost: event.target.value })}
-                    className={inputClass}
-                  />
-                </label>
-
-                <label className="sm:contents">
-                  <span className="mb-1 block text-xs font-medium text-ink-muted sm:hidden">
-                    Remise par unité ({currency})
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={line.discount}
-                    onChange={(event) => updateLine(index, { discount: event.target.value })}
-                    className={inputClass}
-                  />
-                </label>
-
-                <p className="flex items-baseline justify-between gap-2 text-sm tabular-nums sm:justify-end">
-                  <span className="text-xs font-medium text-ink-muted sm:hidden">Total ligne</span>
-                  <span className={lineTotal > 0 ? 'font-semibold text-ink' : 'text-ink-faint'}>
-                    {formatMoney(toMinor(String(lineTotal), currency), currency)}
-                  </span>
-                </p>
-
-                {lines.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setLines((current) => current.filter((_, i) => i !== index))}
-                    className="justify-self-end text-sm text-ink-faint hover:text-state-bad sm:justify-self-auto"
-                  >
-                    <span className="sm:hidden">Retirer cette ligne</span>
-                    <span aria-hidden="true" className="hidden sm:inline">
-                      ✕
-                    </span>
-                    <span className="sr-only hidden sm:inline">Retirer cette ligne</span>
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => setLines((current) => [...current, { productVariantId: '', quantity: 1, unitCost: '0', discount: '0' }])}
-          >
-            + Ajouter une ligne
-          </Button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Frais annexes (facultatif)" htmlFor="extraFees" hint="Transport, douane...">
+          <Field label="Frais annexes" htmlFor="extraFees" hint="Transport, douane…">
             <input
               id="extraFees"
               inputMode="decimal"
@@ -636,55 +792,76 @@ function OrderForm({
               className={inputClass}
             />
           </Field>
-          <Field label="Note (facultatif)" htmlFor="note">
-            <input id="note" name="note" className={inputClass} />
+
+          <Field label="Note" htmlFor="note">
+            <input
+              id="note"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              className={inputClass}
+              placeholder="Facultatif"
+            />
           </Field>
-        </div>
 
-        {/* Récapitulatif : ce qu'on engage, juste au-dessus du bouton qui
-            l'engage. */}
-        <div className="rounded-xl border border-surface-border bg-surface-sunken p-4">
-          <dl className="space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-ink-muted">
-                {filledLines} produit{filledLines > 1 ? 's' : ''}
-              </dt>
-              <dd>{formatMoney(toMinor(String(linesTotal), currency), currency)}</dd>
+          <div className="space-y-2 pt-1">
+            <Button
+              type="button"
+              size="lg"
+              className="w-full"
+              loading={pending}
+              disabled={!ready}
+              onClick={() => void submit(true)}
+              style={{ touchAction: 'manipulation' }}
+            >
+              Commander
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                disabled={pending || !ready}
+                onClick={() => void submit(false)}
+              >
+                Brouillon
+              </Button>
+              <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
+                Annuler
+              </Button>
             </div>
-            {feesValue > 0 && (
-              <div className="flex justify-between">
-                <dt className="text-ink-muted">Frais annexes</dt>
-                <dd>{formatMoney(toMinor(String(feesValue), currency), currency)}</dd>
-              </div>
-            )}
-            <div className="flex justify-between border-t border-surface-border pt-1.5 text-base font-semibold text-ink">
-              <dt>Total de la commande</dt>
-              <dd>{formatMoney(toMinor(String(linesTotal + feesValue), currency), currency)}</dd>
-            </div>
-          </dl>
+          </div>
         </div>
+      </Card>
 
-        <div className="flex flex-wrap gap-2 pt-2">
-          <Button type="submit" loading={pending} disabled={filledLines === 0}>
-            Commander
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={pending}
-            onClick={(event) => {
-              const form = event.currentTarget.closest('form');
-              if (form) void submit(false, form);
-            }}
-          >
-            Enregistrer en brouillon
-          </Button>
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
-            Annuler
-          </Button>
+      {/* Barre inférieure sur téléphone : le montant engagé reste sous les
+          yeux pendant qu'on parcourt le catalogue. */}
+      {!sheetOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
+          <div className="flex items-center gap-3 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-ink-muted">
+                {lines.length === 0
+                  ? 'Aucun produit'
+                  : `${lines.length} produit${lines.length > 1 ? 's' : ''}`}
+              </p>
+              <p className="truncate text-lg font-semibold tabular-nums text-ink">
+                {formatMoney(toMinor(String(total), currency), currency)}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="lg"
+              variant={lines.length === 0 ? 'secondary' : 'primary'}
+              onClick={() => setSheetOpen(true)}
+              style={{ touchAction: 'manipulation' }}
+              className="shrink-0"
+            >
+              {lines.length === 0 ? 'Détails' : 'Voir la commande'}
+            </Button>
+          </div>
         </div>
-      </form>
-    </Card>
+      )}
+    </div>
   );
 }
 

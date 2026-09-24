@@ -25,7 +25,15 @@ export default async function BoutiquePurchasesPage() {
     }),
     prisma.storeProductVariant.findMany({
       where: { product: { storeId: context.store.id } },
-      select: { id: true, product: { select: { name: true } } },
+      // `cost` est le dernier coût d'achat enregistré du produit : il
+      // pré-remplit la ligne de commande, pour ne pas ressaisir un prix que
+      // le produit connaît déjà. Zéro quand il n'a jamais été renseigné — on
+      // laisse alors le champ à zéro plutôt que d'inventer un montant.
+      select: {
+        id: true,
+        cost: true,
+        product: { select: { name: true, category: { select: { name: true } } } },
+      },
       orderBy: { product: { name: 'asc' } },
     }),
     // Les commandes ouvertes sont chargées en entier : ce sont celles qui
@@ -80,7 +88,12 @@ export default async function BoutiquePurchasesPage() {
           ...supplier,
           outstanding: balances.get(supplier.id)?.remaining ?? 0,
         }))}
-        initialProducts={variants.map((v) => ({ variantId: v.id, name: v.product.name }))}
+        initialProducts={variants.map((v) => ({
+          variantId: v.id,
+          name: v.product.name,
+          categoryName: v.product.category?.name ?? null,
+          cost: v.cost,
+        }))}
         initialOrders={orders.map((order) => ({
           id: order.id,
           reference: order.reference,
