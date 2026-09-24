@@ -212,6 +212,84 @@ describe('Cycle de vie des commandes', () => {
     });
   });
 
+  describe('Commande prise au comptoir', () => {
+    it('accepte une commande sans téléphone et ne crée aucune fiche client', async () => {
+      // Un client de passage qui emporte un plat n'a pas à laisser son
+      // numéro. Sa commande doit exister, compter dans le chiffre d'affaires,
+      // et n'alimenter aucun historique personnel — un client inventé
+      // fausserait le fichier et les statistiques de fidélité.
+      const avant = await prisma.customer.count({ where: { restaurantId: shop.restaurant.id } });
+
+      const order = await createOrder({
+        restaurantId: shop.restaurant.id,
+        items: [{ productId: shop.product.id, quantity: 2 }],
+        fulfillmentType: 'PICKUP',
+        customerName: 'Client de passage',
+        paymentProvider: 'pay_at_store',
+      });
+
+      expect(order.customerId).toBeNull();
+      expect(order.customerPhone).toBeNull();
+      expect(order.total).toBe(8000);
+      expect(await prisma.customer.count({ where: { restaurantId: shop.restaurant.id } })).toBe(avant);
+    });
+
+    it('exige un téléphone pour une livraison', async () => {
+      // Sans numéro, le livreur n'a personne à appeler et le code de remise
+      // n'a pas de destinataire.
+      await expect(
+        createOrder({
+          restaurantId: shop.restaurant.id,
+          items: [{ productId: shop.product.id, quantity: 1 }],
+          fulfillmentType: 'DELIVERY',
+          deliveryZoneId: shop.zone.id,
+          deliveryAddress: 'Rue des Jardins',
+          customerName: 'Sans numéro',
+          paymentProvider: 'cash_on_delivery',
+        }),
+      ).rejects.toThrow(/téléphone/i);
+    });
+
+    it('rattache la commande au client quand le numéro est donné', async () => {
+      const phone = '+225 07 55 66 77';
+      const order = await createOrder({
+        restaurantId: shop.restaurant.id,
+        items: [{ productId: shop.product.id, quantity: 1 }],
+        fulfillmentType: 'PICKUP',
+        customerName: 'Client connu',
+        customerPhone: phone,
+        paymentProvider: 'pay_at_store',
+      });
+
+      expect(order.customerId).not.toBeNull();
+      const customer = await prisma.customer.findUnique({
+        where: { restaurantId_phone: { restaurantId: shop.restaurant.id, phone } },
+      });
+      expect(customer!.ordersCount).toBe(1);
+    });
+
+    it("n'échoue pas à l'annulation d'une commande anonyme", async () => {
+      // L'annulation décrémente les compteurs du client. Sans fiche, il n'y a
+      // rien à décrémenter — et surtout rien qui doive planter.
+      const order = await createOrder({
+        restaurantId: shop.restaurant.id,
+        items: [{ productId: shop.product.id, quantity: 1 }],
+        fulfillmentType: 'PICKUP',
+        customerName: 'Passage annulé',
+        paymentProvider: 'pay_at_store',
+      });
+
+      await updateOrderStatus({
+        restaurantId: shop.restaurant.id,
+        orderId: order.id,
+        status: 'CANCELLED',
+      });
+
+      const cancelled = await prisma.order.findUnique({ where: { id: order.id } });
+      expect(cancelled!.status).toBe('CANCELLED');
+    });
+  });
+
   describe('Encaissement', () => {
     /** Commande à emporter, amenée jusqu'au statut voulu. */
     async function pickupOrder(upTo: 'READY' | 'COMPLETED') {

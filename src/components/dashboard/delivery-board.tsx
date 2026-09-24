@@ -15,7 +15,7 @@ type DeliveryOrder = {
   id: string;
   number: number;
   customerName: string;
-  customerPhone: string;
+  customerPhone: string | null;
   deliveryAddress: string | null;
   deliveryLat: number | null;
   deliveryLng: number | null;
@@ -293,12 +293,14 @@ export function DeliveryBoard({
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  <a
-                    href={`tel:${order.customerPhone}`}
-                    className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
-                  >
-                    Appeler
-                  </a>
+                  {order.customerPhone && (
+                    <a
+                      href={`tel:${order.customerPhone}`}
+                      className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
+                    >
+                      Appeler
+                    </a>
+                  )}
                   <a
                     href={mapsUrl(order)}
                     target="_blank"

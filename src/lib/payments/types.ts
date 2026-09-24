@@ -22,7 +22,7 @@ export type PaymentIntent = {
   restaurantId: string;
   restaurantName: string;
   customerName: string;
-  customerPhone: string;
+  customerPhone: string | null;
   customerEmail?: string | null;
   /** URL de retour après paiement, pour les fournisseurs par redirection. */
   returnUrl: string;

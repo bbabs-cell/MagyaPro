@@ -88,7 +88,10 @@ export default async function OrderDetailPage({
                 </span>
               </div>
 
-              {order.status !== 'CANCELLED' && (
+              {/* Sans numéro — commande prise au comptoir — il n'y a personne
+                  à prévenir : le bouton disparaît plutôt que d'ouvrir
+                  WhatsApp sur un destinataire vide. */}
+              {order.status !== 'CANCELLED' && order.customerPhone && (
                 <WhatsAppNotifyButton
                   restaurantName={context.restaurant.name}
                   customerName={order.customerName}
@@ -230,12 +233,16 @@ export default async function OrderDetailPage({
                   Téléphone
                 </dt>
                 <dd className="mt-0.5">
-                  <a
-                    href={`tel:${order.customerPhone}`}
-                    className="underline underline-offset-4"
-                  >
-                    {order.customerPhone}
-                  </a>
+                  {order.customerPhone ? (
+                    <a
+                      href={`tel:${order.customerPhone}`}
+                      className="underline underline-offset-4"
+                    >
+                      {order.customerPhone}
+                    </a>
+                  ) : (
+                    <span className="text-ink-faint">Non communiqué</span>
+                  )}
                 </dd>
               </div>
               {order.customerEmail && (
@@ -274,7 +281,7 @@ export default async function OrderDetailPage({
               )}
             </dl>
 
-            {context.permissions.has('customers:view') && (
+            {context.permissions.has('customers:view') && order.customer && (
               <p className="mt-4 border-t border-surface-border pt-3 text-xs text-ink-muted">
                 {order.customer.ordersCount} commande
                 {order.customer.ordersCount > 1 ? 's' : ''} ·{' '}

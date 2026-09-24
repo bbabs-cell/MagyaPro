@@ -510,7 +510,9 @@ enum PaymentStatus {
 model Order {
   id           String @id @default(cuid())
   restaurantId String
-  customerId   String
+  /// Absent pour une commande prise au comptoir sans que le client laisse son
+  /// numéro : il n'existe alors aucune fiche à laquelle la rattacher.
+  customerId   String?
   /// Numéro séquentiel par restaurant, affiché au client.
   number       Int
 
@@ -522,7 +524,8 @@ model Order {
   // Instantané des coordonnées client au moment de la commande : le profil
   // client peut changer, la commande doit rester fidèle à ce qui a été saisi.
   customerName    String
-  customerPhone   String
+  /// Facultatif hors livraison — voir `customerId`.
+  customerPhone   String?
   customerEmail   String?
   deliveryAddress String?
   /// Position GPS partagée volontairement par le client, pour aider le
@@ -565,7 +568,7 @@ model Order {
   updatedAt       DateTime  @updatedAt
 
   restaurant   Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  customer     Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer     Customer?        @relation(fields: [customerId], references: [id], onDelete: Cascade)
   deliveryZone DeliveryZone?    @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull)
   promotion    Promotion?       @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   table        RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)

@@ -46,7 +46,8 @@ type Order = {
   fulfillmentType: 'DELIVERY' | 'PICKUP' | 'DINE_IN';
   tableLabel: string | null;
   customerName: string;
-  customerPhone: string;
+  /** Absent pour une commande prise au comptoir sans numéro. */
+  customerPhone: string | null;
   total: number;
   itemCount: number;
   placedAt: string;
@@ -211,12 +212,18 @@ export function OrdersBoard({
 
                   <td data-label="Client" className="py-3 pr-3">
                     <span className="block">{order.customerName}</span>
-                    <a
-                      href={`tel:${order.customerPhone}`}
-                      className="block text-xs text-ink-muted underline-offset-4 hover:underline"
-                    >
-                      {order.customerPhone}
-                    </a>
+                    {/* Un lien `tel:` sans numéro composerait « null ». Une
+                        commande au comptoir n'en a pas : on l'écrit. */}
+                    {order.customerPhone ? (
+                      <a
+                        href={`tel:${order.customerPhone}`}
+                        className="block text-xs text-ink-muted underline-offset-4 hover:underline"
+                      >
+                        {order.customerPhone}
+                      </a>
+                    ) : (
+                      <span className="block text-xs text-ink-faint">Sans numéro</span>
+                    )}
                   </td>
 
                   <td data-label="Statut" className="py-3 pr-3">

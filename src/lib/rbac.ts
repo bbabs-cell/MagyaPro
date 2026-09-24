@@ -18,6 +18,7 @@ export const PERMISSIONS = [
   'menu:manage',
 
   'orders:view',
+  'orders:create',
   'orders:update_status',
   'orders:cancel',
 
@@ -81,6 +82,7 @@ const EMPLOYEE_PERMISSIONS: Permission[] = [
   'restaurant:view',
   'menu:view',
   'orders:view',
+  'orders:create',
   'orders:update_status',
   'customers:view',
   'reservations:manage',
@@ -193,6 +195,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'menu:view': 'Voir le menu',
   'menu:manage': 'Gérer le menu',
   'orders:view': 'Voir les commandes',
+  'orders:create': 'Prendre une commande au comptoir ou par téléphone',
   'orders:update_status': 'Changer le statut des commandes',
   'orders:cancel': 'Annuler des commandes',
   'customers:view': 'Voir les clients',

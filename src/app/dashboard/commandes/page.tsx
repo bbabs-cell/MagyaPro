@@ -108,6 +108,13 @@ export default async function OrdersPage({
             ? 'Les commandes à traiter, de la plus récente à la plus ancienne.'
             : undefined
         }
+        action={
+          permissions.has('orders:create') ? (
+            <LinkButton href="/dashboard/commandes/nouvelle">
+              Nouvelle commande
+            </LinkButton>
+          ) : undefined
+        }
       />
 
       {/* Les pastilles passent à la ligne au lieu de défiler : sur dix filtres,

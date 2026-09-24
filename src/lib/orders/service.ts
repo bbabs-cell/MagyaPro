@@ -35,7 +35,15 @@ export type CreateOrderInput = {
   deliveryZoneId?: string | null;
   promoCode?: string | null;
   customerName: string;
-  customerPhone: string;
+  /**
+   * Absent pour une commande prise au comptoir sans que le client laisse son
+   * numéro. Aucune fiche client n'est alors créée ni mise à jour : un numéro
+   * inventé fausserait le fichier client, et une chaîne vide entrerait en
+   * collision dès la deuxième commande anonyme.
+   *
+   * Exigé en livraison — contrôlé ci-dessous.
+   */
+  customerPhone?: string | null;
   customerEmail?: string | null;
   deliveryAddress?: string | null;
   deliveryLat?: number | null;
@@ -60,6 +68,16 @@ export async function createOrder(input: CreateOrderInput) {
     });
   }
 
+  // Sans numéro, le livreur n'a personne à appeler en arrivant, et le code de
+  // remise à six chiffres n'a pas de destinataire à qui être communiqué.
+  if (input.fulfillmentType === 'DELIVERY' && !input.customerPhone) {
+    throw new ValidationError('Un numéro de téléphone est nécessaire pour une livraison.', {
+      customerPhone: 'Indiquez le numéro du client.',
+    });
+  }
+
+  const customerPhone = input.customerPhone?.trim() || null;
+
   const result = await prisma.$transaction(async (tx) => {
     // 1. Recalcul intégral des montants à partir de la base.
     const priced = await priceOrder(tx, {
@@ -81,42 +99,49 @@ export async function createOrder(input: CreateOrderInput) {
     // 3. Fiche client, identifiée par le téléphone au sein du restaurant.
     //    Le portefeuille client est propre à chaque tenant : le même numéro
     //    chez deux restaurants donne deux fiches distinctes.
-    const customer = await tx.customer.upsert({
-      where: {
-        restaurantId_phone: {
-          restaurantId: input.restaurantId,
-          phone: input.customerPhone,
-        },
-      },
-      create: {
-        restaurantId: input.restaurantId,
-        name: input.customerName,
-        phone: input.customerPhone,
-        email: input.customerEmail ?? null,
-        ordersCount: 1,
-        totalSpent: priced.total,
-        lastOrderAt: new Date(),
-      },
-      update: {
-        name: input.customerName,
-        email: input.customerEmail ?? undefined,
-        ordersCount: { increment: 1 },
-        totalSpent: { increment: priced.total },
-        lastOrderAt: new Date(),
-      },
-    });
+    //
+    //    Sans numéro — commande au comptoir d'un client de passage — aucune
+    //    fiche n'est créée. La commande existe et compte dans le chiffre
+    //    d'affaires ; elle n'alimente simplement aucun historique personnel,
+    //    puisqu'il n'y a personne à qui le rattacher.
+    const customer = customerPhone
+      ? await tx.customer.upsert({
+          where: {
+            restaurantId_phone: {
+              restaurantId: input.restaurantId,
+              phone: customerPhone,
+            },
+          },
+          create: {
+            restaurantId: input.restaurantId,
+            name: input.customerName,
+            phone: customerPhone,
+            email: input.customerEmail ?? null,
+            ordersCount: 1,
+            totalSpent: priced.total,
+            lastOrderAt: new Date(),
+          },
+          update: {
+            name: input.customerName,
+            email: input.customerEmail ?? undefined,
+            ordersCount: { increment: 1 },
+            totalSpent: { increment: priced.total },
+            lastOrderAt: new Date(),
+          },
+        })
+      : null;
 
     // 4. La commande et ses lignes, avec les instantanés de noms et de prix.
     const created = await tx.order.create({
       data: {
         restaurantId: input.restaurantId,
-        customerId: customer.id,
+        customerId: customer?.id ?? null,
         number: restaurant.orderCounter,
         fulfillmentType: input.fulfillmentType,
         paymentProvider: input.paymentProvider,
         tableId: input.tableId ?? null,
         customerName: input.customerName,
-        customerPhone: input.customerPhone,
+        customerPhone,
         customerEmail: input.customerEmail ?? null,
         deliveryAddress: input.deliveryAddress ?? null,
         deliveryLat: input.deliveryLat ?? null,
@@ -170,21 +195,26 @@ export async function createOrder(input: CreateOrderInput) {
       });
     }
 
-    return { order: created, customerTotalSpent: customer.totalSpent, restaurantName: restaurant.name };
+    return { order: created, customer, restaurantName: restaurant.name };
   });
 
-  const { order, customerTotalSpent, restaurantName } = result;
+  const { order, customer, restaurantName } = result;
 
   // Effets de bord hors transaction : leur échec ne doit pas annuler une
   // commande déjà payée par le client.
   await notifyNewOrder(order.restaurantId, order.id, order.number, order.total, order.currency);
-  await smsOrderConfirmation({
-    customerPhone: order.customerPhone,
-    restaurantName,
-    orderNumber: order.number,
-    total: order.total,
-    currency: order.currency,
-  });
+
+  // Pas de numéro, pas de SMS : le client de passage est reparti avec son
+  // plat, il n'a rien demandé et il n'y a nulle part où écrire.
+  if (order.customerPhone) {
+    await smsOrderConfirmation({
+      customerPhone: order.customerPhone,
+      restaurantName,
+      orderNumber: order.number,
+      total: order.total,
+      currency: order.currency,
+    });
+  }
   await recordAudit({
     action: AUDIT_ACTIONS.ORDER_CREATED,
     restaurantId: order.restaurantId,
@@ -197,12 +227,18 @@ export async function createOrder(input: CreateOrderInput) {
   // Une commande peut faire franchir un palier de fidélité au client : on
   // l'accorde avant de rendre la main, pour que la page de confirmation
   // puisse l'afficher immédiatement.
-  await grantLoyaltyRewards({
-    restaurantId: order.restaurantId,
-    customerId: order.customerId,
-    orderId: order.id,
-    customerTotalSpent,
-  });
+  //
+  // Sans fiche client, il n'y a pas de fidélité à faire progresser — c'est le
+  // prix assumé d'une commande anonyme, et la raison pour laquelle il reste
+  // utile de demander le numéro quand le client accepte de le donner.
+  if (customer) {
+    await grantLoyaltyRewards({
+      restaurantId: order.restaurantId,
+      customerId: customer.id,
+      orderId: order.id,
+      customerTotalSpent: customer.totalSpent,
+    });
+  }
 
   return order;
 }
@@ -298,7 +334,9 @@ export async function updateOrderStatus(params: {
 
     // Une commande annulée ne doit plus compter dans le chiffre d'affaires du
     // client ni dans son nombre de commandes.
-    if (params.status === 'CANCELLED') {
+    // Une commande anonyme n'a alimenté aucun compteur : il n'y a rien à
+    // décrémenter, et `customerId` y est nul.
+    if (params.status === 'CANCELLED' && result.customerId) {
       await tx.customer.update({
         where: { id: result.customerId },
         data: {
@@ -317,12 +355,14 @@ export async function updateOrderStatus(params: {
     updated.number,
     params.status,
   );
-  await smsOrderStatusChanged({
-    customerPhone: order.customerPhone,
-    restaurantName: order.restaurant.name,
-    orderNumber: updated.number,
-    status: params.status,
-  });
+  if (order.customerPhone) {
+    await smsOrderStatusChanged({
+      customerPhone: order.customerPhone,
+      restaurantName: order.restaurant.name,
+      orderNumber: updated.number,
+      status: params.status,
+    });
+  }
 
   await recordAudit({
     action:
@@ -387,12 +427,15 @@ export async function claimDelivery(params: {
   });
 
   await notifyOrderStatusChanged(order.restaurantId, order.id, order.number, 'OUT_FOR_DELIVERY');
-  await smsOrderStatusChanged({
-    customerPhone: order.customerPhone,
-    restaurantName: order.restaurant.name,
-    orderNumber: order.number,
-    status: 'OUT_FOR_DELIVERY',
-  });
+  if (order.customerPhone) {
+    await smsOrderStatusChanged({
+      customerPhone: order.customerPhone,
+      restaurantName: order.restaurant.name,
+      orderNumber: order.number,
+      status: 'OUT_FOR_DELIVERY',
+    });
+  }
+
   await recordAudit({
     action: AUDIT_ACTIONS.ORDER_STATUS_CHANGED,
     actorUserId: params.courierId,
@@ -498,7 +541,7 @@ export async function confirmDelivery(params: {
  */
 async function recordCourierCollection(params: {
   restaurantId: string;
-  order: { id: string; customerId: string; total: number; currency: string };
+  order: { id: string; customerId: string | null; total: number; currency: string };
   collection?: { outcome: CollectionOutcome; amount?: number; method?: string } | null;
   courierId: string;
   courierEmail?: string | null;

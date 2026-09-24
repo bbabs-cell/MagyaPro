@@ -362,6 +362,43 @@ export const checkoutSchema = z.object({
   paymentProvider: z.string().trim().min(1).max(50),
 });
 
+/**
+ * Commande saisie par le restaurant lui-même — au comptoir ou au téléphone.
+ *
+ * Distinct de `checkoutSchema`, et pas une variante de complaisance : les deux
+ * situations n'ont pas les mêmes exigences.
+ *
+ * - **Le téléphone est facultatif.** Un client de passage qui emporte un plat
+ *   n'a aucune raison de laisser son numéro, et en inventer un fausserait le
+ *   fichier client. Il reste exigé en livraison, contrôlé par `createOrder`.
+ * - **Aucun moyen de paiement n'est transmis.** Le client n'est pas devant un
+ *   écran : le règlement est physique, et le serveur le déduit du mode de
+ *   retrait. Accepter un identifiant de fournisseur ici laisserait croire
+ *   qu'on peut déclencher un paiement en ligne depuis la caisse.
+ * - **`tableId` plutôt que `tableToken`.** Le jeton sert à prouver qu'un
+ *   client a bien scanné le QR d'une table ; le serveur en salle, lui, choisit
+ *   simplement sa table dans une liste.
+ */
+export const staffOrderSchema = z.object({
+  items: z.array(cartItemSchema).min(1, 'Ajoutez au moins un plat.').max(50),
+  fulfillmentType: z.enum(['DELIVERY', 'PICKUP', 'DINE_IN']),
+  deliveryZoneId: z.string().min(1).nullable().optional(),
+  tableId: z.string().min(1).nullable().optional(),
+  customerName: nameSchema,
+  customerPhone: phoneSchema.optional().or(z.literal('').transform(() => undefined)),
+  deliveryAddress: optionalText(300),
+  instructions: optionalText(500),
+  promoCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(24)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  /** Le client a réglé en même temps qu'il commandait — fréquent au comptoir. */
+  alreadyPaid: z.boolean().default(false),
+});
+
 export const orderStatusSchema = z.object({
   status: z.enum([
     'NEW', 'CONFIRMED', 'PREPARING', 'READY',
