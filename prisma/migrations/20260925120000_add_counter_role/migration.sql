@@ -1,0 +1,21 @@
+-- Rôle « Comptoir » pour les équipes de restaurant.
+--
+-- La prise de commande au comptoir et au téléphone est apparue récemment dans
+-- le tableau de bord. Pour confier ce poste à quelqu'un, il fallait le
+-- déclarer « Employé » — et lui remettre du même geste le fichier clients
+-- complet, les réservations, le plan de salle et les livraisons. Neuf accès
+-- pour un poste qui en demande cinq.
+--
+-- C'est le même manque que celui qui avait justifié le rôle « Cuisine », et il
+-- se règle de la même façon : un rôle dédié, au périmètre réduit à ce que le
+-- poste exige — voir `COUNTER_PERMISSIONS` dans `src/lib/rbac.ts`.
+--
+-- Migration élargissante : elle ajoute une valeur à un type énuméré. Aucune
+-- donnée existante n'est modifiée, aucun membre d'équipe ne change de rôle, et
+-- les rôles déjà attribués restent valides.
+--
+-- `ALTER TYPE ... ADD VALUE` ne peut pas s'exécuter dans le même bloc
+-- transactionnel qu'une instruction qui utiliserait ensuite la nouvelle
+-- valeur ; cette migration ne contient donc que cette seule instruction.
+
+ALTER TYPE "MembershipRole" ADD VALUE IF NOT EXISTS 'COUNTER';

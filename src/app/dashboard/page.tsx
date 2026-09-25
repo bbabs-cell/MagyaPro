@@ -7,7 +7,7 @@ import { requireTenant, getTenantContext } from '@/lib/tenant';
 import { formatMoney } from '@/lib/money';
 import { getDashboardMetrics, getPopularProducts, getRevenueSeries } from '@/lib/analytics';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
-import { getEntitlements } from '@/lib/entitlements';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import {
   Badge,
   Card,
@@ -100,6 +100,12 @@ export default async function DashboardPage() {
 
   const hasActivity = metrics.ordersCount > 0;
 
+  // Deux conditions, parce qu'un bouton refusé au clic est pire que pas de
+  // bouton : la permission (qui, dans l'équipe) et le plan (ce que le
+  // restaurant a souscrit).
+  const canTakeOrders =
+    permissions.has('orders:create') && hasFeature(entitlements, FEATURES.COUNTER_ORDERS);
+
   return (
     <>
       <PageHeader
@@ -112,7 +118,7 @@ export default async function DashboardPage() {
           // il porte l'accent, et il arrive en premier. Consulter la liste passe
           // en retrait — c'est ce qu'on fait entre deux clients, pas pendant.
           <div className="flex flex-wrap items-center gap-2">
-            {permissions.has('orders:create') && (
+            {canTakeOrders && (
               <LinkButton href="/dashboard/commandes/nouvelle" size="sm">
                 Nouvelle commande
               </LinkButton>

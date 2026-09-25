@@ -25,6 +25,8 @@ export const FEATURES = {
   RESERVATIONS: 'reservations',
   TABLE_SERVICE: 'table_service',
   LOYALTY: 'loyalty',
+  /** Prise de commande depuis le tableau de bord — comptoir et téléphone. */
+  COUNTER_ORDERS: 'counter_orders',
 } as const;
 
 export type Feature = (typeof FEATURES)[keyof typeof FEATURES];
@@ -40,6 +42,7 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   reservations: 'Réservations de table',
   table_service: 'Service à table (QR code)',
   loyalty: 'Programme de fidélité',
+  counter_orders: 'Prise de commande au comptoir et par téléphone',
 };
 
 export type PlanLimits = {

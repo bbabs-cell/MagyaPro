@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { NewOrderForm } from '@/components/dashboard/new-order-form';
-import { EmptyState, PageHeader } from '@/components/ui';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
+import { Card, EmptyState, LinkButton, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Nouvelle commande' };
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,46 @@ export const dynamic = 'force-dynamic';
  */
 export default async function NewOrderPage() {
   const { restaurant } = await requireTenant('orders:create');
+
+  // Laisser composer une commande entière pour la refuser à l'enregistrement
+  // serait une perte de temps doublée d'une mauvaise surprise : le plan se
+  // vérifie avant d'ouvrir l'écran, et avant même de charger la carte —
+  // l'adresse peut être atteinte directement, par un lien gardé en favori
+  // depuis une période d'essai ou un plan résilié.
+  const entitlements = await getEntitlements(restaurant.id);
+  if (!hasFeature(entitlements, FEATURES.COUNTER_ORDERS)) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Nouvelle commande"
+          description="Pour un client qui appelle, ou qui commande au comptoir."
+          action={
+            <Link
+              href="/dashboard/commandes"
+              className="inline-flex min-h-11 items-center text-sm text-ink-muted underline-offset-4 hover:underline"
+            >
+              Retour
+            </Link>
+          }
+        />
+
+        <Card className="border-state-warn/30 bg-state-warn-soft p-5">
+          <h2 className="text-sm font-medium text-state-warn">
+            Réservé au plan Premium
+          </h2>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">
+            La prise de commande au comptoir et par téléphone n’est pas incluse
+            dans le plan {entitlements.planName}. Vos clients peuvent continuer
+            à commander depuis votre site ; c’est la saisie depuis le tableau de
+            bord qui demande le plan Premium.
+          </p>
+          <LinkButton href="/dashboard/abonnement" size="sm" className="mt-3">
+            Voir les plans
+          </LinkButton>
+        </Card>
+      </div>
+    );
+  }
 
   const [products, zones, tables] = await Promise.all([
     prisma.product.findMany({

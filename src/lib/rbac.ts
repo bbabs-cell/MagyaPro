@@ -78,6 +78,30 @@ const COURIER_PERMISSIONS: Permission[] = ['deliveries:drive'];
  */
 const KITCHEN_PERMISSIONS: Permission[] = ['orders:update_status'];
 
+/**
+ * Comptoir : prendre une commande, l'encaisser, suivre où elle en est.
+ *
+ * Même raisonnement que pour la cuisine, et même manque à l'origine. Confier
+ * la prise de commande à quelqu'un imposait de le déclarer « Employé », ce qui
+ * lui ouvrait du même geste le fichier clients, les réservations, le plan de
+ * salle et les livraisons — neuf accès pour un poste qui en demande cinq.
+ *
+ * `menu:view` parce qu'on ne prend pas une commande sans la carte, et
+ * `orders:update_status` parce qu'encaisser en fait partie : un comptoir qui
+ * ne pourrait pas marquer « payé » renverrait le client au patron.
+ *
+ * Volontairement absents : `customers:view` — un comptoir sert la personne qui
+ * est devant lui, il n'a pas à parcourir l'historique d'achat de toute la
+ * clientèle — et `orders:cancel`, qui n'est pas une décision de comptoir.
+ */
+const COUNTER_PERMISSIONS: Permission[] = [
+  'restaurant:view',
+  'menu:view',
+  'orders:view',
+  'orders:create',
+  'orders:update_status',
+];
+
 const EMPLOYEE_PERMISSIONS: Permission[] = [
   'restaurant:view',
   'menu:view',
@@ -119,6 +143,7 @@ const ROLE_PERMISSIONS: Record<MembershipRole, Permission[]> = {
   ADMIN: ADMIN_PERMISSIONS,
   OWNER: OWNER_PERMISSIONS,
   KITCHEN: KITCHEN_PERMISSIONS,
+  COUNTER: COUNTER_PERMISSIONS,
   COURIER: COURIER_PERMISSIONS,
 };
 
@@ -134,7 +159,7 @@ const ROLE_PERMISSIONS: Record<MembershipRole, Permission[]> = {
  * ajouter un rôle au sélecteur sans l'ajouter au schéma donne un choix que le
  * serveur refuse, et l'inverse donne un rôle que personne ne peut attribuer.
  */
-export const ASSIGNABLE_ROLES = ['ADMIN', 'EMPLOYEE', 'KITCHEN', 'COURIER'] as const;
+export const ASSIGNABLE_ROLES = ['ADMIN', 'EMPLOYEE', 'COUNTER', 'KITCHEN', 'COURIER'] as const;
 
 export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
@@ -168,6 +193,7 @@ export const ROLE_LABELS: Record<MembershipRole, string> = {
   ADMIN: 'Administrateur',
   EMPLOYEE: 'Employé',
   KITCHEN: 'Cuisine',
+  COUNTER: 'Comptoir',
   COURIER: 'Livreur',
 };
 
@@ -184,6 +210,8 @@ export const ROLE_DESCRIPTIONS: Record<MembershipRole, string> = {
   EMPLOYEE:
     'Salle et service : commandes, réservations, tables, fichier clients, livraisons.',
   KITCHEN: 'Uniquement l’écran de préparation. Ni clients, ni chiffres, ni réglages.',
+  COUNTER:
+    'Prendre une commande au comptoir ou au téléphone, et l’encaisser. Ni fichier clients, ni chiffres, ni réglages.',
   COURIER: 'Uniquement ses livraisons : prendre une course, encaisser, confirmer.',
 };
 

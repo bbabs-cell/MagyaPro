@@ -134,6 +134,15 @@ enum MembershipRole {
   /// pas la barre latérale complète : inutile de lui montrer des rubriques
   /// auxquelles il n'a de toute façon pas accès.
   COURIER
+  /// Prise de commande au comptoir et au téléphone — voir
+  /// `COUNTER_PERMISSIONS` dans `src/lib/rbac.ts`.
+  ///
+  /// Même manque que pour la cuisine : confier la prise de commande à
+  /// quelqu'un imposait de le déclarer « Employé », et de lui remettre du
+  /// même geste le fichier clients, les réservations, le plan de salle et les
+  /// livraisons. Un comptoir a besoin de la carte, de créer une commande et
+  /// de l'encaisser. Rien d'autre.
+  COUNTER
 }
 
 model RestaurantUser {

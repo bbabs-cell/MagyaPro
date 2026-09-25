@@ -53,6 +53,45 @@ describe('Rôle Cuisine', () => {
   });
 });
 
+describe('Rôle Comptoir', () => {
+  const counter = permissionsForRole('COUNTER');
+
+  it('permet de prendre une commande et de l’encaisser', () => {
+    // Le poste ne vaut que si les trois gestes tiennent ensemble : lire la
+    // carte, saisir, encaisser. Il en manque un et il faut appeler le patron.
+    expect(counter).toContain('menu:view');
+    expect(counter).toContain('orders:create');
+    expect(counter).toContain('orders:update_status');
+  });
+
+  it('n’ouvre ni le fichier clients, ni les chiffres, ni les réglages', () => {
+    const forbidden = [
+      'customers:view',
+      'orders:cancel',
+      'reservations:manage',
+      'deliveries:drive',
+      'analytics:view',
+      'finances:manage',
+      'payments:manage',
+      'settings:manage',
+      'team:view',
+      'menu:manage',
+    ] as const;
+
+    for (const permission of forbidden) {
+      expect(counter, `Comptoir ne doit pas avoir ${permission}`).not.toContain(permission);
+    }
+  });
+
+  it('reste plus étroit que le rôle Employé, faute de quoi il n’a pas lieu d’être', () => {
+    const employee = permissionsForRole('EMPLOYEE');
+    expect(counter.length).toBeLessThan(employee.length);
+    for (const permission of counter) {
+      expect(employee, `${permission} devrait déjà appartenir à Employé`).toContain(permission);
+    }
+  });
+});
+
 describe('Rôle Livreur', () => {
   it('reste limité à ses livraisons', () => {
     expect(permissionsForRole('COURIER')).toEqual(['deliveries:drive']);

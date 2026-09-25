@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { OrdersBoard } from '@/components/dashboard/orders-board';
+import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { EmptyState, LinkButton, PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Commandes' };
@@ -57,7 +58,7 @@ export default async function OrdersPage({
         : { status: filter as OrderStatus }),
   };
 
-  const [orders, total, counts] = await Promise.all([
+  const [orders, total, counts, entitlements] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { placedAt: 'desc' },
@@ -83,7 +84,13 @@ export default async function OrdersPage({
       where: { restaurantId: restaurant.id },
       _count: true,
     }),
+    getEntitlements(restaurant.id),
   ]);
+
+  // Même règle que sur la vue d'ensemble : la permission dit qui saisit, le
+  // plan dit si le restaurant a souscrit la saisie au comptoir.
+  const canTakeOrders =
+    permissions.has('orders:create') && hasFeature(entitlements, FEATURES.COUNTER_ORDERS);
 
   const countByStatus = Object.fromEntries(
     counts.map((row) => [row.status, row._count]),
@@ -109,7 +116,7 @@ export default async function OrdersPage({
             : undefined
         }
         action={
-          permissions.has('orders:create') ? (
+          canTakeOrders ? (
             <LinkButton href="/dashboard/commandes/nouvelle">
               Nouvelle commande
             </LinkButton>

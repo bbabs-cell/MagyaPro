@@ -91,6 +91,7 @@ const PLANS = [
       'reservations',
       'table_service',
       'loyalty',
+      'counter_orders',
     ],
     limits: { maxProducts: -1, maxCategories: -1, maxUsers: 20 },
     position: 1,
