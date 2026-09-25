@@ -5,7 +5,10 @@ import { platformLogoUrl } from '@/lib/storage';
 import { Logo } from '@/components/ui/logo';
 
 export const metadata: Metadata = {
-  title: 'Magyapro — Restaurant ou Boutique',
+  // Le gabarit de `layout.tsx` ajoute déjà « — Magyapro » : le répéter ici
+  // donnait « Magyapro — Restaurant ou Boutique — Magyapro » dans l'onglet et
+  // dans les résultats de recherche.
+  title: 'Restaurant ou Boutique',
   description: 'Choisissez votre activité : MagyaPro Restaurant ou MagyaPro Boutique.',
 };
 

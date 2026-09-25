@@ -67,7 +67,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
                 Mentions légales
               </Link>
               <Link href="/conditions-generales" className="py-1 hover:text-ink-muted">
-                CGU
+                Conditions d&apos;utilisation
               </Link>
               <Link href="/confidentialite" className="py-1 hover:text-ink-muted">
                 Confidentialité

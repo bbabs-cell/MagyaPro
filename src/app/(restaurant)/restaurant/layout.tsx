@@ -96,7 +96,7 @@ export default async function MarketingLayout({
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
               <Link href="/mentions-legales" className="hover:text-ink-muted">Mentions légales</Link>
-              <Link href="/conditions-generales" className="hover:text-ink-muted">CGU</Link>
+              <Link href="/conditions-generales" className="hover:text-ink-muted">Conditions d&apos;utilisation</Link>
               <Link href="/confidentialite" className="hover:text-ink-muted">Confidentialité</Link>
             </div>
           </div>

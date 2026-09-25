@@ -95,7 +95,7 @@ export default async function BoutiquePublicLayout({ children }: { children: Rea
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#f3ece1]/40">
               <Link href="/mentions-legales" className="hover:text-[#f3ece1]/70">Mentions légales</Link>
-              <Link href="/conditions-generales" className="hover:text-[#f3ece1]/70">CGU</Link>
+              <Link href="/conditions-generales" className="hover:text-[#f3ece1]/70">Conditions d&apos;utilisation</Link>
               <Link href="/confidentialite" className="hover:text-[#f3ece1]/70">Confidentialité</Link>
             </div>
           </div>
