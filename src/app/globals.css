@@ -452,6 +452,134 @@
   }
 }
 
+/* ----------------------------------------------------------- L'impression
+ *
+ * Le seul moment animé des deux pages de présentation, et le seul de tout le
+ * produit qui ne réponde pas à un geste de l'utilisateur.
+ *
+ * Ces pages ont déjà un objet signature : le ticket. Bon de cuisine côté
+ * Restaurant, ticket de caisse côté Boutique — même papier étroit, même
+ * monospace, même bord déchiré. C'est le seul objet physique que ces deux
+ * produits fabriquent vraiment, et c'est pour cela qu'il ouvre les deux pages.
+ *
+ * Ce qu'on anime n'est donc pas « le ticket », c'est **son impression**. La
+ * distinction commande chaque détail ci-dessous :
+ *
+ * - **Le papier s'allonge, il ne glisse pas.** Une imprimante thermique ne
+ *   déplace pas une feuille déjà écrite : elle en produit la longueur au fur
+ *   et à mesure. D'où `clip-path` plutôt qu'une translation — le ticket
+ *   pousse vers le bas depuis une fente, et son ombre portée s'allonge avec
+ *   lui parce que `clip-path` découpe aussi ce que l'élément projette.
+ *
+ * - **L'avance est à vitesse constante.** `linear`, pas une décélération.
+ *   Un moteur pas-à-pas ne ralentit pas en fin de course, et la courbe
+ *   d'arrivée confortable qu'on emploie partout ailleurs sonnerait faux ici.
+ *   C'est la seule animation du produit qui ne porte pas
+ *   `cubic-bezier(0.16, 1, 0.3, 1)`.
+ *
+ * - **L'encre apparaît quand la tête passe**, sans une seule animation de
+ *   plus. Le découpage révèle chaque ligne au moment exact où le bord la
+ *   dépasse, puisque c'est le même masque et que l'encre est *sur* le papier.
+ *   Une version précédente animait l'opacité ligne par ligne, avec un délai
+ *   calculé sur un modèle des hauteurs rendues : mesuré, ce modèle dérivait
+ *   jusqu'à huit pour cent dès qu'un intitulé se repliait sur deux lignes.
+ *   Il faisait en approximatif ce que la découpe fait exactement.
+ *
+ * - **Une seule fois.** Rien ne boucle, rien ne rejoue au défilement. Un
+ *   ticket imprimé ne se réimprime pas.
+ *
+ * ## Pourquoi seulement à partir de 1024 px
+ *
+ * Mesuré au navigateur : sur un écran de téléphone, le ticket se trouve à
+ * environ 1 100 px du haut, donc **sous la ligne de flottaison**. Le papier y
+ * sortait entièrement hors champ, et le visiteur arrivait sur un ticket déjà
+ * imprimé — l'animation ne lui coûtait que du calcul.
+ *
+ * Deux réponses étaient possibles. Déclencher au défilement demandait du
+ * JavaScript, un observateur, et surtout de cacher au départ un contenu rendu
+ * par le serveur : sur grand écran, le ticket aurait été peint, puis effacé à
+ * l'hydratation, puis réimprimé — un clignotement bien pire que l'absence
+ * d'animation. L'autre réponse est celle-ci : n'animer que là où l'objet est
+ * réellement à l'écran au chargement.
+ *
+ * 1024 px n'est pas un seuil arbitraire : c'est exactement le point où la
+ * grille du hero passe à deux colonnes et place le ticket à côté du titre.
+ * En dessous, il passe sous le texte, et un ticket déjà imprimé est de toute
+ * façon l'état normal d'un ticket.
+ *
+ * Coût : deux propriétés animées, aucune dépendance, aucun JavaScript, et
+ * l'élément est au-dessus de la ligne de flottaison partout où l'animation
+ * tourne — il n'y a donc rien à observer, rien à déclencher et rien à arrêter
+ * hors écran.
+ */
+@media (min-width: 1024px) {
+  .ticket-print {
+    --print-feed: 1150ms;
+    --print-start: 220ms;
+    animation: ticket-feed var(--print-feed) linear var(--print-start) both;
+  }
+
+  .ticket-head {
+    background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 196, 148, 0.55) 70%,
+      rgba(255, 196, 148, 0) 100%
+    );
+    background-size: 100% 10px;
+    background-repeat: no-repeat;
+    animation: ticket-head var(--print-feed) linear var(--print-start) both;
+  }
+}
+
+@keyframes ticket-feed {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* La ligne de chauffe : le bord du papier qui accroche la lumière en sortant
+   de la fente. Un filet, pas une lueur — il descend exactement à la vitesse
+   du découpage, donc il reste collé au bord, et il s'éteint en arrivant en
+   bas. C'est ce détail qui distingue une impression d'un simple dévoilement. */
+@keyframes ticket-head {
+  from {
+    background-position: 0 -10px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    background-position: 0 100%;
+    opacity: 0;
+  }
+}
+
+/* Mouvement réduit : le ticket est déjà imprimé.
+ *
+ * La règle globale plus haut ramène toute durée à 0,01 ms, mais elle ne touche
+ * pas au **délai** — le papier resterait donc découpé à zéro pendant les
+ * 220 ms d'attente, c'est-à-dire entièrement invisible, et précisément pour
+ * la personne qui a demandé moins de mouvement. Il faut couper l'animation,
+ * pas l'accélérer. */
+@media (prefers-reduced-motion: reduce) {
+  .ticket-print {
+    animation: none;
+    clip-path: none;
+  }
+
+  .ticket-head {
+    display: none;
+  }
+}
+
 /* Retour visuel bref sur le bouton « + Ajouter » d'une carte de plat, une
    fois le plat ajouté au panier (voir `site/quick-add-button.tsx`). */
 @keyframes cart-add-pop {

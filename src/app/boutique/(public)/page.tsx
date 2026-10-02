@@ -89,7 +89,10 @@ export default async function BoutiqueLandingPage() {
               promesse, le ticket la prouve, côte à côte. Centré, il aurait
               fallu faire défiler pour arriver à la preuve. */}
           <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
-            <div className="max-w-2xl">
+            {/* Même entrée que côté Restaurant — le fondu de 180 ms du système,
+                pas une seconde animation. La promesse s'installe pendant que le
+                ticket, à côté, s'imprime. */}
+            <div className="fade-in-up max-w-2xl">
               <div className="flex items-center gap-3">
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire

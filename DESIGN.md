@@ -438,8 +438,40 @@ balayer une liste de vingt produits sans lire un seul mot.
   suffisent à séparer deux niveaux.
 - **Don't** enfermer la navigation dans un cadre à défilement propre : sur une
   fenêtre courte, il tranche les intertitres en pleine hauteur de lettre.
-- **Don't** ajouter une animation qui ne répond pas à une action de
-  l'utilisateur. La seule animation d'entrée du système est un fondu de 180ms.
+- **Don't** ajouter, **dans un tableau de bord**, une animation qui ne répond
+  pas à une action de l'utilisateur. La seule animation d'entrée y est un
+  fondu de 180ms. Les deux pages de présentation font exception, et une seule
+  fois : voir « L'impression » ci-dessous.
+
+### L'impression
+
+Les pages de présentation Restaurant et Boutique ont droit à **un** moment
+animé, et il est le même des deux côtés : le ticket du hero s'imprime.
+
+Ce n'est pas une dérogation de confort. Une page de présentation n'a pas le
+même métier qu'un tableau de bord : le commerçant qui ouvre sa caisse vient
+travailler et tout mouvement lui coûte de l'attention, tandis que le visiteur
+qui découvre le produit doit comprendre en trois secondes ce qu'il fabrique.
+Le ticket est déjà l'objet qui répond à cette question ; son impression le dit
+sans une phrase de plus.
+
+Ce que cette exception autorise, et rien au-delà :
+
+- **Un seul moment par page**, sur l'objet signature. Pas de section qui
+  apparaît au défilement, pas de cascade, pas de parallaxe.
+- **Une seule fois.** Rien ne boucle, rien ne rejoue. Un ticket imprimé ne se
+  réimprime pas.
+- **À vitesse constante** (`linear`), contrairement à tout le reste du
+  système. Un moteur pas-à-pas ne décélère pas en fin de course ; la courbe
+  d'arrivée confortable employée partout ailleurs sonnerait faux ici.
+- **Seulement là où l'objet est visible au chargement** — à partir de 1024px,
+  le point où la grille du hero place le ticket à côté du titre. En dessous il
+  passe sous le texte, donc hors écran, et il s'affiche simplement imprimé.
+- **Rien n'est caché sans animation.** En mouvement réduit, le ticket est
+  entier d'emblée : l'animation est coupée, pas accélérée — raccourcir une
+  durée ne raccourcit pas un délai.
+
+La mécanique est commentée dans `globals.css`, sous « L'impression ».
 
 ### Une seule déclaration des neutres
 

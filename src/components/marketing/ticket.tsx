@@ -17,7 +17,35 @@ import { cx } from '@/components/ui';
  * carton, à deux prix indépendants : c'est précisément ce qu'un logiciel de
  * facturation ne sait pas faire, montré plutôt qu'affirmé.
  *
- * Aucune animation, aucun JavaScript : un ticket est imprimé, il ne bouge pas.
+ * ## Un ticket ne bouge pas — il s'imprime
+ *
+ * Ce fichier portait « aucune animation : un ticket est imprimé, il ne bouge
+ * pas ». La seconde moitié de la phrase reste vraie et l'est encore à la fin
+ * de cette page : rien ne boucle, rien ne rejoue, le ticket est immobile dès
+ * qu'il est sorti. Mais la première confondait l'objet et sa fabrication.
+ *
+ * L'impression, elle, est le geste même du produit — et c'est le seul moment
+ * animé des deux pages de présentation. Toute la mécanique tient dans
+ * `globals.css`, sous « L'impression » ; ce composant ne porte qu'une classe.
+ *
+ * ### Pourquoi aucune animation par ligne
+ *
+ * Une ligne ne doit pas apparaître « après la précédente » — ce serait une
+ * cascade, le motif qu'on voit partout. Elle doit apparaître **quand le bord
+ * du papier la dépasse**.
+ *
+ * Une première version donnait donc à chaque ligne un délai calculé à partir
+ * d'un modèle des hauteurs rendues. Mesuré au navigateur, ce modèle dérivait
+ * jusqu'à huit pour cent : une note qui passe sur deux lignes, un intitulé qui
+ * se replie, et l'encre se décroche visiblement du bord. Un modèle de hauteurs
+ * est de toute façon une seconde vérité, qui redérive au premier changement
+ * d'espacement.
+ *
+ * Le découpage du papier révèle déjà chaque ligne au moment exact où le bord
+ * la dépasse — c'est le même masque, l'encre est *sur* le papier. L'animation
+ * par ligne refaisait donc en approximatif ce que la découpe fait exactement.
+ * Elle a été retirée : une mécanique, aucune constante à tenir à jour, aucune
+ * désynchronisation possible par construction.
  */
 
 export type TicketLine =
@@ -58,7 +86,7 @@ export function Ticket({
       // chiffres hors contexte.
       aria-hidden="true"
       className={cx(
-        'relative w-full max-w-[22rem] select-none font-mono text-[13px] leading-[1.7]',
+        'ticket-print relative w-full max-w-[22rem] select-none font-mono text-[13px] leading-[1.7]',
         // Ombre portée longue et douce : le ticket est posé sur la page, pas
         // encastré dedans.
         'shadow-[0_24px_60px_-24px_rgba(0,0,0,0.55)]',
@@ -81,6 +109,13 @@ export function Ticket({
         WebkitMaskPosition: 'top, bottom',
       }}
     >
+      {/* La ligne de chauffe, posée par-dessus le papier et découpée avec lui :
+          elle reste donc exactement sur le bord qui avance. */}
+      <span
+        aria-hidden="true"
+        className="ticket-head pointer-events-none absolute inset-0"
+      />
+
       <div className="px-6 py-8">
         <p className="text-center text-[11px] font-medium uppercase tracking-[0.28em]">{header}</p>
         <p className={cx('mt-1 text-center text-[11px]', kraft ? 'text-[#3b2a1a]/55' : 'text-[#18202f]/55')}>
