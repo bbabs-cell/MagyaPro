@@ -209,20 +209,42 @@ les autres cas le script sort en code 1 sans rien annoncer.
 
 ### État de la vérification
 
-Vérifié par exécution réelle :
+Vérifié par exécution réelle, le 2 octobre 2026 :
 
 | | |
 |---|---|
 | Paquet installé, client configuré | ✅ |
-| Identifiants chargés et **acceptés par l'API** | ✅ |
+| Identifiants chargés et acceptés par l'API | ✅ |
 | Modèle et paramètres atteignant le service | ✅ |
 | Chemins d'erreur : sortie en code 1, sans succès annoncé | ✅ |
-| **Génération menée à son terme** | ❌ **« Not enough credits »** |
+| **Génération menée à son terme, URL de vidéo rendue** | ✅ |
 
-L'authentification est prouvée par le changement de message : avec un faux
-identifiant le service répond « Invalid API credentials », avec le vrai il
-répond « Not enough credits ». Le câblage est donc complet de bout en bout ; il
-ne manque que le solde.
+Le fichier produit a été sondé, pas seulement annoncé : `1280×720` (donc bien
+720p), 16:9, 5,06 s, H.264 avec piste audio AAC, 4,5 Mo. Chaque paramètre
+demandé se retrouve dans la sortie.
+
+Une remarque sur la fiabilité du transport : la première tentative s'est
+interrompue sur `Client network socket disconnected before secure TLS
+connection was established`. Le proxy ne rapportait aucune panne, et la
+tentative suivante a abouti sans rien changer. L'attente d'une génération est
+une connexion longue ; une interruption passagère doit être relancée, pas
+diagnostiquée.
+
+### Deux comptes Higgsfield, et c'est à savoir
+
+**La clé d'API et la connexion MCP ne désignent pas le même compte.** Après la
+génération réussie, le solde lu par MCP affichait toujours zéro crédit en plan
+`free`, et son journal de transactions s'arrêtait au 21 septembre — ni le
+rechargement ni la dépense du jour n'y figurent.
+
+Conséquence pratique : **le solde lu par MCP ne dit rien de ce que le SDK peut
+dépenser.** Pour suivre la consommation de la production publicitaire, c'est la
+console du compte portant la clé d'API qui fait foi.
+
+Un repère de coût, relevé dans le journal MCP : une génération Seedance 2.5 y
+a coûté **65 crédits**. Le prix dépend de la durée et de la résolution, donc ce
+nombre ne se multiplie pas tel quel par neuf plans — mais il situe l'ordre de
+grandeur bien mieux que l'estimation de 405 portée au §8.
 
 ---
 
