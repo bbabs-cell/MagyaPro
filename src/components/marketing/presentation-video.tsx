@@ -122,7 +122,7 @@ export function PresentationVideo() {
   }, []);
 
   return (
-    <figure className="mt-10">
+    <figure>
       <video
         ref={ref}
         controls

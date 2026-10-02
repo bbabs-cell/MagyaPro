@@ -9,6 +9,7 @@ import { PlanGrid } from '@/components/marketing/plan-grid';
 import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
+import { FEATURES, type Feature } from '@/lib/entitlements';
 
 /**
  * Landing page.
@@ -19,6 +20,124 @@ import { PresentationVideo } from '@/components/marketing/presentation-video';
  */
 
 export const revalidate = 300;
+
+type FeatureItem = {
+  term: string;
+  detail: string;
+  /** La fonctionnalité du plan dont dépend l'élément ; absente si tous l'ont. */
+  feature?: Feature;
+};
+
+/**
+ * La liste détaillée, groupée par moment du service.
+ *
+ * Chaque élément a été vérifié dans le produit avant d'être écrit ici : une
+ * page de présentation qui exagère est fausse, et une page qui oublie ce que
+ * le produit fait l'est aussi. Elle oubliait la prise de commande au
+ * comptoir, l'écran de cuisine, les rôles d'équipe, les réservations, les
+ * avis, la fidélité, le service à table et les trois langues.
+ */
+const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
+  {
+    group: 'Pendant le service',
+    items: [
+      {
+        term: 'Écran de cuisine',
+        detail:
+          'Les commandes confirmées dans l’ordre d’arrivée, avec le temps d’attente de chacune. Un plat est prêt : un geste, et la salle le voit.',
+      },
+      {
+        term: 'Commandes au comptoir et par téléphone',
+        detail:
+          'Le client qui appelle ou qui commande sur place passe par le même circuit que le site : même cuisine, même suivi, même chiffre d’affaires.',
+        feature: FEATURES.COUNTER_ORDERS,
+      },
+      {
+        term: 'Service à table par QR code',
+        detail:
+          'Un QR code par table : le client consulte la carte, appelle le serveur, demande l’addition — et commande, si vous l’activez.',
+        feature: FEATURES.TABLE_SERVICE,
+      },
+      {
+        term: 'Des rôles pour l’équipe',
+        detail:
+          'Cuisine, comptoir, livreur : chacun ne voit que son poste. Ni vos revenus, ni vos réglages.',
+        feature: FEATURES.MULTIPLE_USERS,
+      },
+      {
+        term: 'Livreurs',
+        detail:
+          'Vos livreurs prennent une course, encaissent à la remise et confirment la livraison, depuis leur téléphone.',
+        feature: FEATURES.MULTIPLE_USERS,
+      },
+    ],
+  },
+  {
+    group: 'Avec vos clients',
+    items: [
+      {
+        term: 'Fichier client',
+        detail:
+          'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.',
+      },
+      {
+        term: 'Réservations',
+        detail:
+          'Le client réserve depuis votre site, vous confirmez ou déclinez. Une réservation prise par téléphone s’ajoute à la main.',
+        feature: FEATURES.RESERVATIONS,
+      },
+      {
+        term: 'Avis clients',
+        detail:
+          'Après sa commande, le client laisse un avis. Rien n’est publié sur votre site sans votre validation.',
+        feature: FEATURES.REVIEWS,
+      },
+      {
+        term: 'Fidélité',
+        detail:
+          'Un client franchit un palier de dépenses : il reçoit automatiquement un code promo à usage unique.',
+        feature: FEATURES.LOYALTY,
+      },
+      {
+        term: 'Codes promo',
+        detail:
+          'Remise en pourcentage ou en montant, avec dates de validité et limite d’utilisation.',
+        feature: FEATURES.PROMOTIONS,
+      },
+    ],
+  },
+  {
+    group: 'Votre site et vos chiffres',
+    items: [
+      {
+        term: 'En trois langues',
+        detail:
+          'Le site s’affiche en français, en anglais ou en arabe — l’arabe de droite à gauche. Vos plats aussi, si vous saisissez leur traduction ; sinon ils restent en français.',
+      },
+      {
+        term: 'Statistiques',
+        detail:
+          'Chiffre d’affaires, panier moyen, plats populaires, périodes d’activité.',
+      },
+      {
+        term: 'Paiements',
+        detail:
+          'Paiement à la livraison et sur place dès aujourd’hui, mobile money à mesure des intégrations. Chaque commande se marque payée en un geste.',
+      },
+      {
+        term: 'Votre nom de domaine',
+        detail:
+          'Votre propre adresse à la place de celle fournie, avec la configuration vérifiée pour vous.',
+        feature: FEATURES.CUSTOM_DOMAIN,
+      },
+      {
+        term: 'Site optimisé',
+        detail:
+          'Rapide sur connexion mobile, référencé, installable comme une application.',
+      },
+    ],
+  },
+];
 
 const ICON_PROPS = {
   width: 22,
@@ -77,6 +196,29 @@ export default async function LandingPage() {
   ]);
 
   const heroLogoUrl = platformLogoUrl();
+
+  /**
+   * Ce qu'une fonctionnalité exige comme plan, lu dans les plans réels.
+   *
+   * Aucun nom de plan n'est écrit dans cette page : l'administration décide
+   * où vit chaque fonctionnalité, et la page le reflète au prochain rendu.
+   * Une première version de l'écran de prise de commande écrivait
+   * « Premium » en dur, et se contredisait dès que l'administration avait
+   * fait un autre choix.
+   *
+   * - incluse partout : rien à signaler ;
+   * - dans certains plans : une étiquette les nomme ;
+   * - dans aucun : **non affichée**. Elle existe dans le code, mais personne
+   *   ne peut l'acheter — la présenter serait promettre ce qui ne se vend pas.
+   */
+  const availability = (feature?: Feature): { visible: boolean; label: string | null } => {
+    if (!feature) return { visible: true, label: null };
+    const including = plans.filter((plan) => plan.features.includes(feature));
+    if (including.length === 0) return { visible: false, label: null };
+    if (including.length === plans.length) return { visible: true, label: null };
+    const names = including.map((plan) => plan.name).join(', ');
+    return { visible: true, label: `${including.length === 1 ? 'Plan' : 'Plans'} ${names}` };
+  };
 
   return (
     <>
@@ -182,6 +324,16 @@ export default async function LandingPage() {
           <li>Sans carte bancaire</li>
           <li>Votre site en ligne le jour même</li>
         </ul>
+      </section>
+
+      {/* ---------------------------------------------------------------- Vidéo */}
+      {/* Juste sous la promesse du hero, qu'elle prouve : elle suit une vraie
+          commande de la vitrine de démonstration, du menu jusqu'à l'écran de
+          cuisine. Elle était d'abord dans la section « Fonctionnalités »,
+          quatre écrans plus bas — trop loin pour la plupart des visiteurs,
+          qui décident avant d'y arriver. */}
+      <section aria-label="Vidéo de présentation" className="container-page pt-12">
+        <PresentationVideo />
       </section>
 
       {/* Colonne unique, sans encadré. La fausse fenêtre de navigateur qui
@@ -295,19 +447,13 @@ export default async function LandingPage() {
 
       {/* -------------------------------------------------------- Fonctionnalités */}
       <section id="fonctionnalites" className="container-page py-16 sm:py-24">
+        {/* Le sur-titre « Fonctionnalités » est retiré : le titre porte seul
+            son poids, et le lien de navigation du même nom mène déjà ici. */}
         <div className="max-w-2xl">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand">
-            Fonctionnalités
-          </span>
-          <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
             Trois choses qu&apos;une page de réseau social ne fait pas
           </h2>
         </div>
-
-        {/* La première des trois — de la table à la cuisine — montrée avant
-            d'être décrite : la vidéo suit une vraie commande de la vitrine
-            de démonstration jusqu'à l'écran de cuisine. */}
-        <PresentationVideo />
 
         {/* Neuf cartes identiques mettaient le fichier client au même niveau
             que le passage de la commande en cuisine. Trois éléments portent
@@ -315,9 +461,13 @@ export default async function LandingPage() {
         <div className="mt-12 grid gap-10 border-t border-surface-border pt-10 lg:grid-cols-3 lg:gap-0">
           {[
             {
-              title: 'De la table à la cuisine',
+              // « De la table à la cuisine » promettait la commande à table, qui
+              // dépend du plan. Le circuit commande → cuisine, lui, est dans
+              // tous : c'est lui qui porte l'argument, comme dans le hero et la
+              // vidéo. La table rejoint la liste plus bas, avec son plan.
+              title: 'De la commande à la cuisine',
               detail:
-                'Le client commande depuis son téléphone, le bon arrive en cuisine et la salle voit où en est chaque table. Personne ne recopie une commande sur un carnet, personne ne perd un papier.',
+                'Le client commande depuis votre site, le bon arrive sur l’écran de cuisine, et chaque commande suit son état jusqu’à la remise. Personne ne recopie une commande sur un carnet, personne ne perd un papier.',
               icon: FEATURE_ICONS.orders,
             },
             {
@@ -346,36 +496,30 @@ export default async function LandingPage() {
         <h3 className="mt-20 font-display text-xl font-bold tracking-[-0.01em] text-ink">
           Et tout ce qu&apos;un restaurant attend d&apos;un logiciel
         </h3>
-        <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2">
-          {[
-            {
-              group: 'Pendant le service',
-              items: [
-                ['Fichier client', 'Chaque commande enrichit votre fichier : coordonnées, historique, montant dépensé.'],
-                ['Codes promo', 'Remise en pourcentage ou en montant, avec dates de validité et limite d\'utilisation.'],
-                ['Plusieurs comptes', 'Un accès limité pour votre équipe : le service voit les commandes, pas vos revenus.'],
-              ],
-            },
-            {
-              group: 'Après le service',
-              items: [
-                ['Statistiques', 'Chiffre d\'affaires, panier moyen, plats populaires, périodes d\'activité.'],
-                ['Paiements', 'Paiement à la livraison et sur place dès aujourd\'hui, mobile money à mesure des intégrations.'],
-                ['Site optimisé', 'Rapide sur connexion mobile, référencé, installable comme une application.'],
-              ],
-            },
-          ].map((cluster) => (
+        <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURE_GROUPS.map((cluster) => (
             <div key={cluster.group}>
               <h4 className="border-b border-surface-border pb-3 font-display text-sm font-semibold text-brand">
                 {cluster.group}
               </h4>
               <dl className="mt-5 space-y-5">
-                {cluster.items.map(([term, detail]) => (
-                  <div key={term}>
-                    <dt className="text-sm font-medium text-ink">{term}</dt>
-                    <dd className="mt-1 text-sm leading-relaxed text-ink-muted">{detail}</dd>
-                  </div>
-                ))}
+                {cluster.items.map((item) => {
+                  const access = availability(item.feature);
+                  if (!access.visible) return null;
+                  return (
+                    <div key={item.term}>
+                      <dt className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm font-medium text-ink">
+                        {item.term}
+                        {access.label && (
+                          <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-normal text-ink-muted">
+                            {access.label}
+                          </span>
+                        )}
+                      </dt>
+                      <dd className="mt-1 text-sm leading-relaxed text-ink-muted">{item.detail}</dd>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           ))}
