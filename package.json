@@ -22,7 +22,8 @@
     "cf:build": "prisma generate && opennextjs-cloudflare build && node scripts/patch-cron-handler.mjs",
     "cf:preview": "npm run cf:build && opennextjs-cloudflare preview",
     "cf:deploy": "npm run cf:build && opennextjs-cloudflare deploy",
-    "cf:typegen": "wrangler types"
+    "cf:typegen": "wrangler types",
+    "higgsfield:exemple": "node --env-file-if-exists=.env.local --import tsx scripts/higgsfield/index.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@higgsfield/client": "^0.2.6",
     "@opennextjs/cloudflare": "^1.20.2",
     "@types/node": "22.19.0",
     "@types/nodemailer": "^8.0.1",

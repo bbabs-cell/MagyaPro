@@ -147,7 +147,86 @@ manquant plutôt que de produire une série incomplète en silence.
 
 ---
 
-## 6. Les appels Higgsfield, prêts à tirer
+## 6. Le SDK officiel
+
+Deux chemins mènent à Higgsfield, et ils ne servent pas la même chose.
+
+Le **serveur MCP** sert à explorer : lister les modèles, lire un solde, choisir
+un préréglage. Il est pratique en conversation et ne laisse aucune trace dans
+le dépôt.
+
+Le **SDK officiel** sert à produire : il est scriptable, reproductible, et
+versionné avec le reste. C'est lui qui tirera les neuf plans du §4, dans le
+même ordre à chaque fois.
+
+### Installation, déjà faite
+
+```sh
+npm install --save-dev @higgsfield/client     # ^0.2.6
+```
+
+**En dépendance de développement, délibérément.** La contrainte fondatrice du
+produit est qu'aucune IA payante n'entre dans ce qu'utilise un commerçant.
+Fabriquer une publicité est un travail de studio, pas une fonctionnalité : le
+paquet vit donc hors de `src/`, rien sous `src/` ne l'importe, et un
+`npm ci --omit=dev` en production ne l'installe pas. La frontière doit rester
+vérifiable d'un `grep`, pas seulement promise.
+
+### Les identifiants
+
+`HF_CREDENTIALS`, au format `identifiant:secret`, dans `.env.local` — ignoré
+par Git depuis toujours (`.gitignore` ligne 10). `.env.example` documente la
+variable sans valeur.
+
+Le script valide la **forme** sans jamais afficher la valeur : un message
+d'erreur qui citerait l'identifiant, même tronqué, finirait dans un journal de
+terminal ou une sortie d'intégration continue. Il n'est pas non plus passé en
+argument de ligne de commande, qu'un `ps` rendrait visible.
+
+### L'exemple
+
+`scripts/higgsfield/index.ts`, lancé par :
+
+```sh
+npm run higgsfield:exemple
+```
+
+Il appelle `subscribe` sur `bytedance/seedance-2.5/text-to-video` avec
+l'invite « A cinematic scene at sunset », 5 secondes, 720p, 16:9, puis attend
+la fin et affiche l'adresse de la vidéo.
+
+Le chargement de `.env.local` passe par `node --env-file-if-exists`, intégré à
+Node : ajouter `dotenv` pour cela aurait été une dépendance de plus pour une
+fonction que le runtime possède déjà.
+
+**Une requête terminée n'est pas une requête réussie.** Le client déclare cinq
+statuts — `queued`, `in_progress`, `completed`, `failed`, `nsfw` — et expose
+par ailleurs une adresse d'annulation, donc un statut d'annulation peut
+apparaître sans figurer dans ce type. Chacun est traité nommément, tout statut
+inconnu est un échec, et un `completed` sans fichier joint en est un aussi.
+La seule issue qui vaut succès est une vidéo réellement présente ; dans tous
+les autres cas le script sort en code 1 sans rien annoncer.
+
+### État de la vérification
+
+Vérifié par exécution réelle :
+
+| | |
+|---|---|
+| Paquet installé, client configuré | ✅ |
+| Identifiants chargés et **acceptés par l'API** | ✅ |
+| Modèle et paramètres atteignant le service | ✅ |
+| Chemins d'erreur : sortie en code 1, sans succès annoncé | ✅ |
+| **Génération menée à son terme** | ❌ **« Not enough credits »** |
+
+L'authentification est prouvée par le changement de message : avec un faux
+identifiant le service répond « Invalid API credentials », avec le vrai il
+répond « Not enough credits ». Le câblage est donc complet de bout en bout ; il
+ne manque que le solde.
+
+---
+
+## 7. Les appels Higgsfield, prêts à tirer
 
 Dans cet ordre. Chaque étape dépend de la précédente.
 
@@ -199,7 +278,7 @@ installé dans l'environnement de travail.
 
 ---
 
-## 7. Le coût
+## 8. Le coût
 
 **À faire chiffrer avant de lancer quoi que ce soit.** L'estimation portée au
 dossier précédent était d'environ 405 crédits pour une publicité de 45
@@ -217,7 +296,7 @@ la plus inutile.
 
 ---
 
-## 8. Ce qui reste à décider
+## 9. Ce qui reste à décider
 
 - **La seconde publicité, côté Boutique.** Même structure, autre personne
   (décision déjà prise : une personne différente par publicité), autre argument
