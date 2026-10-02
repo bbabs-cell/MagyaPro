@@ -83,6 +83,16 @@ export function forecastStock(params: {
   /** Délai fournisseur en jours. `null` = inconnu, la rupture imminente n'est alors pas évaluée. */
   supplierLeadDays: number | null;
   maxStock: number | null;
+  /**
+   * L'unité de base se fractionne-t-elle (kilo, mètre, litre) ?
+   *
+   * Obligatoire, pour qu'un appel ne puisse pas l'oublier : la quantité à
+   * commander en dépend. L'écran affichait « à commander : 16,48 » boîtes de
+   * tomate concentrée et « 13,02 » bouteilles de jus — des quantités qu'aucun
+   * fournisseur ne livre et qu'un commerçant doit arrondir de tête, ce que ce
+   * produit promet justement de lui épargner.
+   */
+  decimal: boolean;
   observedDays?: number;
   reliable?: boolean;
 }): StockForecast {
@@ -116,7 +126,12 @@ export function forecastStock(params: {
   // commande arrive juste pour être aussitôt épuisée.
   const coverDays = (supplierLeadDays ?? 0) + DEFAULT_COVER_DAYS;
   const target = maxStock ?? dailySales * coverDays;
-  const recommendedQuantity = dailySales > 0 ? Math.max(0, round(target - stock)) : 0;
+  const missing = Math.max(0, target - stock);
+  // Arrondi **au-dessus** pour une unité entière : commander 16 boîtes quand
+  // il en manque 16,48, c'est retomber en rupture une demi-journée trop tôt.
+  // Une unité fractionnable garde ses deux décimales — 12,5 kg se pèsent.
+  const recommendedQuantity =
+    dailySales > 0 ? (params.decimal ? round(missing) : ceilWhole(missing)) : 0;
 
   return {
     level,
@@ -127,6 +142,14 @@ export function forecastStock(params: {
     observedDays: params.observedDays ?? 0,
     reliable: params.reliable ?? false,
   };
+}
+
+/**
+ * Entier supérieur, sans compter les miettes de calcul flottant : 16,0000001
+ * reste 16, pas 17.
+ */
+function ceilWhole(value: number): number {
+  return Math.ceil(round(value));
 }
 
 /** Arrondi à deux décimales — au-delà, une prévision affiche une fausse précision. */

@@ -67,6 +67,9 @@ export default async function BoutiqueForecastPage() {
         { daily: 0, observedDays: 0, reliable: false },
       );
 
+      const units = unitsByVariant.get(product.variants[0]!.id) ?? [];
+      const baseUnit = units.find((unit) => unit.isBase);
+
       const forecast = forecastStock({
         stock,
         dailySales: stats.daily,
@@ -75,6 +78,9 @@ export default async function BoutiqueForecastPage() {
         maxStock: product.maxStock ? toQty(product.maxStock) : null,
         observedDays: stats.observedDays,
         reliable: stats.reliable,
+        // Sans unité de base connue, on arrondit au-dessus : mieux vaut une
+        // unité de trop qu'une fraction impossible à commander.
+        decimal: baseUnit?.isDecimal ?? false,
       });
 
       return {
@@ -86,7 +92,7 @@ export default async function BoutiqueForecastPage() {
         daysLeft: forecast.daysLeft,
         recommendedQuantity: forecast.recommendedQuantity,
         reliable: forecast.reliable,
-        units: (unitsByVariant.get(product.variants[0]!.id) ?? []).map((unit) => ({
+        units: units.map((unit) => ({
           unitId: unit.unitId,
           label: unit.label,
           labelPlural: unit.labelPlural,
