@@ -1004,4 +1004,9 @@ export const storeSaleSchema = z.object({
   /** Code promo saisi par le caissier — jamais son montant : le rabais est
    *  toujours recalculé côté serveur depuis la promotion elle-même. */
   promoCode: z.string().trim().max(30).optional(),
+  /** Identifiant tiré par la caisse avant le premier envoi — voir
+   *  `Sale.clientRequestId`. Un UUID, pour qu'il ne se devine pas : il ne
+   *  donne accès à rien, mais deux caisses ne doivent jamais en tirer un
+   *  identique. */
+  clientRequestId: z.string().uuid().optional(),
 });

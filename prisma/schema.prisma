@@ -517,7 +517,7 @@ enum PaymentStatus {
 }
 
 model Order {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   restaurantId String
   /// Absent pour une commande prise au comptoir sans que le client laisse son
   /// numéro : il n'existe alors aucune fiche à laquelle la rattacher.
@@ -2282,6 +2282,18 @@ model Sale {
   creditAmount  Int        @default(0)
   note          String?
 
+  /// Identifiant tiré par la caisse **avant** le premier envoi, et renvoyé
+  /// tel quel à chaque nouvelle tentative.
+  ///
+  /// Sans lui, une vente enregistrée par le serveur dont la réponse se perd —
+  /// courant sur un réseau instable — passait pour une panne : la caisse la
+  /// mettait en attente et la renvoyait au retour du réseau, et le serveur,
+  /// sans moyen de la reconnaître, la créait une seconde fois. Vente en
+  /// double, stock décompté deux fois. Avec lui, la seconde tentative rend la
+  /// vente déjà créée. Facultatif : une vente sans identifiant (API, import)
+  /// se comporte comme avant.
+  clientRequestId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2296,6 +2308,9 @@ model Sale {
   promotionId String?
 
   @@unique([storeId, number])
+  /// Plusieurs `NULL` coexistent sans conflit : seules les ventes porteuses
+  /// d'un identifiant sont dédupliquées.
+  @@unique([storeId, clientRequestId])
   @@index([storeId, createdAt])
   @@index([customerId])
   @@map("boutique_sales")

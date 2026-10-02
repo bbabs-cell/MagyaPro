@@ -391,6 +391,11 @@ export function Pos({
       payments: payments
         .filter((p) => Number(p.amount) > 0)
         .map((p) => ({ method: p.method, amount: Number(p.amount) })),
+      // Tiré **avant** le premier envoi, et gardé dans la vente mise en
+      // attente : si le serveur l'a enregistrée mais que la réponse s'est
+      // perdue, le renvoi rend la vente existante au lieu d'en créer une
+      // seconde. Voir `Sale.clientRequestId`.
+      clientRequestId: crypto.randomUUID(),
     };
 
     function resetCart() {

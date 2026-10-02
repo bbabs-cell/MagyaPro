@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
@@ -25,6 +26,15 @@ export async function createSale(params: {
   input: z.infer<typeof storeSaleSchema>;
 }) {
   const { storeId, userId, userEmail, input } = params;
+
+  // Une vente déjà reçue est rendue telle quelle, **avant** toute
+  // validation : entre la première tentative et la suivante, le stock a pu
+  // bouger, une promotion expirer — revalider une vente déjà enregistrée
+  // pourrait la refuser, et la caisse la croirait perdue.
+  if (input.clientRequestId) {
+    const existing = await findByClientRequest(storeId, input.clientRequestId);
+    if (existing) return existing;
+  }
 
   const defaultWarehouse = await prisma.warehouse.findFirst({
     where: { storeId, isDefault: true },
@@ -180,7 +190,9 @@ export async function createSale(params: {
     }
   }
 
-  const sale = await prisma.$transaction(async (tx) => {
+  let sale;
+  try {
+    sale = await prisma.$transaction(async (tx) => {
     const updatedStore = await tx.store.update({
       where: { id: storeId },
       data: { saleCounter: { increment: 1 } },
@@ -200,6 +212,7 @@ export async function createSale(params: {
         taxAmount,
         total,
         creditAmount,
+        clientRequestId: input.clientRequestId ?? null,
         payments: { create: input.payments },
         items: { create: lines },
       },
@@ -249,7 +262,17 @@ export async function createSale(params: {
     }
 
     return created;
-  });
+    });
+  } catch (error) {
+    // Deux tentatives de la même vente arrivées en même temps : la seconde
+    // bute sur la contrainte d'unicité, sa transaction est annulée — compteur
+    // de ventes et stock compris — et c'est la première qui est rendue.
+    if (input.clientRequestId && isClientRequestConflict(error)) {
+      const existing = await findByClientRequest(storeId, input.clientRequestId);
+      if (existing) return existing;
+    }
+    throw error;
+  }
 
   await recordAudit({
     action: AUDIT_ACTIONS.SALE_CREATED,
@@ -262,4 +285,36 @@ export async function createSale(params: {
   });
 
   return sale;
+}
+
+function findByClientRequest(storeId: string, clientRequestId: string) {
+  return prisma.sale.findUnique({
+    where: { storeId_clientRequestId: { storeId, clientRequestId } },
+    include: { items: true, payments: true },
+  });
+}
+
+/**
+ * Violation de la contrainte d'unicité `(storeId, clientRequestId)`.
+ *
+ * Les colonnes en cause ne sont pas rangées au même endroit selon le moteur :
+ * le client Prisma classique remplit `meta.target`, l'adaptateur de base de
+ * données employé ici les place dans
+ * `meta.driverAdapterError.cause.constraint.fields`, entre guillemets. Une
+ * première version ne lisait que `target` : elle ne reconnaissait jamais le
+ * conflit, et deux renvois simultanés faisaient échouer la seconde tentative
+ * au lieu de rendre la vente. Le test de concurrence l'a montré.
+ */
+function isClientRequestConflict(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') return false;
+  const meta = error.meta as
+    | {
+        target?: unknown;
+        driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
+      }
+    | undefined;
+  const fields = [meta?.target, meta?.driverAdapterError?.cause?.constraint?.fields]
+    .flatMap((value) => (Array.isArray(value) ? value : value == null ? [] : [value]))
+    .map((field) => String(field).replaceAll('"', ''));
+  return fields.includes('clientRequestId');
 }

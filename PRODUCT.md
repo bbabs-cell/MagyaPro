@@ -90,7 +90,14 @@ Confirmé et en service :
   depuis la session, jamais depuis un identifiant envoyé par le client.
 - Trois langues d'interface : français (par défaut), anglais, arabe — avec
   sens de lecture inversé pour l'arabe.
-- Saisie hors ligne des ventes, avec file d'attente et synchronisation.
+- Saisie hors ligne des ventes, avec file d'attente et synchronisation. Une
+  vente renvoyée deux fois (réponse perdue) n'est créée qu'une fois.
+- Les écrans les plus utilisés s'ouvrent hors connexion, même après un
+  redémarrage sans réseau : caisse, tableau de bord, produits et clients en
+  Boutique ; commandes, cuisine, livraisons, vue d'ensemble et nouvelle
+  commande au Restaurant (selon les droits de la personne). Ils montrent leur
+  dernière version connue ; seules les ventes Boutique s'enregistrent hors
+  ligne. Vérifié par `scripts/audit-offline.mjs`, réseau réellement coupé.
 - Scanner de codes-barres, import/export Excel, commande vocale, tous locaux.
 - Les tarifs ne sont jamais écrits en dur : ils vivent dans les plans et les
   réglages de plateforme.
