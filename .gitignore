@@ -25,3 +25,4 @@ coverage/
 *.log
 .env.bak
 captures-pub/
+publicite/

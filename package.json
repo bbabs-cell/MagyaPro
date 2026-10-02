@@ -23,7 +23,8 @@
     "cf:preview": "npm run cf:build && opennextjs-cloudflare preview",
     "cf:deploy": "npm run cf:build && opennextjs-cloudflare deploy",
     "cf:typegen": "wrangler types",
-    "higgsfield:exemple": "node --env-file-if-exists=.env.local --import tsx scripts/higgsfield/index.ts"
+    "higgsfield:exemple": "node --env-file-if-exists=.env.local --import tsx scripts/higgsfield/index.ts",
+    "higgsfield:publicite": "node --env-file-if-exists=.env.local --import tsx scripts/higgsfield/produire-publicite.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
