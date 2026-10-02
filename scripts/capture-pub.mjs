@@ -69,6 +69,8 @@ const RESTAURANT_SHOTS = [
   { file: '11-commandes', path: '/dashboard/commandes' },
   { file: '12-prise-de-commande', path: '/dashboard/commandes/nouvelle' },
   { file: '13-carte', path: '/dashboard/menu' },
+  // L'écran de préparation : c'est lui qui prouve « le bon part en cuisine ».
+  { file: '15-cuisine', path: '/dashboard/cuisine' },
   { file: '14-statistiques', path: '/dashboard/statistiques' },
 ];
 

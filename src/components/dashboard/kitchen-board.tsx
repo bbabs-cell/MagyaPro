@@ -7,6 +7,7 @@ import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { describeOptions, readOptions } from '@/lib/orders/option-snapshot';
 import type { KitchenOrder } from '@/lib/kitchen';
 import { AlertMessage, Card, cx } from '@/components/ui';
+import { formatWait } from '@/lib/orders/wait';
 
 /**
  * Écran cuisine — trois colonnes, une fiche par commande.
@@ -147,7 +148,7 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                               : 'bg-surface-sunken text-ink-muted',
                           )}
                         >
-                          {waited} min
+                          {formatWait(waited)}
                         </span>
                       </div>
 

@@ -24,6 +24,7 @@
  *
  *   npm run higgsfield:publicite -- --devis     # n'appelle rien, chiffre
  *   npm run higgsfield:publicite -- --plans 1,2 # seulement ces plans
+ *   npm run higgsfield:publicite -- --resolution 480p
  *   npm run higgsfield:publicite                # toute la série
  *
  * ## Attention : chaque exécution est facturée
@@ -42,7 +43,16 @@ const MANIFEST = `${OUT_DIR}/manifeste.json`;
 
 /** Format vertical : la publicité est destinée aux réseaux. */
 const ASPECT_RATIO = '9:16';
-const RESOLUTION = '1080p';
+/**
+ * Résolution de la série, choisie à l'exécution : `--resolution 720p`.
+ *
+ * 720p par défaut. Le 1080p a été refusé faute de solde, et pour une
+ * publicité verticale regardée sur un téléphone, 720p est déjà au-dessus de
+ * ce que la plupart des réseaux rediffusent après recompression.
+ */
+const RESOLUTIONS = ['480p', '720p', '1080p'] as const;
+type Resolution = (typeof RESOLUTIONS)[number];
+const DEFAULT_RESOLUTION: Resolution = '720p';
 
 /**
  * Le portrait de référence.
@@ -205,6 +215,12 @@ async function status(requestId: string): Promise<V2Response> {
 
 interface Manifest {
   portrait?: string;
+  /**
+   * Résolution des plans déjà produits. Fixée au premier plan, puis
+   * imposée : une série qui mêlerait 720p et 480p se verrait au montage, plan
+   * après plan, et rien d'autre ne l'empêcherait.
+   */
+  resolution?: Resolution;
   shots: Record<string, string>;
 }
 
@@ -323,8 +339,28 @@ async function main(): Promise<void> {
     return new Set(list.split(',').map((value) => Number(value.trim())));
   })();
 
+  const resolution = ((): Resolution => {
+    const index = args.indexOf('--resolution');
+    if (index === -1) return DEFAULT_RESOLUTION;
+    const value = args[index + 1];
+    if (!RESOLUTIONS.includes(value as Resolution)) {
+      throw new Error(`--resolution attend ${RESOLUTIONS.join(', ')}.`);
+    }
+    return value as Resolution;
+  })();
+
   const planned = SHOTS.filter((shot) => !only || only.has(shot.id));
   const manifest = readManifest();
+
+  const produced = Object.keys(manifest.shots).length;
+  if (produced > 0 && manifest.resolution && manifest.resolution !== resolution) {
+    throw new Error(
+      `${produced} plan(s) déjà produit(s) en ${manifest.resolution} : impossible de ` +
+        `poursuivre la série en ${resolution}. Relancez avec ` +
+        `« --resolution ${manifest.resolution} », ou videz « shots » du manifeste ` +
+        'pour recommencer la série entière.',
+    );
+  }
 
   if (dryRun) {
     const todo = planned.filter((shot) => !manifest.shots[shot.id]);
@@ -332,7 +368,7 @@ async function main(): Promise<void> {
     console.log(`Portrait de référence : ${manifest.portrait ? 'déjà produit' : 'à produire'}`);
     console.log(`Plans à produire      : ${todo.length} sur ${planned.length}`);
     console.log(`Secondes de vidéo     : ${seconds}`);
-    console.log(`Résolution            : ${RESOLUTION}, ${ASPECT_RATIO}`);
+    console.log(`Résolution            : ${resolution}, ${ASPECT_RATIO}`);
     console.log(
       '\nAucun appel n’a été fait. Le coût en crédits n’est pas publié par le ' +
         'service : relevez-le sur la console du compte portant la clé d’API ' +
@@ -378,7 +414,7 @@ async function main(): Promise<void> {
         image_url: manifest.portrait,
         prompt: shot.prompt,
         duration: shot.duration,
-        resolution: RESOLUTION,
+        resolution,
         output_format: 'mp4',
         generate_audio: true,
       },
@@ -386,6 +422,7 @@ async function main(): Promise<void> {
     );
 
     manifest.shots[shot.id] = clip.url;
+    manifest.resolution = resolution;
     writeManifest(manifest);
     console.log(`  ✓ ${clip.url}`);
   }

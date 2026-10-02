@@ -1,14 +1,14 @@
 # Publicité — « Le papier perdu »
 
 Dossier de production complet d'une publicité de 45 secondes, en français,
-jouée par un restaurateur. Tout est prêt sauf la génération elle-même, qui
-attend des crédits Higgsfield.
+jouée par un restaurateur.
 
-> **État au 2 octobre 2026.** Compte Higgsfield connecté, **0 crédit**, plan
-> `free`, essai MCP terminé le 21 septembre. Les recharges à l'unité sont
-> désactivées sur cet espace de travail : le seul chemin est un abonnement
-> (PLUS 1 000 crédits/mois, ULTRA 3 000). Tant que le solde est nul, aucun
-> appel de génération ne peut aboutir.
+> **État au 2 octobre 2026.** Production lancée en **720p**. Le portrait de
+> référence et le plan 2 sont produits ; les plans 1 et 3 à 8 attendent du
+> solde — le service refuse la suite avec « Your credit balance is too low ».
+> Tout le reste est prêt : relancer `npm run higgsfield:publicite --
+> --resolution 720p` reprend au plan manquant, sans repayer ce qui existe,
+> puis `node scripts/higgsfield/monter-publicite.mjs` assemble le film.
 
 ---
 
@@ -112,15 +112,23 @@ ressemblerait au produit sans en être un, et chaque détail faux se verrait.
 
 | # | Durée | Type | Source |
 |---|---|---|---|
-| 1 | 3 s | vidéo | carnet, gros plan |
+| 1 | 4 s | vidéo | carnet, gros plan |
 | 2 | 6 s | vidéo parlée | réplique 0:03 |
 | 3 | 6 s | vidéo parlée | réplique 0:06 |
 | 4 | 4 s | vidéo + insert | `11-commandes-tel.png` |
-| 5 | 5 s | vidéo + insert | commande → en préparation |
+| 5 | 5 s | vidéo + insert | `15-cuisine-tel.png` |
 | 6 | 6 s | vidéo + insert | `13-carte-tel.png` |
 | 7 | 6 s | vidéo + insert | `02-menu-client-tel.png` |
 | 8 | 6 s | vidéo + insert | `12-prise-de-commande-tel.png` |
 | 9 | 3 s | carton | montage |
+
+**Pourquoi pas la vue d'ensemble en insert.** Elle était prévue au plan 4, et
+elle a été écartée à la première image montée : elle affiche un chiffre
+d'affaires et une variation sur trente jours — en rouge, « −56 % », avec les
+données de démonstration. Un indicateur en chute contredit le message, et un
+montant à l'écran se lit comme une preuve de résultats, ce que ce dossier
+s'interdit. Le plan 5, « le bon part en cuisine », montre désormais l'écran de
+cuisine lui-même, qui le prouve.
 
 Format **9:16** pour les réseaux. Une reprise **16:9** du même montage servira
 la page de présentation si elle est demandée ; le script tient dans les deux,
@@ -138,12 +146,31 @@ place, et se corrige quand un écran bouge.
 ```sh
 npm run build && npm run start        # le serveur doit tourner
 npx prisma db seed                    # comptes de démonstration
+npx tsx scripts/rafraichir-demo.ts    # commandes en cours remises à quelques minutes
 node scripts/capture-pub.mjs          # -> ./captures-pub/
 ```
 
-28 fichiers, deux largeurs (téléphone 390×844, bureau 1440×900), nommés par ce
+30 fichiers, deux largeurs (téléphone 390×844, bureau 1440×900), nommés par ce
 qu'ils prouvent et non par leur route. Le script signale en sortie tout écran
 manquant plutôt que de produire une série incomplète en silence.
+
+**Le rafraîchissement n'est pas optionnel.** Le seed ne crée de commandes en
+cours que datées de moins de deux jours, mais il ne tourne qu'une fois : seize
+jours plus tard, l'écran de cuisine affichait des attentes de deux semaines.
+`rafraichir-demo.ts` remet ces commandes à 3–14 minutes. Il ne crée ni ne
+supprime rien, ne touche à aucun montant, ignore les commandes terminées —
+qui portent les statistiques — et **refuse de s'exécuter hors d'une base
+locale** : il réécrit des dates, et lancé contre la production il fausserait
+l'historique de vrais commerces.
+
+Cette capture a d'ailleurs révélé un vrai défaut du produit, corrigé depuis :
+l'écran de cuisine affichait « 22908 min » pour une commande oubliée. Il dit
+maintenant « 15 j » (`src/lib/orders/wait.ts`).
+
+Un résidu connu : la liste des commandes montre le numéro de téléphone du
+client de démonstration, en indicatif +225. C'est cohérent avec la vitrine,
+située à Abidjan, mais c'est un indice de pays à l'image dans une publicité
+destinée à toute la zone.
 
 ---
 
@@ -248,73 +275,83 @@ grandeur bien mieux que l'estimation de 405 portée au §8.
 
 ---
 
-## 7. Les appels Higgsfield, prêts à tirer
+## 7. Produire et monter
 
-Dans cet ordre. Chaque étape dépend de la précédente.
+Deux commandes. La première coûte, la seconde non.
 
-### Étape 1 — le visage de référence
-
-```
-generate_image
-  model:  soul_2                     // Higgsfield Soul 2.0 — UGC réaliste
-  prompt: <la description du §3>
-  aspect_ratio: 9:16
-  quality: 2k
+```sh
+npm run higgsfield:publicite -- --devis                  # compte, n'appelle rien
+npm run higgsfield:publicite -- --resolution 720p        # produit ce qui manque
+node scripts/higgsfield/monter-publicite.mjs             # assemble le film
+node scripts/higgsfield/monter-publicite.mjs --apercu    # assemble ce qui existe
 ```
 
-Garder l'identifiant de média du résultat : il sert de `start_image` à tous les
-plans parlés. C'est lui, et lui seul, qui tient la continuité du visage.
+### Production — `scripts/higgsfield/produire-publicite.ts`
 
-### Étape 2 — les plans parlés
+Le portrait de référence (`higgsfield-ai/soul/v2/standard`) une seule fois,
+puis chaque plan (`bytedance/seedance-2.5/image-to-video`) animé à partir de
+ce portrait, qui tient la continuité du visage.
 
-Un appel par plan, en reprenant la même image de départ.
+Quatre garanties, chacune apprise en produisant :
 
-```
-generate_video
-  model:  seedance_2_5               // ByteDance Seedance 2.5
-  mode:   omni_reference             // conserve l'identité du personnage
-  medias: [{ role: start_image, id: <média de l'étape 1> }]
-  duration: <durée du plan, §4>
-  resolution: 1080p
-  generate_audio: true
-  aspect_ratio: 9:16
-  prompt: <décor + jeu + la réplique entre guillemets, en français>
-```
+- **Reprenable.** Le manifeste (`publicite/manifeste.json`) est écrit après
+  chaque plan réussi ; une relance saute ce qui existe. Vérifié : le portrait
+  a été réemployé, et non repayé, sur quatre relances.
+- **Aucune génération payée n'est perdue.** La requête est lancée sans
+  sondage, son identifiant est affiché aussitôt, puis l'attente est conduite
+  à part, vingt minutes de budget. Le client plafonne sinon à cinq minutes, et
+  son erreur d'expiration ne porte pas l'identifiant : une génération
+  acceptée, en cours et facturée devenait irrécupérable. C'est arrivé une fois.
+- **Le motif d'un échec est affiché.** L'API le renvoie dans un champ `error`
+  que le type du client n'expose pas ; il est lu défensivement.
+- **Une seule résolution par série.** Fixée au premier plan, imposée ensuite.
+  Un essai 480p du plan 2 existe, rangé sous `essais` et non sous `shots` :
+  l'y mettre aurait fait sauter le plan 2 d'une série en 720p.
 
-`generate_audio: true` produit la voix avec l'image. Si le résultat ne convient
-pas, la solution de repli est de générer la voix séparément avec
-`elevenlabs_v4_turbo` (une seule voix pour tous les plans — c'est ce que la
-cohérence exige) et de la synchroniser au montage.
+### Montage — `scripts/higgsfield/monter-publicite.mjs`
 
-### Étape 3 — attendre, puis récupérer
+Aucun appel à Higgsfield, aucun identifiant lu. Sur les plans 4 à 8, l'image
+bascule sur la capture pendant que la voix continue : le visage installe la
+phrase, l'écran la prouve. La capture, plus étroite que le cadre 9:16, est
+mise à la largeur puis rognée **par le haut** — là où sont l'en-tête et le
+contenu — avec un zoom lent de 4 % qui lui évite l'effet diaporama.
 
-```
-jobs_wait        → une seule attente pour tous les plans lancés
-show_generation_by_ids → un seul appel pour tout récupérer
-```
+Le carton final est rendu par le navigateur avec **les fichiers de police du
+site**, relus dans son build : Bricolage Grotesque, DM Mono, Manrope. Une
+première version passait par Google Fonts ; le navigateur de rendu n'y
+accédait pas, retombait sur Liberation Sans, et la garde était au vert —
+`document.fonts.check()` répond « vrai » pour une famille absente. La garde
+emploie maintenant `document.fonts.load()`, qui rend zéro police dans ce cas,
+contrôle positif à l'appui.
 
-### Étape 4 — le montage
-
-Les inserts d'écran et le carton final se montent hors Higgsfield. `ffmpeg` est
-installé dans l'environnement de travail.
+Le film complet **refuse de se monter s'il manque un plan** : un montage qui
+saute du plan 2 au plan 5 ne se diffuse pas, et le laisser sortir sous le nom
+de la publicité finale serait le meilleur moyen qu'il finisse en ligne par
+erreur. `--apercu` l'assemble sous le nom `APERCU-incomplet-<résolution>.mp4`.
 
 ---
 
 ## 8. Le coût
 
-**À faire chiffrer avant de lancer quoi que ce soit.** L'estimation portée au
-dossier précédent était d'environ 405 crédits pour une publicité de 45
-secondes — ordre de grandeur, pas un devis : le prix dépend du modèle, de la
-résolution et de la durée réellement demandée, et ces grilles bougent.
+Le service ne publie pas ses prix — ni sur la page du modèle, ni dans la
+référence d'API — et n'expose aucun point d'accès de solde. Ce qui a été
+**constaté** avec 10 $ de recharge :
 
-Le geste à faire en premier, dès que le compte est approvisionné, est donc un
-**devis** : les outils Higgsfield en proposent un qui ne consomme rien. Si
-l'ordre de grandeur se confirme, PLUS (1 000 crédits/mois) couvre environ deux
-publicités par mois, ULTRA (3 000) environ sept.
+| Produit | Résultat |
+|---|---|
+| Portrait de référence, 1080p | ✅ |
+| Plan 2 en 6 s, 1080p | ❌ solde insuffisant |
+| Essai du plan 2, 4 s, 480p | ✅ |
+| Plan 2 en 6 s, 720p | ✅ |
+| Plan 1 en 4 s, 720p | ❌ solde insuffisant |
+
+Soit, pour 10 $ : un portrait, un essai 480p et un plan 720p. Les sept plans
+restants (37 s de vidéo en 720p) demandent un nouveau rechargement ; le coût
+exact d'un plan est lisible sur la console du compte portant la clé d'API, et
+non sur celui que lit la connexion MCP (voir §6).
 
 Une économie à connaître : **relancer un seul plan coûte un seul plan.** En cas
-de plan raté, ne pas régénérer la série — c'est la dépense la plus fréquente et
-la plus inutile.
+de plan raté, ne pas régénérer la série — `--plans 4` suffit.
 
 ---
 
