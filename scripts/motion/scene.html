@@ -32,8 +32,8 @@
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
-    width: 1920px;
-    height: 1080px;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
     background: var(--navy);
   }
@@ -185,6 +185,50 @@
   .ticket .note { color: rgba(24,32,47,.6); }
   .ticket .foot { margin-top: 30px; }
   .ticket .body { margin-top: 30px; }
+  /* ------------------------------------------------- Composition verticale
+   *
+   * La même scène, réorganisée en hauteur pour un téléphone tenu droit : la
+   * légende en haut, l'objet dessous. En 16:9 sur un écran de 358 px, les
+   * écrans du produit devenaient des vignettes illisibles ; ici le téléphone
+   * occupe toute la largeur utile.
+   *
+   * Seules les positions changent. Le minutage, les courbes, la commande
+   * suivie et la mécanique d'impression sont exactement ceux du 16:9.
+   */
+  body.vertical .caption {
+    left: 90px; top: 170px;
+    width: 900px;
+    transform: none;
+  }
+  body.vertical .caption .display { font-size: 80px; }
+  body.vertical .caption .mono { font-size: 50px; }
+  /* Agrandis par `scale`, propriété distincte de `transform` : le moteur
+     d'animation écrit `transform` à chaque image et l'écraserait sinon. Les
+     positions placent le centre de chaque objet sur l'axe vertical du cadre. */
+  body.vertical .slip { left: 350px; top: 860px; scale: 1.4; }
+  body.vertical .phone {
+    left: 331px; top: 680px;
+    scale: 1.3;
+    transform-origin: 50% 0;
+  }
+  body.vertical .ticket { left: 320px; top: 1180px; scale: 1.45; }
+
+  /* ------------------------------------------------------------- Affiche
+   *
+   * Une seule affiche pour les deux formats. Le lecteur l'affiche en
+   * `object-fit: cover`, donc rognée au centre : en 16:9 il en garde une
+   * bande horizontale, en 9:16 une bande verticale. Seul le carré central
+   * survit aux deux cadrages — c'est là qu'est posé le ticket, et rien
+   * d'autre : une légende sur un bord serait coupée dans l'un des deux.
+   *
+   * Pourquoi pas une affiche par format : un navigateur télécharge l'affiche
+   * d'une vidéo même masquée, et une affiche en arrière-plan CSS est
+   * recouverte par le fond gris que le lecteur peint tant qu'aucune image
+   * n'est chargée.
+   */
+  body.poster .caption, body.poster .phone, body.poster .slip { display: none; }
+  body.poster .ticket { left: 740px; top: 50%; scale: 1.6; }
+
   .heat {
     position: absolute; left: 0; right: 0;
     height: 12px;
@@ -268,6 +312,18 @@
   /** Durée totale, en secondes. Lue par le moteur de rendu. */
   window.DURATION = 26;
 
+  /** `?format=vertical` : même scène, composée pour un téléphone tenu droit. */
+  const format = new URLSearchParams(location.search).get('format');
+  if (format === 'vertical') document.body.classList.add('vertical');
+  if (format === 'poster') document.body.classList.add('poster');
+
+  /**
+   * Hauteur du cadre : tout ce qui entre ou sort par le bas parcourt au moins
+   * cette distance. Une valeur fixe de 1 100 px suffisait en 16:9 ; en 9:16,
+   * le téléphone, posé plus bas, restait visible en bas de l'image.
+   */
+  const OFF = window.innerHeight;
+
   // ------------------------------------------------------------- Outils
   /**
    * Bornée entre 0 et 1, et sûre face à `NaN`.
@@ -333,7 +389,7 @@
     const el = $('slip');
     el.style.opacity = String(enter * (1 - span(3.4, 3.9, t)));
     el.style.transform =
-      `translateX(${(1 - enter) * 260}px) translateY(${drop * 900}px) ` +
+      `translateX(${(1 - enter) * 260}px) translateY(${drop * OFF * 0.85}px) ` +
       `rotate(${-5 + drop * 32}deg)`;
   }
 
@@ -353,8 +409,8 @@
 
     const onFirst = t < 13;
     const y = onFirst
-      ? (1 - firstIn) * 1100 + firstOut * 1100
-      : (1 - secondIn) * 1100 + secondOut * 1100;
+      ? (1 - firstIn) * OFF + firstOut * OFF
+      : (1 - secondIn) * OFF + secondOut * OFF;
     const visible = onFirst ? t >= 4.2 && t <= 10.6 : t >= 16.0 && t <= 20.9;
 
     const el = $('phone');

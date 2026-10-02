@@ -23,6 +23,8 @@
  *                                          # quelques images fixes, pour vérifier
  *   node scripts/motion/render.mjs --publier
  *                                          # rend, puis copie dans public/videos/
+ *   node scripts/motion/render.mjs --format vertical --publier
+ *                                          # la version 9:16, pour les téléphones
  *
  * Variables : CAPTURES_DIR (défaut ./captures-pub), OUT_DIR (défaut
  * ./publicite/motion), CHROMIUM_PATH.
@@ -45,11 +47,20 @@ import pw from 'playwright-core';
 const { chromium } = pw;
 
 const FPS = 30;
-const W = 1920;
-const H = 1080;
+
+/**
+ * Deux formats, une seule scène. `--format vertical` la compose pour un
+ * téléphone tenu droit ; le minutage et le contenu ne changent pas.
+ */
+const VERTICAL = (() => {
+  const index = process.argv.indexOf('--format');
+  return index !== -1 && process.argv[index + 1] === 'vertical';
+})();
+const W = VERTICAL ? 1080 : 1920;
+const H = VERTICAL ? 1920 : 1080;
 const OUT = process.env.OUT_DIR ?? 'publicite/motion';
 const CAPTURES = process.env.CAPTURES_DIR ?? 'captures-pub';
-const NAME = 'magyapro-restaurant';
+const NAME = VERTICAL ? 'magyapro-restaurant-vertical' : 'magyapro-restaurant';
 
 const SCREENS = {
   menu: '02-menu-client-tel.png',
@@ -85,7 +96,8 @@ async function openScene(browser) {
   }
 
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-  await page.goto(`file://${resolve('scripts/motion/scene.html')}`, { waitUntil: 'load' });
+  const query = VERTICAL ? '?format=vertical' : '';
+  await page.goto(`file://${resolve('scripts/motion/scene.html')}${query}`, { waitUntil: 'load' });
   await page.addStyleTag({ content: brandFontFaces() });
 
   await page.evaluate(
@@ -143,19 +155,36 @@ async function write(stream, buffer) {
 }
 
 /**
- * Copie la vidéo là où la page de présentation la lit.
+ * L'affiche commune aux deux formats : un carré de 1 920 px, ticket centré.
  *
- * L'affiche passe en WebP : c'est le seul fichier que le visiteur télécharge
- * au chargement de la page (la vidéo est en `preload="none"`), et un PNG de
- * 1920 × 1080 pèserait dix fois plus pour la même image.
+ * Le lecteur la rogne au centre selon le format (voir « Affiche » dans
+ * `scene.html`). Rendue en WebP : c'est le seul fichier que le visiteur
+ * télécharge tant que la vidéo n'est pas à l'écran, et un PNG pèserait dix
+ * fois plus pour la même image.
  */
-function publish() {
+async function renderPoster(browser, file) {
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1920 } });
+  await page.goto(`file://${resolve('scripts/motion/scene.html')}?format=poster`, { waitUntil: 'load' });
+  await page.addStyleTag({ content: brandFontFaces() });
+  await page.evaluate(async () => {
+    await document.fonts.load('400 22px "DM Mono"');
+    await document.fonts.load('500 17px "DM Mono"');
+  });
+  // L'instant final : le ticket est posé, imprimé, immobile.
+  await page.evaluate((time) => window.render(time), (await page.evaluate(() => window.DURATION)) - 0.1);
+  const png = `${OUT}/affiche-carree.png`;
+  await page.screenshot({ path: png });
+  await page.close();
+  execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y',
+    '-i', png, '-c:v', 'libwebp', '-quality', '86', file]);
+}
+
+/** Copie la vidéo et son affiche là où la page de présentation les lit. */
+async function publish(browser) {
   const target = 'public/videos';
   mkdirSync(target, { recursive: true });
   for (const ext of ['mp4', 'webm']) copyFileSync(`${OUT}/${NAME}.${ext}`, `${target}/${NAME}.${ext}`);
-  execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y',
-    '-i', `${OUT}/${NAME}-affiche.png`, '-c:v', 'libwebp', '-quality', '86',
-    `${target}/${NAME}-affiche.webp`]);
+  await renderPoster(browser, `${target}/magyapro-restaurant-affiche.webp`);
   for (const file of readdirSync(target)) {
     console.log(`  publié : ${target}/${file} — ${(statSync(`${target}/${file}`).size / 1024).toFixed(0)} Ko`);
   }
@@ -177,7 +206,7 @@ async function main() {
 
     if (essai) {
       for (const t of essai) {
-        const path = `${OUT}/essai-${String(t).replace('.', '_')}s.png`;
+        const path = `${OUT}/essai-${VERTICAL ? 'v-' : ''}${String(t).replace('.', '_')}s.png`;
         await page.evaluate((time) => window.render(time), t);
         await page.screenshot({ path });
         console.log(`  ✓ ${path}`);
@@ -225,7 +254,7 @@ async function main() {
     }
     console.log(`  ${OUT}/${NAME}-affiche.png`);
 
-    if (process.argv.includes('--publier')) publish();
+    if (process.argv.includes('--publier')) await publish(browser);
   } finally {
     await browser.close();
   }

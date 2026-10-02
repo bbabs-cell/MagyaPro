@@ -473,11 +473,24 @@ Ce que cette exception autorise, et rien au-delà :
 
 La mécanique est commentée dans `globals.css`, sous « L'impression ».
 
-**La vidéo de présentation n'est pas un second moment.** Elle se lance au
-clic, avec le lecteur natif du navigateur, et rien n'en est téléchargé avant
-— seule son affiche, 43 Ko. Une vidéo en lecture automatique, elle, serait
-une seconde animation qui ne répond à aucun geste, et la plus bruyante des
-deux : elle reste interdite.
+**La vidéo de présentation est la seconde exception, par décision du
+propriétaire.** Elle se lisait d'abord au clic ; il a choisi la lecture
+automatique en boucle. Ce qui la rend acceptable, et qui n'est pas
+négociable :
+
+- **muette**, sans quoi aucun navigateur ne la lance ;
+- **seulement à l'écran** : elle démarre quand elle entre dans la fenêtre,
+  s'arrête quand elle en sort, et rien n'en est téléchargé avant — elle est
+  sous la ligne de flottaison ;
+- **jamais en mouvement réduit ni en économie de données** : le bouton
+  lecture reste ;
+- **le geste du visiteur l'emporte** : mise en pause, elle ne repart plus
+  seule ;
+- **les commandes restent visibles**, pour la mettre en pause (WCAG 2.2.2).
+
+Toute autre vidéo en lecture automatique reste interdite. Cette exception-ci
+tient à sa place sur la page et à ces cinq conditions, pas à un principe
+général.
 
 ### Une seule déclaration des neutres
 
