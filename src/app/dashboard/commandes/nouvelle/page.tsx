@@ -31,6 +31,22 @@ export default async function NewOrderPage() {
   // depuis une période d'essai ou un plan résilié.
   const entitlements = await getEntitlements(restaurant.id);
   if (!hasFeature(entitlements, FEATURES.COUNTER_ORDERS)) {
+    // Les plans qui l'incluent, lus en base : c'est l'administration qui
+    // décide où vit cette fonctionnalité, pas le code. Une première version
+    // écrivait « Premium » en dur — et affichait, à un restaurant déjà au
+    // plan Premium dont la case n'était pas encore cochée, « n'est pas
+    // incluse dans le plan Premium… demande le plan Premium ».
+    const plans = await prisma.plan.findMany({
+      where: {
+        product: 'RESTAURANT',
+        isActive: true,
+        features: { has: FEATURES.COUNTER_ORDERS },
+      },
+      select: { name: true },
+      orderBy: { position: 'asc' },
+    });
+    const names = plans.map((plan) => plan.name);
+
     return (
       <div className="space-y-6">
         <PageHeader
@@ -48,17 +64,25 @@ export default async function NewOrderPage() {
 
         <Card className="border-state-warn/30 bg-state-warn-soft p-5">
           <h2 className="text-sm font-medium text-state-warn">
-            Réservé au plan Premium
+            Non incluse dans votre plan
           </h2>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
             La prise de commande au comptoir et par téléphone n’est pas incluse
             dans le plan {entitlements.planName}. Vos clients peuvent continuer
-            à commander depuis votre site ; c’est la saisie depuis le tableau de
-            bord qui demande le plan Premium.
+            à commander depuis votre site.
           </p>
-          <LinkButton href="/dashboard/abonnement" size="sm" className="mt-3">
-            Voir les plans
-          </LinkButton>
+          <p className="mt-2 max-w-prose text-sm text-ink-muted">
+            {names.length > 0
+              ? `Elle est disponible avec ${
+                  names.length === 1 ? 'le plan' : 'les plans'
+                } ${names.join(', ')}.`
+              : 'Elle n’est proposée dans aucun plan pour le moment.'}
+          </p>
+          {names.length > 0 && (
+            <LinkButton href="/dashboard/abonnement" size="sm" className="mt-3">
+              Voir les plans
+            </LinkButton>
+          )}
         </Card>
       </div>
     );

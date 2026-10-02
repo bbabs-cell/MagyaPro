@@ -1,0 +1,436 @@
+<!doctype html>
+<!--
+  Scène de la vidéo de présentation MagyaPro Restaurant.
+
+  Ce fichier n'est pas une page : c'est une animation **pilotée par le temps**.
+  Rien n'y bouge tout seul — aucune transition CSS, aucune animation, aucun
+  minuteur. La fonction `render(t)` place chaque élément à l'instant `t`, en
+  secondes, et `scripts/motion/render.mjs` l'appelle image par image avant de
+  photographier la page.
+
+  C'est ce qui rend le rendu exact : une animation CSS jouée en temps réel
+  dépend de la vitesse de la machine, et deux rendus ne donneraient pas le
+  même film. Ici, l'image 412 est toujours l'image 412.
+
+  Tout ce qui est à l'écran existe : les écrans de téléphone sont des captures
+  de l'application réelle, la commande suivie (Poulet yassa, n°4) est celle
+  que montre l'écran de cuisine de la vitrine de démonstration, et le ticket
+  s'imprime avec la mécanique de la page d'accueil — avance linéaire, ligne
+  de chauffe.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --navy: #0b1730;
+    --braise: #ff5e2e;
+    --braise-light: #ff9a4d;
+    --paper-cold: #f7f8fa;
+    --paper-ink: #18202f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--navy);
+  }
+  body {
+    position: relative;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* La trame de points du hero, à la même opacité. */
+  .grid {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,.07) 1.4px, transparent 1.4px);
+    background-size: 32px 32px;
+  }
+
+  /* --------------------------------------------------------------- Légendes */
+  .caption {
+    position: absolute;
+    left: 150px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 980px;
+  }
+  /* Chaque ligne est écrite pour tenir seule : le retour à la ligne est
+     décidé dans le texte, jamais par la largeur de la colonne — sinon
+     « Une commande notée » se coupait en « Une commande / notée ». */
+  .caption .line { display: block; white-space: nowrap; will-change: transform, opacity; }
+  .caption .display {
+    font: 800 84px/0.98 'Bricolage Grotesque', sans-serif;
+    letter-spacing: -0.03em;
+  }
+  .caption .mono {
+    margin-top: 14px;
+    font: 500 52px/1.15 'DM Mono', monospace;
+    letter-spacing: -0.01em;
+    color: var(--braise-light);
+  }
+  .caption .eyebrow {
+    margin-bottom: 34px;
+    font: 500 20px/1 'DM Mono', monospace;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--braise-light);
+  }
+  .caption .small {
+    margin-top: 44px;
+    font: 500 30px/1.3 'Manrope', sans-serif;
+    color: rgba(255,255,255,.72);
+  }
+
+  /* ------------------------------------------------------- Le bloc de commande */
+  .slip {
+    position: absolute;
+    left: 1190px; top: 290px;
+    width: 380px; height: 480px;
+    padding: 46px 38px;
+    background-color: #f3ecdf;
+    background-image: repeating-linear-gradient(
+      to bottom, transparent 0, transparent 47px, rgba(59,42,26,.16) 47px, rgba(59,42,26,.16) 48px);
+    background-position: 0 92px;
+    color: #3b2a1a;
+    font: 400 26px/48px 'DM Mono', monospace;
+    box-shadow: 0 30px 60px -28px rgba(0,0,0,.65);
+    border-top: 14px solid #c9603f;
+    transform-origin: 50% 0;
+  }
+  .slip b { font-weight: 500; }
+
+  /* -------------------------------------------------------------- Le téléphone */
+  .phone {
+    position: absolute;
+    left: 1171px; top: 104px;
+    width: 418px; height: 872px;
+    padding: 14px;
+    border-radius: 60px;
+    background: #15110d;
+    box-shadow:
+      0 0 0 2px #2a2118,
+      0 50px 90px -40px rgba(0,0,0,.8),
+      0 18px 40px -20px rgba(0,0,0,.6);
+  }
+  .screen {
+    position: relative;
+    width: 390px; height: 844px;
+    overflow: hidden;
+    border-radius: 46px;
+    background: #fbf8f2;
+  }
+  /*
+   * Barre d'état : le contenu commence sous l'encoche, comme sur un vrai
+   * téléphone. Sans elle, l'encoche masquait le bandeau « Restaurant de
+   * démonstration » de la vitrine — et ce bandeau doit rester lisible : c'est
+   * lui qui dit que la vitrine montrée est une démonstration.
+   */
+  .statusbar { position: absolute; left: 0; right: 0; top: 0; height: 52px; z-index: 3; }
+  .screen img {
+    position: absolute; left: 0; top: 52px;
+    width: 390px;
+    display: block;
+  }
+  .island {
+    position: absolute; z-index: 5;
+    left: 50%; top: 12px;
+    width: 116px; height: 32px;
+    margin-left: -58px;
+    border-radius: 999px;
+    background: #000;
+  }
+  .ripple {
+    position: absolute; z-index: 4;
+    width: 72px; height: 72px;
+    margin: -36px 0 0 -36px;
+    border-radius: 50%;
+    background: rgba(255, 94, 46, .35);
+    border: 2px solid rgba(255, 94, 46, .7);
+  }
+  .ring {
+    position: absolute; z-index: 4;
+    border: 3px solid var(--braise);
+    border-radius: 24px;
+    box-shadow: 0 0 0 6px rgba(255, 94, 46, .18);
+  }
+
+  /* ---------------------------------------------------------------- Le ticket */
+  .ticket {
+    position: absolute;
+    left: 1160px; top: 50%;
+    width: 440px;
+    padding: 44px 36px 46px;
+    background: var(--paper-cold);
+    color: var(--paper-ink);
+    font: 400 22px/1.7 'DM Mono', monospace;
+    box-shadow: 0 34px 80px -30px rgba(0,0,0,.7);
+    -webkit-mask-image:
+      radial-gradient(circle at 8px -1px, transparent 8px, black 8.5px),
+      radial-gradient(circle at 8px calc(100% + 1px), transparent 8px, black 8.5px);
+    -webkit-mask-size: 16px 100%, 16px 100%;
+    -webkit-mask-repeat: repeat-x, repeat-x;
+    -webkit-mask-position: top, bottom;
+  }
+  .ticket .head { text-align: center; font-size: 17px; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; }
+  .ticket .meta { margin-top: 4px; text-align: center; font-size: 17px; color: rgba(24,32,47,.55); }
+  .ticket .row { display: flex; justify-content: space-between; gap: 16px; }
+  .ticket .detail { padding-left: 26px; font-size: 19px; color: rgba(24,32,47,.6); }
+  .ticket .rule { margin: 16px 0; border-top: 2px dashed rgba(24,32,47,.2); }
+  .ticket .note, .ticket .foot {
+    text-align: center; font-size: 17px; letter-spacing: .28em; text-transform: uppercase;
+  }
+  .ticket .note { color: rgba(24,32,47,.6); }
+  .ticket .foot { margin-top: 30px; }
+  .ticket .body { margin-top: 30px; }
+  .heat {
+    position: absolute; left: 0; right: 0;
+    height: 12px;
+    background: linear-gradient(to bottom,
+      rgba(255,255,255,0) 0%, rgba(255,196,148,.6) 70%, rgba(255,196,148,0) 100%);
+  }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+
+  <!-- 1. Le papier -->
+  <div class="caption" id="c1">
+    <span class="line display">Une commande notée</span>
+    <span class="line display">sur un papier</span>
+    <span class="line mono">se perd.</span>
+  </div>
+  <div class="slip" id="slip">
+    <b>Table 7</b><br>
+    2 poulet braisé<br>
+    1 attiéké poisson<br>
+    3 bissap<br>
+    <span style="opacity:.55">— sans piment</span>
+  </div>
+
+  <!-- 2. Le menu -->
+  <div class="caption" id="c2">
+    <span class="line display">Le client commande</span>
+    <span class="line display">depuis votre site,</span>
+    <span class="line mono">ou depuis sa table.</span>
+  </div>
+
+  <!-- 3. Le bon -->
+  <div class="caption" id="c3">
+    <span class="line display">Le bon part</span>
+    <span class="line display">en cuisine.</span>
+    <span class="line mono">Personne ne recopie rien.</span>
+  </div>
+
+  <!-- 4. La cuisine -->
+  <div class="caption" id="c4">
+    <span class="line display">La cuisine suit</span>
+    <span class="line display">chaque commande,</span>
+    <span class="line mono">dans l’ordre d’arrivée.</span>
+  </div>
+
+  <!-- 5. La fin : la composition du hero du site -->
+  <div class="caption" id="c5">
+    <span class="line eyebrow">MagyaPro Restaurant</span>
+    <span class="line display">De la commande</span>
+    <span class="line mono" style="margin:6px 0 10px">à la cuisine</span>
+    <span class="line display">sans un papier perdu.</span>
+    <span class="line small">Un mois gratuit · sans carte bancaire</span>
+  </div>
+
+  <div class="phone" id="phone">
+    <div class="screen">
+      <div class="statusbar" id="statusbar"></div>
+      <div class="island"></div>
+      <img id="scr-menu" alt="">
+      <img id="scr-cuisine" alt="">
+      <div class="ripple" id="ripple"></div>
+      <div class="ring" id="ring"></div>
+    </div>
+  </div>
+
+  <div class="ticket" id="ticket">
+    <div class="head">Chez Aminata</div>
+    <div class="meta">Bon n°4 · Livraison</div>
+    <div class="body">
+      <div class="row"><span>Poulet yassa</span></div>
+      <div class="detail">2 ×</div>
+      <div class="rule"></div>
+      <div class="note">Envoyé en cuisine</div>
+    </div>
+    <div class="foot">À préparer</div>
+    <div class="heat" id="heat"></div>
+  </div>
+
+<script>
+  /** Durée totale, en secondes. Lue par le moteur de rendu. */
+  window.DURATION = 26;
+
+  // ------------------------------------------------------------- Outils
+  /**
+   * Bornée entre 0 et 1, et sûre face à `NaN`.
+   *
+   * Une légende qui ne sort jamais avait pour sortie `Infinity` : le calcul
+   * donnait `(t − ∞) / (∞ − ∞)`, soit `NaN`, et une opacité `NaN` est
+   * ignorée par le navigateur — qui garde 1. La légende finale s'affichait
+   * donc dès la première image, superposée à toutes les autres.
+   */
+  const clamp = (x) => (Number.isNaN(x) ? 0 : Math.min(1, Math.max(0, x)));
+  /** Progression de 0 à 1 entre deux instants. */
+  const span = (a, b, t) => clamp((t - a) / (b - a));
+
+  /**
+   * Les courbes, choisies par ce qu'elles disent.
+   *
+   * - `arrive` : décélération franche, l'équivalent du
+   *   `cubic-bezier(0.16, 1, 0.3, 1)` employé partout dans le produit.
+   * - `leave` : accélération — un départ ne freine pas.
+   * - `fall` : la gravité ; le bloc de papier tombe, il ne glisse pas.
+   * - L'impression du ticket n'a pas de courbe : elle est linéaire, comme
+   *   sur le site, parce qu'un moteur pas-à-pas avance à vitesse constante.
+   */
+  const arrive = (x) => 1 - Math.pow(1 - x, 5);
+  const leave = (x) => x * x * x;
+  const fall = (x) => x * x;
+  const smooth = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+
+  const $ = (id) => document.getElementById(id);
+
+  // ------------------------------------------------------------ Légendes
+  /**
+   * Chaque légende entre ligne par ligne — un décalage de 90 ms, plafonné
+   * par le nombre de lignes, jamais plus de quatre — puis sort d'un bloc,
+   * plus vite qu'elle n'est entrée.
+   */
+  const CAPTIONS = [
+    { id: 'c1', in: 0.3, out: 3.9 },
+    { id: 'c2', in: 4.7, out: 9.9 },
+    { id: 'c3', in: 10.5, out: 15.6 },
+    { id: 'c4', in: 16.4, out: 20.6 },
+    { id: 'c5', in: 21.2, out: Infinity },
+  ];
+
+  function captions(t) {
+    for (const caption of CAPTIONS) {
+      const lines = $(caption.id).querySelectorAll('.line');
+      const exit = Number.isFinite(caption.out)
+        ? leave(span(caption.out - 0.4, caption.out, t))
+        : 0;
+      lines.forEach((line, index) => {
+        const enter = arrive(span(caption.in + index * 0.09, caption.in + index * 0.09 + 0.7, t));
+        line.style.opacity = String(enter * (1 - exit));
+        line.style.transform = `translateY(${(1 - enter) * 30 - exit * 18}px)`;
+      });
+    }
+  }
+
+  // ---------------------------------------------------------- Le papier
+  function slip(t) {
+    const enter = arrive(span(0.2, 1.1, t));
+    const drop = fall(span(2.5, 3.9, t));
+    const el = $('slip');
+    el.style.opacity = String(enter * (1 - span(3.4, 3.9, t)));
+    el.style.transform =
+      `translateX(${(1 - enter) * 260}px) translateY(${drop * 900}px) ` +
+      `rotate(${-5 + drop * 32}deg)`;
+  }
+
+  // -------------------------------------------------------- Le téléphone
+  /** Coordonnées dans l'écran (390 px de large), mesurées sur les captures. */
+  /** Hauteur de la barre d'état ; les captures commencent dessous. */
+  const STATUS = 52;
+  const TAP = { x: 340, y: 484 + STATUS };          // « + AJOUTER » du Poulet yassa
+  const MENU_SCROLL = 120;
+  const CARD = { x: 14, y: 293 + STATUS, w: 362, h: 162 }; // fiche n°4, écran de cuisine
+
+  function phone(t) {
+    const firstIn = arrive(span(4.2, 5.1, t));
+    const firstOut = leave(span(10.0, 10.6, t));
+    const secondIn = arrive(span(16.0, 16.9, t));
+    const secondOut = leave(span(20.3, 20.9, t));
+
+    const onFirst = t < 13;
+    const y = onFirst
+      ? (1 - firstIn) * 1100 + firstOut * 1100
+      : (1 - secondIn) * 1100 + secondOut * 1100;
+    const visible = onFirst ? t >= 4.2 && t <= 10.6 : t >= 16.0 && t <= 20.9;
+
+    const el = $('phone');
+    el.style.display = visible ? 'block' : 'none';
+    el.style.transform = `translateY(${y}px)`;
+
+    $('scr-menu').style.display = onFirst ? 'block' : 'none';
+    $('scr-cuisine').style.display = onFirst ? 'none' : 'block';
+    // Teinte de la barre d'état prise sur le haut de chaque capture : le
+    // bandeau sombre de la vitrine, l'en-tête clair du tableau de bord.
+    $('statusbar').style.background = onFirst ? '#1f1b16' : '#fbf8f2';
+
+    // Le client parcourt la carte, puis ajoute un plat.
+    const scroll = smooth(span(5.5, 6.7, t)) * MENU_SCROLL;
+    $('scr-menu').style.transform = `translateY(${-scroll}px)`;
+
+    const tap = span(7.1, 7.8, t);
+    const ripple = $('ripple');
+    ripple.style.display = tap > 0 && tap < 1 ? 'block' : 'none';
+    ripple.style.left = `${TAP.x}px`;
+    ripple.style.top = `${TAP.y - MENU_SCROLL}px`;
+    ripple.style.opacity = String(1 - tap);
+    ripple.style.transform = `scale(${0.4 + arrive(tap) * 0.9})`;
+
+    // La commande n°4, celle du Poulet yassa, retrouvée en cuisine.
+    const ring = $('ring');
+    const show = arrive(span(18.0, 18.8, t)) * (1 - span(20.1, 20.4, t));
+    ring.style.display = !onFirst && show > 0 ? 'block' : 'none';
+    ring.style.left = `${CARD.x}px`;
+    ring.style.top = `${CARD.y}px`;
+    ring.style.width = `${CARD.w}px`;
+    ring.style.height = `${CARD.h}px`;
+    ring.style.opacity = String(show);
+    ring.style.transform = `scale(${1.04 - 0.04 * arrive(span(18.0, 18.8, t))})`;
+  }
+
+  // ------------------------------------------------------------ Le ticket
+  function ticket(t) {
+    const el = $('ticket');
+    const heat = $('heat');
+
+    const printing = t >= 10.9 && t < 15.9;
+    const resting = t >= 21.6;
+    el.style.display = printing || resting ? 'block' : 'none';
+    if (!printing && !resting) return;
+
+    if (printing) {
+      // La mécanique exacte du site : le papier s'allonge à vitesse
+      // constante, et la ligne de chauffe reste collée à son bord.
+      const fed = span(10.9, 13.1, t);
+      const out = leave(span(15.4, 15.9, t));
+      el.style.clipPath = `inset(0 0 ${(1 - fed) * 100}% 0)`;
+      el.style.opacity = String(1 - out);
+      el.style.transform = `translateY(-50%) translateX(${out * 320}px)`;
+      heat.style.display = 'block';
+      heat.style.top = `calc(${fed * 100}% - 12px)`;
+      heat.style.opacity = String(span(10.9, 11.0, t) * (1 - span(12.9, 13.1, t)));
+    } else {
+      // Au dernier plan, le ticket est déjà imprimé : il revient tel qu'il
+      // est posé sur la page d'accueil, sans se réimprimer.
+      const enter = arrive(span(21.6, 22.5, t));
+      el.style.clipPath = 'none';
+      el.style.opacity = String(enter);
+      el.style.transform = `translateY(calc(-50% + ${(1 - enter) * 36}px))`;
+      heat.style.display = 'none';
+    }
+  }
+
+  window.render = (t) => {
+    captions(t);
+    slip(t);
+    phone(t);
+    ticket(t);
+  };
+
+  window.render(0);
+</script>
+</body>
+</html>
