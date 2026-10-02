@@ -1,5 +1,5 @@
 /**
- * Sonde de la vidéo de présentation, sur la page Restaurant.
+ * Sonde de la vidéo de présentation, sur la page Restaurant ou Boutique.
  *
  * Lecture automatique en boucle, à la demande du propriétaire — mais à des
  * conditions que ce script vérifie dans un vrai navigateur, sur deux
@@ -23,12 +23,17 @@
  * verrait aucune non plus.
  *
  * Emploi : serveur lancé (`npm run start`), puis
- *   node scripts/audit-video.mjs
+ *   node scripts/audit-video.mjs                    # page Restaurant
+ *   node scripts/audit-video.mjs --page boutique    # page Boutique
  */
 import pw from 'playwright-core';
 
 const { chromium } = pw;
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
+const PRODUCT = process.argv.includes('--page') && process.argv[process.argv.indexOf('--page') + 1] === 'boutique'
+  ? 'boutique'
+  : 'restaurant';
+const PATH = PRODUCT === 'boutique' ? '/boutique' : '/restaurant';
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const failures = [];
@@ -47,7 +52,7 @@ async function open(viewport, options = {}) {
   page.on('console', (message) => {
     if (/Content Security Policy|Refused to load/i.test(message.text())) violations.push(message.text());
   });
-  await page.goto(`${BASE}/restaurant`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}${PATH}`, { waitUntil: 'networkidle' });
   return { context, page, requests, violations };
 }
 
@@ -61,8 +66,8 @@ const state = (video) =>
   }));
 
 for (const viewport of [
-  { name: 'bureau', width: 1440, height: 900, expect: 'magyapro-restaurant.webm' },
-  { name: 'téléphone', width: 390, height: 844, expect: 'magyapro-restaurant-vertical.webm' },
+  { name: 'bureau', width: 1440, height: 900, expect: `magyapro-${PRODUCT}.webm` },
+  { name: 'téléphone', width: 390, height: 844, expect: `magyapro-${PRODUCT}-vertical.webm` },
 ]) {
   const tag = viewport.name;
   const { context, page, requests, violations } = await open(viewport);
@@ -139,7 +144,7 @@ for (const viewport of [
   const page = await context.newPage();
   const requests = [];
   page.on('request', (request) => requests.push(request.url()));
-  await page.goto(`${BASE}/restaurant`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}${PATH}`, { waitUntil: 'networkidle' });
   const video = page.locator('video').first();
   await video.scrollIntoViewIfNeeded();
   await page.waitForTimeout(2500);
@@ -153,6 +158,7 @@ for (const viewport of [
 }
 
 await browser.close();
+console.log(`— page ${PATH}`);
 console.log(report.join('\n'));
 if (failures.length) {
   console.log(`\n${failures.length} échec(s) :`);

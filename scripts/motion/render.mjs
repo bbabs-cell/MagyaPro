@@ -25,15 +25,21 @@
  *                                          # rend, puis copie dans public/videos/
  *   node scripts/motion/render.mjs --format vertical --publier
  *                                          # la version 9:16, pour les téléphones
+ *   node scripts/motion/render.mjs --produit boutique [--format vertical] --publier
+ *                                          # la vidéo Boutique
+ *   node scripts/motion/render.mjs [--produit boutique] --affiche
+ *                                          # seulement l'affiche, dans public/videos/
  *
  * Variables : CAPTURES_DIR (défaut ./captures-pub), OUT_DIR (défaut
  * ./publicite/motion), CHROMIUM_PATH.
  *
  * ## Sorties
  *
- * - `magyapro-restaurant.mp4` — H.264, lu partout ;
- * - `magyapro-restaurant.webm` — VP9, plus léger pour le site ;
- * - `magyapro-restaurant-affiche.png` — l'image d'attente du lecteur, prise
+ * Pour chaque produit (`magyapro-restaurant…`, `magyapro-boutique…`) :
+ *
+ * - `.mp4` — H.264, lu partout ;
+ * - `.webm` — VP9, plus léger pour le site ;
+ * - `-affiche.png` — l'image d'attente du lecteur, prise
  *   sur la dernière image, qui reprend la composition du hero.
  *
  * La vidéo est muette, et c'est voulu : une vidéo en lecture automatique sur
@@ -60,12 +66,49 @@ const W = VERTICAL ? 1080 : 1920;
 const H = VERTICAL ? 1920 : 1080;
 const OUT = process.env.OUT_DIR ?? 'publicite/motion';
 const CAPTURES = process.env.CAPTURES_DIR ?? 'captures-pub';
-const NAME = VERTICAL ? 'magyapro-restaurant-vertical' : 'magyapro-restaurant';
+/**
+ * Le produit filmé : `--produit boutique`, Restaurant par défaut. La scène
+ * est commune ; seuls les écrans, le contenu et la palette changent.
+ */
+const PRODUCT = (() => {
+  const index = process.argv.indexOf('--produit');
+  return index !== -1 && process.argv[index + 1] === 'boutique' ? 'boutique' : 'restaurant';
+})();
+const NAME = `magyapro-${PRODUCT}${VERTICAL ? '-vertical' : ''}`;
 
+/**
+ * Les deux écrans du téléphone, dans l'ordre du film.
+ *
+ * Boutique filme la **visite guidée** de « Marché du Coin », la boutique du
+ * ticket de sa page d'accueil : on y vend l'eau à la bouteille et au carton.
+ */
 const SCREENS = {
-  menu: '02-menu-client-tel.png',
-  cuisine: '15-cuisine-tel.png',
-};
+  restaurant: { first: '02-menu-client-tel.png', second: '15-cuisine-tel.png' },
+  boutique: { first: '30-marche-caisse-tel.png', second: '31-marche-previsions-tel.png' },
+}[PRODUCT];
+
+/**
+ * Repères mesurés à la capture (`capture-pub.mjs` → `reperes.json`) :
+ * l'endroit exact du toucher et de la fiche encadrée. Restaurant garde les
+ * siens dans la scène ; Boutique ne peut pas être rendue sans eux.
+ */
+function anchors() {
+  if (PRODUCT === 'restaurant') return {};
+  const file = `${CAPTURES}/reperes.json`;
+  if (!existsSync(file)) throw new Error(`Repères introuvables : ${file} — lancez « node scripts/capture-pub.mjs ».`);
+  const all = JSON.parse(readFileSync(file, 'utf8'));
+  return {
+    tap: all['30-marche-caisse']?.tap,
+    card: all['31-marche-previsions']?.card,
+  };
+}
+
+/** L'adresse de la scène pour ce produit et ce format. */
+function sceneUrl(format) {
+  const params = new URLSearchParams({ produit: PRODUCT });
+  if (format) params.set('format', format);
+  return `file://${resolve('scripts/motion/scene.html')}?${params}`;
+}
 
 const BRAND_FAMILIES = ['Bricolage Grotesque', 'Manrope', 'DM Mono'];
 
@@ -96,12 +139,12 @@ async function openScene(browser) {
   }
 
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-  const query = VERTICAL ? '?format=vertical' : '';
-  await page.goto(`file://${resolve('scripts/motion/scene.html')}${query}`, { waitUntil: 'load' });
+  await page.goto(sceneUrl(VERTICAL ? 'vertical' : null), { waitUntil: 'load' });
   await page.addStyleTag({ content: brandFontFaces() });
+  await page.evaluate((found) => window.configure(found), anchors());
 
   await page.evaluate(
-    async ({ menu, cuisine }) => {
+    async ({ first, second }) => {
       const load = (id, src) =>
         new Promise((done, fail) => {
           const img = document.getElementById(id);
@@ -109,11 +152,11 @@ async function openScene(browser) {
           img.onerror = () => fail(new Error(`Image illisible : ${src}`));
           img.src = src;
         });
-      await Promise.all([load('scr-menu', menu), load('scr-cuisine', cuisine)]);
+      await Promise.all([load('scr-first', first), load('scr-second', second)]);
     },
     {
-      menu: `file://${resolve(CAPTURES, SCREENS.menu)}`,
-      cuisine: `file://${resolve(CAPTURES, SCREENS.cuisine)}`,
+      first: `file://${resolve(CAPTURES, SCREENS.first)}`,
+      second: `file://${resolve(CAPTURES, SCREENS.second)}`,
     },
   );
 
@@ -164,15 +207,16 @@ async function write(stream, buffer) {
  */
 async function renderPoster(browser, file) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1920 } });
-  await page.goto(`file://${resolve('scripts/motion/scene.html')}?format=poster`, { waitUntil: 'load' });
+  await page.goto(sceneUrl('poster'), { waitUntil: 'load' });
   await page.addStyleTag({ content: brandFontFaces() });
+  await page.evaluate((found) => window.configure(found), anchors());
   await page.evaluate(async () => {
     await document.fonts.load('400 22px "DM Mono"');
     await document.fonts.load('500 17px "DM Mono"');
   });
   // L'instant final : le ticket est posé, imprimé, immobile.
   await page.evaluate((time) => window.render(time), (await page.evaluate(() => window.DURATION)) - 0.1);
-  const png = `${OUT}/affiche-carree.png`;
+  const png = `${OUT}/affiche-carree-${PRODUCT}.png`;
   await page.screenshot({ path: png });
   await page.close();
   execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y',
@@ -184,7 +228,7 @@ async function publish(browser) {
   const target = 'public/videos';
   mkdirSync(target, { recursive: true });
   for (const ext of ['mp4', 'webm']) copyFileSync(`${OUT}/${NAME}.${ext}`, `${target}/${NAME}.${ext}`);
-  await renderPoster(browser, `${target}/magyapro-restaurant-affiche.webp`);
+  await renderPoster(browser, `${target}/magyapro-${PRODUCT}-affiche.webp`);
   for (const file of readdirSync(target)) {
     console.log(`  publié : ${target}/${file} — ${(statSync(`${target}/${file}`).size / 1024).toFixed(0)} Ko`);
   }
@@ -201,6 +245,14 @@ async function main() {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 
   try {
+    // Seulement l'affiche : inutile de re-rendre 780 images pour elle.
+    if (process.argv.includes('--affiche')) {
+      mkdirSync('public/videos', { recursive: true });
+      await renderPoster(browser, `public/videos/magyapro-${PRODUCT}-affiche.webp`);
+      console.log(`  publié : public/videos/magyapro-${PRODUCT}-affiche.webp`);
+      return;
+    }
+
     const page = await openScene(browser);
     const duration = await page.evaluate(() => window.DURATION);
 

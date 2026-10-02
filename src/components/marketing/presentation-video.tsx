@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Vidéo de présentation de MagyaPro Restaurant.
+ * Vidéo de présentation, sur les pages Restaurant et Boutique.
  *
- * Une commande suivie de bout en bout : le client ajoute un plat depuis la
- * vitrine, le bon s'imprime, la cuisine la retrouve à l'écran. Les écrans du
- * film sont des captures de l'application, et la vidéo est rendue en code
- * (`scripts/motion/`), sans aucun service d'IA.
+ * Restaurant suit une commande, du menu à la cuisine ; Boutique suit une
+ * vente, du carton d'eau vendu au prix du carton jusqu'à la rupture annoncée.
+ * Les écrans du film sont des captures de l'application, et la vidéo est
+ * rendue en code (`scripts/motion/`), sans aucun service d'IA.
  *
  * ## Lecture automatique, en boucle — par décision du propriétaire
  *
@@ -67,7 +67,40 @@ import { useEffect, useRef } from 'react';
  * 9:16. Seul le carré central survit aux deux cadrages, et c'est là qu'est
  * posé le ticket — voir « Affiche » dans `scripts/motion/scene.html`.
  */
-export function PresentationVideo() {
+/**
+ * Ce qui distingue les deux vidéos. Tout le reste — lecture automatique,
+ * garde-fous, choix du format — est commun : deux comportements différents
+ * pour la même promesse finiraient par diverger.
+ */
+const VIDEOS = {
+  restaurant: {
+    background: 'bg-[#0b1730]',
+    // Le bleu nuit se détache seul du fond clair de la page.
+    frame: '',
+    captionClass: 'text-ink-muted',
+    size: '1,7 Mo',
+    caption:
+      'Une commande suivie de bout en bout, en 26 secondes et sans son : le client ajoute un plat depuis le site, le bon s’imprime, la cuisine la retrouve à l’écran. Les écrans sont ceux de l’application, sur un restaurant de démonstration.',
+  },
+  boutique: {
+    background: 'bg-[#1c1712]',
+    // Même brun que la page : sans filet, la vidéo n'a plus de bord, et sa
+    // première légende se lit comme un titre du site. Le filet est celui de
+    // toutes les cartes de la page Boutique.
+    frame: 'ring-1 ring-white/10',
+    // La page Boutique est sombre : l'encre atténuée des pages claires y
+    // serait illisible.
+    captionClass: 'text-[#f3ece1]/60',
+    size: '1,8 Mo',
+    caption:
+      'Une vente suivie de bout en bout, en 26 secondes et sans son : un carton d’eau vendu au prix du carton, le ticket qui s’imprime, la rupture de stock annoncée avant. Les écrans sont ceux de l’application, sur une boutique de démonstration.',
+  },
+} as const;
+
+export function PresentationVideo({ product }: { product: keyof typeof VIDEOS }) {
+  const video = VIDEOS[product];
+  const base = `/videos/magyapro-${product}`;
+  const descriptionId = `presentation-video-${product}`;
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -130,39 +163,28 @@ export function PresentationVideo() {
         muted
         playsInline
         preload="none"
-        poster="/videos/magyapro-restaurant-affiche.webp"
+        poster={`${base}-affiche.webp`}
         width={1920}
         height={1080}
-        aria-describedby="presentation-video-description"
-        className="aspect-[9/16] w-full rounded-3xl bg-[#0b1730] object-cover shadow-elev2 md:aspect-video"
+        aria-describedby={descriptionId}
+        className={`aspect-[9/16] w-full rounded-3xl ${video.background} ${video.frame} object-cover shadow-elev2 md:aspect-video`}
       >
-        <source
-          src="/videos/magyapro-restaurant.webm"
-          type="video/webm"
-          media="(min-width: 768px)"
-        />
-        <source
-          src="/videos/magyapro-restaurant.mp4"
-          type="video/mp4"
-          media="(min-width: 768px)"
-        />
-        <source src="/videos/magyapro-restaurant-vertical.webm" type="video/webm" />
-        <source src="/videos/magyapro-restaurant-vertical.mp4" type="video/mp4" />
+        <source src={`${base}.webm`} type="video/webm" media="(min-width: 768px)" />
+        <source src={`${base}.mp4`} type="video/mp4" media="(min-width: 768px)" />
+        <source src={`${base}-vertical.webm`} type="video/webm" />
+        <source src={`${base}-vertical.mp4`} type="video/mp4" />
         {/* Affiché seulement par un navigateur qui ne lit aucune source. */}
         Votre navigateur ne lit pas cette vidéo.{' '}
-        <a href="/videos/magyapro-restaurant.mp4">Télécharger la vidéo (1,7 Mo)</a>.
+        <a href={`${base}.mp4`}>Télécharger la vidéo ({video.size})</a>.
       </video>
       {/* La vidéo est muette et son texte est à l'image : la légende dit ce
           qu'elle montre, pour qui ne la voit pas, et qu'elle est sans son,
           pour que personne ne cherche le volume. */}
       <figcaption
-        id="presentation-video-description"
-        className="mt-4 max-w-[65ch] text-sm leading-relaxed text-ink-muted"
+        id={descriptionId}
+        className={`mt-4 max-w-[65ch] text-sm leading-relaxed ${video.captionClass}`}
       >
-        Une commande suivie de bout en bout, en 26 secondes et sans son : le
-        client ajoute un plat depuis le site, le bon s’imprime, la cuisine la
-        retrouve à l’écran. Les écrans sont ceux de l’application, sur un
-        restaurant de démonstration.
+        {video.caption}
       </figcaption>
     </figure>
   );

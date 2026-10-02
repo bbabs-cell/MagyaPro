@@ -37,7 +37,7 @@
  * cherche un argument, pas une route.
  */
 import pw from 'playwright-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 const { chromium } = pw;
 
@@ -81,6 +81,48 @@ const BOUTIQUE_SHOTS = [
   { file: '22-clients-credit', path: '/boutique/dashboard/clients' },
   { file: '23-tableau-de-bord', path: '/boutique/dashboard' },
 ];
+
+/**
+ * La visite guidée d'une vitrine Boutique — ce qu'un visiteur du site voit en
+ * cliquant « Visiter une boutique de démonstration ».
+ *
+ * Elle passe par l'API de visite, pas par une connexion : les vitrines n'ont
+ * pas d'abonnement, et leur compte propriétaire tombe sur le mur de paiement.
+ * La visite, elle, est faite pour être montrée.
+ *
+ * « Marché du Coin » est choisie parce que c'est la boutique du ticket de la
+ * page d'accueil : on y vend réellement l'eau minérale à la bouteille et au
+ * carton de douze, à deux prix indépendants.
+ *
+ * Chaque capture peut déclarer des **repères** : la position, mesurée dans la
+ * page, d'un élément que la vidéo de présentation doit toucher ou encadrer.
+ * Ils sont écrits dans `reperes.json`. Une position relevée à l'œil sur une
+ * capture se décale au premier changement d'écran sans que rien ne le
+ * signale ; mesurée ici, elle suit l'écran.
+ */
+const DEMO_TOUR = {
+  slug: 'demo-marche-du-coin',
+  shots: [
+    {
+      file: '30-marche-caisse',
+      path: '/boutique/dashboard/caisse',
+      fullPage: false,
+      anchors: {
+        // Le bouton « carton ×12 » de l'eau minérale.
+        tap: { card: 'Eau minérale 1,5 L', button: /carton/i },
+      },
+    },
+    {
+      file: '31-marche-previsions',
+      path: '/boutique/dashboard/previsions',
+      fullPage: true,
+      anchors: {
+        // La première fiche en rupture imminente.
+        card: { text: 'Rupture imminente' },
+      },
+    },
+  ],
+};
 
 mkdirSync(OUT, { recursive: true });
 
@@ -161,6 +203,72 @@ for (const viewport of VIEWPORTS) {
     for (const shot of shots) await shoot(signedIn, shot.file, shot.path, viewport.name);
     await context.close();
   }
+}
+
+// --- Visite guidée Boutique, téléphone seulement : c'est la matière de la
+// vidéo de présentation, dont les écrans sont des téléphones.
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/boutique`, { waitUntil: 'networkidle' });
+  const started = await page.evaluate(async (slug) => {
+    const response = await fetch('/api/public/boutique/demo-tour', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+    return response.status;
+  }, DEMO_TOUR.slug);
+
+  const anchors = {};
+  if (started !== 200) {
+    missed.push(`visite guidée ${DEMO_TOUR.slug} refusée (HTTP ${started}) — lancer le seed des vitrines Boutique`);
+  } else {
+    for (const shot of DEMO_TOUR.shots) {
+      const response = await page.goto(`${BASE}${shot.path}`, { waitUntil: 'networkidle' });
+      if (response?.status() !== 200) {
+        missed.push(`${shot.file} — HTTP ${response?.status()} sur ${shot.path}`);
+        continue;
+      }
+      const accept = page.getByRole('button', { name: /accepter/i });
+      if (await accept.count()) await accept.first().click().catch(() => {});
+      await page.waitForTimeout(400);
+
+      // Repères, en pixels CSS de la page (largeur 390), mesurés avant la
+      // capture pour qu'ils décrivent exactement l'image prise.
+      const found = {};
+      if (shot.anchors.tap) {
+        const card = page.locator('div', { hasText: shot.anchors.tap.card }).filter({ has: page.getByRole('button', { name: shot.anchors.tap.button }) }).last();
+        const box = await card
+          .getByRole('button', { name: shot.anchors.tap.button })
+          .first()
+          .boundingBox({ timeout: 5000 })
+          .catch(() => null);
+        if (box) found.tap = { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+      }
+      if (shot.anchors.card) {
+        // Une ligne du tableau — mise en forme en fiche sous 768 px. Son
+        // intitulé « PRODUIT » vient du CSS (`data-label`), pas du texte : on
+        // vise donc la ligne elle-même, pas un libellé qu'elle ne contient pas.
+        const box = await page
+          .locator('tbody tr', { hasText: shot.anchors.card.text })
+          .first()
+          .boundingBox({ timeout: 5000 })
+          .catch(() => null);
+        const scrollY = await page.evaluate(() => window.scrollY);
+        if (box) found.card = { x: Math.round(box.x), y: Math.round(box.y + scrollY), w: Math.round(box.width), h: Math.round(box.height) };
+      }
+      for (const key of Object.keys(shot.anchors)) {
+        if (!found[key]) missed.push(`${shot.file} : repère « ${key} » introuvable dans la page`);
+      }
+      anchors[shot.file] = found;
+
+      await page.screenshot({ path: `${OUT}/${shot.file}-tel.png`, fullPage: shot.fullPage });
+      taken.push(`${shot.file}-tel`);
+    }
+  }
+  writeFileSync(`${OUT}/reperes.json`, `${JSON.stringify(anchors, null, 2)}\n`);
+  await context.close();
 }
 
 await browser.close();

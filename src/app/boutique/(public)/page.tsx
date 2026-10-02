@@ -15,6 +15,8 @@ import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 import { getAdditionalStorePercent } from '@/lib/boutique/store-pricing';
+import { STORE_FEATURES, type StoreFeature } from '@/lib/boutique/entitlements';
+import { PresentationVideo } from '@/components/marketing/presentation-video';
 
 export const metadata: Metadata = {
   title: 'MagyaPro Boutique : caisse et stock au carton comme à l’unité',
@@ -22,6 +24,115 @@ export const metadata: Metadata = {
     'Caisse tactile et gestion de stock pour commerces : vente au carton, au sac, au mètre ou au kilo, prévision des ruptures et encaissement même sans connexion.',
 };
 export const dynamic = 'force-dynamic';
+
+type FeatureItem = {
+  term: string;
+  detail: string;
+  /** La fonctionnalité du plan dont dépend l'élément ; absente si tous l'ont. */
+  feature?: StoreFeature;
+};
+
+/**
+ * La liste détaillée, groupée par moment de la journée.
+ *
+ * Chaque élément a été vérifié dans le produit avant d'être écrit. Elle
+ * oubliait la commande vocale, le ticket, les alertes de stock, l'échange
+ * Excel, les rôles d'équipe et l'installation sur le téléphone. Deux
+ * formulations sont volontairement retenues :
+ *
+ * - **Excel** : l'import met à jour les prix, les coûts et le stock d'un
+ *   catalogue exporté ; il ne crée pas de produits. « Importez votre
+ *   catalogue » aurait promis davantage.
+ * - **Installation** : le tableau de bord a un manifeste, pas d'agent de
+ *   service. Il s'ajoute à l'écran d'accueil et s'ouvre comme une
+ *   application ; il ne démarre pas hors connexion, et la page ne le dit pas.
+ */
+function featureGroups(additionalPercent: number): { group: string; items: FeatureItem[] }[] {
+  return [
+    {
+      group: 'Vendre',
+      items: [
+        {
+          term: 'Caisse tactile',
+          detail: 'Scan code-barres par la caméra, remises, TVA, paiements multiples et fractionnés.',
+        },
+        {
+          term: 'Commande vocale',
+          detail:
+            'Dites « 3 cartons d’eau minérale » : la caisse remplit le panier. La reconnaissance est celle du navigateur, sans abonnement ni coût à l’usage.',
+        },
+        {
+          term: 'Ticket de caisse',
+          detail: 'Chaque vente a son ticket, à imprimer ou à montrer au client.',
+        },
+        {
+          term: 'Promotions',
+          detail: 'Codes promo en pourcentage ou en montant, avec dates et limites d’usage.',
+        },
+        {
+          term: 'Clients & crédit',
+          detail: 'Fichier client, vente à crédit, historique des paiements.',
+        },
+      ],
+    },
+    {
+      group: 'Tenir le stock',
+      items: [
+        {
+          term: 'Alertes de stock',
+          detail: 'Chaque produit a son seuil ; en dessous, il est signalé dans vos alertes.',
+        },
+        {
+          term: 'Dates de péremption',
+          detail:
+            'Les produits proches de leur date passent en orange, les périmés en rouge, sans ouvrir une seule fiche.',
+        },
+        {
+          term: 'Achats & fournisseurs',
+          detail:
+            'Commandes, réceptions, coût d’achat moyen pondéré par le stock, dettes fournisseurs.',
+        },
+        {
+          term: 'Échange avec Excel',
+          detail:
+            'Exportez le catalogue dans un tableur, mettez à jour prix, coûts et stock, puis réimportez-le.',
+        },
+        {
+          term: 'Analyses automatiques',
+          detail: 'Capital immobilisé, produits qui dorment, marges réelles, ventes à perte.',
+        },
+      ],
+    },
+    {
+      group: 'Piloter',
+      items: [
+        {
+          term: 'Caisses & finances',
+          detail: 'Ouverture et fermeture de caisse, dépenses, bénéfice net.',
+        },
+        {
+          term: 'Des rôles pour l’équipe',
+          detail:
+            'Caissier, vendeur, gestionnaire de stock, comptable : chacun ne voit que ce que son poste demande.',
+          feature: STORE_FEATURES.MULTIPLE_USERS,
+        },
+        {
+          term: 'Plusieurs boutiques',
+          detail: `Ouvrez-en une autre quand vous voulez, avec son propre stock et sa propre équipe. Elle coûte ${additionalPercent} % de votre plan, pas un abonnement entier.`,
+        },
+        {
+          term: 'Double authentification',
+          detail: 'La connexion de votre équipe protégée par un code à usage unique.',
+        },
+        {
+          term: 'Sur l’écran d’accueil',
+          detail:
+            'Le tableau de bord s’ajoute à l’écran d’accueil du téléphone et s’ouvre comme une application.',
+        },
+      ],
+    },
+  ];
+}
 
 const ICON_PROPS = {
   width: 22,
@@ -71,6 +182,23 @@ export default async function BoutiqueLandingPage() {
   ]);
 
   const logoUrl = boutiqueLandingAssetUrl();
+
+  /**
+   * Ce qu'une fonctionnalité exige comme plan, lu dans les plans Boutique
+   * réels — même règle que la page Restaurant, aucun nom de plan écrit ici :
+   *
+   * - incluse partout : rien à signaler ;
+   * - dans certains plans : une étiquette les nomme ;
+   * - dans aucun : non affichée, puisque personne ne peut l'acheter.
+   */
+  const availability = (feature?: StoreFeature): { visible: boolean; label: string | null } => {
+    if (!feature) return { visible: true, label: null };
+    const including = plans.filter((plan) => plan.features.includes(feature));
+    if (including.length === 0) return { visible: false, label: null };
+    if (including.length === plans.length) return { visible: true, label: null };
+    const names = including.map((plan) => plan.name).join(', ');
+    return { visible: true, label: `${including.length === 1 ? 'Plan' : 'Plans'} ${names}` };
+  };
 
   return (
     <>
@@ -185,6 +313,15 @@ export default async function BoutiqueLandingPage() {
           <li>Sans carte bancaire</li>
           <li>Fonctionne sans connexion</li>
         </ul>
+      </section>
+
+      {/* ---------------------------------------------------------------- Vidéo */}
+      {/* Juste sous la promesse du hero, qu'elle prouve : elle suit une vraie
+          vente de la vitrine « Marché du Coin » — un carton d'eau vendu au
+          prix du carton, le ticket qui s'imprime, la rupture annoncée. Même
+          place que sur la page Restaurant. */}
+      <section aria-label="Vidéo de présentation" className="container-page pt-12">
+        <PresentationVideo product="boutique" />
       </section>
 
       {/* Colonne unique, sans encadré. La maquette de navigateur qui occupait la
@@ -305,9 +442,10 @@ export default async function BoutiqueLandingPage() {
           désormais l'argument, en pleine largeur ; les neuf autres, attendus
           mais nécessaires, sont regroupés par moment de la journée. */}
       <section id="fonctionnalites" className="container-page py-16 sm:py-24">
+        {/* Le sur-titre « Fonctionnalités » est retiré : le titre porte seul
+            son poids, et le lien de navigation du même nom mène déjà ici. */}
         <div className="max-w-2xl">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#e0bd52]">Fonctionnalités</span>
-          <h2 className="mt-3 font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-[#f3ece1] sm:text-4xl">
             Trois choses qu&apos;un logiciel de caisse ordinaire ne fait pas
           </h2>
         </div>
@@ -347,46 +485,29 @@ export default async function BoutiqueLandingPage() {
           Et tout ce qu&apos;une boutique attend d&apos;un logiciel
         </h3>
         <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              group: 'Vendre',
-              items: [
-                ['Caisse tactile', 'Scan code-barres par la caméra, remises, TVA, paiements multiples et fractionnés.'],
-                ['Promotions', 'Codes promo en pourcentage ou en montant, avec dates et limites d\'usage.'],
-                ['Clients & crédit', 'Fichier client, vente à crédit, historique des paiements.'],
-              ],
-            },
-            {
-              group: 'Tenir le stock',
-              items: [
-                ['Dates de péremption', 'Les produits proches de leur date passent en orange, les périmés en rouge, sans ouvrir une seule fiche.'],
-                ['Achats & fournisseurs', 'Commandes, réceptions, coût d\'achat moyen, dettes fournisseurs.'],
-                ['Analyses automatiques', 'Capital immobilisé, produits qui dorment, marges réelles, ventes à perte.'],
-              ],
-            },
-            {
-              group: 'Piloter',
-              items: [
-                ['Caisses & finances', 'Ouverture et fermeture de caisse, dépenses, bénéfice net.'],
-                [
-                  'Plusieurs boutiques',
-                  `Ouvrez-en une autre quand vous voulez, avec son propre stock et sa propre équipe. Elle coûte ${additionalPercent} % de votre plan, pas un abonnement entier.`,
-                ],
-                ['Double authentification', 'La connexion de votre équipe protégée par un code à usage unique.'],
-              ],
-            },
-          ].map((cluster) => (
+          {featureGroups(additionalPercent).map((cluster) => (
             <div key={cluster.group}>
               <h4 className="border-b border-white/10 pb-3 font-display text-sm font-semibold text-[#e0bd52]">
                 {cluster.group}
               </h4>
               <dl className="mt-5 space-y-5">
-                {cluster.items.map(([term, detail]) => (
-                  <div key={term}>
-                    <dt className="text-sm font-medium text-[#f3ece1]">{term}</dt>
-                    <dd className="mt-1 text-sm leading-relaxed text-[#f3ece1]/55">{detail}</dd>
-                  </div>
-                ))}
+                {cluster.items.map((item) => {
+                  const access = availability(item.feature);
+                  if (!access.visible) return null;
+                  return (
+                    <div key={item.term}>
+                      <dt className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm font-medium text-[#f3ece1]">
+                        {item.term}
+                        {access.label && (
+                          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-normal text-[#f3ece1]/70">
+                            {access.label}
+                          </span>
+                        )}
+                      </dt>
+                      <dd className="mt-1 text-sm leading-relaxed text-[#f3ece1]/55">{item.detail}</dd>
+                    </div>
+                  );
+                })}
               </dl>
             </div>
           ))}

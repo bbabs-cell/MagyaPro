@@ -333,7 +333,7 @@ export default async function LandingPage() {
           quatre écrans plus bas — trop loin pour la plupart des visiteurs,
           qui décident avant d'y arriver. */}
       <section aria-label="Vidéo de présentation" className="container-page pt-12">
-        <PresentationVideo />
+        <PresentationVideo product="restaurant" />
       </section>
 
       {/* Colonne unique, sans encadré. La fausse fenêtre de navigateur qui

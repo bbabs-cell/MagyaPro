@@ -473,8 +473,8 @@ Ce que cette exception autorise, et rien au-delà :
 
 La mécanique est commentée dans `globals.css`, sous « L'impression ».
 
-**La vidéo de présentation est la seconde exception, par décision du
-propriétaire.** Elle se lisait d'abord au clic ; il a choisi la lecture
+**Les vidéos de présentation — une sur la page Restaurant, une sur la page
+Boutique — sont la seconde exception, par décision du propriétaire.** Elle se lisait d'abord au clic ; il a choisi la lecture
 automatique en boucle. Ce qui la rend acceptable, et qui n'est pas
 négociable :
 
@@ -489,8 +489,11 @@ négociable :
 - **les commandes restent visibles**, pour la mettre en pause (WCAG 2.2.2).
 
 Toute autre vidéo en lecture automatique reste interdite. Cette exception-ci
-tient à sa place sur la page et à ces cinq conditions, pas à un principe
-général.
+tient à sa place sur la page — juste sous la promesse du hero, qu'elle
+prouve — et à ces cinq conditions, pas à un principe général. Les deux vidéos
+partagent le même composant (`presentation-video.tsx`) et la même scène
+(`scripts/motion/scene.html`) : deux comportements pour la même promesse
+finiraient par diverger.
 
 ### Une seule déclaration des neutres
 

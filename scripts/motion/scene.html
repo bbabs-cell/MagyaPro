@@ -1,6 +1,10 @@
 <!doctype html>
 <!--
-  Scène de la vidéo de présentation MagyaPro Restaurant.
+  Scène des vidéos de présentation MagyaPro — Restaurant et Boutique.
+
+  `?produit=boutique` change la palette et le contenu ; le moteur, le minutage
+  et les courbes sont communs. Deux produits, un seul geste : la page
+  d'accueil les montre déjà ainsi, avec le même ticket sur deux papiers.
 
   Ce fichier n'est pas une page : c'est une animation **pilotée par le temps**.
   Rien n'y bouge tout seul — aucune transition CSS, aucune animation, aucun
@@ -28,6 +32,21 @@
     --braise-light: #ff9a4d;
     --paper-cold: #f7f8fa;
     --paper-ink: #18202f;
+    --text: #fff;
+    --text-muted: rgba(255,255,255,.72);
+    --dot: rgba(255,255,255,.07);
+  }
+  /* Boutique : la palette de sa page d'accueil — brun torréfié, or, papier
+     kraft. Seules les couleurs changent ici ; le contenu est en JavaScript. */
+  body.boutique {
+    --navy: #1c1712;
+    --braise: #e0bd52;
+    --braise-light: #e0bd52;
+    --paper-cold: #f0e3cd;
+    --paper-ink: #3b2a1a;
+    --text: #f3ece1;
+    --text-muted: rgba(243,236,225,.7);
+    --dot: rgba(243,236,225,.06);
   }
   * { box-sizing: border-box; }
   html, body {
@@ -39,13 +58,13 @@
   }
   body {
     position: relative;
-    color: #fff;
+    color: var(--text);
     -webkit-font-smoothing: antialiased;
   }
   /* La trame de points du hero, à la même opacité. */
   .grid {
     position: absolute; inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,.07) 1.4px, transparent 1.4px);
+    background-image: radial-gradient(circle, var(--dot) 1.4px, transparent 1.4px);
     background-size: 32px 32px;
   }
 
@@ -81,7 +100,7 @@
   .caption .small {
     margin-top: 44px;
     font: 500 30px/1.3 'Manrope', sans-serif;
-    color: rgba(255,255,255,.72);
+    color: var(--text-muted);
   }
 
   /* ------------------------------------------------------- Le bloc de commande */
@@ -147,14 +166,14 @@
     width: 72px; height: 72px;
     margin: -36px 0 0 -36px;
     border-radius: 50%;
-    background: rgba(255, 94, 46, .35);
-    border: 2px solid rgba(255, 94, 46, .7);
+    background: color-mix(in srgb, var(--braise) 35%, transparent);
+    border: 2px solid color-mix(in srgb, var(--braise) 70%, transparent);
   }
   .ring {
     position: absolute; z-index: 4;
     border: 3px solid var(--braise);
     border-radius: 24px;
-    box-shadow: 0 0 0 6px rgba(255, 94, 46, .18);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--braise) 18%, transparent);
   }
 
   /* ---------------------------------------------------------------- Le ticket */
@@ -175,14 +194,17 @@
     -webkit-mask-position: top, bottom;
   }
   .ticket .head { text-align: center; font-size: 17px; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; }
-  .ticket .meta { margin-top: 4px; text-align: center; font-size: 17px; color: rgba(24,32,47,.55); }
+  .ticket .meta { margin-top: 4px; text-align: center; font-size: 17px; color: color-mix(in srgb, var(--paper-ink) 55%, transparent); }
   .ticket .row { display: flex; justify-content: space-between; gap: 16px; }
-  .ticket .detail { padding-left: 26px; font-size: 19px; color: rgba(24,32,47,.6); }
-  .ticket .rule { margin: 16px 0; border-top: 2px dashed rgba(24,32,47,.2); }
+  .ticket .row span:last-child { font-variant-numeric: tabular-nums; }
+  .ticket .total { font-weight: 500; }
+  .ticket .total span:first-child { text-transform: uppercase; letter-spacing: .12em; }
+  .ticket .detail { padding-left: 26px; font-size: 19px; color: color-mix(in srgb, var(--paper-ink) 60%, transparent); }
+  .ticket .rule { margin: 16px 0; border-top: 2px dashed color-mix(in srgb, var(--paper-ink) 22%, transparent); }
   .ticket .note, .ticket .foot {
     text-align: center; font-size: 17px; letter-spacing: .28em; text-transform: uppercase;
   }
-  .ticket .note { color: rgba(24,32,47,.6); }
+  .ticket .note { color: color-mix(in srgb, var(--paper-ink) 60%, transparent); }
   .ticket .foot { margin-top: 30px; }
   .ticket .body { margin-top: 30px; }
   /* ------------------------------------------------- Composition verticale
@@ -227,7 +249,21 @@
    * n'est chargée.
    */
   body.poster .caption, body.poster .phone, body.poster .slip { display: none; }
-  body.poster .ticket { left: 740px; top: 50%; scale: 1.6; }
+  /*
+   * Centrage par `translate`, pas par `transform`. Les propriétés distinctes
+   * s'appliquent dans l'ordre translate → rotate → scale → transform : un
+   * `translateY(-50%)` écrit dans `transform` est donc lui-même agrandi par
+   * `scale`, et le ticket remontait de 30 % de sa hauteur — 112 px sur
+   * Restaurant, 133 px sur Boutique, assez pour frôler le bord en 16:9.
+   * `translate` est appliqué avant l'agrandissement : le centre reste au
+   * centre. Mesuré, pas supposé.
+   */
+  body.poster .ticket {
+    left: 740px; top: 50%;
+    scale: 1.6;
+    translate: 0 -50%;
+    transform: none !important;
+  }
 
   .heat {
     position: absolute; left: 0; right: 0;
@@ -288,8 +324,8 @@
     <div class="screen">
       <div class="statusbar" id="statusbar"></div>
       <div class="island"></div>
-      <img id="scr-menu" alt="">
-      <img id="scr-cuisine" alt="">
+      <img id="scr-first" alt="">
+      <img id="scr-second" alt="">
       <div class="ripple" id="ripple"></div>
       <div class="ring" id="ring"></div>
     </div>
@@ -316,6 +352,89 @@
   const format = new URLSearchParams(location.search).get('format');
   if (format === 'vertical') document.body.classList.add('vertical');
   if (format === 'poster') document.body.classList.add('poster');
+
+  /**
+   * Le contenu propre à chaque produit.
+   *
+   * Restaurant suit une commande, du menu à la cuisine ; Boutique suit une
+   * vente, de la caisse à la prévision de rupture. Chacun reprend en dernier
+   * plan le titre et le ticket de sa propre page d'accueil.
+   *
+   * Pour Boutique, les positions du toucher et de la fiche encadrée ne sont
+   * pas écrites ici : elles sont mesurées dans la page au moment de la
+   * capture (`reperes.json`) et transmises par `configure()`. Une position
+   * relevée à l'œil se décale au premier changement d'écran sans que rien ne
+   * le signale.
+   */
+  const PRODUCTS = {
+    restaurant: {
+      statusbar: ['#1f1b16', '#fbf8f2'],
+      // Relevées à l'œil sur les captures, et vérifiées image par image.
+      tap: { x: 340, y: 484 },          // « + AJOUTER » du Poulet yassa
+      firstScroll: 120,
+      card: { x: 14, y: 293, w: 362, h: 162 }, // fiche n°4, écran de cuisine
+      secondScroll: 0,
+    },
+    boutique: {
+      statusbar: ['#e0bd52', '#e0bd52'], // le bandeau « Visite guidée », relevé sur la capture
+      tap: null,
+      firstScroll: 0,
+      card: null,
+      secondScroll: null, // calculé pour centrer la fiche
+      html: {
+        c1: `<span class="line display">Un cahier ne sait pas</span>
+             <span class="line display">qu’un carton contient</span>
+             <span class="line mono">douze bouteilles.</span>`,
+        slip: `<b>Ventes du jour</b><br>3 eau 1,5 L<br>1 carton d’eau<br>2 kg de riz<br>
+               <span style="opacity:.55">— stock : ?</span>`,
+        c2: `<span class="line display">La caisse encaisse</span>
+             <span class="line display">même sans réseau,</span>
+             <span class="line mono">au carton comme à l’unité.</span>`,
+        c3: `<span class="line display">Deux prix,</span>
+             <span class="line display">un seul stock.</span>
+             <span class="line mono">12 bouteilles sorties.</span>`,
+        c4: `<span class="line display">La rupture</span>
+             <span class="line display">annoncée avant,</span>
+             <span class="line mono">d’après vos ventes réelles.</span>`,
+        c5: `<span class="line eyebrow">MagyaPro Boutique</span>
+             <span class="line display">Vendez au</span>
+             <span class="line mono" style="margin:6px 0 10px">carton</span>
+             <span class="line display">comme à l’unité.</span>
+             <span class="line small">Un mois gratuit · sans carte bancaire</span>`,
+        // Le ticket de la page d'accueil Boutique, réduit à la vente montrée :
+        // un carton d'eau de douze, au prix du carton.
+        ticket: `<div class="head">Marché du Coin</div>
+                 <div class="meta">Ticket n°412 · 18:07</div>
+                 <div class="body">
+                   <div class="row"><span>Eau minérale 1,5 L</span><span>5 400</span></div>
+                   <div class="detail">1 carton de 12</div>
+                   <div class="rule"></div>
+                   <div class="row total"><span>Total</span><span>5 400</span></div>
+                   <div class="rule"></div>
+                   <div class="note">12 bouteilles sorties</div>
+                 </div>
+                 <div class="foot">Merci de votre visite</div>
+                 <div class="heat" id="heat"></div>`,
+      },
+    },
+  };
+
+  const produit = new URLSearchParams(location.search).get('produit') === 'boutique' ? 'boutique' : 'restaurant';
+  const P = PRODUCTS[produit];
+  if (produit === 'boutique') {
+    document.body.classList.add('boutique');
+    for (const [id, html] of Object.entries(P.html)) document.getElementById(id).innerHTML = html;
+  }
+
+  /**
+   * Reçoit les repères mesurés à la capture : `{ tap: {x,y}, card: {x,y,w,h} }`,
+   * en pixels CSS de la page capturée (390 px de large).
+   */
+  window.configure = (anchors = {}) => {
+    if (anchors.tap) P.tap = anchors.tap;
+    if (anchors.card) P.card = anchors.card;
+    if (!P.tap || !P.card) throw new Error(`Repères manquants pour ${produit}.`);
+  };
 
   /**
    * Hauteur du cadre : tout ce qui entre ou sort par le bas parcourt au moins
@@ -394,12 +513,17 @@
   }
 
   // -------------------------------------------------------- Le téléphone
-  /** Coordonnées dans l'écran (390 px de large), mesurées sur les captures. */
   /** Hauteur de la barre d'état ; les captures commencent dessous. */
   const STATUS = 52;
-  const TAP = { x: 340, y: 484 + STATUS };          // « + AJOUTER » du Poulet yassa
-  const MENU_SCROLL = 120;
-  const CARD = { x: 14, y: 293 + STATUS, w: 362, h: 162 }; // fiche n°4, écran de cuisine
+  /** Hauteur d'écran visible sous la barre d'état. */
+  const VISIBLE = 844 - STATUS;
+
+  /**
+   * Défilement du second écran : nul pour la cuisine, qui tient en un écran ;
+   * pour les prévisions, ce qu'il faut pour amener la fiche au centre.
+   */
+  const secondScroll = () =>
+    P.secondScroll ?? Math.max(0, Math.round(P.card.y + P.card.h / 2 - VISIBLE / 2));
 
   function phone(t) {
     const firstIn = arrive(span(4.2, 5.1, t));
@@ -417,32 +541,34 @@
     el.style.display = visible ? 'block' : 'none';
     el.style.transform = `translateY(${y}px)`;
 
-    $('scr-menu').style.display = onFirst ? 'block' : 'none';
-    $('scr-cuisine').style.display = onFirst ? 'none' : 'block';
-    // Teinte de la barre d'état prise sur le haut de chaque capture : le
-    // bandeau sombre de la vitrine, l'en-tête clair du tableau de bord.
-    $('statusbar').style.background = onFirst ? '#1f1b16' : '#fbf8f2';
+    $('scr-first').style.display = onFirst ? 'block' : 'none';
+    $('scr-second').style.display = onFirst ? 'none' : 'block';
+    // Teinte de la barre d'état prise sur le haut de chaque capture.
+    $('statusbar').style.background = P.statusbar[onFirst ? 0 : 1];
 
-    // Le client parcourt la carte, puis ajoute un plat.
-    const scroll = smooth(span(5.5, 6.7, t)) * MENU_SCROLL;
-    $('scr-menu').style.transform = `translateY(${-scroll}px)`;
+    // On parcourt l'écran, puis on touche : un plat, ou le carton d'eau.
+    const scroll = smooth(span(5.5, 6.7, t)) * P.firstScroll;
+    $('scr-first').style.transform = `translateY(${-scroll}px)`;
+
+    const scroll2 = smooth(span(16.9, 17.9, t)) * secondScroll();
+    $('scr-second').style.transform = `translateY(${-scroll2}px)`;
 
     const tap = span(7.1, 7.8, t);
     const ripple = $('ripple');
     ripple.style.display = tap > 0 && tap < 1 ? 'block' : 'none';
-    ripple.style.left = `${TAP.x}px`;
-    ripple.style.top = `${TAP.y - MENU_SCROLL}px`;
+    ripple.style.left = `${P.tap.x}px`;
+    ripple.style.top = `${P.tap.y + STATUS - P.firstScroll}px`;
     ripple.style.opacity = String(1 - tap);
     ripple.style.transform = `scale(${0.4 + arrive(tap) * 0.9})`;
 
-    // La commande n°4, celle du Poulet yassa, retrouvée en cuisine.
+    // La commande suivie, retrouvée : en cuisine, ou dans les prévisions.
     const ring = $('ring');
     const show = arrive(span(18.0, 18.8, t)) * (1 - span(20.1, 20.4, t));
     ring.style.display = !onFirst && show > 0 ? 'block' : 'none';
-    ring.style.left = `${CARD.x}px`;
-    ring.style.top = `${CARD.y}px`;
-    ring.style.width = `${CARD.w}px`;
-    ring.style.height = `${CARD.h}px`;
+    ring.style.left = `${P.card.x}px`;
+    ring.style.top = `${P.card.y + STATUS - secondScroll()}px`;
+    ring.style.width = `${P.card.w}px`;
+    ring.style.height = `${P.card.h}px`;
     ring.style.opacity = String(show);
     ring.style.transform = `scale(${1.04 - 0.04 * arrive(span(18.0, 18.8, t))})`;
   }
@@ -450,6 +576,8 @@
   // ------------------------------------------------------------ Le ticket
   function ticket(t) {
     const el = $('ticket');
+    // Relu à chaque image : le contenu Boutique remplace le ticket, ligne de
+    // chauffe comprise.
     const heat = $('heat');
 
     const printing = t >= 10.9 && t < 15.9;
@@ -486,7 +614,8 @@
     ticket(t);
   };
 
-  window.render(0);
+  // Restaurant n'attend aucun repère : ses positions sont dans PRODUCTS.
+  if (P.tap && P.card) window.render(0);
 </script>
 </body>
 </html>
