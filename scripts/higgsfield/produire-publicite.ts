@@ -29,7 +29,10 @@
  * ## Attention : chaque exécution est facturée
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { config, higgsfield } from '@higgsfield/client/v2';
+import { config, higgsfield, type V2Response } from '@higgsfield/client/v2';
+
+/** Même hôte que celui du client ; voir la référence d'API. */
+const API_BASE = 'https://api.higgsfield.ai';
 
 const SOUL = 'higgsfield-ai/soul/v2/standard';
 const SEEDANCE = 'bytedance/seedance-2.5/image-to-video';
@@ -146,6 +149,60 @@ const SHOTS: Shot[] = [
   },
 ];
 
+/**
+ * Le motif d'échec rendu par le service.
+ *
+ * Le type `V2Response` du client n'expose pas de champ d'erreur, mais la
+ * réponse en porte un — et il est la seule chose utile quand un plan échoue :
+ * « Your credit balance is too low to complete this request » ne se devine
+ * pas depuis un identifiant de requête.
+ *
+ * Il a fallu interroger l'API à la main pour l'obtenir la première fois. Le
+ * lire ici évite ce détour à chaque panne suivante. L'accès est défensif :
+ * le champ n'est pas typé, il peut disparaître, et son absence ne doit pas
+ * masquer l'échec lui-même.
+ */
+function failureReason(result: unknown): string {
+  const reason = (result as { error?: unknown }).error;
+  return typeof reason === 'string' && reason.trim().length > 0
+    ? ` Motif rendu par le service : ${reason}`
+    : ' Le service n’a donné aucun motif.';
+}
+
+/**
+ * Attente longue, assumée.
+ *
+ * Le client plafonne le sondage à cinq minutes par défaut. Mesuré : une
+ * génération vidéo dépasse régulièrement ce seuil. Vingt minutes, sondées
+ * toutes les dix secondes : assez long pour un plan de trente secondes en
+ * 1080p, assez court pour qu'une panne du service ne bloque pas la série.
+ */
+const MAX_WAIT_MS = 20 * 60 * 1000;
+const POLL_INTERVAL_MS = 10_000;
+
+/** Statuts après lesquels plus rien ne change. */
+const TERMINAL = new Set(['completed', 'failed', 'nsfw']);
+
+/**
+ * État d'une requête, lu directement.
+ *
+ * Le client n'expose pas de lecture d'état isolée du sondage, et sa réponse
+ * typée omet le champ `error` que l'API renvoie pourtant. On interroge donc
+ * le point d'accès nous-mêmes : c'est quelques lignes, et cela rend les deux
+ * choses qui manquaient — le motif d'un échec, et la main sur l'attente.
+ */
+async function status(requestId: string): Promise<V2Response> {
+  const response = await fetch(`${API_BASE}/requests/${requestId}/status`, {
+    headers: { Authorization: `Key ${process.env.HF_CREDENTIALS ?? ''}` },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Lecture d’état impossible pour ${requestId} : HTTP ${response.status}.`,
+    );
+  }
+  return (await response.json()) as V2Response;
+}
+
 interface Manifest {
   portrait?: string;
   shots: Record<string, string>;
@@ -193,37 +250,61 @@ async function run(
   input: Record<string, unknown>,
   label: string,
 ): Promise<{ url: string }> {
-  const result = await higgsfield.subscribe(endpoint, { input, withPolling: true });
+  /**
+   * Lancer d'abord, attendre ensuite — et jamais l'inverse.
+   *
+   * `withPolling: true` enchaîne les deux et ne rend rien tant que ce n'est
+   * pas fini : si l'attente expire, le client lève une erreur qui ne porte
+   * **pas** l'identifiant de la requête. Or cette requête-là est acceptée, en
+   * cours, et facturée. Elle se termine quelques minutes plus tard, et son
+   * résultat est irrécupérable faute de savoir comment le demander. C'est
+   * arrivé une fois ; une fois suffit.
+   *
+   * En deux temps, l'identifiant est connu avant la moindre attente, et il
+   * est affiché aussitôt : même si tout s'arrête ensuite, le plan payé reste
+   * récupérable à la main.
+   */
+  const started = await higgsfield.subscribe(endpoint, { input, withPolling: false });
+  const id = started.request_id;
+  console.log(`  requête ${id}`);
+
+  const deadline = Date.now() + MAX_WAIT_MS;
+  let result = started;
+
+  while (!TERMINAL.has(result.status)) {
+    if (Date.now() > deadline) {
+      throw new Error(
+        `${label} : toujours « ${result.status} » après ${MAX_WAIT_MS / 60_000} minutes. ` +
+          `La requête ${id} se termine peut-être encore — son résultat reste ` +
+          `consultable sur ${result.status_url}.`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    result = await status(id);
+  }
 
   switch (result.status) {
     case 'completed': {
       const url = result.video?.url ?? result.images?.[0]?.url;
       if (!url) {
         throw new Error(
-          `${label} : requête ${result.request_id} déclarée terminée sans aucun ` +
-            'fichier joint. Rien n’a été produit.',
+          `${label} : requête ${id} déclarée terminée sans aucun fichier joint. ` +
+            'Rien n’a été produit.',
         );
       }
       return { url };
     }
     case 'failed':
-      throw new Error(`${label} : échec (requête ${result.request_id}).`);
+      throw new Error(`${label} : échec (requête ${id}).${failureReason(result)}`);
     case 'nsfw':
       throw new Error(
-        `${label} : refusé par la modération (requête ${result.request_id}). ` +
-          'Reformulez l’invite de ce plan.',
-      );
-    case 'queued':
-    case 'in_progress':
-      throw new Error(
-        `${label} : l’attente s’est terminée alors que la requête ` +
-          `${result.request_id} est toujours « ${result.status} ». ` +
-          `Suivi : ${result.status_url}`,
+        `${label} : refusé par la modération (requête ${id}).` +
+          `${failureReason(result)} Reformulez l’invite de ce plan.`,
       );
     default: {
-      const status: string = result.status;
+      const unexpected: string = result.status;
       throw new Error(
-        `${label} : statut inattendu « ${status} » (requête ${result.request_id}). ` +
+        `${label} : statut inattendu « ${unexpected} » (requête ${id}). ` +
           'Traité comme un échec.',
       );
     }

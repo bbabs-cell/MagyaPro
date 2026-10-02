@@ -33,6 +33,41 @@
  */
 import { config, higgsfield } from '@higgsfield/client/v2';
 
+/**
+ * Le motif d'échec rendu par le service.
+ *
+ * Le type `V2Response` du client n'expose pas de champ d'erreur, mais la
+ * réponse en porte un — et il est la seule chose utile quand un plan échoue :
+ * « Your credit balance is too low to complete this request » ne se devine
+ * pas depuis un identifiant de requête.
+ *
+ * Il a fallu interroger l'API à la main pour l'obtenir la première fois. Le
+ * lire ici évite ce détour à chaque panne suivante. L'accès est défensif :
+ * le champ n'est pas typé, il peut disparaître, et son absence ne doit pas
+ * masquer l'échec lui-même.
+ */
+function failureReason(result: unknown): string {
+  const reason = (result as { error?: unknown }).error;
+  return typeof reason === 'string' && reason.trim().length > 0
+    ? ` Motif rendu par le service : ${reason}`
+    : ' Le service n’a donné aucun motif.';
+}
+
+/**
+ * Attente longue, assumée.
+ *
+ * Le client plafonne le sondage à cinq minutes par défaut. Mesuré : une
+ * génération vidéo dépasse régulièrement ce seuil, et l'attente expire alors
+ * sur une requête **acceptée et en cours** — donc facturée, mais dont le
+ * résultat est perdu faute d'avoir conservé son identifiant. C'est le pire
+ * des deux mondes.
+ *
+ * Vingt minutes, avec un sondage toutes les dix secondes : assez long pour un
+ * plan de trente secondes en 1080p, assez court pour qu'une panne du service
+ * ne bloque pas la série indéfiniment.
+ */
+const POLL = { maxPollTime: 20 * 60 * 1000, pollInterval: 10_000 };
+
 /** Le modèle, tel que le nomme la référence d'API. */
 const MODEL = 'bytedance/seedance-2.5/text-to-video';
 
@@ -68,7 +103,7 @@ function readCredentials(): string {
 }
 
 async function main(): Promise<void> {
-  config({ credentials: readCredentials() });
+  config({ credentials: readCredentials(), ...POLL });
 
   console.log(`Génération en cours — ${MODEL}`);
   console.log('Chaque exécution réussie consomme des crédits.\n');
@@ -112,12 +147,14 @@ async function main(): Promise<void> {
     }
 
     case 'failed':
-      throw new Error(`La génération a échoué (requête ${result.request_id}).`);
+      throw new Error(
+        `La génération a échoué (requête ${result.request_id}).${failureReason(result)}`,
+      );
 
     case 'nsfw':
       throw new Error(
-        `La génération a été refusée par la modération (requête ${result.request_id}). ` +
-          'Reformulez l’invite.',
+        `La génération a été refusée par la modération (requête ${result.request_id}).` +
+          `${failureReason(result)} Reformulez l’invite.`,
       );
 
     case 'queued':
