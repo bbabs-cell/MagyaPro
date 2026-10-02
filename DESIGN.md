@@ -473,6 +473,12 @@ Ce que cette exception autorise, et rien au-delà :
 
 La mécanique est commentée dans `globals.css`, sous « L'impression ».
 
+**La vidéo de présentation n'est pas un second moment.** Elle se lance au
+clic, avec le lecteur natif du navigateur, et rien n'en est téléchargé avant
+— seule son affiche, 43 Ko. Une vidéo en lecture automatique, elle, serait
+une seconde animation qui ne répond à aucun geste, et la plus bruyante des
+deux : elle reste interdite.
+
 ### Une seule déclaration des neutres
 
 Les rôles neutres ont porté deux valeurs selon le contexte — celles de la

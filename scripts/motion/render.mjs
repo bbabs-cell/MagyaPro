@@ -21,6 +21,8 @@
  *   node scripts/motion/render.mjs         # -> publicite/motion/
  *   node scripts/motion/render.mjs --essai 2,7.4,12,18.5,24
  *                                          # quelques images fixes, pour vérifier
+ *   node scripts/motion/render.mjs --publier
+ *                                          # rend, puis copie dans public/videos/
  *
  * Variables : CAPTURES_DIR (défaut ./captures-pub), OUT_DIR (défaut
  * ./publicite/motion), CHROMIUM_PATH.
@@ -36,7 +38,7 @@
  * un site n'a le droit de démarrer que muette.
  */
 import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import pw from 'playwright-core';
 
@@ -140,6 +142,25 @@ async function write(stream, buffer) {
   if (!stream.write(buffer)) await new Promise((ok) => stream.once('drain', ok));
 }
 
+/**
+ * Copie la vidéo là où la page de présentation la lit.
+ *
+ * L'affiche passe en WebP : c'est le seul fichier que le visiteur télécharge
+ * au chargement de la page (la vidéo est en `preload="none"`), et un PNG de
+ * 1920 × 1080 pèserait dix fois plus pour la même image.
+ */
+function publish() {
+  const target = 'public/videos';
+  mkdirSync(target, { recursive: true });
+  for (const ext of ['mp4', 'webm']) copyFileSync(`${OUT}/${NAME}.${ext}`, `${target}/${NAME}.${ext}`);
+  execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y',
+    '-i', `${OUT}/${NAME}-affiche.png`, '-c:v', 'libwebp', '-quality', '86',
+    `${target}/${NAME}-affiche.webp`]);
+  for (const file of readdirSync(target)) {
+    console.log(`  publié : ${target}/${file} — ${(statSync(`${target}/${file}`).size / 1024).toFixed(0)} Ko`);
+  }
+}
+
 async function main() {
   const essai = (() => {
     const index = process.argv.indexOf('--essai');
@@ -203,6 +224,8 @@ async function main() {
       console.log(`  ${file} — ${(statSync(file).size / 1024 / 1024).toFixed(1)} Mo`);
     }
     console.log(`  ${OUT}/${NAME}-affiche.png`);
+
+    if (process.argv.includes('--publier')) publish();
   } finally {
     await browser.close();
   }

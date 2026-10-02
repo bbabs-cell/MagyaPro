@@ -8,6 +8,7 @@ import { Logo } from '@/components/ui/logo';
 import { PlanGrid } from '@/components/marketing/plan-grid';
 import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+import { PresentationVideo } from '@/components/marketing/presentation-video';
 
 /**
  * Landing page.
@@ -302,6 +303,11 @@ export default async function LandingPage() {
             Trois choses qu&apos;une page de réseau social ne fait pas
           </h2>
         </div>
+
+        {/* La première des trois — de la table à la cuisine — montrée avant
+            d'être décrite : la vidéo suit une vraie commande de la vitrine
+            de démonstration jusqu'à l'écran de cuisine. */}
+        <PresentationVideo />
 
         {/* Neuf cartes identiques mettaient le fichier client au même niveau
             que le passage de la commande en cuisine. Trois éléments portent
