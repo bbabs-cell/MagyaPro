@@ -16,6 +16,20 @@ import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ToastProvider } from '@/components/ui/toast';
 import { useBoutiqueTheme } from '@/components/boutique/use-boutique-theme';
+import { OfflineSupport, clearOfflineCopies, type OfflinePage } from '@/components/offline/offline-support';
+
+/**
+ * Les écrans préparés pour le hors connexion, du plus utilisé au moins
+ * utilisé : la caisse d'abord — c'est la seule qui continue de travailler
+ * sans réseau. Un écran que le rôle n'ouvre pas est refusé par le serveur et
+ * écarté par l'agent de service.
+ */
+const OFFLINE_PAGES: OfflinePage[] = [
+  { href: '/boutique/dashboard/caisse', label: 'Caisse' },
+  { href: '/boutique/dashboard', label: 'Tableau de bord' },
+  { href: '/boutique/dashboard/produits', label: 'Produits' },
+  { href: '/boutique/dashboard/clients', label: 'Clients' },
+];
 
 /**
  * Ossature du tableau de bord MagyaPro Boutique — même structure visuelle
@@ -362,6 +376,9 @@ export function DashboardShell({
   }
 
   async function handleLogout() {
+    // Avant la déconnexion : sur un appareil partagé, la personne suivante ne
+    // doit pas retrouver hors ligne les clients ni les chiffres de celle-ci.
+    await clearOfflineCopies();
     await api.post('/api/auth/logout');
     router.replace('/boutique/connexion');
     router.refresh();
@@ -580,7 +597,18 @@ export function DashboardShell({
         </aside>
 
         <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 print:p-0">
-          <div className="mx-auto max-w-5xl">{children}</div>
+          <div className="mx-auto max-w-5xl">
+            <OfflineSupport
+              scope="/boutique/dashboard"
+              identity={`boutique:${storeId}:${userEmail}`}
+              pages={OFFLINE_PAGES}
+              // Ni en accès support, ni en visite de démonstration : rien à
+              // garder sur l'appareil d'un administrateur ou d'un visiteur.
+              enabled={!isSupportAccess && !isDemoTour}
+              offlineMessage="La caisse continue d’encaisser : les ventes partent au retour du réseau. Les autres écrans affichent leur dernière version enregistrée."
+            />
+            {children}
+          </div>
         </main>
       </div>
     </div>

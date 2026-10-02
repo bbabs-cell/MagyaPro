@@ -69,3 +69,19 @@ export function markQueueItemFailed(storeId: string, id: string, error: string):
     getQueue(storeId).map((item) => (item.id === id ? { ...item, status: 'failed', error } : item)),
   );
 }
+
+/**
+ * Remet une vente en échec dans la file, pour un nouvel essai.
+ *
+ * Un refus n'est pas toujours définitif : « stock insuffisant » cesse de
+ * l'être après une réception de marchandise. Jusqu'ici, la seule issue d'une
+ * vente en échec était « Ignorer » — c'est-à-dire la perdre.
+ */
+export function markQueueItemPending(storeId: string, id: string): void {
+  setQueue(
+    storeId,
+    getQueue(storeId).map((item) =>
+      item.id === id ? { ...item, status: 'pending', error: undefined } : item,
+    ),
+  );
+}

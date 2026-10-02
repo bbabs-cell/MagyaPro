@@ -13,6 +13,7 @@ import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import { SubscriptionAlert } from '@/components/account/subscription-alert';
 import type { Permission } from '@/lib/rbac';
+import { OfflineSupport, clearOfflineCopies, type OfflinePage } from '@/components/offline/offline-support';
 
 /**
  * Ossature du dashboard restaurant.
@@ -370,10 +371,41 @@ export function DashboardShell({
   }
 
   async function handleLogout() {
+    // Avant la déconnexion : sur un appareil partagé, la personne suivante ne
+    // doit pas retrouver hors ligne les commandes de celle-ci.
+    await clearOfflineCopies();
     await api.post('/api/auth/logout');
     router.replace('/');
     router.refresh();
   }
+
+  /**
+   * Les écrans préparés pour le hors connexion, du plus utilisé au moins
+   * utilisé, selon ce que la personne a le droit d'ouvrir. Un écran refusé
+   * par le serveur serait de toute façon écarté par l'agent de service ; le
+   * filtrer ici évite seulement une requête inutile.
+   */
+  const offlinePages: OfflinePage[] = [
+    ...(permissions.includes('orders:view') ? [{ href: '/dashboard/commandes', label: 'Commandes' }] : []),
+    ...(permissions.includes('orders:update_status') ? [{ href: '/dashboard/cuisine', label: 'Cuisine' }] : []),
+    ...(permissions.includes('deliveries:drive') ? [{ href: '/dashboard/livraisons', label: 'Livraisons' }] : []),
+    { href: '/dashboard', label: 'Vue d’ensemble' },
+    ...(permissions.includes('orders:create')
+      ? [{ href: '/dashboard/commandes/nouvelle', label: 'Nouvelle commande' }]
+      : []),
+  ];
+
+  const offline = (
+    <OfflineSupport
+      scope="/dashboard"
+      identity={`restaurant:${restaurant.id}:${user.email}`}
+      pages={offlinePages}
+      // Pas en accès support : les données d'un commerce n'ont rien à faire
+      // sur l'appareil d'un administrateur de la plateforme.
+      enabled={!isSupportAccess}
+      offlineMessage="Les écrans affichent leur dernière version enregistrée sur cet appareil. Les nouvelles commandes et les changements d’état reprendront au retour du réseau."
+    />
+  );
 
   // Livreur et cuisine n'ont chacun qu'une permission : leur montrer la barre
   // latérale complète n'aurait de sens que pour afficher des rubriques
@@ -416,7 +448,10 @@ export function DashboardShell({
             sont lues de loin, souvent sur un écran posé au mur. Le livreur,
             lui, tient son téléphone à la main. */}
         <main id="contenu" className="p-4 sm:p-6">
-          <div className={cx('mx-auto', focusedSpace.width)}>{children}</div>
+          <div className={cx('mx-auto', focusedSpace.width)}>
+            {offline}
+            {children}
+          </div>
         </main>
       </div>
     );
@@ -669,7 +704,10 @@ export function DashboardShell({
         </aside>
 
         <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl">{children}</div>
+          <div className="mx-auto max-w-5xl">
+            {offline}
+            {children}
+          </div>
         </main>
       </div>
     </div>

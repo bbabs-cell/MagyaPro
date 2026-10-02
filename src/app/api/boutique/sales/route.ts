@@ -32,7 +32,12 @@ export const POST = route(async (request) => {
     throw new ForbiddenError('Encaissement désactivé en mode démonstration.');
   }
 
-  await hit(`boutique-sales:${context.store.id}`, RATE_LIMITS.checkout);
+  // Limite des écritures authentifiées, par caissier. Celle d'avant — 12
+  // ventes par tranche de dix minutes et par boutique — était la limite des
+  // formulaires publics anonymes (commande en ligne, réservation, avis).
+  // Une boutique fréquentée la dépassait à l'heure de pointe, et au retour du
+  // réseau une file de trente ventes butait à la treizième.
+  await hit(`boutique-sales:${context.store.id}:${context.user.id}`, RATE_LIMITS.write);
 
   const input = parseOrThrow(storeSaleSchema, await readJson(request));
 
