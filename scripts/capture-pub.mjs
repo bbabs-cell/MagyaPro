@@ -72,6 +72,11 @@ const RESTAURANT_SHOTS = [
   // L'écran de préparation : c'est lui qui prouve « le bon part en cuisine ».
   { file: '15-cuisine', path: '/dashboard/cuisine' },
   { file: '14-statistiques', path: '/dashboard/statistiques' },
+  // Pour la publicité longue : les fonctionnalités qu'elle met en avant.
+  { file: '16-livraisons', path: '/dashboard/livraisons' },
+  { file: '17-salle-qr', path: '/dashboard/salle' },
+  { file: '18-fidelite', path: '/dashboard/fidelite' },
+  { file: '19-clients', path: '/dashboard/clients' },
 ];
 
 const BOUTIQUE_SHOTS = [
@@ -80,6 +85,7 @@ const BOUTIQUE_SHOTS = [
   { file: '24-previsions', path: '/boutique/dashboard/previsions' },
   { file: '22-clients-credit', path: '/boutique/dashboard/clients' },
   { file: '23-tableau-de-bord', path: '/boutique/dashboard' },
+  { file: '25-analyses', path: '/boutique/dashboard/analyses' },
 ];
 
 /**

@@ -30,6 +30,11 @@
  *   node scripts/motion/render.mjs [--produit boutique] --affiche
  *                                          # seulement l'affiche, dans public/videos/
  *
+ *   node scripts/motion/render.mjs --pub [--produit boutique] [--format vertical]
+ *                                          # la publicité de 30 s (`pub.html`),
+ *                                          # matière d'un montage publicitaire —
+ *                                          # jamais publiée sur le site
+ *
  * Variables : CAPTURES_DIR (défaut ./captures-pub), OUT_DIR (défaut
  * ./publicite/motion), CHROMIUM_PATH.
  *
@@ -74,7 +79,12 @@ const PRODUCT = (() => {
   const index = process.argv.indexOf('--produit');
   return index !== -1 && process.argv[index + 1] === 'boutique' ? 'boutique' : 'restaurant';
 })();
-const NAME = `magyapro-${PRODUCT}${VERTICAL ? '-vertical' : ''}`;
+/**
+ * `--pub` : la publicité (`pub.html`) au lieu de la vidéo du site. Même
+ * moteur, autre scène ; elle déclare elle-même les captures qu'elle attend.
+ */
+const PUB = process.argv.includes('--pub');
+const NAME = `magyapro-${PRODUCT}${PUB ? '-pub' : ''}${VERTICAL ? '-vertical' : ''}`;
 
 /**
  * Les deux écrans du téléphone, dans l'ordre du film.
@@ -107,7 +117,7 @@ function anchors() {
 function sceneUrl(format) {
   const params = new URLSearchParams({ produit: PRODUCT });
   if (format) params.set('format', format);
-  return `file://${resolve('scripts/motion/scene.html')}?${params}`;
+  return `file://${resolve(`scripts/motion/${PUB ? 'pub' : 'scene'}.html`)}?${params}`;
 }
 
 const BRAND_FAMILIES = ['Bricolage Grotesque', 'Manrope', 'DM Mono'];
@@ -131,7 +141,32 @@ function brandFontFaces() {
   return faces.join('\n');
 }
 
+/** La publicité : charge les captures qu'elle déclare (`window.CAPTURES`). */
+async function loadPubCaptures(page) {
+  const files = await page.evaluate(() => window.CAPTURES);
+  for (const file of files) {
+    if (!existsSync(`${CAPTURES}/${file}`)) {
+      throw new Error(`Capture manquante : ${CAPTURES}/${file} — lancez « node scripts/capture-pub.mjs ».`);
+    }
+  }
+  await page.evaluate(async ({ dir }) => {
+    await Promise.all([...document.querySelectorAll('img[data-capture]')].map((img) => new Promise((done, fail) => {
+      img.onload = () => img.decode().then(done, done);
+      img.onerror = () => fail(new Error(`Image illisible : ${img.dataset.capture}`));
+      img.src = `${dir}/${img.dataset.capture}`;
+    })));
+  }, { dir: `file://${resolve(CAPTURES)}` });
+}
+
 async function openScene(browser) {
+  if (PUB) {
+    const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+    await page.goto(sceneUrl(VERTICAL ? 'vertical' : null), { waitUntil: 'load' });
+    await page.addStyleTag({ content: brandFontFaces() });
+    await loadPubCaptures(page);
+    await checkFonts(page);
+    return page;
+  }
   for (const file of Object.values(SCREENS)) {
     if (!existsSync(`${CAPTURES}/${file}`)) {
       throw new Error(`Capture manquante : ${CAPTURES}/${file} — lancez « node scripts/capture-pub.mjs ».`);
@@ -160,6 +195,11 @@ async function openScene(browser) {
     },
   );
 
+  await checkFonts(page);
+  return page;
+}
+
+async function checkFonts(page) {
   // Vérification qui peut échouer : `load()` rend la liste des polices
   // réellement chargées, vide si le navigateur est retombé sur une police
   // système. (`check()` répond « vrai » pour une famille absente.)
@@ -174,8 +214,6 @@ async function openScene(browser) {
   if (missing.length) {
     throw new Error(`Police(s) de la marque non chargée(s) : ${missing.join(', ')}. Rendu refusé.`);
   }
-
-  return page;
 }
 
 async function frame(page, t) {
@@ -258,7 +296,7 @@ async function main() {
 
     if (essai) {
       for (const t of essai) {
-        const path = `${OUT}/essai-${VERTICAL ? 'v-' : ''}${String(t).replace('.', '_')}s.png`;
+        const path = `${OUT}/essai-${PUB ? `pub-${PRODUCT}-` : ''}${VERTICAL ? 'v-' : ''}${String(t).replace('.', '_')}s.png`;
         await page.evaluate((time) => window.render(time), t);
         await page.screenshot({ path });
         console.log(`  ✓ ${path}`);
@@ -306,7 +344,8 @@ async function main() {
     }
     console.log(`  ${OUT}/${NAME}-affiche.png`);
 
-    if (process.argv.includes('--publier')) await publish(browser);
+    // La publicité n'est pas faite pour le site : elle part au montage.
+    if (process.argv.includes('--publier') && !PUB) await publish(browser);
   } finally {
     await browser.close();
   }
