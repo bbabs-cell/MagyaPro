@@ -5,10 +5,13 @@ import { useEffect, useRef } from 'react';
 /**
  * Vidéo de présentation, sur les pages Restaurant et Boutique.
  *
- * Restaurant suit une commande, du menu à la cuisine ; Boutique suit une
- * vente, du carton d'eau vendu au prix du carton jusqu'à la rupture annoncée.
- * Les écrans du film sont des captures de l'application, et la vidéo est
- * rendue en code (`scripts/motion/`), sans aucun service d'IA.
+ * Depuis le choix du propriétaire, ce sont les **publicités de 30 secondes**
+ * (`scripts/motion/pub.html`) qui tournent ici : plus denses que la première
+ * vidéo, elles montrent le parcours principal puis les fonctionnalités qui
+ * comptent. Les écrans animés y sont reconstitués d'après l'application
+ * (couleurs, polices, libellés, produits des démos) — la légende le dit.
+ * Rendu en code, sans aucun service d'IA ; réencodées plus légères pour le
+ * site par `render.mjs --pub --publier`.
  *
  * ## Lecture automatique, en boucle — par décision du propriétaire
  *
@@ -62,10 +65,10 @@ import { useEffect, useRef } from 'react';
  * - deux vidéos dont l'une masquée : mesuré, le navigateur télécharge
  *   l'affiche d'une vidéo masquée. Deux affiches payées pour une vue.
  *
- * L'affiche est donc un carré unique de 33 Ko, affiché en `object-cover` :
+ * L'affiche est donc un carré unique d'une cinquantaine de Ko, affiché en `object-cover` :
  * le lecteur en garde une bande horizontale en 16:9, une bande verticale en
  * 9:16. Seul le carré central survit aux deux cadrages, et c'est là qu'est
- * posé le ticket — voir « Affiche » dans `scripts/motion/scene.html`.
+ * posée la carte finale de la publicité (marque, promesse, offre).
  */
 /**
  * Ce qui distingue les deux vidéos. Tout le reste — lecture automatique,
@@ -78,9 +81,9 @@ const VIDEOS = {
     // Le bleu nuit se détache seul du fond clair de la page.
     frame: '',
     captionClass: 'text-ink-muted',
-    size: '1,7 Mo',
+    size: '3,1 Mo',
     caption:
-      'Une commande suivie de bout en bout, en 26 secondes et sans son : le client ajoute un plat depuis le site, le bon s’imprime, la cuisine la retrouve à l’écran. Les écrans sont ceux de l’application, sur un restaurant de démonstration.',
+      'MagyaPro Restaurant en 30 secondes, sans son : le client commande depuis votre site, le bon s’imprime, la cuisine suit chaque commande avec son temps d’attente ; puis le QR code à table, le comptoir et le téléphone, les livreurs et la fidélité. Écrans reconstitués d’après l’application, sur un restaurant de démonstration.',
   },
   boutique: {
     background: 'bg-[#1c1712]',
@@ -91,9 +94,9 @@ const VIDEOS = {
     // La page Boutique est sombre : l'encre atténuée des pages claires y
     // serait illisible.
     captionClass: 'text-[#f3ece1]/60',
-    size: '1,8 Mo',
+    size: '2,8 Mo',
     caption:
-      'Une vente suivie de bout en bout, en 26 secondes et sans son : un carton d’eau vendu au prix du carton, le ticket qui s’imprime, la rupture de stock annoncée avant. Les écrans sont ceux de l’application, sur une boutique de démonstration.',
+      'MagyaPro Boutique en 30 secondes, sans son : un carton d’eau vendu au prix du carton, une vente encaissée sans réseau puis synchronisée, la rupture annoncée avant ; puis la commande vocale, le crédit client, les dates de péremption et plusieurs boutiques. Écrans reconstitués d’après l’application, sur une boutique de démonstration.',
   },
 } as const;
 

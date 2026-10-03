@@ -32,8 +32,10 @@
  *
  *   node scripts/motion/render.mjs --pub [--produit boutique] [--format vertical]
  *                                          # la publicité de 30 s (`pub.html`),
- *                                          # matière d'un montage publicitaire —
- *                                          # jamais publiée sur le site
+ *                                          # celle des pages Restaurant et Boutique
+ *   node scripts/motion/render.mjs --pub [--produit boutique] [--format vertical] --publier [--deja-rendue]
+ *                                          # la publie sur le site, réencodée
+ *                                          # plus légère, avec son affiche
  *
  * Variables : CAPTURES_DIR (défaut ./captures-pub), OUT_DIR (défaut
  * ./publicite/motion), CHROMIUM_PATH.
@@ -247,8 +249,11 @@ async function renderPoster(browser, file) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1920 } });
   await page.goto(sceneUrl('poster'), { waitUntil: 'load' });
   await page.addStyleTag({ content: brandFontFaces() });
-  await page.evaluate((found) => window.configure(found), anchors());
+  // La publicité n'a pas de repères ; son affiche est sa carte finale, centrée
+  // et étroite : elle survit aux deux cadrages.
+  if (!PUB) await page.evaluate((found) => window.configure(found), anchors());
   await page.evaluate(async () => {
+    await document.fonts.load('800 92px "Bricolage Grotesque"');
     await document.fonts.load('400 22px "DM Mono"');
     await document.fonts.load('500 17px "DM Mono"');
   });
@@ -261,11 +266,30 @@ async function renderPoster(browser, file) {
     '-i', png, '-c:v', 'libwebp', '-quality', '86', file]);
 }
 
-/** Copie la vidéo et son affiche là où la page de présentation les lit. */
+/**
+ * Copie la vidéo et son affiche là où la page de présentation les lit.
+ *
+ * Depuis le choix du propriétaire, ce sont les **publicités** (`--pub`) qui
+ * tournent sur les pages Restaurant et Boutique, sous les noms qu'y lit
+ * `presentation-video.tsx`. Le fichier de montage, encodé pour la qualité
+ * (8 Mo), est réencodé plus léger pour le site : la vidéo se télécharge à
+ * chaque visite qui la fait défiler.
+ */
 async function publish(browser) {
   const target = 'public/videos';
   mkdirSync(target, { recursive: true });
-  for (const ext of ['mp4', 'webm']) copyFileSync(`${OUT}/${NAME}.${ext}`, `${target}/${NAME}.${ext}`);
+  const site = NAME.replace('-pub', '');
+  if (PUB) {
+    const source = `${OUT}/${NAME}.mp4`;
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', source,
+      '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+      `${target}/${site}.mp4`]);
+    execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', source,
+      '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '40', '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2',
+      '-pix_fmt', 'yuv420p', `${target}/${site}.webm`]);
+  } else {
+    for (const ext of ['mp4', 'webm']) copyFileSync(`${OUT}/${NAME}.${ext}`, `${target}/${site}.${ext}`);
+  }
   await renderPoster(browser, `${target}/magyapro-${PRODUCT}-affiche.webp`);
   for (const file of readdirSync(target)) {
     console.log(`  publié : ${target}/${file} — ${(statSync(`${target}/${file}`).size / 1024).toFixed(0)} Ko`);
@@ -288,6 +312,12 @@ async function main() {
       mkdirSync('public/videos', { recursive: true });
       await renderPoster(browser, `public/videos/magyapro-${PRODUCT}-affiche.webp`);
       console.log(`  publié : public/videos/magyapro-${PRODUCT}-affiche.webp`);
+      return;
+    }
+
+    // Publier une publicité déjà rendue : inutile de refaire 900 images.
+    if (PUB && process.argv.includes('--publier') && process.argv.includes('--deja-rendue')) {
+      await publish(browser);
       return;
     }
 
@@ -344,8 +374,7 @@ async function main() {
     }
     console.log(`  ${OUT}/${NAME}-affiche.png`);
 
-    // La publicité n'est pas faite pour le site : elle part au montage.
-    if (process.argv.includes('--publier') && !PUB) await publish(browser);
+    if (process.argv.includes('--publier')) await publish(browser);
   } finally {
     await browser.close();
   }
