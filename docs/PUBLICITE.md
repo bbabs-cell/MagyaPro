@@ -9,6 +9,16 @@ jouée par un restaurateur.
 > Tout le reste est prêt : relancer `npm run higgsfield:publicite --
 > --resolution 720p` reprend au plan manquant, sans repayer ce qui existe,
 > puis `node scripts/higgsfield/monter-publicite.mjs` assemble le film.
+>
+> **En pause depuis le 3 octobre 2026, à la demande du propriétaire**, jusqu'à
+> ce qu'il recharge le compte. Rien n'est supprimé : le manifeste, le portrait
+> de référence (`publicite/portrait.png`) et le plan 2 (`publicite/plans/`)
+> sont versionnés — le reste de `publicite/` est exclu du dépôt, et ces
+> fichiers payés disparaissaient avec le conteneur. Pour reprendre : une
+> nouvelle clé dans `.env.local` (saisie par le propriétaire, jamais dans la
+> conversation), puis la commande ci-dessus. Si l'adresse du portrait dans le
+> manifeste a expiré, la copie locale permet de le réemployer sans le
+> régénérer : le visage reste celui du plan 2.
 
 ---
 

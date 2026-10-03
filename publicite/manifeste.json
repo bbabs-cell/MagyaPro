@@ -1,0 +1,13 @@
+{
+  "shots": {
+    "2": "https://d3u0tzju9qaucj.cloudfront.net/ffd13b2c-8562-4c7e-b99f-334d70c908bb/ab8dcea5-b705-4e03-9703-ed6d0145814b.mp4"
+  },
+  "portrait": "https://d3u0tzju9qaucj.cloudfront.net/ffd13b2c-8562-4c7e-b99f-334d70c908bb/4a9e781b-1200-4188-a392-5763a875ea39.png",
+  "essais": {
+    "2-480p": {
+      "url": "https://d3u0tzju9qaucj.cloudfront.net/ffd13b2c-8562-4c7e-b99f-334d70c908bb/febfa8d8-9625-4938-8517-55555e85b937.mp4",
+      "note": "Essai de faisabilité : 4 s en 480p, pas un plan de la série (qui est en 1080p). Volontairement hors de « shots » pour qu'une production finale ne le réemploie pas."
+    }
+  },
+  "resolution": "720p"
+}

@@ -25,4 +25,11 @@ coverage/
 *.log
 .env.bak
 captures-pub/
-publicite/
+# Rendus et essais : régénérables, hors dépôt. Sauf ce qui a été **payé**
+# à Higgsfield et ne se régénère pas sans repayer : le manifeste (qui permet
+# de reprendre la série sans refaire un plan existant), le portrait de
+# référence et les plans déjà produits. Un conteneur effacé les perdait.
+publicite/*
+!publicite/manifeste.json
+!publicite/portrait.png
+!publicite/plans/
