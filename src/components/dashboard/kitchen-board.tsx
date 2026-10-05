@@ -115,7 +115,10 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
             <div key={column.status}>
               <h2 className="mb-2 flex items-center justify-between text-sm font-medium">
                 {column.title}
-                <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-xs text-ink-muted">
+                <span
+                  key={columnOrders.length}
+                  className="animate-pop rounded-full bg-surface-sunken px-2 py-0.5 text-xs text-ink-muted"
+                >
                   {columnOrders.length}
                 </span>
               </h2>
@@ -132,7 +135,11 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                   const late = waited >= LATE_AFTER_MINUTES;
 
                   return (
-                    <Card key={order.id} className="p-3.5">
+                    // Chaque colonne a sa propre liste : une fiche qui passe
+                    // de « À préparer » à « En préparation » est insérée dans
+                    // la suivante, et s'y pose — on suit la commande des yeux,
+                    // de loin, sans relire les numéros.
+                    <Card key={order.id} className="animate-scale-in p-3.5">
                       <div className="flex items-baseline justify-between gap-2">
                         {/* Le numéro est lu de loin, souvent en criant « la
                             douze est prête » à travers la cuisine. Il mérite

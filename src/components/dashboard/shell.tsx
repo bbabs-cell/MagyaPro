@@ -7,6 +7,7 @@ import type { MembershipRole } from '@prisma/client';
 
 import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
+import { NavPending } from '@/components/ui/nav-pending';
 import { Logo } from '@/components/ui/logo';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
@@ -14,6 +15,17 @@ import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
 import { SubscriptionAlert } from '@/components/account/subscription-alert';
 import type { Permission } from '@/lib/rbac';
 import { OfflineSupport, clearOfflineCopies, type OfflinePage } from '@/components/offline/offline-support';
+
+/**
+ * Entrée de menu (skill « animations vivantes ») : elle glisse d'un cran au
+ * survol, son icône pivote, et elle s'enfonce sous le doigt. `relative` porte
+ * la barre de `NavPending`, qui s'allume dès le clic.
+ */
+const NAV_ITEM =
+  'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[transform,background-color,color] duration-200 active:scale-[0.98]';
+const NAV_ICON =
+  'shrink-0 transition-transform duration-300 group-hover:-rotate-[8deg] group-hover:scale-110';
+
 
 /**
  * Ossature du dashboard restaurant.
@@ -448,7 +460,7 @@ export function DashboardShell({
             sont lues de loin, souvent sur un écran posé au mur. Le livreur,
             lui, tient son téléphone à la main. */}
         <main id="contenu" className="p-4 sm:p-6">
-          <div className={cx('mx-auto', focusedSpace.width)}>
+          <div className={cx('route-enter mx-auto', focusedSpace.width)}>
             {offline}
             {children}
           </div>
@@ -483,29 +495,30 @@ export function DashboardShell({
                   onClick={() => setMenuOpen(false)}
                   aria-current={isActive(item) ? 'page' : undefined}
                   className={cx(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                    NAV_ITEM,
                     isActive(item)
                       ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white',
+                      : 'text-white/60 hover:translate-x-1 hover:bg-white/5 hover:text-white',
                   )}
                 >
-                  <span className="shrink-0">{NAV_ICONS[item.href]}</span>
+                  <span className={NAV_ICON}>{NAV_ICONS[item.href]}</span>
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {item.href === '/dashboard/commandes' && unreadCount > 0 && (
-                    <span className="ml-auto shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
+                    <span key={unreadCount} className="ml-auto shrink-0 animate-pop rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
                       {unreadCount}
                     </span>
                   )}
                   {item.href === '/dashboard/alertes' && alertCount > 0 && (
-                    <span className="ml-auto shrink-0 rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
+                    <span key={alertCount} className="ml-auto shrink-0 animate-pop rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
                       {alertCount}
                     </span>
                   )}
                   {item.href === '/dashboard/notifications' && notificationCount > 0 && (
-                    <span className="ml-auto shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
+                    <span key={notificationCount} className="ml-auto shrink-0 animate-pop rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
                       {notificationCount}
                     </span>
                   )}
+                  <NavPending />
                 </Link>
               </li>
             ))}
@@ -587,7 +600,7 @@ export function DashboardShell({
       {menuOpen && (
         <div
           id="menu-mobile"
-          className="fixed inset-0 z-40 overflow-y-auto bg-navy p-4 text-white lg:hidden"
+          className="fixed inset-0 z-40 animate-veil overflow-y-auto bg-navy p-4 text-white lg:hidden"
         >
           <div className="flex h-14 items-center justify-between">
             <span className="truncate px-1 font-medium text-white">{restaurant.name}</span>
@@ -704,7 +717,7 @@ export function DashboardShell({
         </aside>
 
         <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-5xl">
+          <div className="route-enter mx-auto max-w-5xl">
             {offline}
             {children}
           </div>

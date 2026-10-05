@@ -76,7 +76,7 @@ export default async function StoreAnalyticsPage({
           précédente. Auparavant, seul le chiffre d'affaires en avait une : les
           trois autres étaient des nombres nus, impossibles à juger. « 42
           ventes » ne dit rien tant qu'on ignore s'il y en avait 30 ou 60 avant. */}
-      <section aria-label="Indicateurs" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicateurs" className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}

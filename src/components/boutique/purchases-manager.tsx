@@ -606,7 +606,7 @@ function OrderForm({
           type="button"
           aria-label="Fermer la commande"
           onClick={() => setSheetOpen(false)}
-          className="fixed inset-0 z-40 bg-ink/40 lg:hidden"
+          className="fixed inset-0 z-40 animate-veil bg-ink/40 lg:hidden"
         />
       )}
 
@@ -614,7 +614,8 @@ function OrderForm({
         className={cx(
           'h-fit p-4 sm:p-5',
           'lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto',
-          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh]',
+          // La feuille monte depuis le bas, d'où vient le geste qui l'ouvre.
+          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh] max-lg:animate-slide-in-up',
           'max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:rounded-b-none',
           'max-lg:pb-[calc(1rem+env(safe-area-inset-bottom))]',
           !sheetOpen && 'max-lg:hidden',

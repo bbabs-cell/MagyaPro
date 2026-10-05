@@ -67,7 +67,7 @@ export default async function AnalyticsPage({
         ))}
       </nav>
 
-      <section aria-label="Indicateurs" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicateurs" className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}

@@ -336,6 +336,57 @@ grise la couleur au lieu de la poser.
 survol. Assez pour être perçu, jamais assez pour faire sauter la grille sous le
 curseur.
 
+## Motion
+
+Le vocabulaire vient du skill **« animations vivantes »**
+(`.claude/skills/animations-vivantes/`, repris du dépôt ATELIERFLOW) : une
+interface vivante **mais calme**. Ce qui apparaît glisse, ce qui se touche
+répond, et rien ne bouge en continu sous les yeux de quelqu'un qui saisit.
+Le skill est écrit pour Tailwind 4 ; ses jetons sont traduits dans
+`tailwind.config.ts` (`animate-fade-up`, `scale-in`, `pop`, `veil`,
+`slide-in-up`, `nav-progress`, ombre `glow`) et ses utilitaires dans
+`globals.css` (`stagger`, `shine`, `skeleton-shimmer`, `route-enter`).
+
+### Où chaque effet sert
+
+- **Le clic dans le menu** : l'entrée touchée s'allume et une barre fine
+  avance sous elle dès l'image du clic (`NavPending`, `useLinkStatus`), puis
+  le squelette de `loading.tsx` scintille jusqu'à l'arrivée de la page. C'est
+  d'abord une mesure de vitesse perçue : sans ce retour, le tableau de bord
+  Boutique ne changeait rien à l'écran avant la réponse complète du serveur.
+- **L'arrivée d'une page** : `route-enter` sur l'enveloppe du contenu ; tout
+  élément inséré glisse de 12 px en 300 ms. Un changement de filtre sur la
+  même page ne rejoue rien.
+- **Les chiffres clés** : cartes en cascade (`stagger`, 50 ms, plafonné à
+  300 ms) et nombres qui défilent (`AnimatedValue`). La dernière image est le
+  texte exact calculé par la page ; un décimal, un texte à plusieurs nombres
+  ou un mouvement réduit s'affichent directement.
+- **Le geste** : le bouton principal se soulève d'un demi-cran, porte un halo
+  de braise et un reflet au survol ; un bouton d'unité de la caisse s'enfonce
+  sous le doigt ; une entrée de menu glisse d'un cran et son icône pivote.
+- **Ce qui change de valeur** : une pastille de compteur et le total de la
+  caisse rebondissent (`animate-pop`, la valeur en `key`). Une fiche de
+  cuisine se pose dans sa colonne (`scale-in`) — on suit la commande de loin.
+- **Ce qui s'ouvre** : voile en fondu (`veil`), feuille de téléphone qui monte
+  depuis le bas (`slide-in-up`).
+
+### Named Rules
+
+**La règle du retour immédiat.** Tout clic qui attend le serveur change
+quelque chose à l'écran dans l'image qui suit. Mesuré par
+`scripts/audit-clics.mjs` (processeur ralenti ×4, `LATENCE=300` pour une
+base distante) : premier retour sous 200 ms.
+
+**La règle du calme.** Pas de formes qui dérivent en fond, pas de contour en
+dégradé arc-en-ciel dans un tableau de bord : le skill les propose, la règle
+de l'orange unique et « rien qui bouge sans raison » les excluent ici. Ils
+restent possibles sur les pages publiques.
+
+**La règle du mouvement réduit.** La coupure globale de `globals.css` ramène
+les durées à 0,01 ms mais pas les délais : toute entrée retardée
+(`stagger`, `route-enter`, `pop`) est donc coupée explicitement, pour qu'aucun
+contenu ne reste invisible pendant son attente.
+
 ## Shapes
 
 Des angles franchement adoucis, sans jamais devenir des pastilles. Les rayons

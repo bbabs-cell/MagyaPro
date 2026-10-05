@@ -8,6 +8,7 @@ import type { StoreRole } from '@prisma/client';
 
 import { api } from '@/lib/client/api';
 import { cx } from '@/components/ui';
+import { NavPending } from '@/components/ui/nav-pending';
 import { Logo } from '@/components/ui/logo';
 import { StoreSwitcher } from '@/components/boutique/store-switcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
@@ -17,6 +18,17 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ToastProvider } from '@/components/ui/toast';
 import { useBoutiqueTheme } from '@/components/boutique/use-boutique-theme';
 import { OfflineSupport, clearOfflineCopies, type OfflinePage } from '@/components/offline/offline-support';
+
+/**
+ * Entrée de menu (skill « animations vivantes ») : elle glisse d'un cran au
+ * survol, son icône pivote, et elle s'enfonce sous le doigt. `relative` porte
+ * la barre de `NavPending`, qui s'allume dès le clic.
+ */
+const NAV_ITEM =
+  'group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[transform,background-color,color] duration-200 active:scale-[0.98]';
+const NAV_ICON =
+  'shrink-0 transition-transform duration-300 group-hover:-rotate-[8deg] group-hover:scale-110';
+
 
 /**
  * Les écrans préparés pour le hors connexion, du plus utilisé au moins
@@ -399,19 +411,24 @@ export function DashboardShell({
                   onClick={() => setMenuOpen(false)}
                   aria-current={isActive(item) ? 'page' : undefined}
                   className={cx(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                    NAV_ITEM,
                     isActive(item)
                       ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-elev1'
-                      : 'text-nav-muted hover:bg-nav-raised hover:text-nav-ink',
+                      : 'text-nav-muted hover:translate-x-1 hover:bg-nav-raised hover:text-nav-ink',
                   )}
                 >
-                  <span className="shrink-0">{NAV_ICONS[item.href]}</span>
+                  <span className={NAV_ICON}>{NAV_ICONS[item.href]}</span>
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {Boolean(item.badge) && (
-                    <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
+                    // La clé rejoue le rebond à chaque changement du nombre.
+                    <span
+                      key={item.badge}
+                      className="shrink-0 animate-pop rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white"
+                    >
                       {item.badge}
                     </span>
                   )}
+                  <NavPending />
                 </Link>
               </li>
             ))}
@@ -597,7 +614,7 @@ export function DashboardShell({
         </aside>
 
         <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 print:p-0">
-          <div className="mx-auto max-w-5xl">
+          <div className="route-enter mx-auto max-w-5xl">
             <OfflineSupport
               scope="/boutique/dashboard"
               identity={`boutique:${storeId}:${userEmail}`}

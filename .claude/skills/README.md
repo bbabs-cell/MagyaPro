@@ -5,6 +5,18 @@ session s'ouvre sur ce dépôt — y compris les sessions distantes, qui n'ont a
 rien d'autre que ce qui est versionné. C'est la raison pour laquelle le fichier est
 copié dans le dépôt plutôt que laissé dans l'installation locale d'une machine.
 
+## animations-vivantes
+
+- Source : dépôt du propriétaire `bbabs-cell/ATELIERFLOW`, commit `9987ceb` du
+  04/10/2026 (« Skill animations vivantes réutilisable »).
+- Copie de `.claude/skills/animations-vivantes/`, sans modification.
+
+Le skill vise Tailwind 4 ; MagyaPro est en Tailwind 3. Il n'est donc pas
+importé tel quel : ses jetons sont traduits dans `tailwind.config.ts` et
+`globals.css`, et son emploi dans ce produit est décrit dans « Motion » de
+`DESIGN.md` — y compris les effets volontairement écartés des tableaux de
+bord.
+
 ## impeccable
 
 - Source : https://github.com/pbakaus/impeccable (Apache 2.0, © Paul Bakaus)

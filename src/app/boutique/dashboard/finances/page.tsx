@@ -77,7 +77,7 @@ export default async function BoutiqueFinancesPage({
         ))}
       </nav>
 
-      <section aria-label="Compte de résultat" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Compte de résultat" className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Recettes" value={formatMoney(metrics.revenue, currency)} />
         <StatCard
           label="Retours remboursés"

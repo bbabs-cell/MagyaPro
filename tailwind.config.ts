@@ -136,6 +136,8 @@ const config: Config = {
         // douce. Une ombre unique donne un rendu plat et « collé ».
         elev1: 'var(--elev-1, 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18))',
         elev2: 'var(--elev-2, 0 2px 4px rgba(33,29,22,.07), 0 16px 32px -18px rgba(33,29,22,.26))',
+        // Halo de braise du bouton principal (skill « animations vivantes »).
+        glow: '0 10px 28px -10px rgba(255,94,46,.5), 0 4px 12px -6px rgba(255,94,46,.4)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -150,14 +152,52 @@ const config: Config = {
         xl: '0.875rem',
         '2xl': '1.25rem',
       },
+      // Le vocabulaire du skill « animations vivantes » (dépôt ATELIERFLOW),
+      // traduit pour Tailwind 3 : seuls `transform` et `opacity` bougent, et
+      // la règle globale de `globals.css` coupe tout pour qui a demandé moins
+      // de mouvement. Voir « Motion » dans DESIGN.md pour l'emploi de chacun.
       keyframes: {
         'fade-in': {
           from: { opacity: '0', transform: 'translateY(4px)' },
           to: { opacity: '1', transform: 'none' },
         },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        'scale-in': {
+          from: { opacity: '0', transform: 'translateY(10px) scale(0.96)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        veil: { from: { opacity: '0' }, to: { opacity: '1' } },
+        'slide-in-left': { from: { transform: 'translateX(-100%)' }, to: { transform: 'none' } },
+        'slide-in-up': { from: { transform: 'translateY(100%)' }, to: { transform: 'none' } },
+        pop: {
+          '0%': { opacity: '0', transform: 'scale(0.85)' },
+          '60%': { opacity: '1', transform: 'scale(1.08)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        shimmer: { from: { backgroundPosition: '-200% 0' }, to: { backgroundPosition: '200% 0' } },
+        'grow-up': { from: { transform: 'scaleY(0)' }, to: { transform: 'scaleY(1)' } },
+        'nav-progress': {
+          '0%': { transform: 'scaleX(0)' },
+          '60%': { transform: 'scaleX(0.75)' },
+          '100%': { transform: 'scaleX(0.95)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 180ms ease-out',
+        'fade-up': 'fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'scale-in': 'scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
+        veil: 'veil 0.2s ease-out both',
+        'slide-in-left': 'slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'slide-in-up': 'slide-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both',
+        pop: 'pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        shimmer: 'shimmer 1.6s linear infinite',
+        'grow-up': 'grow-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
+        // Long et décélérant : la barre avance tant que le serveur travaille,
+        // sans jamais prétendre être arrivée.
+        'nav-progress': 'nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) both',
       },
     },
   },

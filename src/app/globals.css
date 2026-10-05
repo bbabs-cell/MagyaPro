@@ -580,6 +580,116 @@
   }
 }
 
+/* ------------------------------------------------- Animations vivantes
+ *
+ * Utilitaires du skill « animations vivantes » (dépôt ATELIERFLOW), adaptés
+ * aux tableaux de bord : une interface vivante **mais calme**. Ce qui
+ * apparaît glisse, ce qui se touche répond, et rien ne bouge en continu sous
+ * les yeux de quelqu'un qui saisit. Les jetons (`animate-fade-up`, `pop`,
+ * `scale-in`…) sont dans `tailwind.config.ts`.
+ */
+
+/* Enfants qui arrivent en cascade : une grille de chiffres, une liste.
+   Décalage de 50 ms, plafonné : la neuvième carte n'attend pas plus que la
+   huitième, une longue liste ne se déroule pas comme un générique. */
+@keyframes vivant-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.stagger > * {
+  animation: vivant-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 300ms; }
+
+/* Entrée d'une page du tableau de bord. Posée sur l'enveloppe du contenu
+   dans les deux coquilles : chaque élément **inséré** dessous rejoue
+   l'entrée — le squelette à l'instant du clic, puis la page quand elle
+   arrive. Un changement de filtre sur la même page réutilise les mêmes
+   éléments et ne rejoue rien : seul un vrai changement d'écran glisse.
+   Courte (300 ms) : on traverse ces écrans toute la journée. */
+.route-enter > * {
+  animation: vivant-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Reflet qui balaie le bouton principal au survol — le seul élément orange
+   de l'écran, donc le seul qui le porte. */
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.4) 50%, transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* Squelette de chargement qui scintille, aux dimensions du contenu attendu :
+   un rectangle immobile se lit comme une panne, un reflet qui passe dit
+   « ça arrive ». */
+.skeleton-shimmer {
+  /* Le filet comme fond, le papier comme reflet : le sable creusé, essayé
+     d'abord, se confondait avec le fond de page — mesuré à la capture, le
+     squelette était invisible et l'écran semblait vide. */
+  background: linear-gradient(
+    90deg,
+    var(--surface-border) 25%,
+    var(--surface-raised) 50%,
+    var(--surface-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: vivant-shimmer 1.6s linear infinite;
+}
+@keyframes vivant-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* Mouvement réduit. La règle globale ramène chaque durée à 0,01 ms mais ne
+   touche pas aux délais : une carte en cascade resterait invisible pendant
+   son attente — 300 ms pour la septième, justement pour la personne qui a
+   demandé moins de mouvement. On coupe donc l'entrée, pas seulement sa
+   durée. Le squelette garde sa couleur, sans le reflet qui passe. */
+@media (prefers-reduced-motion: reduce) {
+  .stagger > *,
+  .route-enter > *,
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-pop {
+    animation: none;
+  }
+  .skeleton-shimmer {
+    animation: none;
+    background: var(--surface-border);
+  }
+  .shine::after {
+    display: none;
+  }
+}
+
 /* Retour visuel bref sur le bouton « + Ajouter » d'une carte de plat, une
    fois le plat ajouté au panier (voir `site/quick-add-button.tsx`). */
 @keyframes cart-add-pop {

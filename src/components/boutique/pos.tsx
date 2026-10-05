@@ -30,6 +30,14 @@ import { matchByName, normalize, type VoiceIntent } from '@/lib/boutique/voice-g
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
 
 /**
+ * Bouton d'unité d'un produit — le bouton le plus touché de la caisse. Il
+ * s'enfonce sous le doigt (skill « animations vivantes ») : l'appui est
+ * confirmé à l'image même, avant que le panier ne se mette à jour.
+ */
+const UNIT_BUTTON =
+  'flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-[transform,background-color] duration-150 hover:bg-surface-sunken active:scale-95 active:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100';
+
+/**
  * Caisse (POS).
  *
  * La recherche filtre côté client une liste déjà chargée : suffisant pour un
@@ -676,7 +684,8 @@ export function Pos({
                               type="button"
                               onClick={() => addToCart(product, variant, unit)}
                               disabled={variant.stock < unit.factor}
-                              className="min-w-[46%] flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                              className={UNIT_BUTTON + ' min-w-[46%]'}
+                              style={{ touchAction: 'manipulation' }}
                             >
                               {unit.isBase ? unit.label : `${unit.label} ×${unit.factor}`}
                               <br />
@@ -688,7 +697,8 @@ export function Pos({
                             type="button"
                             onClick={() => addToCart(product, variant)}
                             disabled={variant.stock <= 0}
-                            className="flex-1 rounded-lg border border-surface-border px-2 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50"
+                            className={UNIT_BUTTON}
+                            style={{ touchAction: 'manipulation' }}
                           >
                             {UNIT_LABELS[product.unit] ?? 'Unité'}
                             <br />
@@ -718,7 +728,7 @@ export function Pos({
           type="button"
           aria-label="Fermer le panier"
           onClick={() => setCartOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 animate-veil bg-black/40 lg:hidden"
         />
       ) : null}
 
@@ -729,7 +739,8 @@ export function Pos({
           // qu'un bloc rejeté sous une liste de cent produits. `pb-[calc(...)]`
           // dégage la barre de gestes Android, sans quoi le bouton d'encaissement
           // tombe dessous et devient difficile à viser.
-          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh]',
+          // La feuille monte depuis le bas, d'où vient le geste qui l'ouvre.
+          'max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-50 max-lg:max-h-[85vh] max-lg:animate-slide-in-up',
           'max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:rounded-b-none',
           'max-lg:pb-[calc(1rem+env(safe-area-inset-bottom))]',
           !cartOpen && 'max-lg:hidden',
@@ -777,7 +788,8 @@ export function Pos({
                 : (UNIT_LABELS[line.unit] ?? '');
 
               return (
-                <li key={key} className="flex flex-wrap items-center gap-2">
+                // Une ligne nouvelle glisse en place ; les autres ne bougent pas.
+                <li key={key} className="flex animate-fade-up flex-wrap items-center gap-2">
                   <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                     <p className="truncate text-sm font-medium">{line.name}</p>
                     <p className="text-xs text-ink-muted">
@@ -1004,7 +1016,9 @@ export function Pos({
                   ? 'Panier vide'
                   : `${itemCount} article${itemCount > 1 ? 's' : ''}`}
               </p>
-              <p className="truncate text-lg font-semibold tabular-nums text-ink">
+              {/* La clé rejoue le rebond à chaque article ajouté : le vendeur
+                  voit l'ajout sans regarder le panier. */}
+              <p key={itemCount} className="origin-left animate-pop truncate text-lg font-semibold tabular-nums text-ink">
                 {formatMoney(total, currency)}
               </p>
             </div>

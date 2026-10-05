@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 
+import { AnimatedValue } from './animated-value';
+
 /**
  * Primitives d'interface partagées par le dashboard, l'administration et les
  * pages d'authentification.
@@ -23,7 +25,10 @@ const BUTTON_BASE =
   'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[background-color,color,transform,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100';
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-brand text-white shadow-sm shadow-brand/30 hover:brightness-110',
+  // Le seul bouton orange de l'écran : il porte aussi le seul reflet, et se
+  // soulève d'un demi-cran au survol (skill « animations vivantes »).
+  primary:
+    'shine bg-brand text-white shadow-sm shadow-brand/30 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0',
   secondary:
     'border border-surface-border bg-surface text-ink hover:bg-surface-sunken',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
@@ -398,7 +403,7 @@ export function StatCard({
         )}
       </div>
       <p className="mt-2 text-2xl font-bold tracking-tight text-ink">
-        {value}
+        <AnimatedValue value={value} />
       </p>
       {hint && (
         <p className="mt-1 text-xs text-ink-muted">
@@ -428,7 +433,8 @@ export function SkeletonRows({ rows = 4 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={index}
-          className="h-16 animate-pulse rounded-xl bg-surface-sunken"
+          className="skeleton-shimmer h-16 rounded-xl"
+          style={{ animationDelay: `${index * 90}ms` }}
         />
       ))}
     </div>

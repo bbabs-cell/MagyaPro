@@ -92,7 +92,7 @@ export default async function StoreInsightsPage() {
       )}
 
       {/* --- 2. Où est l'argent -------------------------------------------- */}
-      <section aria-label="Valeur du stock" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Valeur du stock" className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Capital immobilisé"
           value={formatMoney(insights.stockValue.cost, currency)}

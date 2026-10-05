@@ -200,7 +200,7 @@ export default async function BoutiqueDashboardPage() {
       </section>
 
       <h2 className="mb-3 text-sm font-medium text-ink-muted">Sur 30 jours</h2>
-      <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicateurs clés" className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Chiffre d'affaires"
           value={formatMoney(metrics.revenue, currency)}
