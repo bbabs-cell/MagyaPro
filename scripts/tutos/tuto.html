@@ -1,0 +1,537 @@
+<!doctype html>
+<!--
+  Tutoriels vidéo MagyaPro — « Commande au comptoir », et les suivants.
+
+  Même principe que `scripts/motion/` : rien ne bouge tout seul, `render(t)`
+  place chaque élément à l'instant t et `render-tuto.mjs` photographie image
+  par image. Mais le but est autre : **apprendre à se servir du logiciel**,
+  même sans le son. D'où :
+
+  - deux appareils côte à côte, **ordinateur et téléphone**, qui font la même
+    chose au même moment : on voit que l'outil est le même partout ;
+  - un curseur sur l'ordinateur, un doigt sur le téléphone, et un anneau
+    orange sur chaque élément touché : on voit **où** appuyer ;
+  - le titre de l'étape en grand et la phrase dite en sous-titre : on
+    comprend sans le son ;
+  - un minutage dicté par la voix : chaque geste tombe pendant la phrase qui
+    l'annonce (`window.configure(timings)`, durées mesurées sur la voix).
+
+  Les écrans sont reconstruits d'après l'application (libellés, couleurs,
+  ordre des champs de `new-order-form.tsx`), avec la carte du restaurant de
+  démonstration « Chez Aminata ».
+
+  `?format=vertical` (9:16, TikTok, Reels) — par défaut 16:9 (YouTube).
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #0b1730; --bg-deep: #050b18; --accent: #ff5e2e; --accent-2: #ff9a4d;
+    --text: #fff; --muted: rgba(255,255,255,.72);
+    --app-bg: #ece5d8; --card: #fbf8f2; --raised: #fff; --border: #ddd3c1;
+    --ink: #211d16; --ink-muted: #6a6153; --ink-faint: #948b7b; --side: #0c1730;
+    --ok: #2f6b4a; --ok-soft: #dcece2; --warn: #a8700f; --warn-soft: #f9edd6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; background: var(--bg-deep); }
+  body { position: relative; color: var(--text); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 30%, #12234a 0%, var(--bg-deep) 75%); }
+  .dots { position: absolute; inset: 0; opacity: .6; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1.4px, transparent 1.4px); background-size: 32px 32px; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .35; background: radial-gradient(circle, rgba(255,110,60,.7), transparent 70%); }
+
+  /* ---------------------------------------------------------------- En-tête */
+  .head { position: absolute; left: 0; right: 0; top: 70px; text-align: center; padding: 0 60px; }
+  .brand { font: 700 30px/1 'Manrope'; letter-spacing: -.01em; opacity: .9; }
+  .brand b { color: var(--accent); font-weight: 700; }
+  .steps { display: flex; justify-content: center; gap: 12px; margin-top: 30px; }
+  .steps i { width: 64px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; position: relative; }
+  .steps i b { position: absolute; inset: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transform-origin: left; transform: scaleX(0); }
+  .stepchip { display: inline-block; margin-top: 30px; padding: 10px 22px; border-radius: 99px; background: rgba(255,94,46,.16); border: 1px solid rgba(255,94,46,.45);
+              font: 500 24px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); }
+  .title { margin-top: 22px; font: 800 70px/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -.035em; }
+
+  /* -------------------------------------------------------- Sous-titres */
+  .subs { position: absolute; left: 50px; right: 50px; bottom: 34px; text-align: center; }
+  .subs span { display: inline; padding: 6px 14px; line-height: 1.75; border-radius: 10px; -webkit-box-decoration-break: clone; box-decoration-break: clone;
+               background: rgba(5,11,24,.82); font: 600 34px/1.75 'Manrope'; color: #fff; }
+  .subs span em { font-style: normal; color: var(--accent-2); }
+
+  /* ---------------------------------------------------------- Appareils */
+  .laptop { position: absolute; width: 996px; }
+  .laptop .lid { padding: 18px 18px 22px; border-radius: 26px 26px 6px 6px; background: linear-gradient(180deg, #3a3e45, #1b1d21);
+                 box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14), 0 40px 90px -30px rgba(0,0,0,.9); }
+  .laptop .lscreen { position: relative; width: 960px; height: 600px; overflow: hidden; border-radius: 6px; background: var(--app-bg); }
+  .laptop .base { height: 22px; margin: 0 -40px; border-radius: 0 0 22px 22px; background: linear-gradient(180deg, #c9ccd1, #8c9097); box-shadow: 0 30px 50px -25px rgba(0,0,0,.9); }
+  .laptop .base::before { content: ''; display: block; width: 160px; height: 8px; margin: 0 auto; border-radius: 0 0 10px 10px; background: #6d7178; }
+  .desk { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; transform-origin: 0 0; }
+
+  .phone { position: absolute; width: 414px; height: 868px; padding: 12px; border-radius: 64px;
+           background: linear-gradient(135deg, #5b5f66 0%, #2b2e33 18%, #1a1c20 50%, #2b2e33 82%, #6a6e75 100%);
+           box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), inset 0 0 0 5px #0c0d0f, 0 50px 100px -40px rgba(0,0,0,.9); transform-origin: 0 0; }
+  .phone .pscreen { position: relative; width: 390px; height: 844px; border-radius: 52px; overflow: hidden; background: var(--app-bg); }
+  .phone .status { position: absolute; left: 0; right: 0; top: 0; height: 50px; z-index: 30; display: flex; justify-content: space-between; align-items: center;
+                   padding: 6px 34px 0 40px; font: 700 16px/1 'Manrope'; color: var(--ink); background: var(--card); }
+  .phone .island { position: absolute; z-index: 31; left: 50%; top: 11px; width: 122px; height: 35px; margin-left: -61px; border-radius: 99px; background: #000; }
+  .mob { position: absolute; left: 0; right: 0; top: 50px; bottom: 0; overflow: hidden; color: var(--ink); font: 500 15px/1.4 'Manrope'; }
+  .mob h1 { margin: 0; font: 600 26px/1.15 'Bricolage Grotesque'; letter-spacing: -.02em; }
+  .mob .lead { margin: 4px 0 16px; color: var(--ink-muted); font-size: 14.5px; }
+  .devlabel { position: absolute; font: 500 20px/1 'DM Mono'; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+
+  /* ------------------------------------------------------ L'application */
+  .app { position: absolute; inset: 0; display: flex; color: var(--ink); font: 500 15px/1.4 'Manrope'; }
+  .side { width: 232px; flex: none; background: var(--side); color: rgba(255,255,255,.62); padding: 22px 14px; }
+  .side .logo { font: 700 22px/1 'Manrope'; color: #fff; padding: 0 8px 18px; } .side .logo b { color: var(--accent); }
+  .side .resto { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04); border-radius: 14px; padding: 12px; margin-bottom: 20px; color: #fff; font-size: 15px; }
+  .side .resto small { display: block; color: rgba(255,255,255,.5); font-size: 12px; margin-top: 2px; }
+  .side h6 { margin: 0 10px 8px; font: 500 11px/1 'Manrope'; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.35); }
+  .nav { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 15px; margin-bottom: 2px; }
+  .nav i { width: 16px; height: 16px; border: 1.6px solid currentColor; border-radius: 4px; opacity: .8; }
+  .nav.on { background: linear-gradient(90deg, #ff9a4d, #ff5e2e); color: #fff; }
+  .main { flex: 1; padding: 28px 32px; position: relative; overflow: hidden; }
+  .main h1 { margin: 0; font: 600 28px/1.15 'Bricolage Grotesque'; letter-spacing: -.02em; }
+  .main .lead { margin: 4px 0 20px; color: var(--ink-muted); font-size: 15px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 14px; font-weight: 600; font-size: 15px;
+         background: var(--accent); color: #fff; box-shadow: 0 4px 12px -4px rgba(255,94,46,.5); }
+  .btn.sec { background: var(--card); color: var(--ink); border: 1px solid var(--border); box-shadow: none; }
+  .btn.ghost { background: transparent; color: var(--ink-muted); box-shadow: none; }
+  .btn.wide { width: 100%; height: 50px; font-size: 16px; }
+  .btn.off { opacity: .45; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; }
+  .badge.b { background: #fff1e6; color: var(--accent); }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .input { height: 44px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 0 14px; display: flex; align-items: center; font-size: 15px; color: var(--ink); }
+  .input.ph { color: var(--ink-faint); }
+  .input.focus { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .caret { display: inline-block; width: 2px; height: 18px; margin-left: 1px; background: var(--ink); vertical-align: middle; }
+  .label { font-size: 13.5px; font-weight: 600; margin: 12px 0 6px; }
+  .label .req { color: #c0392b; }
+  .seg { display: flex; gap: 6px; padding: 4px; border-radius: 14px; background: var(--app-bg); }
+  .seg span { flex: 1; text-align: center; padding: 9px 4px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--ink-muted); }
+  .seg span.on { background: var(--ink); color: #fff; }
+
+  .dishes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .dish { overflow: hidden; border-radius: 14px; border: 1px solid var(--border); background: var(--raised); }
+  .dish.open { border-color: var(--ink); }
+  .dish .top { display: flex; justify-content: space-between; gap: 8px; padding: 12px 14px; }
+  .dish .nm { font-weight: 600; font-size: 15px; }
+  .dish .cat { color: var(--ink-faint); font-size: 12.5px; margin-top: 2px; }
+  .dish .pr { margin-top: 8px; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .dish .opts { border-top: 1px solid var(--border); background: var(--app-bg); padding: 10px 14px; }
+  .dish .opt { display: flex; align-items: center; gap: 8px; min-height: 34px; font-size: 13.5px; }
+  .dish .opt > span:nth-child(2) { min-width: 0; line-height: 1.25; }
+  .dish .opt > span:nth-child(3) { white-space: nowrap; font-size: 12.5px; }
+  .box { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--ink-faint); flex: none; display: grid; place-items: center; }
+  .box.on { background: var(--ink); border-color: var(--ink); }
+  .box.on::after { content: ''; width: 9px; height: 5px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+
+  .lines .ln { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border); font-size: 14.5px; }
+  .lines .ln small { display: block; color: var(--ink-faint); font-size: 12.5px; }
+  .qty { display: flex; align-items: center; gap: 6px; }
+  .qty span { width: 28px; height: 28px; border-radius: 9px; border: 1px solid var(--border); display: grid; place-items: center; font-size: 16px; }
+  .qty b { min-width: 18px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .toast { position: absolute; z-index: 40; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 16px; background: var(--ink); color: #fff; font-size: 15px; font-weight: 600;
+           box-shadow: 0 20px 40px -15px rgba(0,0,0,.6); }
+  .toast .ic { width: 26px; height: 26px; border-radius: 50%; background: #3dd68c; display: grid; place-items: center; color: #10301f; font-weight: 800; }
+
+  .kcol h4 { margin: 0 0 10px; display: flex; justify-content: space-between; font-size: 15px; }
+  .kcol h4 span { color: var(--ink-faint); }
+  .kcard { padding: 14px 16px; margin-bottom: 12px; }
+  .kcard .num { font: 700 24px/1 'Manrope'; }
+  .wait { font: 600 13px/1 'DM Mono'; padding: 5px 9px; border-radius: 99px; background: var(--ok-soft); color: var(--ok); }
+
+  /* --------------------------------------------------- Gestes et repères */
+  .cursor { position: absolute; z-index: 50; width: 30px; height: 30px; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
+  .finger { position: absolute; z-index: 50; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,.6) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,0) 72%); border: 2.5px solid rgba(255,255,255,.85); }
+  .ring { position: absolute; z-index: 45; pointer-events: none; border: 3px solid var(--accent); border-radius: 14px; box-shadow: 0 0 0 7px rgba(255,94,46,.22); }
+  .ripple { position: absolute; z-index: 49; pointer-events: none; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 3px solid var(--accent); }
+
+  .endcard { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
+  .endcard .lg { font: 800 92px/1 'Manrope'; letter-spacing: -.03em; } .endcard .lg b { color: var(--accent); }
+  .endcard .tg { margin-top: 30px; font: 800 64px/1.05 'Bricolage Grotesque'; letter-spacing: -.03em; }
+  .endcard .of { margin-top: 44px; padding: 18px 30px; border-radius: 99px; border: 1px solid rgba(255,94,46,.45); background: rgba(255,94,46,.14); font: 500 30px/1 'DM Mono'; color: var(--accent-2); }
+
+  /* 16:9 : en-tête resserré, sous-titres plus bas. */
+  body:not(.vertical) .head { top: 40px; }
+  body:not(.vertical) .title { font-size: 54px; margin-top: 14px; }
+  body:not(.vertical) .stepchip { margin-top: 18px; font-size: 20px; }
+  body:not(.vertical) .steps { margin-top: 18px; }
+  body:not(.vertical) .subs { bottom: 34px; }
+  body:not(.vertical) .subs span { font-size: 30px; }
+</style>
+</head>
+<body>
+  <div class="bg"></div><div class="dots"></div>
+  <div class="glow" id="glow1"></div><div class="glow" id="glow2"></div>
+
+  <div class="head" id="head">
+    <div class="brand">Magya<b>pro</b> Restaurant</div>
+    <div class="steps" id="steps"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+    <div class="stepchip" id="chip"></div>
+    <div class="title" id="title"></div>
+  </div>
+
+  <div class="laptop" id="laptop"><div class="lid"><div class="lscreen"><div class="desk" id="desk"></div></div></div><div class="base"></div></div>
+  <div class="devlabel" id="lbl-pc">Ordinateur</div>
+  <div class="phone" id="phone"><div class="pscreen" id="pscreen">
+    <div class="status"><span>12:30</span><span>●●● ▮</span></div><div class="island"></div>
+    <div class="mob" id="mob"></div></div></div>
+  <div class="devlabel" id="lbl-tel">Téléphone</div>
+
+  <div class="cursor" id="cursor"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 2 L4 20 L9 15.5 L12.5 22.5 L15.5 21 L12 14 L19 14 Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <div class="finger" id="finger"></div>
+  <div class="ripple" id="rip-desk"></div><div class="ripple" id="rip-mob"></div>
+  <div class="ring" id="ring-desk"></div><div class="ring" id="ring-mob"></div>
+
+  <div class="endcard" id="end"><div class="lg">Magya<b>pro</b></div><div class="tg">De la commande à la cuisine,<br>sans un papier perdu.</div><div class="of">Un mois gratuit · sans carte bancaire</div></div>
+
+  <div class="subs" id="subs"></div>
+
+<script>
+  const Q = new URLSearchParams(location.search);
+  const V = Q.get('format') === 'vertical';
+  if (V) document.body.classList.add('vertical');
+
+  // ------------------------------------------------------------ Outils
+  const clamp = (x) => (Number.isNaN(x) ? 0 : Math.min(1, Math.max(0, x)));
+  const span = (a, b, t) => clamp((t - a) / (b - a));
+  const mix = (a, b, x) => a + (b - a) * x;
+  const arrive = (x) => 1 - Math.pow(1 - x, 4);
+  const smooth = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const back = (x) => { const c = 1.5; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const fmt = (n) => `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F CFA`;
+  const $ = (id) => document.getElementById(id);
+  const css = (el, s) => el && Object.assign(el.style, s);
+
+  // ------------------------------------------------------------ Mise en page
+  const L = V
+    ? { laptop: { x: 42, y: 420, s: 1.0 }, phone: { x: 382, y: 1100, s: 0.74 }, lblpc: { x: 62, y: 386 }, lbltel: { x: 120, y: 1160 } }
+    : { laptop: { x: 120, y: 250, s: 0.95 }, phone: { x: 1330, y: 230, s: 0.84 }, lblpc: { x: 140, y: 214 }, lbltel: { x: 1350, y: 196 } };
+  css($('laptop'), { left: `${L.laptop.x}px`, top: `${L.laptop.y}px`, transform: `scale(${L.laptop.s})`, transformOrigin: '0 0' });
+  css($('phone'), { left: `${L.phone.x}px`, top: `${L.phone.y}px`, transform: `scale(${L.phone.s})` });
+  css($('lbl-pc'), { left: `${L.lblpc.x}px`, top: `${L.lblpc.y}px` });
+  css($('lbl-tel'), { left: `${L.lbltel.x}px`, top: `${L.lbltel.y}px` });
+  css($('glow1'), { width: '700px', height: '700px', left: '-200px', top: V ? '500px' : '100px' });
+  css($('glow2'), { width: '600px', height: '600px', right: '-150px', bottom: V ? '200px' : '-100px', left: 'auto' });
+
+  // ------------------------------------------------------------ Le script
+  /**
+   * Durées des phrases, en secondes, mesurées sur la voix par le moteur de
+   * rendu. Valeurs par défaut pour les aperçus sans voix.
+   */
+  let SEG = [];
+  const GAP = 0.45;
+  window.configure = (segments) => {
+    let t = 0.6;
+    SEG = segments.map((s) => { const out = { ...s, start: t, end: t + s.duree }; t = out.end + GAP; return out; });
+    window.DURATION = t + 2.2;
+    build();
+  };
+  const seg = (id) => SEG.find((s) => s.id === id);
+  /** Instant à la fraction `f` de la phrase `id`. */
+  const at = (id, f) => { const s = seg(id); return s.start + (s.end - s.start) * f; };
+
+  // ------------------------------------------------------------ La carte
+  const MENU = [
+    { k: 'yassa', nm: 'Poulet yassa', cat: 'Plats mijotés', pr: 5500 },
+    { k: 'thieb', nm: 'Thieboudienne', cat: 'Plats mijotés', pr: 5000, opts: [['poisson', 'Poisson supplémentaire', 1500], ['piment', 'Piment', 0], ['citron', 'Citron', 0]] },
+    { k: 'mafe', nm: 'Mafé bœuf', cat: 'Plats mijotés', pr: 5500 },
+    { k: 'dibi', nm: 'Dibi mouton', cat: 'Grillades', pr: 6000 },
+    { k: 'bouye', nm: 'Bouye', cat: 'Boissons', pr: 1200 },
+    { k: 'bissap', nm: 'Jus de bissap', cat: 'Boissons', pr: 1500 },
+  ];
+
+  /**
+   * Les gestes, dans l'ordre. `d` : cible sur l'ordinateur, `m` : sur le
+   * téléphone (`data-t` des éléments). `fn` : ce que le geste change.
+   */
+  let EVENTS = [];
+  function build() {
+    EVENTS = [
+      // Étape 1 : Commandes → Nouvelle commande.
+      { t: at('ouvrir', 0.30), d: 'nav-cmd', fn: (s) => { s.deskPage = 'orders'; } },
+      { t: at('ouvrir', 0.20), m: 'burger', fn: (s) => { s.drawer = true; } },
+      { t: at('ouvrir', 0.42), m: 'nav-cmd', fn: (s) => { s.drawer = false; s.mobPage = 'orders'; } },
+      { t: at('ouvrir', 0.78), d: 'new', m: 'new', fn: (s) => { s.deskPage = s.mobPage = 'new'; } },
+      // Étape 2 : les plats.
+      { t: at('plats', 0.40), d: 'dish-yassa', m: 'dish-yassa', fn: (s) => add(s, 'yassa') },
+      { t: at('plats', 0.58), d: 'dish-yassa', m: 'dish-yassa', fn: (s) => add(s, 'yassa') },
+      { t: at('plats', 0.80), d: 'dish-bouye', m: 'dish-bouye', fn: (s) => add(s, 'bouye') },
+      // Les suppléments.
+      { t: at('choix', 0.12), d: 'dish-thieb', m: 'dish-thieb', fn: (s) => { s.config = 'thieb'; } },
+      { t: at('choix', 0.50), d: 'opt-poisson', m: 'opt-poisson', fn: (s) => { s.opts = ['poisson']; } },
+      { t: at('choix', 0.82), d: 'opt-add', m: 'opt-add', fn: (s) => { add(s, 'thieb', ['poisson']); s.config = null; s.opts = []; } },
+      // Étape 3 : type et nom.
+      { t: at('client', 0.02), m: 'see', fn: (s) => { s.sheet = true; } },
+      { t: at('client', 0.30), d: 'f-PICKUP', m: 'f-PICKUP', fn: (s) => { s.ful = 'PICKUP'; } },
+      { t: at('client', 0.66), d: 'name', m: 'name', fn: (s) => { s.focus = 'name'; }, type: { field: 'name', text: 'Awa Koné', dur: 1.1 } },
+      { t: at('note', 0.30), d: 'note', m: 'note', fn: (s) => { s.focus = 'note'; }, type: { field: 'note', text: 'Sans piment', dur: 0.9 } },
+      // Étape 4 : envoyer.
+      { t: at('envoyer', 0.38), d: 'save', m: 'save', fn: (s) => { s.focus = null; s.toast = true; s.saveAt = 0; } },
+      { t: at('envoyer', 0.72), fn: (s) => { s.toast = false; s.deskPage = s.mobPage = 'kitchen'; s.sheet = false; } },
+    ].sort((a, b) => a.t - b.t);
+  }
+  function add(s, k, opts = []) {
+    const key = `${k}|${opts.join(',')}`;
+    const line = s.lines.find((l) => l.key === key);
+    if (line) line.q += 1;
+    else s.lines.push({ key, k, opts, q: 1 });
+  }
+
+  /** L'état de l'application à l'instant t : on rejoue les gestes passés. */
+  function stateAt(t) {
+    const s = { deskPage: 'overview', mobPage: 'overview', drawer: false, lines: [], config: null, opts: [], ful: 'DINE_IN',
+                name: '', note: '', focus: null, sheet: false, toast: false, changed: {} };
+    for (const e of EVENTS) {
+      if (e.t > t) break;
+      e.fn(s);
+      if (e.type) {
+        const n = Math.round(e.type.text.length * span(e.t + 0.25, e.t + 0.25 + e.type.dur, t));
+        s[e.type.field] = e.type.text.slice(0, n);
+      }
+      s.last = e;
+    }
+    return s;
+  }
+
+  const priceOf = (l) => { const d = MENU.find((m) => m.k === l.k); return d.pr + (d.opts || []).filter((o) => l.opts.includes(o[0])).reduce((a, o) => a + o[2], 0); };
+  const total = (s) => s.lines.reduce((a, l) => a + priceOf(l) * l.q, 0);
+  const count = (s) => s.lines.reduce((a, l) => a + l.q, 0);
+
+  // ------------------------------------------------------------ Écrans
+  const caret = (s, f) => (s.focus === f ? '<span class="caret"></span>' : '');
+  function sideHTML(page) {
+    const item = (t, label, on) => `<div class="nav ${on ? 'on' : ''}" data-t="${t}"><i></i>${label}</div>`;
+    return `<div class="side"><div class="logo">Magya<b>pro</b></div><div class="resto">Chez Aminata<small>Restaurant</small></div><h6>Service</h6>
+      ${item('nav-ov', 'Vue d’ensemble', page === 'overview')}${item('nav-cmd', 'Commandes', page === 'orders' || page === 'new')}${item('nav-cui', 'Cuisine', page === 'kitchen')}${item('nav-res', 'Réservations', false)}${item('nav-liv', 'Livraisons', false)}</div>`;
+  }
+  function overviewHTML(mobile) {
+    return `<h1>Bonjour Aminata</h1><div class="lead">Chez Aminata — voici votre service.</div>
+      <div style="display:grid;grid-template-columns:${mobile ? '1fr 1fr' : 'repeat(3,1fr)'};gap:12px">${['À traiter|2', 'En cuisine|3', 'Prêtes|1'].map((x) => `<div class="card" style="padding:16px"><div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)">${x.split('|')[0]}</div><div style="font:700 28px/1.2 Manrope;margin-top:6px">${x.split('|')[1]}</div></div>`).join('')}</div>`;
+  }
+  function ordersHTML(mobile) {
+    const rows = [['n°26', 'Marc Kouassi', 'En préparation', 'warn'], ['n°25', 'Sarah Bamba', 'Prête', 'ok'], ['n°24', 'Ibrahim Traoré', 'Remise', 'ok']];
+    return `<div class="row"><div><h1>Commandes</h1><div class="lead">Les commandes à traiter, de la plus ancienne à la plus récente.</div></div>
+      ${mobile ? '' : '<div class="btn" data-t="new">+ Nouvelle commande</div>'}</div>
+      ${mobile ? '<div class="btn wide" data-t="new" style="margin-bottom:14px">+ Nouvelle commande</div>' : ''}
+      ${rows.map((r) => `<div class="card row" style="padding:14px 16px;margin-bottom:10px"><div><b style="font-size:17px">${r[0]}</b><div style="color:var(--ink-muted);font-size:14px">${r[1]}</div></div><span class="badge ${r[3]}">${r[2]}</span></div>`).join('')}`;
+  }
+  function dishHTML(s, d) {
+    const chosen = s.lines.filter((l) => l.k === d.k).reduce((a, l) => a + l.q, 0);
+    const open = s.config === d.k;
+    return `<div class="dish ${open ? 'open' : ''}" data-t="dish-${d.k}"><div class="top"><div><div class="nm">${d.nm}</div><div class="cat">${d.cat}${d.opts ? ' · suppléments' : ''}</div><div class="pr">${fmt(d.pr)}</div></div>
+      ${chosen ? `<span class="badge b" data-pop="${d.k}-${chosen}" style="height:24px">×${chosen}</span>` : ''}</div>
+      ${open ? `<div class="opts">${d.opts.map((o) => `<div class="opt" data-t="opt-${o[0]}"><span class="box ${s.opts.includes(o[0]) ? 'on' : ''}"></span><span style="flex:1">${o[1]}</span>${o[2] ? `<span style="color:var(--ink-muted)">+${fmt(o[2])}</span>` : ''}</div>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:8px"><span class="btn" data-t="opt-add" style="height:38px">Ajouter</span><span class="btn ghost" style="height:38px">Annuler</span></div></div>` : ''}</div>`;
+  }
+  function orderPanelHTML(s) {
+    const lines = s.lines.map((l) => { const d = MENU.find((m) => m.k === l.k); const o = (d.opts || []).filter((x) => l.opts.includes(x[0])).map((x) => x[1]).join(', ');
+      return `<div class="ln" data-born="${l.key}"><div><b>${d.nm}</b>${o ? `<small>+ ${o}</small>` : ''}</div><div class="qty"><span>−</span><b>${l.q}</b><span>+</span></div></div>`; }).join('');
+    const ready = s.lines.length && s.name.length >= 2;
+    return `<div style="font:700 18px/1 Manrope;margin-bottom:6px">Commande</div>
+      <div class="lines">${lines || '<div style="color:var(--ink-faint);padding:12px 0;font-size:14px">Touchez un plat pour l’ajouter.</div>'}</div>
+      <div class="row" style="margin-top:10px"><span style="color:var(--ink-muted)">Sous-total</span><b style="font-size:18px;font-variant-numeric:tabular-nums" data-pop="tot-${count(s)}">${fmt(total(s))}</b></div>
+      <div class="label">Type de commande</div><div class="seg">${[['PICKUP', 'À emporter'], ['DINE_IN', 'Sur place'], ['DELIVERY', 'Livraison']].map((f) => `<span data-t="f-${f[0]}" class="${s.ful === f[0] ? 'on' : ''}">${f[1]}</span>`).join('')}</div>
+      <div class="label">Nom du client <span class="req">*</span></div><div class="input ${s.name ? '' : 'ph'} ${s.focus === 'name' ? 'focus' : ''}" data-t="name">${s.name || (s.focus === 'name' ? '' : 'Prénom et nom')}${caret(s, 'name')}</div>
+      <div class="label">Téléphone</div><div class="input ph">Facultatif</div>
+      <div class="label">Note pour la cuisine</div><div class="input ${s.note ? '' : 'ph'} ${s.focus === 'note' ? 'focus' : ''}" data-t="note">${s.note || (s.focus === 'note' ? '' : 'Sans piment, bien cuit…')}${caret(s, 'note')}</div>
+      <div class="btn wide ${ready ? '' : 'off'}" data-t="save" style="margin-top:16px">Enregistrer la commande</div>`;
+  }
+  function kitchenHTML(s, mobile) {
+    const card = (n, kind, items, wait, isNew) => `<div class="card kcard" ${isNew ? 'data-born="k27"' : ''}><div class="row"><span class="num">${n}</span><span class="wait">${wait}</span></div><div style="color:var(--ink-faint);font-size:13px;margin-top:3px">${kind}</div><div style="margin:10px 0 12px;font-size:15px;line-height:1.55">${items}</div><div class="btn wide" style="height:40px;font-size:14px">Commencer</div></div>`;
+    const mine = card('n°27', `À emporter · ${s.name || 'Awa Koné'}`, '2 × Poulet yassa<br>1 × Thieboudienne <span style="color:var(--ink-muted)">+ Poisson</span><br>1 × Bouye<div style="margin-top:6px;color:var(--warn);font-weight:600">Note : Sans piment</div>', 'à l’instant', true);
+    if (mobile) return `<h1>Cuisine</h1><div class="lead">À préparer</div>${mine}${card('n°26', 'Sur place · Table 3', '4 × Dibi mouton', '6 min')}`;
+    return `<h1>Cuisine</h1><div class="lead">Commandes confirmées, dans l’ordre d’arrivée.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div class="kcol"><h4>À préparer<span>2</span></h4>${card('n°26', 'Sur place · Table 3', '4 × Dibi mouton', '6 min')}${mine}</div>
+      <div class="kcol"><h4>En préparation<span>1</span></h4>${card('n°25', 'Livraison', '2 × Mafé bœuf', '11 min')}</div>
+      <div class="kcol"><h4>Prêtes<span>0</span></h4></div></div>`;
+  }
+  function deskHTML(s) {
+    let main;
+    if (s.deskPage === 'overview') main = overviewHTML(false);
+    else if (s.deskPage === 'orders') main = ordersHTML(false);
+    else if (s.deskPage === 'kitchen') main = kitchenHTML(s, false);
+    else main = `<h1>Nouvelle commande</h1><div class="lead">Pour un client qui appelle, ou qui commande au comptoir.</div>
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px"><div><div class="input ph" style="margin-bottom:14px">Rechercher un plat…</div><div class="dishes">${MENU.map((d) => dishHTML(s, d)).join('')}</div></div>
+      <div class="card" style="padding:16px 18px">${orderPanelHTML(s)}</div></div>`;
+    return `<div class="app">${sideHTML(s.deskPage)}<div class="main">${main}</div></div>`;
+  }
+  function mobHTML(s) {
+    const header = `<div style="height:56px;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--card);border-bottom:1px solid var(--border)"><span data-t="burger" style="width:40px;height:40px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;font-size:20px">☰</span><b style="font-size:16px">Chez Aminata</b></div>`;
+    let body;
+    if (s.mobPage === 'overview') body = overviewHTML(true);
+    else if (s.mobPage === 'orders') body = ordersHTML(true);
+    else if (s.mobPage === 'kitchen') body = kitchenHTML(s, true);
+    else body = `<h1>Nouvelle commande</h1><div class="lead" style="margin-bottom:12px">Pour un client qui appelle, ou au comptoir.</div><div style="display:grid;gap:10px">${MENU.map((d) => dishHTML(s, d)).join('')}</div>`;
+    const bar = s.mobPage === 'new' && !s.sheet ? `<div style="position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--border);padding:12px 14px 22px;display:flex;align-items:center;gap:12px;box-shadow:0 -10px 24px -14px rgba(33,29,22,.3)">
+      <div style="flex:1"><div style="font-size:12.5px;color:var(--ink-muted)">${count(s) ? `${count(s)} plat${count(s) > 1 ? 's' : ''}` : 'Aucun plat'}</div><div style="font:700 19px/1.2 Manrope;font-variant-numeric:tabular-nums" data-pop="mtot-${count(s)}">${fmt(total(s))}</div></div>
+      <span class="btn ${count(s) ? '' : 'sec'}" data-t="see" style="height:46px">${count(s) ? 'Voir la commande' : 'Détails'}</span></div>` : '';
+    const sheet = s.sheet && s.mobPage === 'new' ? `<div style="position:absolute;inset:0;background:rgba(33,29,22,.4)"></div><div data-sheet style="position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow:hidden;background:var(--card);border-radius:22px 22px 0 0;padding:16px 16px 22px">${orderPanelHTML(s)}</div>` : '';
+    const drawer = s.drawer ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div><div style="position:absolute;left:0;top:0;bottom:0;width:78%;background:var(--side);padding:16px 12px">${sideHTML('overview').replace('<div class="side">', '<div class="side" style="width:auto;padding:0;background:none">').replace(/class="nav on"/, 'class="nav"')}</div>` : '';
+    return `${header}<div style="position:absolute;left:0;right:0;top:56px;bottom:0;padding:16px;overflow:hidden" id="mobbody"><div id="mobscroll">${body}</div></div>${bar}${sheet}${drawer}`;
+  }
+
+  // ------------------------------------------------------------ Rendu
+  let lastDesk = '', lastMob = '';
+  const born = {};
+  /**
+   * La caméra de l'ordinateur : à chaque étape, l'écran s'approche de la
+   * zone où l'on agit. Un écran d'ordinateur entier, réduit dans une vidéo
+   * verticale, ne se lit pas sur un téléphone ; la carte des plats ou le
+   * panneau de commande, en gros plan, si.
+   */
+  const FOCUS = {
+    plein: { x: 0, y: 0, w: 1280, h: 800 },
+    plats: { x: 250, y: 70, w: 690, h: 470 },
+    // Le panneau de commande, en deux plans : le haut (lignes, type,
+    // nom), puis le bas (note, bouton d'envoi).
+    panneau: { x: 895, y: 80, w: 375, h: 470 },
+    panneauBas: { x: 895, y: 300, w: 375, h: 470 },
+  };
+  function focusAt(t) {
+    const zone = (id) => (['plats', 'choix'].includes(id) ? 'plats' : id === 'client' ? 'panneau' : ['note', 'envoyer'].includes(id) ? 'panneauBas' : 'plein');
+    const order = SEG.map((s) => ({ t: s.start - 0.2, z: zone(s.id) }));
+    // Après « Enregistrer », retour au plein écran pour voir la cuisine.
+    const ev = EVENTS.find((e) => e.d === 'save');
+    if (ev) order.push({ t: ev.t + 0.5, z: 'plein' });
+    order.sort((a, b) => a.t - b.t);
+    let from = FOCUS.plein, to = FOCUS.plein, k = 1;
+    for (const o of order) {
+      if (o.t > t) break;
+      from = to === FOCUS[o.z] ? from : to; to = FOCUS[o.z];
+      k = smooth(span(o.t, o.t + 0.7, t));
+    }
+    const r = { x: mix(from.x, to.x, k), y: mix(from.y, to.y, k), w: mix(from.w, to.w, k), h: mix(from.h, to.h, k) };
+    const z = Math.min(960 / r.w, 600 / r.h);
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    const tx = Math.min(0, Math.max(960 - 1280 * z, 480 - cx * z));
+    const ty = Math.min(0, Math.max(600 - 800 * z, 300 - cy * z));
+    return `translate(${tx}px, ${ty}px) scale(${z})`;
+  }
+
+  function paint(s, t) {
+    css($('desk'), { transform: focusAt(t) });
+    const d = deskHTML(s), m = mobHTML(s);
+    if (d !== lastDesk) { $('desk').innerHTML = d; lastDesk = d; }
+    if (m !== lastMob) { $('mob').innerHTML = m; lastMob = m; }
+    // Ce qui vient d'apparaître glisse en place ; ce qui change de valeur rebondit.
+    for (const el of document.querySelectorAll('[data-born],[data-pop]')) {
+      const key = el.dataset.born || el.dataset.pop;
+      born[key] ??= t;
+      const a = t - born[key];
+      if (el.dataset.born) css(el, { opacity: String(arrive(span(0, 0.35, a))), transform: `translateY(${(1 - arrive(span(0, 0.4, a))) * 14}px)` });
+      else css(el, { display: 'inline-block', transform: `scale(${a < 0.4 ? mix(1.35, 1, back(span(0, 0.4, a))) : 1})` });
+    }
+    // Le téléphone fait défiler la carte pour amener le plat touché à l'écran.
+    const scroll = document.getElementById('mobscroll');
+    if (scroll && s.mobPage === 'new' && !s.sheet) {
+      const thieb = s.config === 'thieb' ? 60 : 0;
+      css(scroll, { transform: `translateY(${-thieb}px)` });
+    }
+    // Feuille du téléphone : monte depuis le bas.
+    const sh = document.querySelector('[data-sheet]');
+    if (sh) { born.sheet ??= t; css(sh, { transform: `translateY(${(1 - arrive(span(0, 0.4, t - born.sheet))) * 100}%)` }); } else delete born.sheet;
+  }
+
+  /** Centre d'un élément `data-t` dans un appareil, en coordonnées de scène. */
+  function target(root, key) {
+    const el = root.querySelector(`[data-t="${key}"]`);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, r };
+  }
+
+  function gestures(t) {
+    for (const dev of ['d', 'm']) {
+      const root = dev === 'd' ? $('desk') : $('mob');
+      const evs = EVENTS.filter((e) => e[dev]);
+      const next = evs.find((e) => e.t >= t - 0.45);
+      const prev = [...evs].reverse().find((e) => e.t < (next ? next.t : Infinity) && e !== next);
+      const pointer = dev === 'd' ? $('cursor') : $('finger');
+      const ring = $(dev === 'd' ? 'ring-desk' : 'ring-mob');
+      const rip = $(dev === 'd' ? 'rip-desk' : 'rip-mob');
+      const visible = SEG.length && t > at('ouvrir', 0) - 0.3 && t < at('envoyer', 0.7);
+      if (!next || !visible) { css(pointer, { opacity: '0' }); css(ring, { opacity: '0' }); css(rip, { opacity: '0' }); continue; }
+      const to = target(root, next[dev]);
+      const from = prev ? (target(root, prev[dev]) || to) : { x: to?.x + 120, y: to?.y + 160 };
+      if (!to) { css(pointer, { opacity: '0' }); continue; }
+      const k = smooth(span(next.t - 0.65, next.t - 0.05, t));
+      const x = mix(from.x, to.x, k), y = mix(from.y, to.y, k);
+      const press = t >= next.t - 0.08 && t <= next.t + 0.12;
+      if (dev === 'd') css(pointer, { opacity: '1', left: `${x - 4}px`, top: `${y - 2}px`, transform: `scale(${press ? 0.85 : 1})` });
+      else css(pointer, { opacity: '1', left: `${x}px`, top: `${y}px`, transform: `scale(${press ? 0.8 : 1})` });
+      // L'anneau entoure l'élément visé dès que le geste approche.
+      const rv = span(next.t - 0.35, next.t - 0.1, t) * (1 - span(next.t + 0.35, next.t + 0.55, t));
+      css(ring, { opacity: String(rv), left: `${to.r.left - 6}px`, top: `${to.r.top - 6}px`, width: `${to.r.width + 12}px`, height: `${to.r.height + 12}px` });
+      const rp = span(next.t, next.t + 0.45, t);
+      css(rip, { opacity: String(rp > 0 && rp < 1 ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.4})` });
+    }
+  }
+
+  function chrome(t) {
+    // Titre d'étape et sous-titres de la phrase en cours (ou de la dernière dite).
+    const cur = [...SEG].reverse().find((s) => t >= s.start - 0.15) || SEG[0];
+    if (!cur) return;
+    const steps = [...new Set(SEG.filter((s) => s.etape).map((s) => s.etape))];
+    $('chip').textContent = cur.etape ? `Étape ${cur.etape} sur ${steps.length}` : 'Tutoriel';
+    $('title').textContent = cur.titre;
+    const e = arrive(span(cur.start - 0.15, cur.start + 0.35, t));
+    css($('title'), { opacity: String(e), transform: `translateY(${(1 - e) * 18}px)` });
+    css($('chip'), { opacity: String(e) });
+    [...$('steps').children].forEach((bar, i) => {
+      const s = SEG.filter((x) => x.etape === i + 1);
+      const p = s.length ? span(s[0].start, s[s.length - 1].end, t) : 0;
+      css(bar.firstElementChild, { transform: `scaleX(${p})` });
+    });
+    const words = cur.texte.split(' ');
+    const shown = Math.ceil(words.length * span(cur.start - 0.1, cur.start + 0.25, t));
+    $('subs').innerHTML = `<span>${words.slice(0, Math.max(shown, 0)).join(' ')}</span>`;
+    css($('subs'), { opacity: String(t > cur.end + GAP + 0.1 && cur.id === 'fin' ? 0 : 1) });
+
+    // Ouverture et fin : les appareils laissent la place à la carte finale.
+    const fin = seg('fin');
+    const out = smooth(span(fin.start - 0.2, fin.start + 0.5, t));
+    const inn = arrive(span(0, 0.9, t));
+    for (const id of ['laptop', 'phone', 'lbl-pc', 'lbl-tel', 'head']) css($(id), { opacity: String(inn * (1 - out)) });
+    css($('laptop'), { transform: `translateY(${(1 - inn) * 60 - out * 40}px) scale(${L.laptop.s})` });
+    css($('phone'), { transform: `translateY(${(1 - inn) * 90 - out * 40}px) scale(${L.phone.s})` });
+    const ec = arrive(span(fin.start + 0.2, fin.start + 1.0, t));
+    css($('end'), { opacity: String(ec), transform: `scale(${mix(0.94, 1, ec)})` });
+    css($('subs'), { bottom: V ? (out > 0.5 ? '240px' : '34px') : (out > 0.5 ? '120px' : '34px') });
+    // Toast de confirmation, sur les deux écrans.
+  }
+
+  function toast(s, t) {
+    document.querySelectorAll('.toast').forEach((n) => n.remove());
+    if (!s.toast) return;
+    const ev = EVENTS.find((e) => e.d === 'save');
+    const a = arrive(span(ev.t + 0.05, ev.t + 0.4, t));
+    for (const [root, w] of [[$('desk'), 460], [$('mob'), 340]]) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = `<span class="ic">✓</span><span>Commande enregistrée, elle est partie en cuisine.</span>`;
+      css(el, { width: `${w}px`, left: root === $('desk') ? '410px' : '25px', bottom: root === $('desk') ? '28px' : '28px', opacity: String(a), transform: `translateY(${(1 - a) * 20}px)` });
+      root.appendChild(el);
+    }
+  }
+
+  window.render = (t) => {
+    if (!SEG.length) return;
+    const s = stateAt(t);
+    paint(s, t);
+    toast(s, t);
+    chrome(t);
+    gestures(t);
+  };
+
+  // Aperçu sans voix : durées estimées (≈ 13 caractères par seconde).
+  window.previewTimings = () => fetch('comptoir.json').then((r) => r.json());
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "comptoir",
+  "titre": "Commande au comptoir",
+  "produit": "restaurant",
+  "segments": [
+    { "id": "intro", "etape": null, "titre": "Commande au comptoir, de A à Z",
+      "texte": "Un client commande au comptoir, ou par téléphone ? Voici comment enregistrer sa commande avec MagyaPro Restaurant, en moins d'une minute." },
+    { "id": "ouvrir", "etape": 1, "titre": "Ouvrez une nouvelle commande",
+      "texte": "Étape un. Ouvrez Commandes, puis touchez Nouvelle commande." },
+    { "id": "plats", "etape": 2, "titre": "Touchez les plats",
+      "texte": "Étape deux. Touchez les plats du client. Chaque toucher ajoute un plat, et le total se met à jour." },
+    { "id": "choix", "etape": 2, "titre": "Choisissez les suppléments",
+      "texte": "Un plat propose des suppléments ? Cochez-les, puis touchez Ajouter." },
+    { "id": "client", "etape": 3, "titre": "Type de commande et nom du client",
+      "texte": "Étape trois. Choisissez sur place, à emporter, ou livraison. Puis écrivez le nom du client." },
+    { "id": "note", "etape": 3, "titre": "Une précision pour la cuisine",
+      "texte": "Une précision pour le cuisinier ? Notez-la ici." },
+    { "id": "envoyer", "etape": 4, "titre": "Envoyez en cuisine",
+      "texte": "Étape quatre. Touchez Enregistrer la commande. Elle part aussitôt en cuisine." },
+    { "id": "fin", "etape": null, "titre": "Pas de papier, pas d'oubli.",
+      "texte": "Pas de papier, pas d'oubli. MagyaPro Restaurant. Essayez-le gratuitement pendant un mois." }
+  ]
+}
