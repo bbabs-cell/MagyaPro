@@ -603,7 +603,7 @@
   }
 }
 .stagger > * {
-  animation: vivant-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: vivant-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 .stagger > *:nth-child(2) { animation-delay: 50ms; }
 .stagger > *:nth-child(3) { animation-delay: 100ms; }
@@ -617,9 +617,19 @@
    l'entrée — le squelette à l'instant du clic, puis la page quand elle
    arrive. Un changement de filtre sur la même page réutilise les mêmes
    éléments et ne rejoue rien : seul un vrai changement d'écran glisse.
-   Courte (300 ms) : on traverse ces écrans toute la journée. */
+   Courte (300 ms) : on traverse ces écrans toute la journée.
+
+   `backwards`, jamais `both` : une animation qui reste « remplie » après sa
+   fin laisse une transformation sur l'élément — même neutre, `matrix(1, 0,
+   0, 1, 0, 0)` n'est pas `none`. Or un ancêtre transformé devient la
+   référence de tout `position: fixed` qu'il contient. Mesuré au téléphone
+   avec `both` : la barre « Voir le panier » de la caisse se retrouvait à
+   1 778 px du haut au lieu du bas de l'écran, la commande au comptoir du
+   Restaurant de même, et la fenêtre du scanner s'étirait sur toute la page
+   — il fallait défiler pour voir la caméra. `backwards` n'agit qu'avant et
+   pendant l'entrée : la transformation disparaît dès la fin. */
 .route-enter > * {
-  animation: vivant-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: vivant-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /* Reflet qui balaie le bouton principal au survol — le seul élément orange

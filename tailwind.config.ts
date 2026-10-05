@@ -152,6 +152,9 @@ const config: Config = {
         xl: '0.875rem',
         '2xl': '1.25rem',
       },
+      // Les entrées sont en `backwards`, jamais `both` : remplie après sa fin,
+      // une animation laisse une transformation qui capture les `position:
+      // fixed` descendants (voir `.route-enter` dans globals.css).
       // Le vocabulaire du skill « animations vivantes » (dépôt ATELIERFLOW),
       // traduit pour Tailwind 3 : seuls `transform` et `opacity` bougent, et
       // la règle globale de `globals.css` coupe tout pour qui a demandé moins
@@ -187,12 +190,12 @@ const config: Config = {
       },
       animation: {
         'fade-in': 'fade-in 180ms ease-out',
-        'fade-up': 'fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both',
-        'scale-in': 'scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'fade-up': 'fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards',
+        'scale-in': 'scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards',
         veil: 'veil 0.2s ease-out both',
-        'slide-in-left': 'slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) both',
-        'slide-in-up': 'slide-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both',
-        pop: 'pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'slide-in-left': 'slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards',
+        'slide-in-up': 'slide-in-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards',
+        pop: 'pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
         shimmer: 'shimmer 1.6s linear infinite',
         'grow-up': 'grow-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
         // Long et décélérant : la barre avance tant que le serveur travaille,

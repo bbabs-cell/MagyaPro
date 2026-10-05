@@ -1,6 +1,7 @@
 'use client';
 
 import { startTransition, useMemo, useState, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
@@ -17,7 +18,7 @@ import {
   type UnitOption,
 } from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
-import { BarcodeScannerButton } from '@/components/boutique/barcode-scanner';
+import { BarcodeScannerButton, type ScanResult } from '@/components/boutique/barcode-scanner';
 import {
   EXPIRY_ICONS,
   EXPIRY_LABELS,
@@ -125,6 +126,7 @@ export function Pos({
   taxRate,
   paymentMethods,
   readOnly = false,
+  canLinkBarcodes = false,
   now,
 }: {
   storeId: string;
@@ -142,10 +144,20 @@ export function Pos({
    * d'appeler l'API — qui le refuserait de toute façon côté serveur.
    */
   readOnly?: boolean;
+  /**
+   * La personne peut rattacher un code inconnu à un produit depuis la caisse
+   * (droit `products:manage`). Sans ce droit, le code inconnu est signalé,
+   * le catalogue ne change pas.
+   */
+  canLinkBarcodes?: boolean;
   /** Instant de référence figé par le serveur — voir la page Caisse. */
   now: number;
 }) {
   const router = useRouter();
+  // Codes rattachés pendant cette session de caisse : reconnus tout de suite,
+  // sans attendre un rechargement de la liste des produits.
+  const [linkedBarcodes, setLinkedBarcodes] = useState<Record<string, string>>({});
+  const [linking, setLinking] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState('');
@@ -305,25 +317,32 @@ export function Pos({
    * tape le code puis Entrée), caméra, et saisie manuelle. Une seule logique
    * pour les trois, donc un seul comportement à comprendre.
    */
-  function submitBarcode(code: string): boolean {
+  /**
+   * Cherche la déclinaison qui porte ce code et l'ajoute au panier.
+   * `null` : aucun produit ne porte ce code.
+   */
+  function submitBarcode(code: string): ScanResult | null {
     const needle = code.trim().toLowerCase();
-    if (!needle) return false;
+    if (!needle) return null;
 
     // Le code-barres identifie une déclinaison précise (un t-shirt en M noir),
     // pas seulement un produit : le scan ajoute donc directement la bonne.
     for (const product of products) {
-      const variant = product.variants.find((v) => v.barcode?.toLowerCase() === needle);
+      const variant = product.variants.find(
+        (v) => (linkedBarcodes[v.variantId] ?? v.barcode)?.toLowerCase() === needle,
+      );
       if (!variant) continue;
+      const name = product.name;
       if (variant.stock <= 0) {
-        setError(`${product.name} : rupture de stock.`);
-        return true;
+        setError(`${name} : rupture de stock.`);
+        return { ok: false, message: `${name} : rupture de stock` };
       }
       setError(null);
       addToCart(product, variant);
       setQuery('');
-      return true;
+      return { ok: true, message: `${name} ajouté au panier` };
     }
-    return false;
+    return null;
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -331,13 +350,41 @@ export function Pos({
     if (submitBarcode(query)) event.preventDefault();
   }
 
-  function handleScan(code: string) {
-    // Un code inconnu est reporté tel quel dans la recherche : le produit
-    // existe peut-être sans code-barres enregistré, et le vendeur peut alors
-    // le retrouver par son nom sans ressaisir quoi que ce soit.
-    if (submitBarcode(code)) return;
+  function handleScan(code: string): ScanResult {
+    const result = submitBarcode(code);
+    if (result) return result;
+    // Un code inconnu est reporté dans la recherche : le produit existe
+    // peut-être sans code-barres enregistré, et le vendeur le retrouve par
+    // son nom en fermant la caméra, sans rien ressaisir.
+    if (canLinkBarcodes && !readOnly) {
+      // Le geste qui rend le scanner utile dès le premier jour : un commerce
+      // démarre avec des fiches sans code-barres.
+      return {
+        ok: false,
+        message: `Code ${code} inconnu`,
+        action: { label: 'Associer ce code à un produit', run: () => setLinking(code) },
+      };
+    }
     setQuery(code);
-    setError(`Aucun produit avec le code-barres ${code}.`);
+    setError(`Aucun produit avec le code-barres ${code}. Demandez à un responsable de l’ajouter à la fiche du produit.`);
+    return { ok: false, message: `Code ${code} inconnu` };
+  }
+
+  /** Rattache le code en attente à une déclinaison, puis l'ajoute au panier. */
+  async function linkBarcode(product: Product, variant: Variant) {
+    const code = linking;
+    if (!code) return;
+    try {
+      await api.post('/api/boutique/products/barcode', { variantId: variant.variantId, barcode: code });
+      setLinkedBarcodes((current) => ({ ...current, [variant.variantId]: code }));
+      setLinking(null);
+      setError(null);
+      if (variant.stock > 0) addToCart(product, variant);
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : 'Le code n’a pas pu être enregistré.');
+      setLinking(null);
+    }
   }
 
   function updateQuantity(key: string, quantity: number) {
@@ -561,7 +608,9 @@ export function Pos({
             className={cx(inputClass, 'flex-1')}
             autoFocus
           />
-          <BarcodeScannerButton onDetect={handleScan} className="shrink-0" />
+          {/* La caméra reste ouverte : on scanne les articles l'un après
+              l'autre, chacun part au panier, puis « Terminé ». */}
+          <BarcodeScannerButton onDetect={handleScan} continuous className="shrink-0" />
         </div>
 
         <VoiceCommandButton
@@ -998,6 +1047,15 @@ export function Pos({
         </Button>
       </Card>
 
+      {linking ? (
+        <BarcodeLinkSheet
+          code={linking}
+          products={products}
+          onPick={(product, variant) => void linkBarcode(product, variant)}
+          onClose={() => setLinking(null)}
+        />
+      ) : null}
+
       {/* --- Barre fixe, téléphone uniquement -----------------------------
           Le total et l'accès au panier restent visibles pendant qu'on
           parcourt le catalogue. C'était le vrai défaut de cet écran : sur
@@ -1040,5 +1098,84 @@ export function Pos({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * « Associer ce code à un produit » : la liste du catalogue, une recherche,
+ * un geste. Rendue dans `document.body`, comme le scanner, pour rester
+ * au-dessus de la page quoi que fassent ses ancêtres.
+ */
+function BarcodeLinkSheet({
+  code,
+  products,
+  onPick,
+  onClose,
+}: {
+  code: string;
+  products: Product[];
+  onPick: (product: Product, variant: Variant) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false);
+  const needle = normalize(search);
+  const rows = products
+    .flatMap((product) =>
+      product.variants.map((variant) => {
+        const detail = Object.values(variant.attributes).join(' · ');
+        return { product, variant, label: detail ? `${product.name} — ${detail}` : product.name };
+      }),
+    )
+    .filter((row) => !needle || normalize(row.label).includes(needle))
+    .slice(0, 60);
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label="Associer un code-barres" className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4">
+      <button type="button" aria-label="Fermer" onClick={onClose} className="absolute inset-0 animate-veil bg-ink/50" />
+      <div className="relative flex max-h-[85vh] w-full max-w-md animate-slide-in-up flex-col rounded-t-2xl bg-surface shadow-elev2 sm:animate-scale-in sm:rounded-2xl">
+        <div className="border-b border-surface-border p-4">
+          <h2 className="text-base font-semibold text-ink">Quel produit porte ce code ?</h2>
+          <p className="mt-1 font-mono text-sm text-ink-muted">{code}</p>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Rechercher le produit…"
+            className={cx(inputClass, 'mt-3')}
+            autoFocus
+          />
+        </div>
+        <ul className="min-h-0 flex-1 overflow-y-auto p-2">
+          {rows.map(({ product, variant, label }) => (
+            <li key={variant.variantId}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true);
+                  onPick(product, variant);
+                }}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-start text-sm text-ink transition-colors hover:bg-surface-sunken active:bg-surface-sunken disabled:opacity-50"
+              >
+                <span className="min-w-0 truncate font-medium">{label}</span>
+                {variant.barcode ? (
+                  <span className="shrink-0 text-xs text-ink-faint">a déjà un code</span>
+                ) : null}
+              </button>
+            </li>
+          ))}
+          {rows.length === 0 ? (
+            <li className="p-4 text-center text-sm text-ink-muted">Aucun produit ne correspond.</li>
+          ) : null}
+        </ul>
+        <div className="border-t border-surface-border p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <Button type="button" variant="secondary" className="w-full" onClick={onClose}>
+            Annuler
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

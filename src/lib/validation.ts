@@ -1010,3 +1010,18 @@ export const storeSaleSchema = z.object({
    *  identique. */
   clientRequestId: z.string().uuid().optional(),
 });
+
+/**
+ * Associer un code-barres lu à la caisse à un produit existant (voir
+ * `POST /api/boutique/products/barcode`). Le code est celui qu'a lu la
+ * caméra ou la douchette : chiffres et lettres, sans espace.
+ */
+export const storeBarcodeLinkSchema = z.object({
+  variantId: z.string().min(1).max(64),
+  barcode: z
+    .string()
+    .trim()
+    .min(3, 'Code-barres trop court.')
+    .max(60, 'Code-barres trop long.')
+    .regex(/^[A-Za-z0-9\-.]+$/, 'Code-barres invalide.'),
+});

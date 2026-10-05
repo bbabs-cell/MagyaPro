@@ -54,7 +54,11 @@ export function contentSecurityPolicy(nonce: string, storageHost?: string): stri
     // les réglages d'analytics propres à chaque tenant
     // (`googleAnalyticsId` / `metaPixelId` sur les sites publics r/[host]).
     // challenges.cloudflare.com : widget anti-robot Turnstile.
-    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net`,
+    // 'wasm-unsafe-eval' : compilation de WebAssembly, et rien d'autre —
+    // ni `eval`, ni `new Function`. Il faut au lecteur de codes-barres
+    // (ZXing, servi par le site depuis /vendor/zxing/) sur les navigateurs
+    // sans décodeur intégré, c'est-à-dire tous les iPhone.
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: https:${storageHost ? ` https://${storageHost}` : ''}`,
     // Sans cette directive, `media-src` retombe sur `default-src 'self'` et

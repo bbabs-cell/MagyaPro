@@ -33,3 +33,6 @@ publicite/*
 !publicite/manifeste.json
 !publicite/portrait.png
 !publicite/plans/
+
+# Copié au build depuis node_modules (scripts/copier-zxing.mjs).
+public/vendor/

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
-import { requireStore } from '@/lib/boutique/store-tenant';
+import { canStore, requireStore } from '@/lib/boutique/store-tenant';
 import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady, resolveVariantUnitsBulk } from '@/lib/boutique/units-engine';
 import { parseVariantAxes, type VariantAxis } from '@/lib/boutique/variants';
@@ -166,6 +166,7 @@ export default async function BoutiqueCaissePage() {
           taxRate={context.store.taxRate}
           paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
           readOnly={context.isDemoTour}
+          canLinkBarcodes={!context.isDemoTour && canStore(context, 'products:manage')}
           // Instant figé côté serveur : sans lui, « périme dans N jours »
           // serait calculé à deux instants différents au rendu serveur puis
           // navigateur, ce que React signale comme une erreur d'hydratation.

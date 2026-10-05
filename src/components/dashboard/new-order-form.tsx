@@ -612,7 +612,9 @@ export function NewOrderForm({
                   ? 'Aucun plat'
                   : `${itemCount} plat${itemCount > 1 ? 's' : ''}`}
               </p>
-              <p className="truncate text-lg font-semibold tabular-nums text-ink">
+              {/* Comme à la caisse Boutique : le total rebondit à chaque plat
+                  ajouté — l'ajout se voit sans ouvrir la commande. */}
+              <p key={itemCount} className="origin-left animate-pop truncate text-lg font-semibold tabular-nums text-ink">
                 {formatMoney(estimate, currency)}
               </p>
             </div>

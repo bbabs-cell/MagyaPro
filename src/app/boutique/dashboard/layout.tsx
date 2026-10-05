@@ -153,6 +153,11 @@ export default async function BoutiqueDashboardLayout({
     );
   }
 
+  // Le jeton de la politique de sécurité (posé par le middleware) : sans
+  // lui, ce script en ligne était refusé à chaque page, et le thème sombre
+  // ne s'appliquait qu'après coup — l'éclair qu'il devait justement éviter.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <>
       {/* Applique le thème mémorisé avant le premier rendu : sans ça, une
@@ -160,6 +165,7 @@ export default async function BoutiqueDashboardLayout({
           chargement de page. Le composant `useBoutiqueTheme` reprend ensuite
           la main, et retire l'attribut en quittant le tableau de bord. */}
       <script
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html:
             "try{var t=localStorage.getItem('magyapro:boutique-theme');document.documentElement.dataset.boutiqueTheme=t==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.boutiqueTheme='light'}",
