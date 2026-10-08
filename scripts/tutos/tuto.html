@@ -363,6 +363,8 @@
     const out = [];
     // Un « regard » (`look`) montre sans toucher : pas de clic.
     for (const e of EVENTS) if ((e.d || e.m) && !e.look) out.push({ t: e.t, type: e.chime ? 'carillon' : 'clic' });
+    // Un son propre à l'événement (`sound`), par exemple le bip d'une commande qui arrive.
+    for (const e of EVENTS) if (e.sound) out.push({ t: e.t, type: e.sound });
     for (const s of stepStarts()) out.push({ t: s.start - 0.55, type: 'souffle' });
     const p = seg('probleme');
     if (p) out.push({ t: at('probleme', 0.72), type: 'froisse' });

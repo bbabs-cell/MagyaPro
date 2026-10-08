@@ -88,6 +88,8 @@ const SOUNDS = {
   coche: { src: "aevalsrc='0.5*sin(2*PI*1320*t)*exp(-22*t)+0.25*sin(2*PI*1980*t)*exp(-30*t)':d=0.3", volume: 0.4 },
   carillon: { src: "aevalsrc='0.45*sin(2*PI*880*t)*exp(-5*t)+0.45*sin(2*PI*1318.5*(t-0.13))*exp(-5*(t-0.13))*gte(t,0.13)':d=1.3", volume: 0.5 },
   souffle: { src: 'anoisesrc=d=0.7:c=pink:a=0.6,highpass=f=500,lowpass=f=4000,afade=t=in:d=0.35,afade=t=out:st=0.35:d=0.35', volume: 0.22 },
+  // Le bip de l'application à l'arrivée d'une commande (alert-watcher.tsx : 880 Hz, 0,18 s).
+  bip: { src: "aevalsrc='0.6*sin(2*PI*880*t)':d=0.18,afade=t=out:st=0.15:d=0.03", volume: 0.45 },
   froisse: { src: 'anoisesrc=d=0.55:c=white:a=0.5,bandpass=f=3200:w=2500,tremolo=f=28:d=0.95,afade=t=out:st=0.25:d=0.3', volume: 0.35 },
 };
 function soundFiles() {

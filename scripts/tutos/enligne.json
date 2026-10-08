@@ -1,0 +1,23 @@
+{
+  "id": "enligne",
+  "titre": "Recevoir les commandes de son site",
+  "produit": "restaurant",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "Ça sonne en plein service…",
+      "texte": "Le téléphone sonne en plein service… et vous ratez des commandes." },
+    { "id": "intro", "etape": null, "titre": "Les commandes du site, en 3 étapes",
+      "texte": "Avec MagyaPro Restaurant, vos clients commandent seuls sur votre site. Vous, vous confirmez d'un geste." },
+    { "id": "client", "etape": 1, "titre": "Le client choisit ses plats", "geste": "+ Ajouter",
+      "texte": "Étape un : le client choisit ses plats sur votre site, et touche Ajouter." },
+    { "id": "valider", "etape": 1, "titre": "Ses coordonnées, puis Valider", "geste": "Panier › Valider ma commande",
+      "texte": "Il ouvre son panier, choisit le retrait sur place, écrit son nom et son téléphone, puis valide sa commande." },
+    { "id": "sonne", "etape": 2, "titre": "Ça sonne, elle s'affiche", "geste": "À traiter",
+      "texte": "Étape deux : chez vous, ça sonne. La commande s'affiche toute seule, sans recharger la page." },
+    { "id": "confirmer", "etape": 3, "titre": "Confirmez d'un geste", "geste": "Confirmée",
+      "texte": "Étape trois : touchez Confirmée. La commande part en cuisine, et le client le voit sur son suivi." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "Le client commande, ça sonne, vous confirmez. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Plus une commande ratée.",
+      "texte": "MagyaPro Restaurant : essayez-le gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}
