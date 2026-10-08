@@ -332,6 +332,12 @@
   $('lost').innerHTML = TUTO.hook.lost;
   $('tagline').textContent = TUTO.tagline;
   if (!TUTO.hook.ring) $('hook-ring').style.display = 'none';
+  // Ce que montre chaque appareil (par défaut : le même écran, des deux côtés).
+  $('lbl-pc').textContent = TUTO.labels?.pc ?? 'Sur ordinateur';
+  $('lbl-tel').textContent = TUTO.labels?.tel ?? 'Sur téléphone';
+  // En vertical, l'étiquette du téléphone n'apparaît que si elle dit autre
+  // chose que « le même écran » — à gauche du téléphone.
+  if (V && TUTO.labels?.tel) { L.lbltel = { x: 36, y: 1040 }; css($('lbl-tel'), { left: '36px', top: '1040px', whiteSpace: 'normal', width: '270px', lineHeight: '1.4' }); }
   if (TUTO.theme) for (const [k, v] of Object.entries(TUTO.theme)) document.documentElement.style.setProperty(k, v);
   if (TUTO.css) document.head.insertAdjacentHTML('beforeend', `<style>${TUTO.css}</style>`);
 
@@ -372,7 +378,8 @@
     const zone = TUTO.zoneOf;
     const order = SEG.map((s) => ({ t: s.start - 0.2, z: zone(s.id) }));
     const ev = EVENTS.find((e) => e.chime);
-    if (ev) order.push({ t: ev.t + 0.5, z: 'plein' });
+    // Après l'envoi, la caméra recule (plan large, ou la zone choisie par le tutoriel).
+    if (ev) order.push({ t: ev.t + 0.5, z: TUTO.zoneAfterChime ?? 'plein' });
     order.sort((a, b) => a.t - b.t);
     let from = FOCUS.plein, to = FOCUS.plein, k = 1;
     for (const o of order) {
@@ -407,14 +414,19 @@
 
   function toast(s, t) {
     document.querySelectorAll('.toast').forEach((n) => n.remove());
-    if (!s.toast) return;
+    if (!s.toast || !TUTO.toast) return;
     const ev = EVENTS.find((e) => e.chime);
     const a = back(span(ev.t + 0.05, ev.t + 0.45, t));
-    for (const [root, w, left] of [[$('desk'), 470, '400px'], [$('mob'), 350, '20px']]) {
+    // `toastOn` : les écrans qui affichent la confirmation (les deux par défaut).
+    const on = TUTO.toastOn ?? ['d', 'm'];
+    for (const [root, w, left, dev] of [[$('desk'), 470, '400px', 'd'], [$('mob'), 350, '20px', 'm']]) {
+      if (!on.includes(dev)) continue;
       const el = document.createElement('div');
       el.className = 'toast';
       el.innerHTML = `<span class="ic">✓</span><span>${TUTO.toast}</span>`;
-      css(el, { width: `${w}px`, left, bottom: '28px', opacity: String(span(ev.t + 0.05, ev.t + 0.2, t)), transform: `translateY(${(1 - a) * 30}px) scale(${mix(0.9, 1, a)})` });
+      // `toastAt.d` / `toastAt.m` : une autre place que le bas de l'écran.
+      const place = TUTO.toastAt?.[dev] ?? { left, bottom: '28px' };
+      css(el, { width: `${w}px`, ...place, opacity: String(span(ev.t + 0.05, ev.t + 0.2, t)), transform: `translateY(${(1 - a) * 30}px) scale(${mix(0.9, 1, a)})` });
       root.appendChild(el);
     }
   }
@@ -471,7 +483,8 @@
       const rp = span(next.t, next.t + 0.5, t);
       css(rip, { opacity: String(rp > 0 && rp < 1 ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.6})` });
       // La bulle : sur le téléphone (premier plan), ou sur l'ordinateur pour ses gestes à lui.
-      const tipEv = dev === 'm' ? next : null;
+      // La bulle accompagne le téléphone ; un geste fait sur l'ordinateur seul a la sienne.
+      const tipEv = next.tip && (dev === 'm' || !next.m) ? next : null;
       if (tipEv && tipEv.tip && !tipShown) {
         tipShown = true;
         const tv = back(span(next.t - 0.8, next.t - 0.45, t)) * (1 - leave(span(next.t + 0.3, next.t + 0.5, t)));
@@ -479,7 +492,7 @@
         $('tip-n').textContent = step;
         $('tip-t').textContent = tipEv.tip;
         const tw = $('tip').offsetWidth, th = $('tip').offsetHeight;
-        const below = r.top - th - 26 < (V ? 860 : 200);
+        const below = r.top - th - 26 < (dev === 'm' ? (V ? 860 : 200) : (V ? 330 : 230));
         let left = to.x - tw / 2;
         left = Math.max(24, Math.min(left, window.innerWidth - tw - 24));
         $('tip').classList.toggle('below', below);

@@ -102,7 +102,8 @@ function soundFiles() {
   return files;
 }
 
-const BRAND_FAMILIES = ['Bricolage Grotesque', 'Manrope', 'DM Mono'];
+// Poppins et Playfair Display : les polices du site client (« Ce que voit le client »).
+const BRAND_FAMILIES = ['Bricolage Grotesque', 'Manrope', 'DM Mono', 'Poppins', 'Playfair Display'];
 /** Les polices du site, relues dans son build (voir `scripts/motion/render.mjs`). */
 function brandFontFaces() {
   const dir = '.next/static/css';

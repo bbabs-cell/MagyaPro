@@ -1,0 +1,25 @@
+{
+  "id": "menu",
+  "titre": "Créer sa carte",
+  "produit": "restaurant",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "Le menu imprimé…",
+      "texte": "Un nouveau plat, un prix qui monte, un plat épuisé… et le menu imprimé est déjà faux." },
+    { "id": "intro", "etape": null, "titre": "Créer sa carte, en 3 étapes",
+      "texte": "Avec MagyaPro Restaurant, votre carte se met à jour en trois étapes, et votre site suit tout de suite." },
+    { "id": "nouveau", "etape": 1, "titre": "La catégorie, puis Nouveau plat", "geste": "Menu › Nouveau plat",
+      "texte": "Étape un : dans Menu, choisissez la catégorie, puis touchez Nouveau plat." },
+    { "id": "fiche", "etape": 2, "titre": "Le nom, la photo, le prix", "geste": "Nom · Description · Photo · Prix",
+      "texte": "Étape deux : écrivez le nom et la description, ajoutez une photo, puis le prix." },
+    { "id": "choix", "etape": 2, "titre": "Une taille ? Une variante", "geste": "Ajouter une variante",
+      "texte": "Le plat existe en plusieurs tailles ? Ajoutez une variante, avec son prix. Pour les suppléments, il y a les groupes d'options." },
+    { "id": "enregistrer", "etape": 3, "titre": "Enregistrez : c'est en ligne", "geste": "Enregistrer",
+      "texte": "Étape trois : touchez Enregistrer. Le plat apparaît aussitôt sur votre site." },
+    { "id": "epuise", "etape": 3, "titre": "Un plat épuisé ? Un toucher", "geste": "Marquer épuisé",
+      "texte": "Plus de mouton ce soir ? Touchez Marquer épuisé : le client le voit tout de suite." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "La catégorie, la fiche du plat, enregistrer. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Votre carte, toujours juste.",
+      "texte": "MagyaPro Restaurant : essayez-le gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}
