@@ -118,7 +118,7 @@ function brandFontFaces() {
 
 async function openScene(browser, segments) {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-  await page.goto(`file://${resolve('scripts/tutos/tuto.html')}${VERTICAL ? '?format=vertical' : ''}`, { waitUntil: 'load' });
+  await page.goto(`file://${resolve('scripts/tutos/tuto.html')}?tuto=${TUTO}${VERTICAL ? '&format=vertical' : ''}`, { waitUntil: 'load' });
   await page.addStyleTag({ content: brandFontFaces() });
   const missing = await page.evaluate(async (specs) => {
     const out = [];

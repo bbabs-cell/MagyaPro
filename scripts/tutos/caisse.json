@@ -1,0 +1,23 @@
+{
+  "id": "caisse",
+  "titre": "Encaisser une vente",
+  "produit": "boutique",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "Le soir, on recompte…",
+      "texte": "Une file de clients, une calculette, un cahier… et le soir, la caisse ne tombe pas juste." },
+    { "id": "intro", "etape": null, "titre": "Encaisser une vente, en 3 étapes",
+      "texte": "Avec MagyaPro Boutique, une vente s'encaisse en trois étapes. Regardez." },
+    { "id": "produits", "etape": 1, "titre": "Touchez les produits",
+      "texte": "Étape un : touchez les produits. Bouteille ou carton : chaque bouton a son prix." },
+    { "id": "quantite", "etape": 1, "titre": "Ajustez la quantité",
+      "texte": "Il en faut deux ? Touchez plus. Le total se calcule tout seul." },
+    { "id": "paiement", "etape": 2, "titre": "Le paiement",
+      "texte": "Étape deux : ouvrez le panier, choisissez le mode de paiement, et saisissez le montant reçu." },
+    { "id": "encaisser", "etape": 3, "titre": "Encaissez",
+      "texte": "Étape trois : touchez Encaisser. La vente est enregistrée, et le stock baisse tout seul." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "Les produits, le paiement, encaisser. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Vendez sans calculer.",
+      "texte": "MagyaPro Boutique : essayez-la gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}
