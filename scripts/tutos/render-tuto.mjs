@@ -43,7 +43,7 @@ const arg = (name, fallback) => {
 };
 const TUTO = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'comptoir';
 const VERTICAL = arg('format') === 'vertical';
-const VOICE = arg('voix', 'tom');
+const VOICE = arg('voix', 'siwis');
 /**
  * Voix enregistrées ailleurs (ElevenLabs, ou une vraie voix) : un fichier
  * `<id>.mp3` par phrase dans ce dossier. Une phrase absente est dite par
