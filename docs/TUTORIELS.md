@@ -27,7 +27,7 @@ Trois questions, dans cet ordre :
 | 1 | Restaurant | **Commande au comptoir** | ✅ Faite. Le modèle de la série. |
 | 2 | Boutique | **Encaisser une vente** | ✅ Faite. Le geste le plus fréquent de tout le produit. |
 | 3 | Restaurant | **Créer sa carte** (plats, prix, photo, suppléments, plat épuisé) | ✅ Faite. Le téléphone montre le site du client, mis à jour en direct. |
-| 4 | Boutique | **Ajouter un produit, à l'unité et au carton** | Sans produit, pas de caisse — et c'est ce qui distingue MagyaPro. |
+| 4 | Boutique | **Ajouter un produit, à l'unité et au carton** | ✅ Faite. Sans produit, pas de caisse — et c'est ce qui distingue MagyaPro. |
 | 5 | Restaurant | **L'écran de cuisine** | Utilisé à chaque commande, par quelqu'un qui n'a pas été formé. |
 | 6 | Restaurant | **Recevoir les commandes de son site** | La promesse principale : le client commande seul. |
 | 7 | Boutique | **Scanner un code-barres** (et associer un code inconnu) | Nouveau et simplifié ; ce qui faisait dire « ça ne marche pas ». |

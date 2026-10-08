@@ -1,0 +1,27 @@
+{
+  "id": "produit",
+  "titre": "Ajouter un produit, à l'unité et au carton",
+  "produit": "boutique",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "Au carton, à la pièce…",
+      "texte": "Vous vendez au carton et à la pièce ? Sur un cahier, le stock ne tombe jamais juste." },
+    { "id": "intro", "etape": null, "titre": "Ajouter un produit, en 3 étapes",
+      "texte": "Avec MagyaPro Boutique, un produit s'ajoute en trois étapes, à la pièce et au carton." },
+    { "id": "nouveau", "etape": 1, "titre": "Nouveau produit, et son nom", "geste": "+ Nouveau produit",
+      "texte": "Étape un : dans Produits, touchez Nouveau produit, et écrivez son nom." },
+    { "id": "prix", "etape": 1, "titre": "Le coût et le prix à la pièce", "geste": "Coût d'achat · Prix de vente",
+      "texte": "Puis le coût d'achat, et le prix de vente à la pièce." },
+    { "id": "carton", "etape": 2, "titre": "Le carton, avec son prix", "geste": "+ Ajouter un conditionnement",
+      "texte": "Étape deux : vous vendez aussi au carton ? Ajoutez un conditionnement : un carton de vingt-quatre pièces, avec son propre prix." },
+    { "id": "stock", "etape": 2, "titre": "Le stock déjà en rayon", "geste": "Cartons · pièces en plus",
+      "texte": "Le stock déjà en rayon se saisit en cartons, et en pièces en plus." },
+    { "id": "actif", "etape": 3, "titre": "Actif, puis Enregistrer", "geste": "Statut : Actif",
+      "texte": "Étape trois : passez le statut sur Actif, sinon il reste en brouillon. Puis touchez Enregistrer." },
+    { "id": "caisse", "etape": 3, "titre": "Il est déjà en caisse", "geste": "Pièce ou carton",
+      "texte": "À la caisse, il est déjà là : à la pièce ou au carton, et le stock se compte tout seul." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "Le produit, le carton, actif et enregistrer. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Vendez en gros comme au détail.",
+      "texte": "MagyaPro Boutique : essayez-la gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}

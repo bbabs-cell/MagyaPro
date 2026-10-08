@@ -473,7 +473,10 @@
       const k = smooth(span(next.t - 0.7, next.t - 0.08, t));
       const x = mix(from.x, to.x, k), y = mix(from.y, to.y, k);
       const press = t >= next.t - 0.08 && t <= next.t + 0.12;
-      const appear = span(firstStep.start - 0.5, firstStep.start - 0.1, t);
+      // Un appareil qui n'a encore rien touché garde son pointeur caché
+      // jusqu'à l'approche de son premier geste (l'autre écran travaille).
+      const idle = !pr && !lastTouch[dev] ? span(next.t - 1.4, next.t - 0.8, t) : 1;
+      const appear = span(firstStep.start - 0.5, firstStep.start - 0.1, t) * idle;
       if (dev === 'd') css(pointer, { opacity: String(appear), left: `${x - 5}px`, top: `${y - 3}px`, transform: `scale(${press ? 0.82 : 1})` });
       else css(pointer, { opacity: String(appear), left: `${x}px`, top: `${y}px`, transform: `scale(${press ? 0.78 : 1})` });
       // Projecteur : s'allume avant le geste, s'éteint juste après.
