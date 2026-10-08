@@ -2,25 +2,39 @@
 <!--
   Tutoriels vidéo MagyaPro — « Commande au comptoir », et les suivants.
 
-  Même principe que `scripts/motion/` : rien ne bouge tout seul, `render(t)`
-  place chaque élément à l'instant t et `render-tuto.mjs` photographie image
-  par image. Mais le but est autre : **apprendre à se servir du logiciel**,
-  même sans le son. D'où :
+  Rien ne bouge tout seul : `render(t)` place chaque élément à l'instant t et
+  `render-tuto.mjs` photographie image par image, sur un minutage dicté par
+  la voix (`configure`).
 
-  - deux appareils côte à côte, **ordinateur et téléphone**, qui font la même
-    chose au même moment : on voit que l'outil est le même partout ;
-  - un curseur sur l'ordinateur, un doigt sur le téléphone, et un anneau
-    orange sur chaque élément touché : on voit **où** appuyer ;
-  - le titre de l'étape en grand et la phrase dite en sous-titre : on
-    comprend sans le son ;
-  - un minutage dicté par la voix : chaque geste tombe pendant la phrase qui
-    l'annonce (`window.configure(timings)`, durées mesurées sur la voix).
+  ## Comment la vidéo explique
+
+  Un tutoriel réussi se comprend **sans le son** et **sans relire**. Chaque
+  choix ci-dessous sert l'un des deux :
+
+  - **Le problème d'abord** : un bon papier griffonné se froisse et tombe.
+    On montre ce que le logiciel remplace avant de montrer le logiciel.
+  - **La feuille de route, toujours visible** : les quatre étapes en
+    pastilles en haut de l'image. L'étape en cours s'allume, les étapes
+    faites se cochent : on sait à tout moment où l'on en est, et combien il
+    en reste.
+  - **Un seul geste à la fois, montré trois fois** : le projecteur assombrit
+    tout sauf l'élément à toucher, une bulle dit ce qu'on fait (« Touchez
+    “Nouvelle commande” »), et le doigt touche. L'œil n'a jamais à chercher.
+  - **Le téléphone au premier plan** — c'est l'écran du public, sur TikTok
+    comme au comptoir — et l'ordinateur au-dessus, en gros plan sur la zone
+    où l'on agit, qui fait la même chose au même moment.
+  - **Les mots s'allument quand ils sont dits** (sous-titres « karaoké ») :
+    on suit sans le son, et le son aide qui lit mal.
+  - **Le récapitulatif** : la liste des quatre étapes se coche au rythme de
+    la voix. Ce qu'on retient, c'est elle.
+  - **Le son** : un clic à chaque toucher, un souffle à chaque étape, un
+    carillon quand la commande part (`window.CUES`, posés par le moteur).
 
   Les écrans sont reconstruits d'après l'application (libellés, couleurs,
   ordre des champs de `new-order-form.tsx`), avec la carte du restaurant de
   démonstration « Chez Aminata ».
 
-  `?format=vertical` (9:16, TikTok, Reels) — par défaut 16:9 (YouTube).
+  `?format=vertical` (9:16 : TikTok, Reels, Shorts) — sinon 16:9 (YouTube).
 -->
 <html lang="fr">
 <head>
@@ -28,7 +42,7 @@
 <style>
   :root {
     --bg: #0b1730; --bg-deep: #050b18; --accent: #ff5e2e; --accent-2: #ff9a4d;
-    --text: #fff; --muted: rgba(255,255,255,.72);
+    --text: #fff; --muted: rgba(255,255,255,.72); --done: #3dd68c;
     --app-bg: #ece5d8; --card: #fbf8f2; --raised: #fff; --border: #ddd3c1;
     --ink: #211d16; --ink-muted: #6a6153; --ink-faint: #948b7b; --side: #0c1730;
     --ok: #2f6b4a; --ok-soft: #dcece2; --warn: #a8700f; --warn-soft: #f9edd6;
@@ -36,29 +50,34 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; background: var(--bg-deep); }
   body { position: relative; color: var(--text); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
-  .bg { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 30%, #12234a 0%, var(--bg-deep) 75%); }
-  .dots { position: absolute; inset: 0; opacity: .6; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1.4px, transparent 1.4px); background-size: 32px 32px; }
-  .glow { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .35; background: radial-gradient(circle, rgba(255,110,60,.7), transparent 70%); }
+  .bg { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 30%, #13254d 0%, var(--bg-deep) 75%); }
+  .dots { position: absolute; inset: 0; opacity: .55; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1.4px, transparent 1.4px); background-size: 32px 32px; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .32; background: radial-gradient(circle, rgba(255,110,60,.75), transparent 70%); }
 
-  /* ---------------------------------------------------------------- En-tête */
-  .head { position: absolute; left: 0; right: 0; top: 70px; text-align: center; padding: 0 60px; }
-  .brand { font: 700 30px/1 'Manrope'; letter-spacing: -.01em; opacity: .9; }
+  /* ------------------------------------------------- Feuille de route */
+  .head { position: absolute; left: 0; right: 0; top: 64px; text-align: center; padding: 0 40px; }
+  .brand { font: 700 28px/1 'Manrope'; letter-spacing: -.01em; opacity: .85; }
   .brand b { color: var(--accent); font-weight: 700; }
-  .steps { display: flex; justify-content: center; gap: 12px; margin-top: 30px; }
-  .steps i { width: 64px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; position: relative; }
-  .steps i b { position: absolute; inset: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transform-origin: left; transform: scaleX(0); }
-  .stepchip { display: inline-block; margin-top: 30px; padding: 10px 22px; border-radius: 99px; background: rgba(255,94,46,.16); border: 1px solid rgba(255,94,46,.45);
-              font: 500 24px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); }
-  .title { margin-top: 22px; font: 800 70px/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -.035em; }
+  .road { display: flex; justify-content: center; gap: 10px; margin-top: 26px; }
+  .pill { display: flex; align-items: center; gap: 10px; padding: 9px 16px 9px 9px; border-radius: 99px; border: 1.5px solid rgba(255,255,255,.22);
+          font: 600 22px/1 'Manrope'; color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); transform-origin: 50% 50%; }
+  .pill .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 700 19px/1 'DM Mono'; background: rgba(255,255,255,.12); color: #fff; }
+  .pill.on { border-color: var(--accent); background: linear-gradient(90deg, rgba(255,154,77,.25), rgba(255,94,46,.25)); color: #fff; }
+  .pill.on .n { background: var(--accent); }
+  .pill.done { border-color: rgba(61,214,140,.55); color: rgba(255,255,255,.85); }
+  .pill.done .n { background: var(--done); color: #0c2a1b; }
+  .title { margin-top: 22px; font: 800 56px/1.04 'Bricolage Grotesque', sans-serif; letter-spacing: -.035em; text-wrap: balance; }
 
   /* -------------------------------------------------------- Sous-titres */
-  .subs { position: absolute; left: 50px; right: 50px; bottom: 34px; text-align: center; }
-  .subs span { display: inline; padding: 6px 14px; line-height: 1.75; border-radius: 10px; -webkit-box-decoration-break: clone; box-decoration-break: clone;
-               background: rgba(5,11,24,.82); font: 600 34px/1.75 'Manrope'; color: #fff; }
-  .subs span em { font-style: normal; color: var(--accent-2); }
+  .subs { position: absolute; left: 36px; right: 36px; bottom: 30px; text-align: center; }
+  .subs span.box { display: inline; padding: 8px 16px; border-radius: 12px; -webkit-box-decoration-break: clone; box-decoration-break: clone;
+                   background: rgba(5,11,24,.86); font: 700 40px/1.7 'Manrope'; }
+  .subs .w { color: rgba(255,255,255,.42); }
+  .subs .w.said { color: #fff; }
+  .subs .w.now { color: var(--accent-2); }
 
   /* ---------------------------------------------------------- Appareils */
-  .laptop { position: absolute; width: 996px; }
+  .laptop { position: absolute; width: 996px; transform-origin: 0 0; }
   .laptop .lid { padding: 18px 18px 22px; border-radius: 26px 26px 6px 6px; background: linear-gradient(180deg, #3a3e45, #1b1d21);
                  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14), 0 40px 90px -30px rgba(0,0,0,.9); }
   .laptop .lscreen { position: relative; width: 960px; height: 600px; overflow: hidden; border-radius: 6px; background: var(--app-bg); }
@@ -66,9 +85,9 @@
   .laptop .base::before { content: ''; display: block; width: 160px; height: 8px; margin: 0 auto; border-radius: 0 0 10px 10px; background: #6d7178; }
   .desk { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; transform-origin: 0 0; }
 
-  .phone { position: absolute; width: 414px; height: 868px; padding: 12px; border-radius: 64px;
+  .phone { position: absolute; width: 414px; height: 868px; padding: 12px; border-radius: 64px; transform-origin: 0 0;
            background: linear-gradient(135deg, #5b5f66 0%, #2b2e33 18%, #1a1c20 50%, #2b2e33 82%, #6a6e75 100%);
-           box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), inset 0 0 0 5px #0c0d0f, 0 50px 100px -40px rgba(0,0,0,.9); transform-origin: 0 0; }
+           box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18), inset 0 0 0 5px #0c0d0f, 0 60px 120px -40px rgba(0,0,0,.95); }
   .phone .pscreen { position: relative; width: 390px; height: 844px; border-radius: 52px; overflow: hidden; background: var(--app-bg); }
   .phone .status { position: absolute; left: 0; right: 0; top: 0; height: 50px; z-index: 30; display: flex; justify-content: space-between; align-items: center;
                    padding: 6px 34px 0 40px; font: 700 16px/1 'Manrope'; color: var(--ink); background: var(--card); }
@@ -76,7 +95,8 @@
   .mob { position: absolute; left: 0; right: 0; top: 50px; bottom: 0; overflow: hidden; color: var(--ink); font: 500 15px/1.4 'Manrope'; }
   .mob h1 { margin: 0; font: 600 26px/1.15 'Bricolage Grotesque'; letter-spacing: -.02em; }
   .mob .lead { margin: 4px 0 16px; color: var(--ink-muted); font-size: 14.5px; }
-  .devlabel { position: absolute; font: 500 20px/1 'DM Mono'; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .devlabel { position: absolute; padding: 7px 14px; border-radius: 99px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+              font: 500 17px/1 'DM Mono'; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 
   /* ------------------------------------------------------ L'application */
   .app { position: absolute; inset: 0; display: flex; color: var(--ink); font: 500 15px/1.4 'Manrope'; }
@@ -144,51 +164,103 @@
   .kcard .num { font: 700 24px/1 'Manrope'; }
   .wait { font: 600 13px/1 'DM Mono'; padding: 5px 9px; border-radius: 99px; background: var(--ok-soft); color: var(--ok); }
 
-  /* --------------------------------------------------- Gestes et repères */
-  .cursor { position: absolute; z-index: 50; width: 30px; height: 30px; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
-  .finger { position: absolute; z-index: 50; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; pointer-events: none;
-            background: radial-gradient(circle, rgba(255,255,255,.6) 0%, rgba(255,255,255,.25) 50%, rgba(255,255,255,0) 72%); border: 2.5px solid rgba(255,255,255,.85); }
-  .ring { position: absolute; z-index: 45; pointer-events: none; border: 3px solid var(--accent); border-radius: 14px; box-shadow: 0 0 0 7px rgba(255,94,46,.22); }
-  .ripple { position: absolute; z-index: 49; pointer-events: none; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 3px solid var(--accent); }
 
-  .endcard { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
-  .endcard .lg { font: 800 92px/1 'Manrope'; letter-spacing: -.03em; } .endcard .lg b { color: var(--accent); }
-  .endcard .tg { margin-top: 30px; font: 800 64px/1.05 'Bricolage Grotesque'; letter-spacing: -.03em; }
-  .endcard .of { margin-top: 44px; padding: 18px 30px; border-radius: 99px; border: 1px solid rgba(255,94,46,.45); background: rgba(255,94,46,.14); font: 500 30px/1 'DM Mono'; color: var(--accent-2); }
 
-  /* 16:9 : en-tête resserré, sous-titres plus bas. */
-  body:not(.vertical) .head { top: 40px; }
-  body:not(.vertical) .title { font-size: 54px; margin-top: 14px; }
-  body:not(.vertical) .stepchip { margin-top: 18px; font-size: 20px; }
-  body:not(.vertical) .steps { margin-top: 18px; }
-  body:not(.vertical) .subs { bottom: 34px; }
-  body:not(.vertical) .subs span { font-size: 30px; }
+  /* ---------------------------------------------- Projecteur et gestes */
+  /* Le projecteur vit dans l'écran de l'appareil (qui le rogne) : tout
+     s'assombrit sauf l'élément à toucher, cerclé d'orange. */
+  .spot { position: absolute; z-index: 60; pointer-events: none; border-radius: 14px; border: 3px solid var(--accent);
+          box-shadow: 0 0 0 4000px rgba(10,8,6,.5), 0 0 0 8px rgba(255,94,46,.25); }
+  .cursor { position: absolute; z-index: 80; width: 34px; height: 34px; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+  .finger { position: absolute; z-index: 80; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; pointer-events: none;
+            background: radial-gradient(circle, rgba(255,255,255,.7) 0%, rgba(255,255,255,.3) 50%, rgba(255,255,255,0) 72%); border: 3px solid #fff;
+            box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .ripple { position: absolute; z-index: 79; pointer-events: none; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 4px solid var(--accent); }
+  /* La consigne du geste, en bulle, au-dessus de ce qu'on touche. */
+  .tip { position: absolute; z-index: 90; display: flex; align-items: center; gap: 12px; padding: 14px 20px 14px 14px; border-radius: 18px; white-space: nowrap;
+         background: #fff; color: var(--ink); font: 700 30px/1.1 'Manrope'; box-shadow: 0 20px 40px -12px rgba(0,0,0,.55); transform-origin: 50% 100%; }
+  .tip .n { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font: 700 20px/1 'DM Mono'; flex: none; }
+  .tip::after { content: ''; position: absolute; left: var(--arrow, 50%); bottom: -11px; width: 22px; height: 22px; margin-left: -11px; background: #fff; transform: rotate(45deg); border-radius: 3px; }
+  .tip.below { transform-origin: 50% 0; }
+  .tip.below::after { bottom: auto; top: -11px; }
+
+  /* -------------------------------------------------- Numéro d'étape */
+  .bignum { position: absolute; z-index: 70; left: 0; right: 0; top: 50%; text-align: center; pointer-events: none; }
+  .bignum b { display: block; font: 800 420px/0.8 'Bricolage Grotesque'; letter-spacing: -.06em; color: var(--accent);
+              text-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .bignum span { display: block; margin-top: 10px; font: 600 40px/1 'DM Mono'; letter-spacing: .3em; text-transform: uppercase; color: #fff; }
+  .dim { position: absolute; inset: 0; z-index: 65; background: rgba(5,11,24,.78); pointer-events: none; }
+
+  /* ---------------------------------------------------------- Accroche */
+  .hook { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+  .slip { position: absolute; width: 420px; padding: 34px 32px 40px; background: #f6efe0; color: #2c2416; border-radius: 4px;
+          font: 400 34px/1.55 'DM Mono'; box-shadow: 0 40px 80px -30px rgba(0,0,0,.9); border-top: 14px solid #c9603f; }
+  .slip s { opacity: .55; }
+  .ring-ico { position: absolute; width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); }
+  .ring-ico i { position: absolute; inset: 0; border-radius: 50%; border: 4px solid var(--accent); }
+  .lost { position: absolute; left: 0; right: 0; text-align: center; font: 800 96px/1 'Bricolage Grotesque'; letter-spacing: -.04em; }
+  .lost em { font-style: normal; color: var(--accent-2); }
+
+  /* ------------------------------------------------------ Récapitulatif */
+  .recap { position: absolute; z-index: 75; left: 50%; top: 50%; width: 760px; padding: 44px 48px; border-radius: 36px; background: rgba(251,248,242,.97); color: var(--ink);
+           box-shadow: 0 50px 120px -30px rgba(0,0,0,.9); }
+  .recap h3 { margin: 0 0 24px; font: 800 52px/1 'Bricolage Grotesque'; letter-spacing: -.03em; }
+  .recap .it { display: flex; align-items: center; gap: 20px; padding: 18px 0; border-top: 1.5px dashed var(--border); font: 700 36px/1.1 'Manrope'; }
+  .recap .ck { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--border); display: grid; place-items: center; flex: none; font: 700 26px/1 'DM Mono'; color: var(--ink-faint); }
+  .recap .ck.on { background: var(--done); border-color: var(--done); color: #0c2a1b; }
+  .recap .it small { display: block; margin-top: 6px; font: 500 22px/1.2 'Manrope'; color: var(--ink-muted); }
+
+  .endcard { position: absolute; inset: 0; z-index: 85; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 70px; }
+  .endcard .lg { font: 800 100px/1 'Manrope'; letter-spacing: -.03em; } .endcard .lg b { color: var(--accent); }
+  .endcard .tg { margin-top: 34px; font: 800 66px/1.05 'Bricolage Grotesque'; letter-spacing: -.03em; text-wrap: balance; }
+  .endcard .of { margin-top: 46px; padding: 20px 34px; border-radius: 99px; background: var(--accent); color: #fff; font: 700 34px/1 'Manrope'; box-shadow: 0 20px 50px -15px rgba(255,94,46,.7); }
+  .endcard .sm { margin-top: 22px; font: 500 26px/1 'DM Mono'; color: var(--muted); letter-spacing: .06em; }
+
+  /* 16:9 */
+  body:not(.vertical) .head { top: 34px; }
+  body:not(.vertical) .title { font-size: 46px; margin-top: 16px; }
+  body:not(.vertical) .road { margin-top: 18px; }
+  body:not(.vertical) .pill { font-size: 19px; padding: 7px 14px 7px 7px; }
+  body:not(.vertical) .pill .n { width: 30px; height: 30px; font-size: 17px; }
+  body:not(.vertical) .subs { bottom: 26px; }
+  body:not(.vertical) .subs span.box { font-size: 32px; }
+  body:not(.vertical) .bignum b { font-size: 320px; }
 </style>
 </head>
 <body>
   <div class="bg"></div><div class="dots"></div>
   <div class="glow" id="glow1"></div><div class="glow" id="glow2"></div>
 
+  <div class="hook" id="hook">
+    <div class="ring-ico" id="hook-ring"><i></i><i></i><svg width="70" height="70" viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></div>
+    <div class="slip" id="slip"><b>Tél. — Awa</b><br>2 poulet yassa<br><s>1 mafé</s> 1 thieb ?<br>+ poisson ??<br>1 bouye<br>— sans piment</div>
+    <div class="lost" id="lost">Le papier <em>se perd.</em></div>
+  </div>
+
   <div class="head" id="head">
     <div class="brand">Magya<b>pro</b> Restaurant</div>
-    <div class="steps" id="steps"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
-    <div class="stepchip" id="chip"></div>
+    <div class="road" id="road"></div>
     <div class="title" id="title"></div>
   </div>
 
-  <div class="laptop" id="laptop"><div class="lid"><div class="lscreen"><div class="desk" id="desk"></div></div></div><div class="base"></div></div>
-  <div class="devlabel" id="lbl-pc">Ordinateur</div>
+  <div class="laptop" id="laptop"><div class="lid"><div class="lscreen" id="lscreen"><div class="desk" id="desk"></div><div class="spot" id="spot-d"></div></div></div><div class="base"></div></div>
+  <div class="devlabel" id="lbl-pc">Sur ordinateur</div>
   <div class="phone" id="phone"><div class="pscreen" id="pscreen">
     <div class="status"><span>12:30</span><span>●●● ▮</span></div><div class="island"></div>
-    <div class="mob" id="mob"></div></div></div>
-  <div class="devlabel" id="lbl-tel">Téléphone</div>
+    <div class="mob" id="mob"></div><div class="spot" id="spot-m"></div></div></div>
+  <div class="devlabel" id="lbl-tel">Sur téléphone</div>
 
-  <div class="cursor" id="cursor"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 2 L4 20 L9 15.5 L12.5 22.5 L15.5 21 L12 14 L19 14 Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <div class="cursor" id="cursor"><svg viewBox="0 0 24 24" width="34" height="34"><path d="M4 2 L4 20 L9 15.5 L12.5 22.5 L15.5 21 L12 14 L19 14 Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
   <div class="finger" id="finger"></div>
   <div class="ripple" id="rip-desk"></div><div class="ripple" id="rip-mob"></div>
-  <div class="ring" id="ring-desk"></div><div class="ring" id="ring-mob"></div>
+  <div class="tip" id="tip"><span class="n" id="tip-n"></span><span id="tip-t"></span></div>
 
-  <div class="endcard" id="end"><div class="lg">Magya<b>pro</b></div><div class="tg">De la commande à la cuisine,<br>sans un papier perdu.</div><div class="of">Un mois gratuit · sans carte bancaire</div></div>
+  <div class="dim" id="dim"></div>
+  <div class="bignum" id="bignum"><b id="bignum-b"></b><span>Étape</span></div>
+
+  <div class="recap" id="recap"><h3>En résumé</h3><div id="recap-items"></div></div>
+
+  <div class="endcard" id="end"><div class="lg">Magya<b>pro</b></div><div class="tg">De la commande à la cuisine, sans un papier perdu.</div><div class="of">Essai gratuit · 1 mois</div><div class="sm">sans carte bancaire</div></div>
 
   <div class="subs" id="subs"></div>
 
@@ -202,39 +274,53 @@
   const span = (a, b, t) => clamp((t - a) / (b - a));
   const mix = (a, b, x) => a + (b - a) * x;
   const arrive = (x) => 1 - Math.pow(1 - x, 4);
+  const leave = (x) => x * x * x;
   const smooth = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
-  const back = (x) => { const c = 1.5; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const back = (x) => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
   const fmt = (n) => `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} F CFA`;
   const $ = (id) => document.getElementById(id);
   const css = (el, s) => el && Object.assign(el.style, s);
 
   // ------------------------------------------------------------ Mise en page
+  /** Positions des appareils ; le téléphone, au premier plan, est le plus grand. */
   const L = V
-    ? { laptop: { x: 42, y: 420, s: 1.0 }, phone: { x: 382, y: 1100, s: 0.74 }, lblpc: { x: 62, y: 386 }, lbltel: { x: 120, y: 1160 } }
-    : { laptop: { x: 120, y: 250, s: 0.95 }, phone: { x: 1330, y: 230, s: 0.84 }, lblpc: { x: 140, y: 214 }, lbltel: { x: 1350, y: 196 } };
-  css($('laptop'), { left: `${L.laptop.x}px`, top: `${L.laptop.y}px`, transform: `scale(${L.laptop.s})`, transformOrigin: '0 0' });
-  css($('phone'), { left: `${L.phone.x}px`, top: `${L.phone.y}px`, transform: `scale(${L.phone.s})` });
+    ? { laptop: { x: 141, y: 352, s: 0.80 }, phone: { x: 333, y: 846, s: 1.0 }, lblpc: { x: -999, y: 0 }, lbltel: { x: -999, y: 0 } }
+    : { laptop: { x: 90, y: 232, s: 1.0 }, phone: { x: 1250, y: 196, s: 0.86 }, lblpc: { x: 90, y: 192 }, lbltel: { x: 1290, y: 160 } };
   css($('lbl-pc'), { left: `${L.lblpc.x}px`, top: `${L.lblpc.y}px` });
   css($('lbl-tel'), { left: `${L.lbltel.x}px`, top: `${L.lbltel.y}px` });
-  css($('glow1'), { width: '700px', height: '700px', left: '-200px', top: V ? '500px' : '100px' });
-  css($('glow2'), { width: '600px', height: '600px', right: '-150px', bottom: V ? '200px' : '-100px', left: 'auto' });
+  css($('glow1'), { width: '760px', height: '760px', left: '-240px', top: V ? '560px' : '120px' });
+  css($('glow2'), { width: '640px', height: '640px', right: '-180px', bottom: V ? '160px' : '-120px', left: 'auto' });
+  css($('hook-ring'), V ? { left: '465px', top: '330px' } : { left: '885px', top: '170px' });
+  css($('slip'), V ? { left: '330px', top: '620px' } : { left: '750px', top: '360px' });
+  css($('lost'), { top: V ? '1360px' : '880px', fontSize: V ? '96px' : '72px' });
 
   // ------------------------------------------------------------ Le script
-  /**
-   * Durées des phrases, en secondes, mesurées sur la voix par le moteur de
-   * rendu. Valeurs par défaut pour les aperçus sans voix.
-   */
   let SEG = [];
-  const GAP = 0.45;
+  let EVENTS = [];
+  const GAP = 0.4;
   window.configure = (segments) => {
-    let t = 0.6;
-    SEG = segments.map((s) => { const out = { ...s, start: t, end: t + s.duree }; t = out.end + GAP; return out; });
-    window.DURATION = t + 2.2;
+    let t = 0.4;
+    SEG = segments.map((s) => {
+      // Un temps de respiration avant chaque nouvelle étape, pour le chiffre.
+      if (s.etape && !segments.slice(0, segments.indexOf(s)).some((x) => x.etape === s.etape)) t += 0.5;
+      const out = { ...s, start: t, end: t + s.duree };
+      t = out.end + GAP;
+      return out;
+    });
+    window.DURATION = t + 2.4;
     build();
+    window.CUES = cues();
   };
   const seg = (id) => SEG.find((s) => s.id === id);
-  /** Instant à la fraction `f` de la phrase `id`. */
   const at = (id, f) => { const s = seg(id); return s.start + (s.end - s.start) * f; };
+  /** Début d'une nouvelle étape : c'est là que passe le grand chiffre. */
+  const stepStarts = () => SEG.filter((s, i) => s.etape && !SEG.slice(0, i).some((x) => x.etape === s.etape));
+
+  const ROAD = [[1, 'Ouvrir'], [2, 'Les plats'], [3, 'Le client'], [4, 'Envoyer']];
+  $('road').innerHTML = ROAD.map(([n, l]) => `<div class="pill" data-step="${n}"><span class="n">${n}</span>${l}</div>`).join('');
+  $('recap-items').innerHTML = [
+    ['Commandes', '› Nouvelle commande'], ['Les plats', 'un toucher, un plat'], ['Le client', 'type, nom, note'], ['Enregistrer', 'la cuisine la reçoit'],
+  ].map(([a, b], i) => `<div class="it"><span class="ck" data-ck="${i}">${i + 1}</span><span>${a}<small>${b}</small></span></div>`).join('');
 
   // ------------------------------------------------------------ La carte
   const MENU = [
@@ -246,36 +332,6 @@
     { k: 'bissap', nm: 'Jus de bissap', cat: 'Boissons', pr: 1500 },
   ];
 
-  /**
-   * Les gestes, dans l'ordre. `d` : cible sur l'ordinateur, `m` : sur le
-   * téléphone (`data-t` des éléments). `fn` : ce que le geste change.
-   */
-  let EVENTS = [];
-  function build() {
-    EVENTS = [
-      // Étape 1 : Commandes → Nouvelle commande.
-      { t: at('ouvrir', 0.30), d: 'nav-cmd', fn: (s) => { s.deskPage = 'orders'; } },
-      { t: at('ouvrir', 0.20), m: 'burger', fn: (s) => { s.drawer = true; } },
-      { t: at('ouvrir', 0.42), m: 'nav-cmd', fn: (s) => { s.drawer = false; s.mobPage = 'orders'; } },
-      { t: at('ouvrir', 0.78), d: 'new', m: 'new', fn: (s) => { s.deskPage = s.mobPage = 'new'; } },
-      // Étape 2 : les plats.
-      { t: at('plats', 0.40), d: 'dish-yassa', m: 'dish-yassa', fn: (s) => add(s, 'yassa') },
-      { t: at('plats', 0.58), d: 'dish-yassa', m: 'dish-yassa', fn: (s) => add(s, 'yassa') },
-      { t: at('plats', 0.80), d: 'dish-bouye', m: 'dish-bouye', fn: (s) => add(s, 'bouye') },
-      // Les suppléments.
-      { t: at('choix', 0.12), d: 'dish-thieb', m: 'dish-thieb', fn: (s) => { s.config = 'thieb'; } },
-      { t: at('choix', 0.50), d: 'opt-poisson', m: 'opt-poisson', fn: (s) => { s.opts = ['poisson']; } },
-      { t: at('choix', 0.82), d: 'opt-add', m: 'opt-add', fn: (s) => { add(s, 'thieb', ['poisson']); s.config = null; s.opts = []; } },
-      // Étape 3 : type et nom.
-      { t: at('client', 0.02), m: 'see', fn: (s) => { s.sheet = true; } },
-      { t: at('client', 0.30), d: 'f-PICKUP', m: 'f-PICKUP', fn: (s) => { s.ful = 'PICKUP'; } },
-      { t: at('client', 0.66), d: 'name', m: 'name', fn: (s) => { s.focus = 'name'; }, type: { field: 'name', text: 'Awa Koné', dur: 1.1 } },
-      { t: at('note', 0.30), d: 'note', m: 'note', fn: (s) => { s.focus = 'note'; }, type: { field: 'note', text: 'Sans piment', dur: 0.9 } },
-      // Étape 4 : envoyer.
-      { t: at('envoyer', 0.38), d: 'save', m: 'save', fn: (s) => { s.focus = null; s.toast = true; s.saveAt = 0; } },
-      { t: at('envoyer', 0.72), fn: (s) => { s.toast = false; s.deskPage = s.mobPage = 'kitchen'; s.sheet = false; } },
-    ].sort((a, b) => a.t - b.t);
-  }
   function add(s, k, opts = []) {
     const key = `${k}|${opts.join(',')}`;
     const line = s.lines.find((l) => l.key === key);
@@ -377,28 +433,64 @@
     return `${header}<div style="position:absolute;left:0;right:0;top:56px;bottom:0;padding:16px;overflow:hidden" id="mobbody"><div id="mobscroll">${body}</div></div>${bar}${sheet}${drawer}`;
   }
 
-  // ------------------------------------------------------------ Rendu
+
+
+  /**
+   * Les gestes. `d` : cible sur l'ordinateur, `m` : sur le téléphone
+   * (`data-t`). `tip` : la consigne affichée dans la bulle. `fn` : ce que
+   * le geste change à l'écran.
+   */
+  function build() {
+    EVENTS = [
+      // Étape 1
+      { t: at('ouvrir', 0.22), m: 'burger', tip: 'Ouvrez le menu', fn: (s) => { s.drawer = true; } },
+      { t: at('ouvrir', 0.30), d: 'nav-cmd', fn: (s) => { s.deskPage = 'orders'; } },
+      { t: at('ouvrir', 0.48), m: 'nav-cmd', tip: 'Touchez « Commandes »', fn: (s) => { s.drawer = false; s.mobPage = 'orders'; } },
+      { t: at('ouvrir', 0.86), d: 'new', m: 'new', tip: 'Touchez « Nouvelle commande »', fn: (s) => { s.deskPage = s.mobPage = 'new'; } },
+      // Étape 2
+      { t: at('plats', 0.36), d: 'dish-yassa', m: 'dish-yassa', tip: 'Touchez le plat', fn: (s) => add(s, 'yassa') },
+      { t: at('plats', 0.56), d: 'dish-yassa', m: 'dish-yassa', tip: 'Encore : 2 plats', fn: (s) => add(s, 'yassa') },
+      { t: at('plats', 0.80), d: 'dish-bouye', m: 'dish-bouye', tip: 'Une boisson', fn: (s) => add(s, 'bouye') },
+      { t: at('choix', 0.16), d: 'dish-thieb', m: 'dish-thieb', tip: 'Ce plat a des suppléments', fn: (s) => { s.config = 'thieb'; } },
+      { t: at('choix', 0.52), d: 'opt-poisson', m: 'opt-poisson', tip: 'Cochez « Poisson »', fn: (s) => { s.opts = ['poisson']; } },
+      { t: at('choix', 0.86), d: 'opt-add', m: 'opt-add', tip: 'Touchez « Ajouter »', fn: (s) => { add(s, 'thieb', ['poisson']); s.config = null; s.opts = []; } },
+      // Étape 3
+      { t: at('client', 0.10), m: 'see', tip: 'Voir la commande', fn: (s) => { s.sheet = true; } },
+      { t: at('client', 0.42), d: 'f-PICKUP', m: 'f-PICKUP', tip: 'À emporter', fn: (s) => { s.ful = 'PICKUP'; } },
+      { t: at('client', 0.74), d: 'name', m: 'name', tip: 'Le nom du client', fn: (s) => { s.focus = 'name'; }, type: { field: 'name', text: 'Awa Koné', dur: 0.9 } },
+      { t: at('note', 0.40), d: 'note', m: 'note', tip: 'Note pour la cuisine', fn: (s) => { s.focus = 'note'; }, type: { field: 'note', text: 'Sans piment', dur: 0.8 } },
+      // Étape 4
+      { t: at('envoyer', 0.40), d: 'save', m: 'save', tip: 'Touchez « Enregistrer »', fn: (s) => { s.focus = null; s.toast = true; }, chime: true },
+      { t: at('envoyer', 0.74), fn: (s) => { s.toast = false; s.deskPage = s.mobPage = 'kitchen'; s.sheet = false; } },
+    ].sort((a, b) => a.t - b.t);
+  }
+
+  /** Les sons, pour le moteur : un clic par toucher, un souffle par étape, un carillon à l'envoi. */
+  function cues() {
+    const out = [];
+    for (const e of EVENTS) if (e.d || e.m) out.push({ t: e.t, type: e.chime ? 'carillon' : 'clic' });
+    for (const s of stepStarts()) out.push({ t: s.start - 0.55, type: 'souffle' });
+    const p = seg('probleme');
+    if (p) out.push({ t: at('probleme', 0.72), type: 'froisse' });
+    const r = seg('recap');
+    if (r) [0.06, 0.26, 0.46, 0.64].forEach((f) => out.push({ t: at('recap', f), type: 'coche' }));
+    return out.sort((a, b) => a.t - b.t);
+  }
+
+  // ------------------------------------------------------------ Rendu des écrans
   let lastDesk = '', lastMob = '';
   const born = {};
-  /**
-   * La caméra de l'ordinateur : à chaque étape, l'écran s'approche de la
-   * zone où l'on agit. Un écran d'ordinateur entier, réduit dans une vidéo
-   * verticale, ne se lit pas sur un téléphone ; la carte des plats ou le
-   * panneau de commande, en gros plan, si.
-   */
   const FOCUS = {
     plein: { x: 0, y: 0, w: 1280, h: 800 },
+    nav: { x: 0, y: 0, w: 760, h: 475 },
     plats: { x: 250, y: 70, w: 690, h: 470 },
-    // Le panneau de commande, en deux plans : le haut (lignes, type,
-    // nom), puis le bas (note, bouton d'envoi).
     panneau: { x: 895, y: 80, w: 375, h: 470 },
     panneauBas: { x: 895, y: 300, w: 375, h: 470 },
   };
   function focusAt(t) {
     const zone = (id) => (['plats', 'choix'].includes(id) ? 'plats' : id === 'client' ? 'panneau' : ['note', 'envoyer'].includes(id) ? 'panneauBas' : 'plein');
     const order = SEG.map((s) => ({ t: s.start - 0.2, z: zone(s.id) }));
-    // Après « Enregistrer », retour au plein écran pour voir la cuisine.
-    const ev = EVENTS.find((e) => e.d === 'save');
+    const ev = EVENTS.find((e) => e.chime);
     if (ev) order.push({ t: ev.t + 0.5, z: 'plein' });
     order.sort((a, b) => a.t - b.t);
     let from = FOCUS.plein, to = FOCUS.plein, k = 1;
@@ -420,105 +512,190 @@
     const d = deskHTML(s), m = mobHTML(s);
     if (d !== lastDesk) { $('desk').innerHTML = d; lastDesk = d; }
     if (m !== lastMob) { $('mob').innerHTML = m; lastMob = m; }
-    // Ce qui vient d'apparaître glisse en place ; ce qui change de valeur rebondit.
     for (const el of document.querySelectorAll('[data-born],[data-pop]')) {
       const key = el.dataset.born || el.dataset.pop;
       born[key] ??= t;
       const a = t - born[key];
       if (el.dataset.born) css(el, { opacity: String(arrive(span(0, 0.35, a))), transform: `translateY(${(1 - arrive(span(0, 0.4, a))) * 14}px)` });
-      else css(el, { display: 'inline-block', transform: `scale(${a < 0.4 ? mix(1.35, 1, back(span(0, 0.4, a))) : 1})` });
+      else css(el, { display: 'inline-block', transform: `scale(${a < 0.45 ? mix(1.5, 1, back(span(0, 0.45, a))) : 1})` });
     }
-    // Le téléphone fait défiler la carte pour amener le plat touché à l'écran.
     const scroll = document.getElementById('mobscroll');
-    if (scroll && s.mobPage === 'new' && !s.sheet) {
-      const thieb = s.config === 'thieb' ? 60 : 0;
-      css(scroll, { transform: `translateY(${-thieb}px)` });
-    }
-    // Feuille du téléphone : monte depuis le bas.
+    if (scroll && s.mobPage === 'new' && !s.sheet) css(scroll, { transform: `translateY(${s.config === 'thieb' ? -60 : 0}px)` });
     const sh = document.querySelector('[data-sheet]');
     if (sh) { born.sheet ??= t; css(sh, { transform: `translateY(${(1 - arrive(span(0, 0.4, t - born.sheet))) * 100}%)` }); } else delete born.sheet;
-  }
-
-  /** Centre d'un élément `data-t` dans un appareil, en coordonnées de scène. */
-  function target(root, key) {
-    const el = root.querySelector(`[data-t="${key}"]`);
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2, r };
-  }
-
-  function gestures(t) {
-    for (const dev of ['d', 'm']) {
-      const root = dev === 'd' ? $('desk') : $('mob');
-      const evs = EVENTS.filter((e) => e[dev]);
-      const next = evs.find((e) => e.t >= t - 0.45);
-      const prev = [...evs].reverse().find((e) => e.t < (next ? next.t : Infinity) && e !== next);
-      const pointer = dev === 'd' ? $('cursor') : $('finger');
-      const ring = $(dev === 'd' ? 'ring-desk' : 'ring-mob');
-      const rip = $(dev === 'd' ? 'rip-desk' : 'rip-mob');
-      const visible = SEG.length && t > at('ouvrir', 0) - 0.3 && t < at('envoyer', 0.7);
-      if (!next || !visible) { css(pointer, { opacity: '0' }); css(ring, { opacity: '0' }); css(rip, { opacity: '0' }); continue; }
-      const to = target(root, next[dev]);
-      const from = prev ? (target(root, prev[dev]) || to) : { x: to?.x + 120, y: to?.y + 160 };
-      if (!to) { css(pointer, { opacity: '0' }); continue; }
-      const k = smooth(span(next.t - 0.65, next.t - 0.05, t));
-      const x = mix(from.x, to.x, k), y = mix(from.y, to.y, k);
-      const press = t >= next.t - 0.08 && t <= next.t + 0.12;
-      if (dev === 'd') css(pointer, { opacity: '1', left: `${x - 4}px`, top: `${y - 2}px`, transform: `scale(${press ? 0.85 : 1})` });
-      else css(pointer, { opacity: '1', left: `${x}px`, top: `${y}px`, transform: `scale(${press ? 0.8 : 1})` });
-      // L'anneau entoure l'élément visé dès que le geste approche.
-      const rv = span(next.t - 0.35, next.t - 0.1, t) * (1 - span(next.t + 0.35, next.t + 0.55, t));
-      css(ring, { opacity: String(rv), left: `${to.r.left - 6}px`, top: `${to.r.top - 6}px`, width: `${to.r.width + 12}px`, height: `${to.r.height + 12}px` });
-      const rp = span(next.t, next.t + 0.45, t);
-      css(rip, { opacity: String(rp > 0 && rp < 1 ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.4})` });
-    }
-  }
-
-  function chrome(t) {
-    // Titre d'étape et sous-titres de la phrase en cours (ou de la dernière dite).
-    const cur = [...SEG].reverse().find((s) => t >= s.start - 0.15) || SEG[0];
-    if (!cur) return;
-    const steps = [...new Set(SEG.filter((s) => s.etape).map((s) => s.etape))];
-    $('chip').textContent = cur.etape ? `Étape ${cur.etape} sur ${steps.length}` : 'Tutoriel';
-    $('title').textContent = cur.titre;
-    const e = arrive(span(cur.start - 0.15, cur.start + 0.35, t));
-    css($('title'), { opacity: String(e), transform: `translateY(${(1 - e) * 18}px)` });
-    css($('chip'), { opacity: String(e) });
-    [...$('steps').children].forEach((bar, i) => {
-      const s = SEG.filter((x) => x.etape === i + 1);
-      const p = s.length ? span(s[0].start, s[s.length - 1].end, t) : 0;
-      css(bar.firstElementChild, { transform: `scaleX(${p})` });
-    });
-    const words = cur.texte.split(' ');
-    const shown = Math.ceil(words.length * span(cur.start - 0.1, cur.start + 0.25, t));
-    $('subs').innerHTML = `<span>${words.slice(0, Math.max(shown, 0)).join(' ')}</span>`;
-    css($('subs'), { opacity: String(t > cur.end + GAP + 0.1 && cur.id === 'fin' ? 0 : 1) });
-
-    // Ouverture et fin : les appareils laissent la place à la carte finale.
-    const fin = seg('fin');
-    const out = smooth(span(fin.start - 0.2, fin.start + 0.5, t));
-    const inn = arrive(span(0, 0.9, t));
-    for (const id of ['laptop', 'phone', 'lbl-pc', 'lbl-tel', 'head']) css($(id), { opacity: String(inn * (1 - out)) });
-    css($('laptop'), { transform: `translateY(${(1 - inn) * 60 - out * 40}px) scale(${L.laptop.s})` });
-    css($('phone'), { transform: `translateY(${(1 - inn) * 90 - out * 40}px) scale(${L.phone.s})` });
-    const ec = arrive(span(fin.start + 0.2, fin.start + 1.0, t));
-    css($('end'), { opacity: String(ec), transform: `scale(${mix(0.94, 1, ec)})` });
-    css($('subs'), { bottom: V ? (out > 0.5 ? '240px' : '34px') : (out > 0.5 ? '120px' : '34px') });
-    // Toast de confirmation, sur les deux écrans.
   }
 
   function toast(s, t) {
     document.querySelectorAll('.toast').forEach((n) => n.remove());
     if (!s.toast) return;
-    const ev = EVENTS.find((e) => e.d === 'save');
-    const a = arrive(span(ev.t + 0.05, ev.t + 0.4, t));
-    for (const [root, w] of [[$('desk'), 460], [$('mob'), 340]]) {
+    const ev = EVENTS.find((e) => e.chime);
+    const a = back(span(ev.t + 0.05, ev.t + 0.45, t));
+    for (const [root, w, left] of [[$('desk'), 470, '400px'], [$('mob'), 350, '20px']]) {
       const el = document.createElement('div');
       el.className = 'toast';
-      el.innerHTML = `<span class="ic">✓</span><span>Commande enregistrée, elle est partie en cuisine.</span>`;
-      css(el, { width: `${w}px`, left: root === $('desk') ? '410px' : '25px', bottom: root === $('desk') ? '28px' : '28px', opacity: String(a), transform: `translateY(${(1 - a) * 20}px)` });
+      el.innerHTML = '<span class="ic">✓</span><span>Commande enregistrée, elle est partie en cuisine.</span>';
+      css(el, { width: `${w}px`, left, bottom: '28px', opacity: String(span(ev.t + 0.05, ev.t + 0.2, t)), transform: `translateY(${(1 - a) * 30}px) scale(${mix(0.9, 1, a)})` });
       root.appendChild(el);
     }
+  }
+
+  // ------------------------------------------------------------ Gestes
+  /** Rectangle d'un élément `data-t`, en coordonnées de la scène. */
+  function rectOf(root, key) {
+    const el = root.querySelector(`[data-t="${key}"]`);
+    return el ? el.getBoundingClientRect() : null;
+  }
+  /** Le même rectangle, en coordonnées de l'écran de l'appareil (pour le projecteur). */
+  function inScreen(screen, r, scale) {
+    const c = screen.getBoundingClientRect();
+    return { x: (r.left - c.left) / scale, y: (r.top - c.top) / scale, w: r.width / scale, h: r.height / scale };
+  }
+
+  function gestures(t) {
+    const live = SEG.length && t > at('ouvrir', 0) - 0.5 && t < at('envoyer', 0.72);
+    let tipShown = false;
+    for (const dev of ['d', 'm']) {
+      const root = dev === 'd' ? $('desk') : $('mob');
+      const screen = dev === 'd' ? $('lscreen') : $('pscreen');
+      // Échelle réelle de l'écran à l'image (appareil agrandi ou réduit).
+      const scale = screen.getBoundingClientRect().width / (dev === 'd' ? 960 : 390);
+      const evs = EVENTS.filter((e) => e[dev]);
+      const next = evs.find((e) => e.t >= t - 0.5);
+      const prev = next ? [...evs].reverse().find((e) => e.t < next.t) : null;
+      const pointer = dev === 'd' ? $('cursor') : $('finger');
+      const spot = dev === 'd' ? $('spot-d') : $('spot-m');
+      const rip = $(dev === 'd' ? 'rip-desk' : 'rip-mob');
+      const r = next && live ? rectOf(root, next[dev]) : null;
+      if (!r) { css(pointer, { opacity: '0' }); css(spot, { opacity: '0' }); css(rip, { opacity: '0' }); continue; }
+      const to = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      const pr = prev ? rectOf(root, prev[dev]) : null;
+      const from = pr ? { x: pr.left + pr.width / 2, y: pr.top + pr.height / 2 } : { x: to.x + 140, y: to.y + 200 };
+      const k = smooth(span(next.t - 0.7, next.t - 0.08, t));
+      const x = mix(from.x, to.x, k), y = mix(from.y, to.y, k);
+      const press = t >= next.t - 0.08 && t <= next.t + 0.12;
+      const appear = span(at('ouvrir', 0) - 0.5, at('ouvrir', 0) - 0.1, t);
+      if (dev === 'd') css(pointer, { opacity: String(appear), left: `${x - 5}px`, top: `${y - 3}px`, transform: `scale(${press ? 0.82 : 1})` });
+      else css(pointer, { opacity: String(appear), left: `${x}px`, top: `${y}px`, transform: `scale(${press ? 0.78 : 1})` });
+      // Projecteur : s'allume avant le geste, s'éteint juste après.
+      const sv = span(next.t - 0.75, next.t - 0.35, t) * (1 - span(next.t + 0.25, next.t + 0.5, t));
+      const box = inScreen(screen, r, scale);
+      css(spot, { opacity: String(sv), left: `${box.x - 8}px`, top: `${box.y - 8}px`, width: `${box.w + 16}px`, height: `${box.h + 16}px` });
+      const rp = span(next.t, next.t + 0.5, t);
+      css(rip, { opacity: String(rp > 0 && rp < 1 ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.6})` });
+      // La bulle : sur le téléphone (premier plan), ou sur l'ordinateur pour ses gestes à lui.
+      const tipEv = dev === 'm' ? next : null;
+      if (tipEv && tipEv.tip && !tipShown) {
+        tipShown = true;
+        const tv = back(span(next.t - 0.8, next.t - 0.45, t)) * (1 - leave(span(next.t + 0.3, next.t + 0.5, t)));
+        const step = SEG.find((sg) => next.t >= sg.start - 0.1 && next.t <= sg.end + 0.5)?.etape ?? '';
+        $('tip-n').textContent = step;
+        $('tip-t').textContent = tipEv.tip;
+        const tw = $('tip').offsetWidth, th = $('tip').offsetHeight;
+        const below = r.top - th - 26 < (V ? 860 : 200);
+        let left = to.x - tw / 2;
+        left = Math.max(24, Math.min(left, window.innerWidth - tw - 24));
+        $('tip').classList.toggle('below', below);
+        $('tip').style.setProperty('--arrow', `${to.x - left}px`);
+        css($('tip'), { opacity: String(clamp(tv)), left: `${left}px`, top: `${below ? r.bottom + 24 : r.top - th - 24}px`, transform: `scale(${mix(0.7, 1, clamp(tv))})` });
+      }
+    }
+    if (!tipShown) css($('tip'), { opacity: '0' });
+  }
+
+  // ------------------------------------------------------------ Habillage
+  function chrome(t) {
+    const cur = [...SEG].reverse().find((s) => t >= s.start - 0.15) || SEG[0];
+    if (!cur) return;
+    const first = SEG[0], intro = seg('intro'), recap = seg('recap'), fin = seg('fin');
+
+    // Titre de l'étape.
+    $('title').textContent = cur.titre;
+    const e = arrive(span(cur.start - 0.15, cur.start + 0.35, t));
+    css($('title'), { opacity: String(e), transform: `translateY(${(1 - e) * 22}px)` });
+
+    // Feuille de route : apparaît avec l'annonce des quatre étapes, une pastille après l'autre.
+    const roadIn = intro ? intro.start + (intro.end - intro.start) * 0.45 : 0;
+    const curStep = cur.etape ?? (t >= (recap?.start ?? Infinity) ? 5 : 0);
+    [...$('road').children].forEach((pill, i) => {
+      const n = i + 1;
+      const a = back(span(roadIn + i * 0.14, roadIn + i * 0.14 + 0.4, t));
+      pill.classList.toggle('on', curStep === n);
+      pill.classList.toggle('done', curStep > n);
+      pill.querySelector('.n').textContent = curStep > n ? '✓' : String(n);
+      const pulse = curStep === n ? 1 + 0.06 * Math.max(0, 1 - (t - (SEG.find((s) => s.etape === n)?.start ?? 0)) / 0.5) : 1;
+      css(pill, { opacity: String(clamp(a)), transform: `scale(${mix(0.6, 1, a) * pulse})` });
+    });
+
+    // Accroche : le bon papier, puis il se froisse et tombe.
+    const hookOut = smooth(span(intro.start - 0.2, intro.start + 0.4, t));
+    css($('hook'), { opacity: String(1 - hookOut) });
+    const sIn = back(span(first.start, first.start + 0.6, t));
+    const crumple = span(at('probleme', 0.66), at('probleme', 0.95), t);
+    css($('slip'), { opacity: String(span(first.start, first.start + 0.2, t) * (1 - crumple * 0.9)),
+      transform: `translateY(${(1 - sIn) * -200 + crumple * crumple * 900}px) rotate(${-6 + (1 - sIn) * 20 + crumple * 70}deg) scale(${mix(1.1, 1, sIn) * mix(1, 0.45, crumple)})`,
+      filter: crumple > 0.05 ? `blur(${crumple * 6}px)` : 'none' });
+    const ring = span(first.start, first.start + 0.4, t) * (1 - span(at('probleme', 0.5), at('probleme', 0.7), t));
+    css($('hook-ring'), { opacity: String(ring), transform: `rotate(${Math.sin(t * 40) * 8 * (t < at('probleme', 0.4) ? 1 : 0)}deg)` });
+    [...$('hook-ring').querySelectorAll('i')].forEach((c, i) => { const k = ((t * 1.4 + i / 2) % 1); css(c, { transform: `scale(${1 + k * 0.8})`, opacity: String(1 - k) }); });
+    const lost = arrive(span(at('probleme', 0.62), at('probleme', 0.85), t));
+    css($('lost'), { opacity: String(lost), transform: `translateY(${(1 - lost) * 30}px)` });
+
+    // Appareils : arrivent avec l'introduction, s'effacent au résumé.
+    const inn = arrive(span(intro.start, intro.start + 0.9, t));
+    const toRecap = recap ? smooth(span(recap.start - 0.2, recap.start + 0.4, t)) : 0;
+    const out = smooth(span(fin.start - 0.2, fin.start + 0.4, t));
+    const devOp = inn * (1 - toRecap * 0.75) * (1 - out);
+    for (const id of ['laptop', 'phone', 'lbl-pc', 'lbl-tel']) css($(id), { opacity: String(devOp) });
+    const blur = toRecap * 6;
+    css($('laptop'), { left: `${L.laptop.x}px`, top: `${L.laptop.y}px`, transform: `translateY(${(1 - inn) * 80}px) scale(${L.laptop.s})`, filter: blur > 0.3 ? `blur(${blur}px)` : 'none' });
+    css($('phone'), { left: `${L.phone.x}px`, top: `${L.phone.y}px`, transform: `translateY(${(1 - inn) * 140}px) scale(${L.phone.s})`, filter: blur > 0.3 ? `blur(${blur}px)` : 'none' });
+    css($('head'), { opacity: String(span(first.start, first.start + 0.4, t) * (1 - out)) });
+
+    // Grand chiffre au début de chaque étape.
+    let bn = 0, bnum = '';
+    for (const s of stepStarts()) {
+      const a = span(s.start - 0.7, s.start + 0.25, t);
+      if (a > 0 && a < 1) { bn = a; bnum = String(s.etape); }
+    }
+    $('bignum-b').textContent = bnum;
+    const bIn = back(span(0, 0.45, bn)), bOut = leave(span(0.7, 1, bn));
+    css($('bignum'), { opacity: String(bn > 0 ? clamp(span(0, 0.15, bn)) * (1 - bOut) : 0), transform: `translateY(-50%) scale(${mix(0.5, 1, bIn) + bOut * 0.3})` });
+    css($('dim'), { opacity: String(bn > 0 ? 0.85 * Math.sin(Math.PI * bn) : 0) });
+
+    // Récapitulatif : la liste se coche au rythme de la voix.
+    if (recap) {
+      const ra = back(span(recap.start - 0.1, recap.start + 0.5, t)) * (1 - smooth(span(fin.start - 0.2, fin.start + 0.3, t)));
+      css($('recap'), { opacity: String(clamp(ra * 1.2)), transform: `translate(-50%, -50%) scale(${mix(0.85, 1, clamp(ra))})` });
+      $('recap').querySelectorAll('[data-ck]').forEach((ck, i) => {
+        const on = t >= at('recap', [0.06, 0.26, 0.46, 0.64][i]);
+        ck.classList.toggle('on', on);
+        ck.textContent = on ? '✓' : String(i + 1);
+        const p = span(at('recap', [0.06, 0.26, 0.46, 0.64][i]), at('recap', [0.06, 0.26, 0.46, 0.64][i]) + 0.35, t);
+        css(ck, { transform: `scale(${on ? mix(1.4, 1, back(p)) : 1})` });
+      });
+    }
+
+    // Carte finale.
+    const ec = arrive(span(fin.start + 0.1, fin.start + 0.9, t));
+    css($('end'), { opacity: String(ec), transform: `scale(${mix(0.92, 1, ec)})` });
+    const of = back(span(fin.start + 0.7, fin.start + 1.2, t));
+    css($('end').querySelector('.of'), { transform: `scale(${mix(0.6, 1, of)})`, opacity: String(clamp(of)) });
+
+    // Sous-titres : les mots s'allument au fil de la voix.
+    const say = SEG.find((s) => t >= s.start - 0.1 && t <= s.end + GAP * 0.8);
+    if (!say || (say.id === 'fin' && t > say.end)) { $('subs').innerHTML = ''; return; }
+    const words = say.texte.split(' ');
+    const weights = words.map((w) => w.length + 2);
+    const total = weights.reduce((a, b) => a + b, 0);
+    const p = span(say.start, say.end - 0.15, t) * total;
+    let acc = 0;
+    const html = words.map((w, i) => {
+      const startW = acc; acc += weights[i];
+      const cls = p >= acc ? 'said' : p >= startW ? 'now' : '';
+      return `<span class="w ${cls}">${w}</span>`;
+    }).join(' ');
+    $('subs').innerHTML = `<span class="box">${html}</span>`;
+    css($('subs'), { bottom: V ? (say.id === 'recap' ? '250px' : '30px') : '26px' });
   }
 
   window.render = (t) => {
@@ -529,9 +706,6 @@
     chrome(t);
     gestures(t);
   };
-
-  // Aperçu sans voix : durées estimées (≈ 13 caractères par seconde).
-  window.previewTimings = () => fetch('comptoir.json').then((r) => r.json());
 </script>
 </body>
 </html>
