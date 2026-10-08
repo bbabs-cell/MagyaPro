@@ -1,0 +1,23 @@
+{
+  "id": "cuisine",
+  "titre": "L'écran de cuisine",
+  "produit": "restaurant",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "Les bons s'empilent…",
+      "texte": "Les bons de commande s'empilent en cuisine… et plus personne ne sait lequel est prêt." },
+    { "id": "intro", "etape": null, "titre": "L'écran de cuisine, en 3 gestes",
+      "texte": "Avec MagyaPro Restaurant, l'écran de cuisine tient en trois gestes. Pas besoin d'être formé." },
+    { "id": "arrive", "etape": 1, "titre": "La commande arrive seule", "geste": "À préparer",
+      "texte": "Étape un : une commande confirmée arrive seule dans À préparer, avec ses plats, ses options, et la note du client." },
+    { "id": "lecture", "etape": 1, "titre": "Tout se lit de loin", "geste": "Numéro · temps d'attente",
+      "texte": "Le numéro se lit de loin. Une commande qui attend depuis plus d'un quart d'heure passe en orange." },
+    { "id": "demarrer", "etape": 2, "titre": "Touchez Démarrer", "geste": "Démarrer",
+      "texte": "Étape deux : touchez Démarrer. La fiche passe en préparation, et le client le voit sur son téléphone." },
+    { "id": "prete", "etape": 3, "titre": "Touchez Marquer prête", "geste": "Marquer prête",
+      "texte": "Étape trois : c'est prêt ? Touchez Marquer prête. Le suivi du client se met à jour tout seul." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "Elle arrive, démarrer, marquer prête. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Plus de bons perdus.",
+      "texte": "MagyaPro Restaurant : essayez-le gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}

@@ -361,7 +361,8 @@
   /** Les sons, pour le moteur : un clic par toucher, un souffle par étape, un carillon à l'envoi. */
   function cues() {
     const out = [];
-    for (const e of EVENTS) if (e.d || e.m) out.push({ t: e.t, type: e.chime ? 'carillon' : 'clic' });
+    // Un « regard » (`look`) montre sans toucher : pas de clic.
+    for (const e of EVENTS) if ((e.d || e.m) && !e.look) out.push({ t: e.t, type: e.chime ? 'carillon' : 'clic' });
     for (const s of stepStarts()) out.push({ t: s.start - 0.55, type: 'souffle' });
     const p = seg('probleme');
     if (p) out.push({ t: at('probleme', 0.72), type: 'froisse' });
@@ -449,7 +450,7 @@
     // Les gestes vivent de la première étape au dernier geste (plus son écho).
     const firstStep = SEG.find((x) => x.etape);
     const lastGesture = EVENTS.filter((e) => e.d || e.m).at(-1);
-    const live = SEG.length && t > firstStep.start - 0.5 && t < lastGesture.t + 0.7;
+    const live = SEG.length && t > firstStep.start - 0.5 && t < lastGesture.t + (lastGesture.hold ?? 0) + 0.7;
     let tipShown = false;
     for (const dev of ['d', 'm']) {
       const root = dev === 'd' ? $('desk') : $('mob');
@@ -457,8 +458,10 @@
       // Échelle réelle de l'écran à l'image (appareil agrandi ou réduit).
       const scale = screen.getBoundingClientRect().width / (dev === 'd' ? 960 : 390);
       const evs = EVENTS.filter((e) => e[dev]);
-      const next = evs.find((e) => e.t >= t - 0.5);
-      const prev = next ? [...evs].reverse().find((e) => e.t < next.t) : null;
+      // `hold` : un regard reste allumé plus longtemps qu'un toucher.
+      const next = evs.find((e) => e.t + (e.hold ?? 0) >= t - 0.5);
+      const hold = next?.hold ?? 0;
+      const prev = next ? [...evs].reverse().find((e) => e.t < next.t && !e.look) : null;
       const pointer = dev === 'd' ? $('cursor') : $('finger');
       const spot = dev === 'd' ? $('spot-d') : $('spot-m');
       const rip = $(dev === 'd' ? 'rip-desk' : 'rip-mob');
@@ -469,7 +472,7 @@
       // L'élément touché avant a pu disparaître (une feuille l'a recouvert) :
       // on repart alors du dernier endroit touché, pas d'un point arbitraire.
       const from = pr ? { x: pr.left + pr.width / 2, y: pr.top + pr.height / 2 } : (lastTouch[dev] ?? { x: to.x + 140, y: to.y + 200 });
-      if (t >= next.t - 0.1) lastTouch[dev] = to;
+      if (t >= next.t - 0.1 && !next.look) lastTouch[dev] = to;
       const k = smooth(span(next.t - 0.7, next.t - 0.08, t));
       const x = mix(from.x, to.x, k), y = mix(from.y, to.y, k);
       const press = t >= next.t - 0.08 && t <= next.t + 0.12;
@@ -477,20 +480,21 @@
       // jusqu'à l'approche de son premier geste (l'autre écran travaille).
       const idle = !pr && !lastTouch[dev] ? span(next.t - 1.4, next.t - 0.8, t) : 1;
       const appear = span(firstStep.start - 0.5, firstStep.start - 0.1, t) * idle;
-      if (dev === 'd') css(pointer, { opacity: String(appear), left: `${x - 5}px`, top: `${y - 3}px`, transform: `scale(${press ? 0.82 : 1})` });
+      if (next.look) css(pointer, { opacity: '0' });
+      else if (dev === 'd') css(pointer, { opacity: String(appear), left: `${x - 5}px`, top: `${y - 3}px`, transform: `scale(${press ? 0.82 : 1})` });
       else css(pointer, { opacity: String(appear), left: `${x}px`, top: `${y}px`, transform: `scale(${press ? 0.78 : 1})` });
       // Projecteur : s'allume avant le geste, s'éteint juste après.
-      const sv = span(next.t - 0.75, next.t - 0.35, t) * (1 - span(next.t + 0.25, next.t + 0.5, t));
+      const sv = span(next.t - 0.75, next.t - 0.35, t) * (1 - span(next.t + 0.25 + hold, next.t + 0.5 + hold, t));
       const box = inScreen(screen, r, scale);
       css(spot, { opacity: String(sv), left: `${box.x - 8}px`, top: `${box.y - 8}px`, width: `${box.w + 16}px`, height: `${box.h + 16}px` });
       const rp = span(next.t, next.t + 0.5, t);
-      css(rip, { opacity: String(rp > 0 && rp < 1 ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.6})` });
+      css(rip, { opacity: String(rp > 0 && rp < 1 && !next.look ? 1 - rp : 0), left: `${to.x}px`, top: `${to.y}px`, transform: `scale(${0.4 + rp * 1.6})` });
       // La bulle : sur le téléphone (premier plan), ou sur l'ordinateur pour ses gestes à lui.
       // La bulle accompagne le téléphone ; un geste fait sur l'ordinateur seul a la sienne.
       const tipEv = next.tip && (dev === 'm' || !next.m) ? next : null;
       if (tipEv && tipEv.tip && !tipShown) {
         tipShown = true;
-        const tv = back(span(next.t - 0.8, next.t - 0.45, t)) * (1 - leave(span(next.t + 0.3, next.t + 0.5, t)));
+        const tv = back(span(next.t - 0.8, next.t - 0.45, t)) * (1 - leave(span(next.t + 0.3 + hold, next.t + 0.5 + hold, t)));
         const step = SEG.find((sg) => next.t >= sg.start - 0.1 && next.t <= sg.end + 0.5)?.etape ?? '';
         $('tip-n').textContent = step;
         $('tip-t').textContent = tipEv.tip;
