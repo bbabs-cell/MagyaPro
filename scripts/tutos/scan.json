@@ -1,0 +1,23 @@
+{
+  "id": "scan",
+  "titre": "Scanner un code-barres",
+  "produit": "boutique",
+  "segments": [
+    { "id": "probleme", "etape": null, "titre": "On cherche le prix…",
+      "texte": "Un client attend, et vous cherchez le produit et son prix dans la liste." },
+    { "id": "intro", "etape": null, "titre": "Scanner, en 3 étapes",
+      "texte": "Avec MagyaPro Boutique, la caméra du téléphone devient un scanner. Regardez." },
+    { "id": "scanner", "etape": 1, "titre": "Touchez Scanner", "geste": "Scanner",
+      "texte": "Étape un : à la caisse, touchez Scanner. La caméra s'ouvre en plein écran." },
+    { "id": "inconnu", "etape": 2, "titre": "Un code inconnu ? Associez-le", "geste": "Associer ce code à un produit",
+      "texte": "Étape deux : le premier jour, vos produits n'ont pas encore de code. Touchez Associer, cherchez le produit, et touchez-le." },
+    { "id": "direct", "etape": 3, "titre": "Ensuite, un scan suffit", "geste": "Visez le code-barres",
+      "texte": "Étape trois : les fois suivantes, visez simplement le code. Le cadre passe au vert, et le produit va droit au panier." },
+    { "id": "douchette", "etape": 3, "titre": "Sur ordinateur aussi", "geste": "Douchette USB",
+      "texte": "Sur ordinateur, une douchette USB marche aussi : elle tape le code, et l'article s'ajoute." },
+    { "id": "recap", "etape": null, "titre": "C'est tout.",
+      "texte": "Scanner, associer une fois, puis un scan suffit. C'est tout." },
+    { "id": "fin", "etape": null, "titre": "Encaissez plus vite.",
+      "texte": "MagyaPro Boutique : essayez-la gratuitement pendant un mois, sans carte bancaire." }
+  ]
+}
