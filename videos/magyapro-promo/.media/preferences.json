@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "tiktok-reels-statut",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:30:22.875Z"
+    },
+    "aspect": {
+      "value": "1080x1920",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:30:22.931Z"
+    },
+    "language": {
+      "value": "fr",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:30:22.983Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:30:23.043Z"
+    },
+    "storyboard": {
+      "value": "no",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:30:23.101Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "broadside",
+      "confirmed_in": [
+        "magyapro-promo"
+      ],
+      "updated_at": "2026-10-10T18:31:57.528Z"
+    }
+  },
+  "sightings": {}
+}

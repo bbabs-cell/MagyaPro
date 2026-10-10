@@ -1,0 +1,5 @@
+# Asset inventory (no site capture — assets supplied by the user / repo)
+
+- `capture/assets/restaurateur-plan.mp4` — 720x1280 vertical, 6.0 s, no audio needed. A West African restaurateur (white shirt, brown apron) in his dim restaurant dining room, warm golden low sun from the right; he starts in profile and turns to look straight into camera by ~3–4 s. Wooden tables, a diner blurred in background left. Ideal hook / opening shot.
+- `capture/assets/restaurateur-portrait.png` — 1152x2048 vertical still, same man, three-quarter profile looking off-frame left, golden light, dark background. Ideal for the closing backdrop with a slow push-in; dark top third leaves room for type.
+- `capture/assets/logo-magyapro.png` — 1536x1024, brand mark on pure black: blue glowing "M" (a fork engraved in the left stroke) whose right stroke becomes an orange swoosh/tray carrying an orange restaurant cloche; neon glow. Black background → composite with mix-blend-mode: screen on a dark ground. Closing sting.

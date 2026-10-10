@@ -1,0 +1,19 @@
+MagyaPro Restaurant — promo verticale 45 s, sans voix off.
+
+Accroche : « Combien tu as vendu aujourd'hui ? »
+Q1 Qu'ai-je vendu ? — Chiffre d'affaires du jour (écran Aujourd'hui / Finances).
+Q2 Qu'est-ce qui marche ? — Plats les plus commandés (tableau de bord).
+Q3 Qu'est-ce qui me reste vraiment ? — Chiffre d'affaires moins les dépenses (Finances : dépenses, marge par plat).
+Réponse : Le soir, il sait.
+
+Ticket (ce que MagyaPro ne vous facture pas) :
+Intelligence artificielle payante .... 0 F
+Carte bancaire exigée ............... 0 F
+Coût à l'usage ...................... 0 F
+Réglé par : Wave · Orange Money (à égalité)
+
+Signature : MagyaPro — Le restaurant, tenu au téléphone. (Existe aussi pour les boutiques.)
+
+Positionnement (PRODUCT.md) : aucune IA payante ; prévisions et alertes sur des règles métier ;
+abonnement payé par mobile money avec preuve validée à la main ; pas de carte bancaire ;
+téléphone d'abord, fonctionne hors ligne et synchronise au retour du réseau ; montants en FCFA.
