@@ -23,19 +23,19 @@
       color: #fbf8f2;
       font-family: "Manrope", sans-serif;
     }
-    .\30 7-magyapro-ground {
+    .f07-magyapro-ground {
       position: absolute;
       inset: 0;
       background: #0b1730;
       overflow: hidden;
     }
     /* camera: the one sanctioned slow push-in, origin on the face */
-    #\30 7-magyapro-cam {
+    #f07-magyapro-cam {
       position: absolute;
       inset: 0;
       transform-origin: 50% 58%;
     }
-    #\30 7-magyapro-portrait {
+    #f07-magyapro-portrait {
       position: absolute;
       left: -135px;
       top: 440px;
@@ -45,14 +45,14 @@
       filter: contrast(1.06) saturate(1.12) brightness(0.96);
     }
     /* warm grade wash */
-    .\30 7-magyapro-warm {
+    .f07-magyapro-warm {
       position: absolute;
       inset: 0;
       background: radial-gradient(70% 40% at 70% 62%, rgba(255, 150, 60, 0.18), rgba(255, 150, 60, 0) 70%);
       mix-blend-mode: soft-light;
     }
     /* darken the top ~55% to night blue, and a low band under the CTA */
-    .\30 7-magyapro-shade {
+    .f07-magyapro-shade {
       position: absolute;
       inset: 0;
       background:
@@ -72,47 +72,47 @@
           rgba(11, 23, 48, 0) 36%
         );
     }
-    .\30 7-magyapro-grain {
+    .f07-magyapro-grain {
       position: absolute;
       inset: 0;
       opacity: 0.09;
       mix-blend-mode: overlay;
       pointer-events: none;
     }
-    .\30 7-magyapro-grain svg {
+    .f07-magyapro-grain svg {
       width: 100%;
       height: 100%;
       display: block;
     }
 
     /* ── logo lockup ── */
-    #\30 7-magyapro-mark {
+    #f07-magyapro-mark {
       position: absolute;
       left: 162px;
       top: 150px;
       width: 756px;
       height: 504px;
     }
-    .\30 7-magyapro-glow {
+    .f07-magyapro-glow {
       position: absolute;
       border-radius: 50%;
       opacity: 0;
     }
-    #\30 7-magyapro-glow-m {
+    #f07-magyapro-glow-m {
       left: 40px;
       top: 60px;
       width: 560px;
       height: 460px;
       background: radial-gradient(closest-side, rgba(20, 70, 200, 0.75), rgba(20, 70, 200, 0) 100%);
     }
-    #\30 7-magyapro-glow-c {
+    #f07-magyapro-glow-c {
       left: 360px;
       top: -110px;
       width: 460px;
       height: 420px;
       background: radial-gradient(closest-side, rgba(230, 70, 20, 0.85), rgba(230, 70, 20, 0) 100%);
     }
-    .\30 7-magyapro-logo {
+    .f07-magyapro-logo {
       position: absolute;
       inset: 0;
       width: 756px;
@@ -121,16 +121,16 @@
       opacity: 0;
     }
     /* M part: everything except the upper-right cloche box */
-    #\30 7-magyapro-logo-m {
+    #f07-magyapro-logo-m {
       clip-path: polygon(0% 0%, 58% 0%, 58% 44%, 100% 44%, 100% 100%, 0% 100%);
     }
     /* cloche part: upper-right box */
-    #\30 7-magyapro-logo-c {
+    #f07-magyapro-logo-c {
       clip-path: inset(0% 0% 56% 58%);
       background: url("assets/logo-magyapro.png") center / 100% 100% no-repeat;
     }
 
-    #\30 7-magyapro-word {
+    #f07-magyapro-word {
       position: absolute;
       left: 0;
       right: 0;
@@ -144,13 +144,13 @@
       color: #fbf8f2;
       white-space: nowrap;
     }
-    #\30 7-magyapro-word span {
+    #f07-magyapro-word span {
       display: inline-block;
     }
-    #\30 7-magyapro-word .\30 7-magyapro-pro {
+    #f07-magyapro-word .f07-magyapro-pro {
       color: #ff5e2e;
     }
-    #\30 7-magyapro-lead {
+    #f07-magyapro-lead {
       position: absolute;
       left: 60px;
       right: 60px;
@@ -164,7 +164,7 @@
     }
 
     /* ── CTA cluster (lower, over the darkened band) ── */
-    #\30 7-magyapro-cta {
+    #f07-magyapro-cta {
       position: absolute;
       left: 0;
       right: 0;
@@ -184,7 +184,7 @@
       letter-spacing: -0.01em;
       white-space: nowrap;
     }
-    #\30 7-magyapro-url {
+    #f07-magyapro-url {
       position: absolute;
       left: 0;
       right: 0;
@@ -196,7 +196,7 @@
       letter-spacing: -0.02em;
       color: #fbf8f2;
     }
-    #\30 7-magyapro-also {
+    #f07-magyapro-also {
       position: absolute;
       left: 0;
       right: 0;
@@ -207,7 +207,7 @@
       font-size: 32px;
       color: #b3a894;
     }
-    #\30 7-magyapro-fade {
+    #f07-magyapro-fade {
       position: absolute;
       inset: 0;
       background: #0b1730;
@@ -224,48 +224,48 @@
     data-height="1920"
   >
     <!-- full-bleed ground: portrait + grade + shade + grain -->
-    <div id="07-magyapro-ground" class="clip 07-magyapro-ground" data-start="0" data-duration="6" data-track-index="0">
-      <div id="07-magyapro-cam">
-        <img id="07-magyapro-portrait" src="assets/restaurateur-portrait.png" alt="" />
-        <div class="07-magyapro-warm"></div>
+    <div id="f07-magyapro-ground" class="clip f07-magyapro-ground" data-start="0" data-duration="6" data-track-index="0">
+      <div id="f07-magyapro-cam">
+        <img id="f07-magyapro-portrait" src="assets/restaurateur-portrait.png" alt="" />
+        <div class="f07-magyapro-warm"></div>
       </div>
-      <div class="07-magyapro-shade"></div>
-      <div class="07-magyapro-grain">
+      <div class="f07-magyapro-shade"></div>
+      <div class="f07-magyapro-grain">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" preserveAspectRatio="none">
-          <filter id="07-magyapro-noise">
+          <filter id="f07-magyapro-noise">
             <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch" />
             <feColorMatrix type="saturate" values="0" />
           </filter>
-          <rect width="1080" height="1920" filter="url(#07-magyapro-noise)" />
+          <rect width="1080" height="1920" filter="url(#f07-magyapro-noise)" />
         </svg>
       </div>
     </div>
 
     <!-- logo: two masked copies, lit like a neon sign -->
-    <div id="07-magyapro-mark" class="clip" data-start="0" data-duration="6" data-track-index="1">
-      <div id="07-magyapro-glow-m" class="07-magyapro-glow"></div>
-      <div id="07-magyapro-glow-c" class="07-magyapro-glow"></div>
-      <img id="07-magyapro-logo-m" class="07-magyapro-logo" src="assets/logo-magyapro.png" alt="" />
-      <div id="07-magyapro-logo-c" class="07-magyapro-logo"></div>
+    <div id="f07-magyapro-mark" class="clip" data-start="0" data-duration="6" data-track-index="1">
+      <div id="f07-magyapro-glow-m" class="f07-magyapro-glow"></div>
+      <div id="f07-magyapro-glow-c" class="f07-magyapro-glow"></div>
+      <img id="f07-magyapro-logo-m" class="f07-magyapro-logo" src="assets/logo-magyapro.png" alt="" />
+      <div id="f07-magyapro-logo-c" class="f07-magyapro-logo"></div>
     </div>
 
-    <div id="07-magyapro-word" class="clip" data-start="0" data-duration="6" data-track-index="2">
-      <span>m</span><span>a</span><span>g</span><span>y</span><span>a</span><span class="07-magyapro-pro">p</span><span class="07-magyapro-pro">r</span><span class="07-magyapro-pro">o</span>
+    <div id="f07-magyapro-word" class="clip" data-start="0" data-duration="6" data-track-index="2">
+      <span>m</span><span>a</span><span>g</span><span>y</span><span>a</span><span class="f07-magyapro-pro">p</span><span class="f07-magyapro-pro">r</span><span class="f07-magyapro-pro">o</span>
     </div>
-    <div id="07-magyapro-lead" class="clip" data-start="0" data-duration="6" data-track-index="3">
+    <div id="f07-magyapro-lead" class="clip" data-start="0" data-duration="6" data-track-index="3">
       le restaurant, tenu au téléphone.
     </div>
 
-    <div id="07-magyapro-cta" class="clip" data-start="0" data-duration="6" data-track-index="4">
+    <div id="f07-magyapro-cta" class="clip" data-start="0" data-duration="6" data-track-index="4">
       essai gratuit · sans carte bancaire
     </div>
-    <div id="07-magyapro-url" class="clip" data-start="0" data-duration="6" data-track-index="5">magyapro.app</div>
-    <div id="07-magyapro-also" class="clip" data-start="0" data-duration="6" data-track-index="6">
+    <div id="f07-magyapro-url" class="clip" data-start="0" data-duration="6" data-track-index="5">magyapro.app</div>
+    <div id="f07-magyapro-also" class="clip" data-start="0" data-duration="6" data-track-index="6">
       existe aussi pour les boutiques
     </div>
 
     <!-- the video's only exit: fade to night blue -->
-    <div id="07-magyapro-fade" class="clip" data-start="0" data-duration="6" data-track-index="7"></div>
+    <div id="f07-magyapro-fade" class="clip" data-start="0" data-duration="6" data-track-index="7"></div>
   </div>
 
   <script>
@@ -274,29 +274,29 @@
       const tl = gsap.timeline({ paused: true });
 
       // Scene 1 (0–6s): single slow push-in on the portrait, whole frame
-      tl.fromTo($("07-magyapro-cam"), { scale: 1 }, { scale: 1.09, duration: 6, ease: "none" }, 0);
+      tl.fromTo($("f07-magyapro-cam"), { scale: 1 }, { scale: 1.09, duration: 6, ease: "none" }, 0);
 
       // Scene 2 (1.2–2.6s): neon light-up — blue M flickers on in two short steps
-      const m = $("07-magyapro-logo-m");
-      const c = $("07-magyapro-logo-c");
+      const m = $("f07-magyapro-logo-m");
+      const c = $("f07-magyapro-logo-c");
       tl.set(m, { opacity: 0, filter: "brightness(1)" }, 0);
       tl.set(m, { opacity: 0.55, filter: "brightness(1.7)" }, 1.2);
       tl.set(m, { opacity: 0.05, filter: "brightness(1)" }, 1.28);
       tl.set(m, { opacity: 0.85, filter: "brightness(1.5)" }, 1.42);
       tl.set(m, { opacity: 0.2, filter: "brightness(1)" }, 1.5);
       tl.fromTo(m, { opacity: 0.2, filter: "brightness(1.6)" }, { opacity: 1, filter: "brightness(1)", duration: 0.35, ease: "power2.out" }, 1.58);
-      tl.fromTo($("07-magyapro-glow-m"), { opacity: 0, scale: 0.85 }, { opacity: 0.22, scale: 1, duration: 0.6, ease: "power2.out" }, 1.4);
+      tl.fromTo($("f07-magyapro-glow-m"), { opacity: 0, scale: 0.85 }, { opacity: 0.22, scale: 1, duration: 0.6, ease: "power2.out" }, 1.4);
 
       // orange cloche glows on with a bloom (ambient-glow-bloom: bloom lands on the settle)
       tl.set(c, { opacity: 0, filter: "brightness(1)" }, 0);
       tl.set(c, { opacity: 0.6, filter: "brightness(1.8)" }, 1.98);
       tl.set(c, { opacity: 0.1, filter: "brightness(1)" }, 2.05);
       tl.fromTo(c, { opacity: 0.1, filter: "brightness(2)" }, { opacity: 1, filter: "brightness(1)", duration: 0.5, ease: "power2.out" }, 2.1);
-      tl.fromTo($("07-magyapro-glow-c"), { opacity: 0, scale: 0.85 }, { opacity: 0.32, scale: 1, duration: 0.5, ease: "power2.out" }, 2.1);
+      tl.fromTo($("f07-magyapro-glow-c"), { opacity: 0, scale: 0.85 }, { opacity: 0.32, scale: 1, duration: 0.5, ease: "power2.out" }, 2.1);
 
       // bounded breathe on both halos through the hold (finite phase tweens, no yoyo)
-      const gm = $("07-magyapro-glow-m");
-      const gc = $("07-magyapro-glow-c");
+      const gm = $("f07-magyapro-glow-m");
+      const gc = $("f07-magyapro-glow-c");
       const pm = { p: 0 };
       tl.to(pm, {
         p: Math.PI * 2,
@@ -322,20 +322,20 @@
 
       // Scene 3 (2.6–4.0s): wordmark letters rise in left→right, then the lead line
       tl.fromTo(
-        $("07-magyapro-word").querySelectorAll("span"),
+        $("f07-magyapro-word").querySelectorAll("span"),
         { opacity: 0, y: 46 },
         { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.6)", stagger: 0.05 },
         2.6,
       );
-      tl.fromTo($("07-magyapro-lead"), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.35);
+      tl.fromTo($("f07-magyapro-lead"), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 3.35);
 
       // Scene 4 (4.0–6.0s): CTA pill pops, URL settles, then the small last line
-      tl.fromTo($("07-magyapro-cta"), { opacity: 0, scale: 0.86, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.7)" }, 4.0);
-      tl.fromTo($("07-magyapro-url"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 4.3);
-      tl.fromTo($("07-magyapro-also"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 4.75);
+      tl.fromTo($("f07-magyapro-cta"), { opacity: 0, scale: 0.86, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.7)" }, 4.0);
+      tl.fromTo($("f07-magyapro-url"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 4.3);
+      tl.fromTo($("f07-magyapro-also"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 4.75);
 
       // final frame owns the only exit: short fade to night blue
-      tl.fromTo($("07-magyapro-fade"), { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.in" }, 5.6);
+      tl.fromTo($("f07-magyapro-fade"), { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.in" }, 5.6);
 
       window.__timelines = window.__timelines || {};
       window.__timelines["07-magyapro"] = tl;

@@ -256,11 +256,11 @@
     data-composition-id="05-reste"
     data-width="1080"
     data-height="1920"
-    data-duration="7"
+    data-duration="7.6"
   >
-    <div class="05-reste-bg clip" data-start="0" data-duration="7" data-track-index="0"></div>
+    <div id="f05-reste-bg" class="05-reste-bg clip" data-start="0" data-duration="7.6" data-track-index="0"></div>
 
-    <div class="05-reste-cam-outer clip" id="f05-reste-cam-outer" data-start="0" data-duration="7" data-track-index="1">
+    <div class="05-reste-cam-outer clip" id="f05-reste-cam-outer" data-start="0" data-duration="7.6" data-track-index="1">
       <div class="05-reste-cam-inner" id="f05-reste-cam-inner">
         <div class="05-reste-phone">
           <div class="05-reste-screen">
@@ -296,11 +296,11 @@
       </div>
     </div>
 
-    <div class="05-reste-kicker clip" id="f05-reste-kicker" data-start="0" data-duration="7" data-track-index="2">
+    <div class="05-reste-kicker clip" id="f05-reste-kicker" data-start="0" data-duration="7.6" data-track-index="2">
       <span class="05-reste-stub"></span><span>03 / qu'est-ce qui me reste ?</span>
     </div>
 
-    <div class="05-reste-caption clip" id="f05-reste-caption" data-start="0" data-duration="7" data-track-index="3">vraiment.</div>
+    <div class="05-reste-caption clip" id="f05-reste-caption" data-start="0" data-duration="7.6" data-track-index="3">vraiment.</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
@@ -399,7 +399,7 @@
 
       // Focus falloff while the camera punches: the upper ledger recedes and the
       // kicker flips to ink so it stays legible over the enlarged light screen.
-      tl.fromTo(upper, { opacity: 1 }, { opacity: 0.16, duration: 0.6, ease: "power2.out" }, ZOOM_AT);
+      tl.fromTo(upper, { opacity: 1 }, { opacity: 0, duration: 0.6, ease: "power2.out" }, ZOOM_AT);
       tl.fromTo(kicker, { color: "#b3a894" }, { color: "rgba(33, 29, 22, 0.62)", duration: 0.5, ease: "power2.out" }, ZOOM_AT + 0.1);
 
       // Scene 4 (5.0–7.0): « vraiment. » lands below the number, then dead-still hold.

@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
     <style>
       * {
         margin: 0;
@@ -12,25 +12,23 @@
       }
       html,
       body {
-        margin: 0;
-        width: 1920px;
-        height: 1080px;
+        width: 1080px;
+        height: 1920px;
         overflow: hidden;
-        background: #0a0a0a;
+        background: #000;
       }
       #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #fbf8f2;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      }
-      #title {
-        color: #f4f4f5;
-        font-size: 72px;
-        font-weight: 600;
-        letter-spacing: -0.03em;
       }
     </style>
   </head>
@@ -39,17 +37,128 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="10"
-      data-width="1920"
-      data-height="1080"
+      data-duration="45"
+      data-width="1080"
+      data-height="1920"
     >
-      <h1 id="title" class="clip" data-start="0" data-duration="10" data-track-index="0">Title</h1>
+      <div
+        id="el-01-combien"
+        class="scene"
+        data-composition-id="01-combien"
+        data-composition-src="compositions/frames/01-combien.html"
+        data-start="0"
+        data-duration="7.4"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-02-il-sait"
+        class="scene"
+        data-composition-id="02-il-sait"
+        data-composition-src="compositions/frames/02-il-sait.html"
+        data-start="7"
+        data-duration="5.5"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-03-vendu"
+        class="scene"
+        data-composition-id="03-vendu"
+        data-composition-src="compositions/frames/03-vendu.html"
+        data-start="12"
+        data-duration="7.5"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-04-marche"
+        class="scene"
+        data-composition-id="04-marche"
+        data-composition-src="compositions/frames/04-marche.html"
+        data-start="19"
+        data-duration="6.5"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-05-reste"
+        class="scene"
+        data-composition-id="05-reste"
+        data-composition-src="compositions/frames/05-reste.html"
+        data-start="25"
+        data-duration="7.6"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-06-ticket"
+        class="scene"
+        data-composition-id="06-ticket"
+        data-composition-src="compositions/frames/06-ticket.html"
+        data-start="32"
+        data-duration="7.5"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-07-magyapro"
+        class="scene"
+        data-composition-id="07-magyapro"
+        data-composition-src="compositions/frames/07-magyapro.html"
+        data-start="39"
+        data-duration="6"
+        data-track-index="0"
+      ></div>
+
+      <video id="f01-footage" data-playback-rate="0.85" src="assets/restaurateur-plan.mp4" preload="auto" aria-label="Restaurateur turning to camera in golden evening light" muted playsinline
+        class="clip"
+        style="position:absolute;left:0px;top:0px;width:1080px;height:1920px;object-fit:cover;z-index:0"
+        data-start="0"
+        data-duration="7"
+        data-track-index="1000"
+      ></video>
+
+      <!-- BGM -->
+      <audio
+        id="el-bgm"
+        src="assets/bgm/track.mp3"
+        data-start="0"
+        data-duration="45"
+        data-track-index="11"
+        data-volume="0.9"
+      ></audio>
+
+      <!-- SFX -->
+      <audio
+        id="el-sfx-0"
+        src="assets/sfx/printer.wav"
+        data-start="32"
+        data-duration="7"
+        data-track-index="20"
+        data-volume="0.6"
+      ></audio>
     </div>
+
     <script>
-      const tl = gsap.timeline({ paused: true });
-      // Example: tl.fromTo("#title", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.6 }, 0);
-      window.__timelines["main"] = tl;
-      tl.seek(0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-01-combien", { scale: 2.5, opacity: 0, filter: "blur(8px)", duration: 0.4, ease: "power3.in" }, 7);
+        tl.fromTo("#el-02-il-sait", { scale: 0.5, opacity: 0, filter: "blur(8px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power3.out" }, 7);
+        tl.to("#el-02-il-sait", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 12);
+        tl.fromTo("#el-03-vendu", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 12);
+        tl.to("#el-03-vendu", { x: -1080, duration: 0.5, ease: "power3.inOut" }, 19);
+        tl.fromTo("#el-04-marche", { x: 1080, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 19);
+        tl.to("#el-04-marche", { x: -1080, duration: 0.5, ease: "power3.inOut" }, 25);
+        tl.fromTo("#el-05-reste", { x: 1080, opacity: 1 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.inOut" }, 25);
+        tl.to("#el-05-reste", { filter: "blur(10px)", scale: 1.03, opacity: 0, duration: 0.6, ease: "power2.inOut" }, 32);
+        tl.fromTo("#el-06-ticket", { filter: "blur(10px)", scale: 0.97, opacity: 0 }, { filter: "blur(0px)", scale: 1, opacity: 1, duration: 0.6, ease: "power2.inOut" }, 32);
+        tl.to("#el-06-ticket", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 39);
+        tl.fromTo("#el-07-magyapro", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 39);
+        tl.to({}, { duration: 45 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
     </script>
   </body>
 </html>

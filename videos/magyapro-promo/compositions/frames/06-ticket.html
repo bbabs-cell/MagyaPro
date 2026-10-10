@@ -84,7 +84,7 @@
       background: #fbf8f2;
       color: #211d16;
       padding: 48px 60px 0;
-      height: 848px;
+      height: 998px;
     }
     .f06-ticket-tear {
       height: 28px;
@@ -180,8 +180,8 @@
     }
     .f06-ticket-stamp {
       position: absolute;
-      left: 368px;
-      top: 1178px;
+      left: 286px;
+      top: 1262px;
       z-index: 5;
       padding: 16px 34px;
       border: 6px solid #ff5e2e;
@@ -195,8 +195,8 @@
     }
   </style>
 
-  <div id="root" data-composition-id="06-ticket" data-start="0" data-duration="7" data-width="1080" data-height="1920">
-    <div id="f06-ticket-bg" class="clip f06-ticket-bg" data-start="0" data-duration="7" data-track-index="0"></div>
+  <div id="root" data-composition-id="06-ticket" data-start="0" data-duration="7.5" data-width="1080" data-height="1920">
+    <div id="f06-ticket-bg" class="clip f06-ticket-bg" data-start="0" data-duration="7.5" data-track-index="0"></div>
 
     <div class="f06-ticket-stub"></div>
     <div class="f06-ticket-kicker">ce que magyapro ne vous facture pas</div>
@@ -309,7 +309,7 @@
         { t: 4.4, r: 552 }, // dashed rule
         { t: 4.75, r: 636 }, // réglé par :
         { t: 5.1, r: 732 }, // Wave · Orange Money
-        { t: 5.45, r: 876 }, // merci ! + tear edge
+        { t: 5.45, r: 1026 }, // merci ! + stamp room + tear edge
       ];
       tl.fromTo(cover, { y: 0 }, { y: FEED[0].r, duration: 0.16, ease: "power2.out" }, FEED[0].t);
       for (let i = 1; i < FEED.length; i++) {

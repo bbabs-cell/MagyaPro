@@ -25,7 +25,7 @@ captions: skipped (no narration — on-screen type carries the copy)
 - duration: 7s
 - poster: 5s
 - transition_in: cut
-- status: outline
+- status: animated
 - src: compositions/frames/01-combien.html
 - type: hook
 - persuasion: Pain validation (the question every owner hears and can't answer without counting)
@@ -52,7 +52,7 @@ keyMessage: You don't know your day until you've counted it.
 - duration: 5s
 - poster: 4.2s
 - transition_in: zoom-through
-- status: outline
+- status: animated
 - src: compositions/frames/02-il-sait.html
 - type: product_intro
 - persuasion: Rule of three → promise
@@ -78,7 +78,7 @@ keyMessage: MagyaPro answers the three questions for you.
 - duration: 7s
 - poster: 5s
 - transition_in: crossfade
-- status: outline
+- status: animated
 - src: compositions/frames/03-vendu.html
 - type: feature_showcase
 - persuasion: Show-don't-tell proof
@@ -105,7 +105,7 @@ keyMessage: Your day's revenue, already added up.
 - duration: 6s
 - poster: 4.5s
 - transition_in: push-slide LEFT
-- status: outline
+- status: animated
 - src: compositions/frames/04-marche.html
 - type: feature_showcase
 - persuasion: Feature-to-benefit translation
@@ -130,7 +130,7 @@ keyMessage: You know what works, dish by dish.
 - duration: 7s
 - poster: 5.5s
 - transition_in: push-slide LEFT
-- status: outline
+- status: animated
 - src: compositions/frames/05-reste.html
 - type: benefit_highlight
 - persuasion: Value stacking (the subtraction is done for you)
@@ -157,7 +157,7 @@ keyMessage: What's really left, after expenses.
 - duration: 7s
 - poster: 6s
 - transition_in: blur-crossfade
-- status: outline
+- status: animated
 - src: compositions/frames/06-ticket.html
 - type: benefit_highlight
 - persuasion: Risk reversal + negative contrast (vs. tools billed per AI request)
@@ -185,7 +185,7 @@ keyMessage: No paid AI, no card, no per-use bill — pay by mobile money.
 - duration: 6s
 - poster: 4.5s
 - transition_in: crossfade
-- status: outline
+- status: animated
 - src: compositions/frames/07-magyapro.html
 - type: cta
 - persuasion: Future pacing (this evening could be yours)

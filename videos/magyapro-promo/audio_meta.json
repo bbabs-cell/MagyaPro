@@ -1,0 +1,6 @@
+{
+  "bgm": { "path": "assets/bgm/track.mp3", "source": "host" },
+  "sfx": [
+    { "frame": 6, "file": "assets/sfx/printer.wav", "offset_s": 0, "duration_s": 7, "source": "host" }
+  ]
+}
