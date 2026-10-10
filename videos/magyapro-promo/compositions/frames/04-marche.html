@@ -31,51 +31,42 @@
     }
 
     /* full-bleed ground — dark register */
-    [id="04-marche-bg"] {
+    #marche04-bg {
       position: absolute;
       inset: 0;
       background: #0b1730;
     }
 
     /* kicker */
-    [id="04-marche-kicker"] {
+    #marche04-kicker {
       position: absolute;
-      left: 64px;
-      top: 132px;
+      left: 59px;
+      top: 92px;
       font-family: "IBM Plex Mono", monospace;
       font-weight: 500;
-      font-size: 30px;
+      font-size: 28px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #b3a894;
       white-space: nowrap;
     }
-    [id="04-marche-kicker"] .k-num {
+    #marche04-kicker .marche04-num {
       color: #ff5e2e;
-    }
-    [id="04-marche-rule"] {
-      position: absolute;
-      left: 64px;
-      top: 108px;
-      width: 36px;
-      height: 2px;
-      background: #ff5e2e;
-      transform-origin: left center;
     }
 
     /* ── phone prop (merged from device-frame-stage, fixed shared geometry:
        centered, screen 620px wide, vertical center y=980, flat) ── */
-    [id="04-marche-phone"] {
+    #marche04-phone {
       --device-color: #1b1d22;
       --device-color-hi: #343740;
       --device-color-dark: #111318;
       position: absolute;
-      left: 221px; /* (1080 - 638) / 2 */
+      left: 216px; /* 540 - 648 / 2 */
       top: 289px; /* 980 - 1382 / 2 */
-      width: 638px;
-      height: 1382px;
-      border-radius: 64px;
-      padding: 9px;
+      width: 648px; /* 620 screen + 2 x 14 bezel */
+      height: 1382px; /* 1354 screen + 2 x 14 */
+      border-radius: 70px;
+      padding: 14px;
       background: linear-gradient(
         145deg,
         var(--device-color-hi),
@@ -90,32 +81,32 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.24),
         inset 0 0 0 1px rgba(0, 0, 0, 0.48);
     }
-    [id="04-marche-screen"] {
+    #marche04-screen {
       position: relative;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      border-radius: 55px;
+      border-radius: 56px;
       background: #fbf8f2;
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42);
       isolation: isolate;
     }
-    [id="04-marche-viewport"] {
+    #marche04-viewport {
       /* logical 390-wide authoring space, scaled to the 620px screen */
       position: absolute;
       left: 0;
       top: 0;
       width: 390px;
-      height: 858px;
+      height: 844px;
       transform-origin: 0 0;
-      transform: scale(1.589744);
+      transform: scale(1.58974);
       font-family: "Manrope", sans-serif;
       color: #211d16;
-      padding: 54px 28px 0;
+      padding: 34px 20px 0;
     }
 
     /* app UI */
-    [id="04-marche-title"] {
+    #marche04-title {
       font-size: 30px;
       font-weight: 800;
       line-height: 1.12;
@@ -123,21 +114,21 @@
       color: #211d16;
       margin: 0;
     }
-    [id="04-marche-hair"] {
+    #marche04-hair {
       margin-top: 22px;
       height: 1px;
       background: rgba(33, 29, 22, 0.12);
     }
-    [id="04-marche-list"] {
+    #marche04-list {
       position: relative;
       margin-top: 30px;
     }
-    [class~="m04-row"] {
+    .marche04-row {
       position: relative;
       height: 128px;
       padding-top: 10px;
     }
-    [class~="m04-hl"] {
+    .marche04-hl {
       position: absolute;
       left: -12px;
       right: -12px;
@@ -148,7 +139,7 @@
       transform-origin: left center;
       z-index: 0;
     }
-    [class~="m04-head"] {
+    .marche04-head {
       position: relative;
       z-index: 1;
       display: flex;
@@ -156,14 +147,14 @@
       justify-content: space-between;
       height: 38px;
     }
-    [class~="m04-name"] {
+    .marche04-name {
       font-size: 23px;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #211d16;
       white-space: nowrap;
     }
-    [class~="m04-skel"] {
+    .marche04-skel {
       position: absolute;
       left: 0;
       top: 10px;
@@ -172,7 +163,7 @@
       border-radius: 8px;
       background: rgba(33, 29, 22, 0.08);
     }
-    [class~="m04-count"] {
+    .marche04-count {
       font-size: 28px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
@@ -180,10 +171,10 @@
       min-width: 40px;
       text-align: right;
     }
-    [class~="m04-row"][data-top] [class~="m04-count"] {
+    .marche04-row[data-top] .marche04-count {
       color: #ff5e2e;
     }
-    [class~="m04-track"] {
+    .marche04-track {
       position: relative;
       z-index: 1;
       margin-top: 14px;
@@ -192,29 +183,28 @@
       background: rgba(33, 29, 22, 0.06);
       overflow: hidden;
     }
-    [class~="m04-bar"] {
+    .marche04-bar {
       width: 100%;
       height: 100%;
       border-radius: 8px;
       background: rgba(33, 29, 22, 0.3);
       transform-origin: left center;
     }
-    [class~="m04-row"][data-top] [class~="m04-bar"] {
+    .marche04-row[data-top] .marche04-bar {
       background: #ff5e2e;
     }
 
-    /* caption under the phone */
-    [id="04-marche-caption"] {
+    /* caption above the phone (matches frame 03) */
+    #marche04-caption {
       position: absolute;
-      left: 0;
-      right: 0;
-      top: 1704px;
-      text-align: center;
+      left: 59px;
+      top: 162px;
       font-family: "Manrope", sans-serif;
-      font-size: 46px;
+      font-size: 58px;
       font-weight: 600;
-      line-height: 1.3;
-      letter-spacing: -0.01em;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
       color: #fbf8f2;
     }
   </style>
@@ -227,58 +217,57 @@
     data-width="1080"
     data-height="1920"
   >
-    <div id="04-marche-bg" class="clip" data-start="0" data-duration="6" data-track-index="0"></div>
+    <div id="marche04-bg" class="clip" data-start="0" data-duration="6" data-track-index="0"></div>
 
-    <div id="04-marche-phone" class="clip" data-start="0" data-duration="6" data-track-index="1">
-      <div id="04-marche-screen">
-        <div id="04-marche-viewport">
-          <h2 id="04-marche-title">Plats les plus commandés</h2>
-          <div id="04-marche-hair"></div>
-          <div id="04-marche-list">
-            <div class="m04-row" data-top data-count="21" data-pct="1">
-              <div class="m04-hl" id="04-marche-hl"></div>
-              <div class="m04-head">
-                <span class="m04-skel"></span>
-                <span class="m04-name">Poulet braisé</span>
-                <span class="m04-count">0</span>
+    <div id="marche04-phone" class="clip" data-start="0" data-duration="6" data-track-index="1">
+      <div id="marche04-screen">
+        <div id="marche04-viewport">
+          <h2 id="marche04-title">Plats les plus commandés</h2>
+          <div id="marche04-hair"></div>
+          <div id="marche04-list">
+            <div class="marche04-row" data-top data-count="21" data-pct="1">
+              <div class="marche04-hl" id="marche04-hl"></div>
+              <div class="marche04-head">
+                <span class="marche04-skel"></span>
+                <span class="marche04-name">Poulet braisé</span>
+                <span class="marche04-count">0</span>
               </div>
-              <div class="m04-track"><div class="m04-bar"></div></div>
+              <div class="marche04-track"><div class="marche04-bar"></div></div>
             </div>
-            <div class="m04-row" data-count="17" data-pct="0.8095">
-              <div class="m04-head">
-                <span class="m04-skel"></span>
-                <span class="m04-name">Attiéké poisson</span>
-                <span class="m04-count">0</span>
+            <div class="marche04-row" data-count="17" data-pct="0.8095">
+              <div class="marche04-head">
+                <span class="marche04-skel"></span>
+                <span class="marche04-name">Attiéké poisson</span>
+                <span class="marche04-count">0</span>
               </div>
-              <div class="m04-track"><div class="m04-bar"></div></div>
+              <div class="marche04-track"><div class="marche04-bar"></div></div>
             </div>
-            <div class="m04-row" data-count="12" data-pct="0.5714">
-              <div class="m04-head">
-                <span class="m04-skel"></span>
-                <span class="m04-name">Riz gras</span>
-                <span class="m04-count">0</span>
+            <div class="marche04-row" data-count="12" data-pct="0.5714">
+              <div class="marche04-head">
+                <span class="marche04-skel"></span>
+                <span class="marche04-name">Riz gras</span>
+                <span class="marche04-count">0</span>
               </div>
-              <div class="m04-track"><div class="m04-bar"></div></div>
+              <div class="marche04-track"><div class="marche04-bar"></div></div>
             </div>
-            <div class="m04-row" data-count="8" data-pct="0.381">
-              <div class="m04-head">
-                <span class="m04-skel"></span>
-                <span class="m04-name">Alloco</span>
-                <span class="m04-count">0</span>
+            <div class="marche04-row" data-count="8" data-pct="0.381">
+              <div class="marche04-head">
+                <span class="marche04-skel"></span>
+                <span class="marche04-name">Alloco</span>
+                <span class="marche04-count">0</span>
               </div>
-              <div class="m04-track"><div class="m04-bar"></div></div>
+              <div class="marche04-track"><div class="marche04-bar"></div></div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="04-marche-rule" class="clip" data-start="0" data-duration="6" data-track-index="2"></div>
-    <div id="04-marche-kicker" class="clip" data-start="0" data-duration="6" data-track-index="3">
-      <span class="k-num">02</span> / qu'est-ce qui marche ?
+    <div id="marche04-kicker" class="clip" data-start="0" data-duration="6" data-track-index="3">
+      <span class="marche04-num">02</span> / qu'est-ce qui marche ?
     </div>
 
-    <div id="04-marche-caption" class="clip" data-start="0" data-duration="6" data-track-index="4">
+    <div id="marche04-caption" class="clip" data-start="0" data-duration="6" data-track-index="4">
       tu sais quoi préparer demain.
     </div>
   </div>
@@ -292,24 +281,23 @@
       var tl = gsap.timeline({ paused: true });
 
       // Scene 1 (0.0–0.8s): kicker lands; phone is already in place (arrives with the push-slide)
-      tl.fromTo($("04-marche-rule"), { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, 0.05);
       tl.fromTo(
-        $("04-marche-kicker"),
+        $("marche04-kicker"),
         { opacity: 0, y: 14 },
         { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
         0.12,
       );
 
       // Scene 2 (0.8–4.0s): rows fill in rank order — name fades in, bar grows left→right, count ticks
-      var rows = $("04-marche-list").querySelectorAll('[class~="m04-row"]');
+      var rows = $("marche04-list").querySelectorAll('.marche04-row');
       var FILL = 0.9;
       var STEP = 0.75;
       for (var i = 0; i < rows.length; i++) {
         (function (row, at) {
-          var name = row.querySelector('[class~="m04-name"]');
-          var skel = row.querySelector('[class~="m04-skel"]');
-          var count = row.querySelector('[class~="m04-count"]');
-          var bar = row.querySelector('[class~="m04-bar"]');
+          var name = row.querySelector('.marche04-name');
+          var skel = row.querySelector('.marche04-skel');
+          var count = row.querySelector('.marche04-count');
+          var bar = row.querySelector('.marche04-bar');
           var target = parseInt(row.getAttribute("data-count"), 10);
           var pct = parseFloat(row.getAttribute("data-pct"));
           var proxy = { v: 0 };
@@ -339,14 +327,14 @@
         })(rows[i], 0.8 + i * STEP);
       }
 
-      // Scene 3 (4.0–6.0s): caption fades up under the phone; braise marker sweep on the top row; hold
+      // Scene 3 (4.0–6.0s): caption fades up above the phone, under the kicker; braise marker sweep on the top row; hold
       tl.fromTo(
-        $("04-marche-caption"),
-        { opacity: 0, y: 24 },
+        $("marche04-caption"),
+        { opacity: 0, y: 18 },
         { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
         4.0,
       );
-      tl.fromTo($("04-marche-hl"), { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power2.out" }, 4.3);
+      tl.fromTo($("marche04-hl"), { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power2.out" }, 4.3);
 
       // pad to the fixed frame length
       tl.to({}, { duration: Math.max(0, DURATION - tl.duration()) }, tl.duration());

@@ -1,0 +1,323 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: "IBM Plex Mono", monospace;
+      color: #fbf8f2;
+    }
+    .f06-ticket-bg {
+      position: absolute;
+      inset: 0;
+      background: #0b1730;
+    }
+    .f06-ticket-stub {
+      position: absolute;
+      left: 522px;
+      top: 262px;
+      width: 36px;
+      height: 2px;
+      background: #ff5e2e;
+    }
+    .f06-ticket-kicker {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 292px;
+      text-align: center;
+      font-size: 30px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #b3a894;
+      white-space: nowrap;
+    }
+    .f06-ticket-slot {
+      position: absolute;
+      left: 80px;
+      top: 384px;
+      width: 920px;
+      height: 36px;
+      background: #13213f;
+      border: 1px solid #22304d;
+      transform-origin: 50% 50%;
+      z-index: 4;
+    }
+    .f06-ticket-slit {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      bottom: 6px;
+      height: 6px;
+      background: #0b1730;
+    }
+    .f06-ticket-ticket {
+      position: absolute;
+      left: 110px;
+      top: 420px;
+      width: 860px;
+      z-index: 1;
+    }
+    .f06-ticket-paper {
+      background: #fbf8f2;
+      color: #211d16;
+      padding: 48px 60px 0;
+      height: 848px;
+    }
+    .f06-ticket-tear {
+      height: 28px;
+      background:
+        linear-gradient(135deg, #fbf8f2 50%, transparent 50%) 0 0 / 28px 28px repeat-x,
+        linear-gradient(225deg, #fbf8f2 50%, transparent 50%) 0 0 / 28px 28px repeat-x;
+    }
+    .f06-ticket-head {
+      height: 104px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+      border-bottom: 2px dashed rgba(33, 29, 22, 0.35);
+    }
+    .f06-ticket-line {
+      height: 112px;
+      display: flex;
+      align-items: center;
+      font-size: 48px;
+      font-weight: 500;
+      white-space: nowrap;
+      min-width: 740px;
+    }
+    .f06-ticket-label {
+      flex: none;
+    }
+    .f06-ticket-leader {
+      flex: 1 1 auto;
+      overflow: hidden;
+      padding: 0 14px;
+      color: rgba(33, 29, 22, 0.55);
+      letter-spacing: 0.04em;
+    }
+    .f06-ticket-amount {
+      flex: none;
+      font-weight: 700;
+    }
+    .f06-ticket-rule {
+      height: 64px;
+      display: flex;
+      align-items: center;
+    }
+    .f06-ticket-rule-ink {
+      width: 100%;
+      border-top: 3px dashed #211d16;
+    }
+    .f06-ticket-paidby {
+      height: 84px;
+      display: flex;
+      align-items: flex-end;
+      font-size: 36px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .f06-ticket-payline {
+      height: 96px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .f06-ticket-pay {
+      font-size: 48px;
+      font-weight: 600;
+      color: #211d16;
+    }
+    .f06-ticket-dot {
+      font-size: 48px;
+      font-weight: 600;
+      color: #211d16;
+      padding: 0 18px;
+    }
+    .f06-ticket-thanks {
+      height: 116px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .f06-ticket-cover {
+      position: absolute;
+      left: 60px;
+      top: 420px;
+      width: 960px;
+      height: 1600px;
+      background: #0b1730;
+      z-index: 2;
+    }
+    .f06-ticket-stamp {
+      position: absolute;
+      left: 368px;
+      top: 1178px;
+      z-index: 5;
+      padding: 16px 34px;
+      border: 6px solid #ff5e2e;
+      color: #ff5e2e;
+      font-size: 54px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+    }
+  </style>
+
+  <div id="root" data-composition-id="06-ticket" data-start="0" data-duration="7" data-width="1080" data-height="1920">
+    <div class="clip f06-ticket-bg" data-start="0" data-duration="7" data-track-index="0"></div>
+
+    <div class="f06-ticket-stub"></div>
+    <div class="f06-ticket-kicker">ce que magyapro ne vous facture pas</div>
+
+    <div class="f06-ticket-ticket">
+      <div class="f06-ticket-paper">
+        <div class="f06-ticket-head"><span data-print="head"></span></div>
+
+        <div class="f06-ticket-line">
+          <span class="f06-ticket-label" data-print="1.05">IA payante</span>
+          <span class="f06-ticket-leader" data-print="1.25">................................................</span>
+          <span class="f06-ticket-amount" data-print="1.45">0 F</span>
+        </div>
+        <div class="f06-ticket-line">
+          <span class="f06-ticket-label" data-print="2.15">carte bancaire</span>
+          <span class="f06-ticket-leader" data-print="2.35">................................................</span>
+          <span class="f06-ticket-amount" data-print="2.55">0 F</span>
+        </div>
+        <div class="f06-ticket-line">
+          <span class="f06-ticket-label" data-print="3.25">coût à l'usage</span>
+          <span class="f06-ticket-leader" data-print="3.45">................................................</span>
+          <span class="f06-ticket-amount" data-print="3.65">0 F</span>
+        </div>
+
+        <div class="f06-ticket-rule"><div class="f06-ticket-rule-ink" data-print="4.42"></div></div>
+        <div class="f06-ticket-paidby"><span data-print="4.78">réglé par :</span></div>
+        <div class="f06-ticket-payline">
+          <span class="f06-ticket-pay" data-print="5.13">Wave</span><span class="f06-ticket-dot" data-print="5.13">·</span><span class="f06-ticket-pay" data-print="5.13">Orange Money</span>
+        </div>
+        <div class="f06-ticket-thanks"><span data-print="5.48">merci !</span></div>
+      </div>
+      <div class="f06-ticket-tear"></div>
+    </div>
+
+    <div class="f06-ticket-cover"></div>
+
+    <div class="f06-ticket-slot"><div class="f06-ticket-slit"></div></div>
+
+    <div class="f06-ticket-stamp">0 F de surprise</div>
+  </div>
+
+  <script>
+    (function () {
+      const FRAME = "06-ticket";
+      const TOTAL = 7;
+      const root = document.querySelector('[data-composition-id="' + FRAME + '"]');
+      const $ = (sel) => root.querySelector(sel);
+
+      const tl = gsap.timeline({ paused: true });
+
+      // ── Discrete print states (discrete-text-sequence): header text swaps whole
+      // states at thresholds; every other printed part snaps on instantly at its t.
+      const HEAD_SEQUENCE = [
+        { t: 0.0, text: "" },
+        { t: 0.42, text: "MAGYAPRO" },
+        { t: 0.62, text: "MAGYAPRO · REÇU" },
+      ];
+      function headAt(time) {
+        for (let i = HEAD_SEQUENCE.length - 1; i >= 0; i--) {
+          if (time >= HEAD_SEQUENCE[i].t) return HEAD_SEQUENCE[i].text;
+        }
+        return "";
+      }
+      const headEl = $('[data-print="head"]');
+      const parts = Array.prototype.slice
+        .call(root.querySelectorAll("[data-print]"))
+        .filter((el) => el !== headEl)
+        .map((el) => ({ el: el, t: parseFloat(el.getAttribute("data-print")) }));
+
+      function render(time) {
+        headEl.textContent = headAt(time);
+        for (let i = 0; i < parts.length; i++) {
+          parts[i].el.style.visibility = time >= parts[i].t ? "visible" : "hidden";
+        }
+      }
+      render(0);
+
+      const driver = { t: 0 };
+      tl.fromTo(
+        driver,
+        { t: 0 },
+        {
+          t: TOTAL,
+          duration: TOTAL,
+          ease: "none",
+          onUpdate: () => render(driver.t),
+        },
+        0,
+      );
+
+      // ── Scene 1: slot + kicker, header feeds out
+      const slot = $(".f06-ticket-slot");
+      tl.fromTo(slot, { scaleX: 0.2, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.35, ease: "power3.out" }, 0);
+      tl.fromTo(
+        $(".f06-ticket-kicker"),
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+        0.1,
+      );
+      tl.fromTo($(".f06-ticket-stub"), { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power3.out" }, 0.15);
+
+      // ── Paper feed: a ground-colored cover slides down in stepped jolts,
+      // revealing the ticket line by line beneath the slot (transform-only).
+      const cover = $(".f06-ticket-cover");
+      const FEED = [
+        { t: 0.3, r: 152 }, // header
+        { t: 1.0, r: 264 }, // IA payante
+        { t: 2.1, r: 376 }, // carte bancaire
+        { t: 3.2, r: 488 }, // coût à l'usage
+        { t: 4.4, r: 552 }, // dashed rule
+        { t: 4.75, r: 636 }, // réglé par :
+        { t: 5.1, r: 732 }, // Wave · Orange Money
+        { t: 5.45, r: 876 }, // merci ! + tear edge
+      ];
+      tl.fromTo(cover, { y: 0 }, { y: FEED[0].r, duration: 0.16, ease: "power2.out" }, FEED[0].t);
+      for (let i = 1; i < FEED.length; i++) {
+        tl.to(cover, { y: FEED[i].r, duration: 0.16, ease: "power2.out" }, FEED[i].t);
+      }
+      // the slot ticks with each feed step (mechanical jolt, then still)
+      for (let i = 0; i < FEED.length; i++) {
+        tl.fromTo(slot, { y: 0 }, { y: 3, duration: 0.05, ease: "power1.out" }, FEED[i].t);
+        tl.to(slot, { y: 0, duration: 0.12, ease: "power2.out" }, FEED[i].t + 0.05);
+      }
+
+      // ── Scene 4: braise stamp thumps on (spring-pop-entrance, smooth settle)
+      const stamp = $(".f06-ticket-stamp");
+      tl.fromTo(
+        stamp,
+        { scale: 0, opacity: 0, rotation: -7 },
+        { scale: 1, opacity: 0.94, rotation: -7, duration: 0.5, ease: "power3.out" },
+        5.85,
+      );
+      // ticket answers the thump with a small press, then rests
+      const ticket = $(".f06-ticket-ticket");
+      tl.fromTo(ticket, { y: 0 }, { y: 6, duration: 0.07, ease: "power1.out" }, 6.0);
+      tl.to(ticket, { y: 0, duration: 0.25, ease: "power3.out" }, 6.07);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME] = tl;
+    })();
+  </script>
+</template>

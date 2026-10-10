@@ -1,0 +1,408 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Bricolage Grotesque";
+      src: url("assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2");
+      font-weight: 200 800;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-Variable.woff2") format("woff2");
+      font-weight: 200 800;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono";
+      src: url("assets/fonts/IBMPlexMono-500.woff2") format("woff2");
+      font-weight: 500;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+    }
+
+    .\30 5-reste-bg {
+      position: absolute;
+      inset: 0;
+      background: #0b1730;
+    }
+
+    /* ---------- camera (coordinate-target-zoom: outer scales, inner translates) ---------- */
+    .\30 5-reste-cam-outer {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .\30 5-reste-cam-inner {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+
+    /* ---------- phone prop (device-frame-stage geometry, phone / graphite / no cutout) ----------
+       screen 620px wide, frame centered at x=540, y=980, flat. */
+    .\30 5-reste-phone {
+      position: absolute;
+      left: 221px;
+      top: 289px;
+      width: 638px;
+      height: 1382px;
+      border-radius: 46px;
+      padding: 9px;
+      box-sizing: border-box;
+      background: linear-gradient(145deg, #343740, #1b1d22 42%, #111318);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        0 52px 110px rgba(7, 10, 20, 0.3),
+        0 18px 38px rgba(7, 10, 20, 0.22),
+        0 3px 9px rgba(7, 10, 20, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.48);
+    }
+    .\30 5-reste-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 37px;
+      background: #fbf8f2;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42);
+      isolation: isolate;
+    }
+    /* logical 390x844 viewport, scaled 620/390 */
+    .\30 5-reste-viewport {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 390px;
+      height: 844px;
+      transform-origin: 0 0;
+      transform: scale(1.58974);
+      font-family: "Manrope", sans-serif;
+      color: #211d16;
+    }
+
+    .\30 5-reste-app-top {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .\30 5-reste-app-title {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 40px;
+    }
+    .\30 5-reste-app-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #efe9dd;
+    }
+    .\30 5-reste-app-sub {
+      position: absolute;
+      left: 20px;
+      top: 80px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(33, 29, 22, 0.55);
+    }
+
+    .\30 5-reste-row {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 17px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .\30 5-reste-row b {
+      font-weight: 800;
+      font-size: 19px;
+    }
+    .\30 5-reste-row-1 {
+      top: 128px;
+      border-bottom: 1px solid rgba(33, 29, 22, 0.1);
+    }
+    .\30 5-reste-row-2 {
+      top: 196px;
+      color: rgba(33, 29, 22, 0.78);
+    }
+    .\30 5-reste-minus {
+      color: #ff5e2e;
+      font-weight: 800;
+      margin-right: 6px;
+    }
+
+    .\30 5-reste-rule {
+      position: absolute;
+      left: 20px;
+      top: 276px;
+      width: 350px;
+      height: 6px;
+      overflow: visible;
+    }
+    .\30 5-reste-rule path {
+      fill: none;
+      stroke: #211d16;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    /* result card — number center sits at logical y=429 → canvas (540, 980) */
+    .\30 5-reste-card {
+      position: absolute;
+      left: 20px;
+      top: 330px;
+      width: 350px;
+      height: 250px;
+      border-radius: 22px;
+      background: #211d16;
+    }
+    .\30 5-reste-card-label {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 26px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 20px;
+      letter-spacing: 0.02em;
+      color: rgba(251, 248, 242, 0.72);
+    }
+    .\30 5-reste-count-wrap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 64px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .\30 5-reste-count {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      width: 330px;
+      font-size: 56px;
+      font-weight: 800;
+      line-height: 70px;
+      letter-spacing: -0.03em;
+      color: #ff5e2e;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+    }
+    .\30 5-reste-count-suffix {
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    /* ---------- overlay chrome (outside the camera) ---------- */
+    .\30 5-reste-kicker {
+      position: absolute;
+      left: 60px;
+      top: 150px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-family: "IBM Plex Mono", monospace;
+      font-weight: 500;
+      font-size: 30px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #b3a894;
+      white-space: nowrap;
+    }
+    .\30 5-reste-stub {
+      width: 36px;
+      height: 2px;
+      background: #ff5e2e;
+    }
+    .\30 5-reste-caption {
+      position: absolute;
+      left: 0;
+      width: 1080px;
+      top: 1150px;
+      text-align: center;
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-weight: 800;
+      font-size: 132px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      text-transform: lowercase;
+      color: #fbf8f2;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="05-reste"
+    data-width="1080"
+    data-height="1920"
+    data-duration="7"
+  >
+    <div class="05-reste-bg clip" data-start="0" data-duration="7" data-track-index="0"></div>
+
+    <div class="05-reste-cam-outer clip" id="05-reste-cam-outer" data-start="0" data-duration="7" data-track-index="1">
+      <div class="05-reste-cam-inner" id="05-reste-cam-inner">
+        <div class="05-reste-phone">
+          <div class="05-reste-screen">
+            <div class="05-reste-viewport">
+              <div class="05-reste-app-top">
+                <div class="05-reste-app-title">Finances</div>
+                <div class="05-reste-app-dot"></div>
+              </div>
+              <div class="05-reste-app-sub">Aujourd'hui</div>
+
+              <div class="05-reste-row 05-reste-row-1" id="05-reste-row-1">
+                <span>Chiffre d'affaires</span><b>487&nbsp;500&nbsp;F</b>
+              </div>
+              <div class="05-reste-row 05-reste-row-2" id="05-reste-row-2">
+                <span><span class="05-reste-minus">−</span>Dépenses</span><b>212&nbsp;000&nbsp;F</b>
+              </div>
+
+              <svg class="05-reste-rule" viewBox="0 0 350 6" xmlns="http://www.w3.org/2000/svg">
+                <path id="05-reste-rule-path" d="M 1.5 3 L 348.5 3" />
+              </svg>
+
+              <div class="05-reste-card" id="05-reste-card">
+                <div class="05-reste-card-label" id="05-reste-card-label">Il vous reste</div>
+                <div class="05-reste-count-wrap">
+                  <span class="05-reste-count" id="05-reste-count"><span id="05-reste-count-num">0</span><span class="05-reste-count-suffix" id="05-reste-count-suffix">F</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="05-reste-kicker clip" id="05-reste-kicker" data-start="0" data-duration="7" data-track-index="2">
+      <span class="05-reste-stub"></span><span>03 / qu'est-ce qui me reste ?</span>
+    </div>
+
+    <div class="05-reste-caption clip" id="05-reste-caption" data-start="0" data-duration="7" data-track-index="3">vraiment.</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (id) {
+        return document.getElementById(id);
+      };
+
+      var camOuter = $("05-reste-cam-outer");
+      var camInner = $("05-reste-cam-inner");
+      var row2 = $("05-reste-row-2");
+      var rulePath = $("05-reste-rule-path");
+      var card = $("05-reste-card");
+      var cardLabel = $("05-reste-card-label");
+      var count = $("05-reste-count");
+      var countNum = $("05-reste-count-num");
+      var suffix = $("05-reste-count-suffix");
+      var kicker = $("05-reste-kicker");
+      var caption = $("05-reste-caption");
+
+      // French thousands grouping, deterministic (no locale dependency).
+      function fmt(n) {
+        var s = String(Math.round(n));
+        return s.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+      }
+
+      // svg-path-draw setup: the rule is a straight 347-unit line; measure when possible.
+      var RULE_LEN = 347;
+      try {
+        var measured = rulePath.getTotalLength();
+        if (measured > 0) RULE_LEN = measured;
+      } catch (e) {}
+      rulePath.style.strokeDasharray = RULE_LEN * 1.05 + "";
+      rulePath.style.strokeDashoffset = RULE_LEN * 1.05 + "";
+
+      // coordinate-target-zoom: the result number's center is laid out at canvas
+      // (540, 980) by fixed geometry (screen origin 230,298 + 429 logical px × 1.58974).
+      // Canvas center is (540, 960) → offset (0, +20) → counter-translate T = -offset.
+      var TARGET_OFFSET_X = 0;
+      var TARGET_OFFSET_Y = 20;
+      var ZOOM_SCALE = 1.8; // number ≈ 82% of frame width at peak (headroom ≤ 88%)
+      var ZOOM_AT = 4.45;
+      var ZOOM_DUR = 1.0;
+
+      var COUNT_AT = 2.85;
+      var COUNT_DUR = 1.7;
+      var TARGET_VALUE = 275500;
+      var START_SCALE = 0.5;
+
+      var tl = gsap.timeline({ paused: true });
+
+      // Scene 1 (0.0–1.2): kicker settles in; phone + « Chiffre d'affaires » already present.
+      tl.fromTo(kicker, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 0.1);
+
+      // Scene 2 (1.2–2.6): « − Dépenses » slides in, then the rule draws across.
+      tl.fromTo(row2, { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 1.2);
+      tl.to(rulePath, { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" }, 1.8);
+
+      // Scene 3 (2.6–5.0): result card + « Il vous reste », count-up with dynamic scale, camera punch.
+      tl.fromTo(card, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 2.6);
+      tl.fromTo(cardLabel, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 2.7);
+
+      var state = { v: 0 };
+      countNum.textContent = fmt(0);
+      tl.to(
+        state,
+        {
+          v: TARGET_VALUE,
+          duration: COUNT_DUR,
+          ease: "power3.out",
+          onUpdate: function () {
+            countNum.textContent = fmt(state.v);
+          },
+        },
+        COUNT_AT,
+      );
+      tl.fromTo(count, { scale: START_SCALE }, { scale: 1, duration: COUNT_DUR, ease: "power3.out" }, COUNT_AT);
+      tl.fromTo(
+        suffix,
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.6)" },
+        COUNT_AT + COUNT_DUR - 0.15,
+      );
+
+      // The one camera move: scale + counter-translate share position, duration and ease.
+      tl.fromTo(camOuter, { scale: 1 }, { scale: ZOOM_SCALE, duration: ZOOM_DUR, ease: "expo.out" }, ZOOM_AT);
+      tl.fromTo(
+        camInner,
+        { x: 0, y: 0 },
+        { x: -TARGET_OFFSET_X, y: -TARGET_OFFSET_Y, duration: ZOOM_DUR, ease: "expo.out" },
+        ZOOM_AT,
+      );
+
+      // Scene 4 (5.0–7.0): « vraiment. » lands below the number, then dead-still hold.
+      tl.fromTo(caption, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 5.05);
+
+      // pad to full duration (hold)
+      tl.to({}, { duration: 7 - tl.duration() });
+
+      tl.seek(0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["05-reste"] = tl;
+    })();
+  </script>
+</template>
