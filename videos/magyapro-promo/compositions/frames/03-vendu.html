@@ -1,0 +1,426 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="03-vendu"
+    data-start="0"
+    data-duration="7"
+    data-width="1080"
+    data-height="1920"
+  >
+    <style>
+      @font-face {
+        font-family: "Manrope";
+        src: local("Manrope"), local("Manrope Regular");
+        font-weight: 200 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "IBM Plex Mono";
+        src: local("IBM Plex Mono"), local("IBMPlexMono-Medium");
+        font-weight: 400 600;
+        font-display: block;
+      }
+
+      #root {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        container-type: size;
+        font-family: "Manrope", sans-serif;
+      }
+      #root *,
+      #root *::before,
+      #root *::after {
+        box-sizing: border-box;
+      }
+
+      /* ── ground (dark register) ── */
+      .vendu03-bg {
+        position: absolute;
+        inset: 0;
+        background: #0b1730;
+      }
+      .vendu03-glow {
+        position: absolute;
+        left: 90px;
+        top: 380px;
+        width: 900px;
+        height: 1200px;
+        border-radius: 50%;
+        background: radial-gradient(
+          closest-side,
+          rgba(255, 94, 46, 0.26),
+          rgba(255, 94, 46, 0.08) 55%,
+          rgba(255, 94, 46, 0) 100%
+        );
+        filter: blur(30px);
+        transform-origin: 50% 50%;
+      }
+
+      /* ── top chrome: kicker + caption ── */
+      .vendu03-kicker {
+        position: absolute;
+        left: 59px;
+        top: 92px;
+        font-family: "IBM Plex Mono", monospace;
+        font-weight: 500;
+        font-size: 28px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #b3a894;
+        white-space: pre;
+      }
+      .vendu03-kicker .vendu03-num {
+        color: #ff5e2e;
+      }
+      .vendu03-caret {
+        display: inline-block;
+        width: 14px;
+        height: 30px;
+        margin-left: 6px;
+        vertical-align: -5px;
+        background: #ff5e2e;
+      }
+      .vendu03-caption {
+        position: absolute;
+        left: 59px;
+        top: 162px;
+        font-family: "Manrope", sans-serif;
+        font-weight: 600;
+        font-size: 58px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: #fbf8f2;
+      }
+      .vendu03-caption em {
+        font-style: normal;
+        color: #ff5e2e;
+      }
+
+      /* ── phone prop (device-frame-stage geometry, phone / graphite / no cutout) ──
+         Shared lock across frames 03–05: screen 620px wide, centered, vertical center y=980. */
+      .vendu03-stage {
+        position: absolute;
+        inset: 0;
+        perspective: 1600px;
+        perspective-origin: 50% 50%;
+      }
+      .vendu03-device {
+        --device-radius: 70px;
+        --device-bezel: 14px;
+        position: absolute;
+        left: 216px; /* 540 - 648/2 → centered horizontally */
+        top: 289px; /* 980 - 691 */
+        width: 648px; /* 620 screen + 2×14 bezel */
+        height: 1382px; /* 1354 screen (390×844 logical @ 1.5897) + 2×14 */
+        border-radius: var(--device-radius);
+        padding: var(--device-bezel);
+        background: linear-gradient(145deg, #343740, #1b1d22 42%, #111318);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow:
+          0 52px 110px rgba(2, 6, 16, 0.45),
+          0 18px 38px rgba(2, 6, 16, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.24),
+          inset 0 0 0 1px rgba(0, 0, 0, 0.48);
+        transform-style: preserve-3d;
+        transform-origin: 50% 88%;
+        will-change: transform;
+      }
+      .vendu03-screen {
+        position: relative;
+        width: 620px;
+        height: 1354px;
+        overflow: hidden;
+        border-radius: calc(var(--device-radius) - var(--device-bezel));
+        background: #fbf8f2;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42);
+        isolation: isolate;
+      }
+      .vendu03-viewport {
+        /* 390×844 logical authoring space, statically scaled to the 620px screen */
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 390px;
+        height: 844px;
+        transform-origin: 0 0;
+        transform: scale(1.58974);
+        padding: 34px 20px 0;
+        color: #211d16;
+        font-family: "Manrope", sans-serif;
+      }
+
+      /* ── MagyaPro "Aujourd'hui" app UI ── */
+      .vendu03-app-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+      .vendu03-app-title {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .vendu03-app-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff5e2e;
+        box-shadow: 0 0 0 5px rgba(255, 94, 46, 0.16);
+      }
+      .vendu03-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid rgba(33, 29, 22, 0.07);
+        box-shadow: 0 6px 18px rgba(33, 29, 22, 0.06);
+      }
+      .vendu03-ca {
+        padding: 20px 20px 22px;
+      }
+      .vendu03-card-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(33, 29, 22, 0.6);
+        letter-spacing: 0.01em;
+      }
+      .vendu03-ca-wrap {
+        display: flex;
+        align-items: baseline;
+        width: 310px; /* fixed width — no layout shift as digits change */
+        height: 56px;
+        margin-top: 10px;
+        white-space: nowrap;
+      }
+      .vendu03-ca-num {
+        display: inline-block;
+        font-size: 46px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        transform-origin: 0% 85%;
+        color: #211d16;
+      }
+      .vendu03-ca-suffix {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #ff5e2e;
+      }
+      .vendu03-track {
+        position: relative;
+        height: 8px;
+        margin-top: 16px;
+        border-radius: 4px;
+        background: rgba(33, 29, 22, 0.08);
+        overflow: hidden;
+      }
+      .vendu03-fill {
+        position: absolute;
+        inset: 0;
+        border-radius: 4px;
+        background: #ff5e2e;
+        transform-origin: 0% 50%;
+      }
+      .vendu03-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .vendu03-mini {
+        flex: 1;
+        padding: 16px 16px 18px;
+        transform-origin: 50% 50%;
+      }
+      .vendu03-mini-val {
+        margin-top: 8px;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .vendu03-mini-val span {
+        font-size: 18px;
+        color: #ff5e2e;
+        margin-left: 3px;
+      }
+    </style>
+
+    <!-- full-bleed ground on its own clip (never painted on #root) -->
+    <div id="vendu03-bg" class="clip vendu03-bg" data-start="0" data-duration="7" data-track-index="0"></div>
+
+    <div id="vendu03-layer" class="clip vendu03-layer" data-start="0" data-duration="7" data-track-index="1" style="position:absolute;inset:0;">
+      <div class="vendu03-glow" id="vendu03-glow"></div>
+
+      <div class="vendu03-stage">
+        <div class="vendu03-device" id="vendu03-device">
+          <div class="vendu03-screen">
+            <div class="vendu03-viewport">
+              <div class="vendu03-app-head">
+                <div class="vendu03-app-title">Aujourd'hui</div>
+                <div class="vendu03-app-dot"></div>
+              </div>
+
+              <div class="vendu03-card vendu03-ca">
+                <div class="vendu03-card-label">Chiffre d'affaires</div>
+                <div class="vendu03-ca-wrap">
+                  <span class="vendu03-ca-num" id="vendu03-ca-num">0</span
+                  ><span class="vendu03-ca-suffix" id="vendu03-ca-suffix">F CFA</span>
+                </div>
+                <div class="vendu03-track"><div class="vendu03-fill" id="vendu03-fill"></div></div>
+              </div>
+
+              <div class="vendu03-row">
+                <div class="vendu03-card vendu03-mini" id="vendu03-mini-a">
+                  <div class="vendu03-card-label">Commandes</div>
+                  <div class="vendu03-mini-val">63</div>
+                </div>
+                <div class="vendu03-card vendu03-mini" id="vendu03-mini-b">
+                  <div class="vendu03-card-label">Panier moyen</div>
+                  <div class="vendu03-mini-val">7&#8239;740<span>F</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vendu03-kicker" id="vendu03-kicker"></div>
+      <div class="vendu03-caption" id="vendu03-caption">sans calculer <em>de tête.</em></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        var root = document.querySelector('[data-composition-id="03-vendu"]');
+        var q = function (id) {
+          return root.querySelector("#" + id);
+        };
+        var tl = gsap.timeline({ paused: true });
+
+        /* ── Scene 1 (0.0–1.0s): kicker types in; phone rises + tilt settles flat; glow blooms ── */
+        var kicker = q("vendu03-kicker");
+        var KICK = "01 / qu'ai-je vendu ?";
+        var chars = [];
+        for (var i = 0; i < KICK.length; i++) {
+          var s = document.createElement("span");
+          s.textContent = KICK[i];
+          if (i < 2) s.className = "vendu03-num";
+          kicker.appendChild(s);
+          chars.push(s);
+        }
+        var caret = document.createElement("span");
+        caret.className = "vendu03-caret";
+        kicker.appendChild(caret);
+
+        tl.set(chars, { opacity: 0 }, 0);
+        var TYPE_AT = 0.15;
+        var TYPE_STEP = 0.034;
+        chars.forEach(function (c, i) {
+          tl.set(c, { opacity: 1 }, TYPE_AT + i * TYPE_STEP);
+        });
+        // caret square-wave blink, then gone once typed + held
+        var typedEnd = TYPE_AT + chars.length * TYPE_STEP;
+        tl.set(caret, { opacity: 1 }, 0);
+        tl.set(caret, { opacity: 0 }, typedEnd + 0.25);
+        tl.set(caret, { opacity: 1 }, typedEnd + 0.5);
+        tl.set(caret, { opacity: 0 }, typedEnd + 0.75);
+        tl.set(caret, { opacity: 1 }, typedEnd + 1.0);
+        tl.set(caret, { opacity: 0 }, typedEnd + 1.25);
+
+        tl.fromTo(
+          "#vendu03-glow",
+          { opacity: 0, scale: 0.7 },
+          { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" },
+          0,
+        );
+
+        tl.fromTo(
+          "#vendu03-device",
+          { y: 760, rotationX: 16, rotationY: -6, scale: 0.94 },
+          { y: 0, rotationX: 0, rotationY: 0, scale: 1, duration: 1.0, ease: "power3.out" },
+          0,
+        );
+
+        /* ── Scene 2 (1.0–4.2s): the count IS the shot (counting-dynamic-scale + paired fill) ── */
+        var num = q("vendu03-ca-num");
+        function fmt(n) {
+          var s = String(Math.round(n));
+          return s.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+        var state = { v: 0 };
+        var COUNT_AT = 1.1;
+        var COUNT_DUR = 2.5;
+        var COUNT_EASE = "power3.out";
+        var END_SIZE = 46;
+        var START_SIZE = 26;
+        tl.fromTo(
+          state,
+          { v: 0 },
+          {
+            v: 487500,
+            duration: COUNT_DUR,
+            ease: COUNT_EASE,
+            onUpdate: function () {
+              num.textContent = fmt(state.v);
+            },
+          },
+          COUNT_AT,
+        );
+        tl.fromTo(
+          num,
+          { scale: START_SIZE / END_SIZE },
+          { scale: 1, duration: COUNT_DUR, ease: COUNT_EASE },
+          COUNT_AT,
+        );
+        tl.fromTo(
+          "#vendu03-fill",
+          { scaleX: 0 },
+          { scaleX: 1, duration: COUNT_DUR, ease: COUNT_EASE },
+          COUNT_AT,
+        );
+        // suffix gets its own beat after the count lands
+        tl.fromTo(
+          "#vendu03-ca-suffix",
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },
+          COUNT_AT + COUNT_DUR,
+        );
+
+        /* ── Scene 3 (4.2–5.6s): Commandes, then Panier moyen pop in (spring-pop-entrance, smooth) ── */
+        tl.fromTo(
+          "#vendu03-mini-a",
+          { scale: 0, opacity: 0, y: 16 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
+          4.2,
+        );
+        tl.fromTo(
+          "#vendu03-mini-b",
+          { scale: 0, opacity: 0, y: 16 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
+          4.6,
+        );
+
+        /* ── Scene 4 (5.6–7.0s): caption fades up; hold still ── */
+        tl.fromTo(
+          "#vendu03-caption",
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+          5.6,
+        );
+
+        // pad to the full duration (hold)
+        tl.to({}, { duration: 0.01 }, 6.99);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["03-vendu"] = tl;
+      })();
+    </script>
+  </div>
+</template>
