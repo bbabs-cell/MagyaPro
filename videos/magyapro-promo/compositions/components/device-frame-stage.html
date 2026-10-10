@@ -1,14 +1,9 @@
-<!doctype html>
-<html
-  lang="en"
-  data-composition-id="device-frame-stage"
-  data-composition-duration="5"
-  data-composition-variables='[
-    { "id": "device", "type": "enum", "role": "layout", "label": "Device kind", "default": "phone", "options": [{ "value": "phone", "label": "Phone" }, { "value": "tablet", "label": "Tablet" }] },
-    { "id": "cutout", "type": "enum", "role": "layout", "label": "Camera cutout", "default": "none", "options": [{ "value": "none", "label": "None" }, { "value": "island", "label": "Island" }, { "value": "notch", "label": "Notch" }] },
-    { "id": "body", "type": "enum", "role": "style", "label": "Body material", "default": "graphite", "options": [{ "value": "graphite", "label": "Graphite" }, { "value": "silver", "label": "Silver" }] }
-  ]'
->
+<!DOCTYPE html>
+<html lang="en" data-composition-id="device-frame-stage" data-composition-duration="5" data-composition-variables="[
+    { &quot;id&quot;: &quot;device&quot;, &quot;type&quot;: &quot;enum&quot;, &quot;role&quot;: &quot;layout&quot;, &quot;label&quot;: &quot;Device kind&quot;, &quot;default&quot;: &quot;phone&quot;, &quot;options&quot;: [{ &quot;value&quot;: &quot;phone&quot;, &quot;label&quot;: &quot;Phone&quot; }, { &quot;value&quot;: &quot;tablet&quot;, &quot;label&quot;: &quot;Tablet&quot; }] },
+    { &quot;id&quot;: &quot;cutout&quot;, &quot;type&quot;: &quot;enum&quot;, &quot;role&quot;: &quot;layout&quot;, &quot;label&quot;: &quot;Camera cutout&quot;, &quot;default&quot;: &quot;none&quot;, &quot;options&quot;: [{ &quot;value&quot;: &quot;none&quot;, &quot;label&quot;: &quot;None&quot; }, { &quot;value&quot;: &quot;island&quot;, &quot;label&quot;: &quot;Island&quot; }, { &quot;value&quot;: &quot;notch&quot;, &quot;label&quot;: &quot;Notch&quot; }] },
+    { &quot;id&quot;: &quot;body&quot;, &quot;type&quot;: &quot;enum&quot;, &quot;role&quot;: &quot;style&quot;, &quot;label&quot;: &quot;Body material&quot;, &quot;default&quot;: &quot;graphite&quot;, &quot;options&quot;: [{ &quot;value&quot;: &quot;graphite&quot;, &quot;label&quot;: &quot;Graphite&quot; }, { &quot;value&quot;: &quot;silver&quot;, &quot;label&quot;: &quot;Silver&quot; }] }
+  ]">
   <!--
     Device Frame Stage, a HyperFrames video primitive.
 
@@ -56,8 +51,8 @@
     never plays audio itself; the host scene mixes the cue.
   -->
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
     <title>Device Frame Stage</title>
     <!-- head is metadata for the source file only; the runtime only clones
          <template> contents on mount (see sub-compositions.md), so the gsap
@@ -268,19 +263,13 @@
            above is required to keep the rendered box elastic (fills the
            host clip's actual box, from a 960x540 slot up to a full
            1920x1080 frame) instead of a fixed 1920x1080. -->
-      <div
-        id="root"
-        data-composition-id="device-frame-stage"
-        data-width="1920"
-        data-height="1080"
-        data-duration="5"
-      >
-        <div class="device-stage">
-          <div class="device-frame" data-kind="phone" data-cutout="none" data-body="graphite">
-            <div class="device-screen">
-              <div class="screen-viewport">
-                <div class="screen-safe-area">
-                  <div class="device-screen-slot" data-screen-slot>
+      <div data-hf-id="hf-iw4j" id="root" data-composition-id="device-frame-stage" data-width="1920" data-height="1080" data-duration="5">
+        <div data-hf-id="hf-afdb" class="device-stage">
+          <div data-hf-id="hf-obqw" class="device-frame" data-kind="phone" data-cutout="none" data-body="graphite">
+            <div data-hf-id="hf-knsr" class="device-screen">
+              <div data-hf-id="hf-cf5n" class="screen-viewport">
+                <div data-hf-id="hf-j0yg" class="screen-safe-area">
+                  <div data-hf-id="hf-2mkl" class="device-screen-slot" data-screen-slot="">
                     <!-- EDIT ZONE: replace with reconstructed product UI, or
                          nest a <div data-composition-src="..." data-duration="...">
                          sub-composition host. Author content at the device's
@@ -291,7 +280,7 @@
                 </div>
               </div>
             </div>
-            <div class="device-cutout" aria-hidden="true"></div>
+            <div data-hf-id="hf-37k8" class="device-cutout" aria-hidden="true"></div>
           </div>
         </div>
       </div>
