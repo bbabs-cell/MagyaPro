@@ -260,34 +260,34 @@
   >
     <div class="05-reste-bg clip" data-start="0" data-duration="7" data-track-index="0"></div>
 
-    <div class="05-reste-cam-outer clip" id="05-reste-cam-outer" data-start="0" data-duration="7" data-track-index="1">
-      <div class="05-reste-cam-inner" id="05-reste-cam-inner">
+    <div class="05-reste-cam-outer clip" id="f05-reste-cam-outer" data-start="0" data-duration="7" data-track-index="1">
+      <div class="05-reste-cam-inner" id="f05-reste-cam-inner">
         <div class="05-reste-phone">
           <div class="05-reste-screen">
             <div class="05-reste-viewport">
-              <div class="05-reste-upper" id="05-reste-upper">
+              <div class="05-reste-upper" id="f05-reste-upper">
               <div class="05-reste-app-top">
                 <div class="05-reste-app-title">Finances</div>
                 <div class="05-reste-app-dot"></div>
               </div>
               <div class="05-reste-app-sub">Aujourd'hui</div>
 
-              <div class="05-reste-row 05-reste-row-1" id="05-reste-row-1">
+              <div class="05-reste-row 05-reste-row-1" id="f05-reste-row-1">
                 <span>Chiffre d'affaires</span><b>487&nbsp;500&nbsp;F</b>
               </div>
-              <div class="05-reste-row 05-reste-row-2" id="05-reste-row-2">
+              <div class="05-reste-row 05-reste-row-2" id="f05-reste-row-2">
                 <span><span class="05-reste-minus">−</span>Dépenses</span><b>212&nbsp;000&nbsp;F</b>
               </div>
 
               <svg class="05-reste-rule" viewBox="0 0 350 6" xmlns="http://www.w3.org/2000/svg">
-                <path id="05-reste-rule-path" d="M 1.5 3 L 348.5 3" />
+                <path id="f05-reste-rule-path" d="M 1.5 3 L 348.5 3" />
               </svg>
               </div>
 
-              <div class="05-reste-card" id="05-reste-card">
-                <div class="05-reste-card-label" id="05-reste-card-label">Il vous reste</div>
+              <div class="05-reste-card" id="f05-reste-card">
+                <div class="05-reste-card-label" id="f05-reste-card-label">Il vous reste</div>
                 <div class="05-reste-count-wrap">
-                  <span class="05-reste-count" id="05-reste-count"><span id="05-reste-count-num">0</span><span class="05-reste-count-suffix" id="05-reste-count-suffix">F</span></span>
+                  <span class="05-reste-count" id="f05-reste-count"><span id="f05-reste-count-num">0</span><span class="05-reste-count-suffix" id="f05-reste-count-suffix">F</span></span>
                 </div>
               </div>
             </div>
@@ -296,11 +296,11 @@
       </div>
     </div>
 
-    <div class="05-reste-kicker clip" id="05-reste-kicker" data-start="0" data-duration="7" data-track-index="2">
+    <div class="05-reste-kicker clip" id="f05-reste-kicker" data-start="0" data-duration="7" data-track-index="2">
       <span class="05-reste-stub"></span><span>03 / qu'est-ce qui me reste ?</span>
     </div>
 
-    <div class="05-reste-caption clip" id="05-reste-caption" data-start="0" data-duration="7" data-track-index="3">vraiment.</div>
+    <div class="05-reste-caption clip" id="f05-reste-caption" data-start="0" data-duration="7" data-track-index="3">vraiment.</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
@@ -311,18 +311,18 @@
         return document.getElementById(id);
       };
 
-      var camOuter = $("05-reste-cam-outer");
-      var camInner = $("05-reste-cam-inner");
-      var row2 = $("05-reste-row-2");
-      var upper = $("05-reste-upper");
-      var rulePath = $("05-reste-rule-path");
-      var card = $("05-reste-card");
-      var cardLabel = $("05-reste-card-label");
-      var count = $("05-reste-count");
-      var countNum = $("05-reste-count-num");
-      var suffix = $("05-reste-count-suffix");
-      var kicker = $("05-reste-kicker");
-      var caption = $("05-reste-caption");
+      var camOuter = $("f05-reste-cam-outer");
+      var camInner = $("f05-reste-cam-inner");
+      var row2 = $("f05-reste-row-2");
+      var upper = $("f05-reste-upper");
+      var rulePath = $("f05-reste-rule-path");
+      var card = $("f05-reste-card");
+      var cardLabel = $("f05-reste-card-label");
+      var count = $("f05-reste-count");
+      var countNum = $("f05-reste-count-num");
+      var suffix = $("f05-reste-count-suffix");
+      var kicker = $("f05-reste-kicker");
+      var caption = $("f05-reste-caption");
 
       // French thousands grouping, deterministic (no locale dependency).
       function fmt(n) {
