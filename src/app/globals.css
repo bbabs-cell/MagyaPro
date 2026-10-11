@@ -282,6 +282,16 @@
   --nav-muted: #b3a894;
   --nav-border: rgba(245, 239, 227, 0.1);
 
+  /* Signature de MagyaPro Boutique : l'or, comme sur sa page de
+     présentation. Restaurant garde la braise. Le bouton principal est or à
+     libellé encre (9,8:1) ; l'or employé comme texte sur le sable passe à
+     un or brûlé (5,5:1), l'or vif y serait illisible. */
+  --brand: #b8891c;
+  --brand-strong: #e0bd52;
+  --brand-ink: #1c1712;
+  --brand-text: #806010;
+  --brand-soft: #f6ecd0;
+
   --state-ok: #2f6b4a;
   --state-ok-soft: #dcece2;
   --state-warn: #a8700f;
@@ -312,6 +322,12 @@
   --nav-ink: #f0e9dc;
   --nav-muted: #9a9081;
   --nav-border: rgba(240, 233, 220, 0.08);
+
+  --brand: #e0bd52;
+  --brand-strong: #e0bd52;
+  --brand-ink: #1c1712;
+  --brand-text: #e0bd52;
+  --brand-soft: rgba(224, 189, 82, 0.14);
 
   --state-ok: #74c298;
   --state-ok-soft: #1a2c22;

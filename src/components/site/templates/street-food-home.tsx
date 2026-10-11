@@ -6,6 +6,7 @@ import { OfferCountdown } from '@/components/site/templates/offer-countdown';
 import { StreetFoodMenuFilter } from '@/components/site/templates/street-food-menu-filter';
 import { GalleryLightbox } from '@/components/site/templates/gallery-lightbox';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
+import { MenuBoard } from '@/components/site/templates/menu-board';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
 import { formatDecimal } from '@/lib/numbers';
@@ -159,7 +160,12 @@ function StreetFoodHero({
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
               <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
-              <div aria-hidden="true" className="h-full w-full bg-black/15" />
+              <MenuBoard
+                name={data.name}
+                items={data.board}
+                title={dict.templates.boardTitle}
+                primaryColor="#ffffff"
+              />
             )}
           </div>
 

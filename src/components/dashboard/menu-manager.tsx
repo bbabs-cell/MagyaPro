@@ -236,7 +236,7 @@ export function MenuManager({
                   className={cx(
                     'rounded-lg px-3 py-1.5 text-sm transition-colors',
                     selectedCategory === category.id
-                      ? 'bg-brand text-white'
+                      ? 'bg-brand-strong text-brand-ink'
                       : 'bg-surface-sunken text-ink-muted hover:text-ink',
                   )}
                 >

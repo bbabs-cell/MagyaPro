@@ -61,7 +61,7 @@ export default async function FinancesPage({
             href={`/dashboard/finances?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
             className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
-              period === key ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
+              period === key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
             {PERIODS[key].label}

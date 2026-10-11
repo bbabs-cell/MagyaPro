@@ -126,7 +126,7 @@ export function PromotionsManager({
                 <label
                   key={value}
                   className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm ${
-                    type === value ? 'border-brand bg-brand text-white' : 'border-surface-border'
+                    type === value ? 'border-brand bg-brand-strong text-brand-ink' : 'border-surface-border'
                   }`}
                 >
                   <input

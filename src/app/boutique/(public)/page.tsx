@@ -13,7 +13,7 @@ import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
 import { Ticket } from '@/components/marketing/ticket';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
-import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
+import { SECTOR_LABELS, SECTOR_UNITS, UNIT_CATALOGUE } from '@/lib/boutique/unit-catalogue';
 import { getAdditionalStorePercent } from '@/lib/boutique/store-pricing';
 import { STORE_FEATURES, type StoreFeature } from '@/lib/boutique/entitlements';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
@@ -405,25 +405,32 @@ export default async function BoutiqueLandingPage() {
                   key={item.step}
                   className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
                 >
-                  <div className="relative h-40 w-full">
-                    {imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
+                  {imageUrl ? (
+                    <div className="relative h-40 w-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire */}
                       <img
                         src={imageUrl}
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                    ) : (
-                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#c2603d]/50 to-[#e0bd52]/30" />
-                    )}
-                    <div
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
+                      />
+                      <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-[#e0bd52] text-sm font-bold text-[#1c1712] shadow-lg">
+                        {item.step}
+                      </span>
+                    </div>
+                  ) : (
+                    // Sans illustration, pas de cadre vide : le numéro de
+                    // l'étape devient lui-même l'élément visuel de la carte.
+                    <p
                       aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
-                    />
-                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-[#c2603d] to-[#e0bd52] text-sm font-bold text-[#1c1712] shadow-lg">
-                      {item.step}
-                    </span>
-                  </div>
+                      className="px-5 pt-5 font-mono text-4xl font-medium tracking-tight text-[#e0bd52]"
+                    >
+                      {String(item.step).padStart(2, '0')}
+                    </p>
+                  )}
                   <div className="p-5">
                     <h3 className="font-semibold text-[#f3ece1]">{item.title}</h3>
                     <p className="mt-1 text-sm text-[#f3ece1]/55">{item.detail}</p>
@@ -543,7 +550,22 @@ export default async function BoutiqueLandingPage() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div aria-hidden="true" className="h-full w-full bg-[#e0bd52]/15" />
+                      // Sans illustration, la vignette montre l'argument même de
+                      // la section : les unités de vente déjà prêtes pour ce
+                      // secteur, tirées du catalogue réel du produit.
+                      <div className="flex h-full w-full flex-wrap content-center gap-1.5 bg-[#e0bd52]/10 p-4">
+                        {(SECTOR_UNITS[sector] ?? [])
+                          .filter((code) => code !== 'PIECE')
+                          .slice(0, 4)
+                          .map((code) => (
+                            <span
+                              key={code}
+                              className="rounded-full border border-[#e0bd52]/35 px-2.5 py-1 font-mono text-[11px] text-[#e0bd52]"
+                            >
+                              {UNIT_CATALOGUE[code]?.label ?? code.toLowerCase()}
+                            </span>
+                          ))}
+                      </div>
                     )}
                   </div>
                   <h3 className="mt-3 text-sm font-medium text-[#f3ece1]">{SECTOR_LABELS[sector]}</h3>

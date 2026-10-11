@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
+import { TemplateSketch } from '@/components/site/template-sketch';
 
 const FONTS = [
   'Inter',
@@ -168,10 +169,10 @@ export function AppearanceForm({
                   className="mb-3 h-28 w-full rounded-lg object-cover"
                 />
               ) : (
-                <span
-                  aria-hidden="true"
-                  className="mb-3 block h-14 rounded-lg"
-                  style={{ backgroundColor: template.suggested?.primary ?? '#12151a' }}
+                <TemplateSketch
+                  templateKey={template.key}
+                  primary={templateKey === template.key ? primaryColor : undefined}
+                  className="mb-3 h-28 w-full rounded-lg border border-surface-border"
                 />
               )}
               <span className="flex items-center gap-2 font-medium">

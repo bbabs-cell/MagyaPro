@@ -266,7 +266,7 @@ export function CheckoutFlow({
         <p className="mt-1 text-sm text-ink-muted">{dict.cartPage.browseMenu}</p>
         <Link
           href={`/r/${host}/menu`}
-          className="mt-5 inline-flex h-11 items-center rounded-xl bg-brand px-6 font-medium text-white"
+          className="mt-5 inline-flex h-11 items-center rounded-xl bg-brand-strong px-6 font-medium text-brand-ink"
         >
           {dict.cartPage.seeMenu}
         </Link>
@@ -655,7 +655,7 @@ export function CheckoutFlow({
           form="checkout-form"
           disabled={submitting || !quote || belowMinimum || providers.length === 0}
           aria-busy={submitting || undefined}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-strong font-medium text-brand-ink transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
         >
           {submitting && (
             <span

@@ -76,7 +76,7 @@ export default async function JournalPage({
           href="/dashboard/journal"
           aria-current={actionFilter === '' ? 'true' : undefined}
           className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-            actionFilter === '' ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
+            actionFilter === '' ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
           }`}
         >
           Tout
@@ -87,7 +87,7 @@ export default async function JournalPage({
             href={`/dashboard/journal?action=${prefix}`}
             aria-current={actionFilter === prefix ? 'true' : undefined}
             className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-              actionFilter === prefix ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
+              actionFilter === prefix ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
             {prefix}

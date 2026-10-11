@@ -224,7 +224,7 @@ export default async function SubscriptionPage() {
                 <a
                   href={`/recu/abonnement/${payment.id}`}
                   target="_blank"
-                  className="shrink-0 text-xs font-medium text-brand-strong underline underline-offset-4"
+                  className="shrink-0 text-xs font-medium text-brand-text underline underline-offset-4"
                 >
                   Reçu
                 </a>

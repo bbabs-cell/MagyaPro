@@ -246,7 +246,7 @@ export function SettingsPanels({
             aria-current={tab === item.key ? 'true' : undefined}
             className={cx(
               'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
-              tab === item.key ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink',
+              tab === item.key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink',
             )}
           >
             {item.label}

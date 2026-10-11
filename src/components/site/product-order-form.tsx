@@ -286,7 +286,7 @@ export function ProductOrderForm({
             <button
               type="button"
               onClick={() => handleAdd(true)}
-              className="h-12 flex-1 rounded-xl bg-brand font-medium text-white transition-opacity hover:opacity-90"
+              className="h-12 flex-1 rounded-xl bg-brand-strong font-medium text-brand-ink transition-opacity hover:opacity-90"
             >
               {dict.product.orderNow} · {formatMoney(unitPrice * quantity, currency)}
             </button>

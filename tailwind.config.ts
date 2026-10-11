@@ -81,6 +81,12 @@ const config: Config = {
           /// L'orange vif reste pour ce qui ne porte pas de texte : graphiques,
           /// halos, rails, pastilles de couleur.
           strong: themed('--brand-strong', '#c93f1a'),
+          /// La couleur de marque employée comme **texte** sur un fond clair.
+          /// Distincte de `strong` parce qu'une couleur peut faire un bon fond
+          /// de bouton et un mauvais texte : l'or de MagyaPro Boutique porte
+          /// très bien un libellé encre, mais écrit en or sur le sable il
+          /// devient illisible. Restaurant : identique à `strong`.
+          text: themed('--brand-text', '#c93f1a'),
         },
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
@@ -144,7 +150,7 @@ const config: Config = {
         elev1: 'var(--elev-1, 0 1px 2px rgba(33,29,22,.06), 0 6px 16px -10px rgba(33,29,22,.18))',
         elev2: 'var(--elev-2, 0 2px 4px rgba(33,29,22,.07), 0 16px 32px -18px rgba(33,29,22,.26))',
         // Halo de braise du bouton principal (skill « animations vivantes »).
-        glow: '0 10px 28px -10px rgba(255,94,46,.5), 0 4px 12px -6px rgba(255,94,46,.4)',
+        glow: '0 10px 28px -10px color-mix(in srgb, var(--brand, #ff5e2e) 50%, transparent), 0 4px 12px -6px color-mix(in srgb, var(--brand, #ff5e2e) 40%, transparent)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],

@@ -66,6 +66,7 @@ export const DICTIONARY = {
       unavailable: 'Indisponible',
 
       sectionMenu: 'La carte',
+      boardTitle: 'Nos incontournables',
       sectionOurMenu: 'Notre menu',
       sectionSelection: 'Notre sélection',
       sectionGallery: 'Galerie',
@@ -342,6 +343,7 @@ export const DICTIONARY = {
       unavailable: 'Unavailable',
 
       sectionMenu: 'The menu',
+      boardTitle: 'House favourites',
       sectionOurMenu: 'Our menu',
       sectionSelection: 'Our selection',
       sectionGallery: 'Gallery',
@@ -617,6 +619,7 @@ export const DICTIONARY = {
       unavailable: 'غير متوفر',
 
       sectionMenu: 'القائمة',
+      boardTitle: 'أطباقنا المميزة',
       sectionOurMenu: 'قائمتنا',
       sectionSelection: 'مختاراتنا',
       sectionGallery: 'معرض الصور',

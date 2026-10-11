@@ -109,7 +109,7 @@ export default async function BoutiqueRapportsPage({
             href={`/boutique/dashboard/rapports?type=${tab.value}&${dateQuery}`}
             aria-current={type === tab.value ? 'true' : undefined}
             className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-              type === tab.value ? 'bg-brand text-white' : 'bg-surface text-ink-muted hover:text-ink'
+              type === tab.value ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
             }`}
           >
             {tab.label}

@@ -276,7 +276,7 @@ export default async function DashboardPage() {
         <section aria-label="Évolution du chiffre d'affaires" className="lg:col-span-2">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.revenue}
               </span>
               Chiffre d&apos;affaires sur 30 jours
@@ -296,7 +296,7 @@ export default async function DashboardPage() {
         <section aria-label="Plats les plus commandés">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.basket}
               </span>
               Plats les plus commandés
@@ -330,7 +330,7 @@ export default async function DashboardPage() {
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.orders}
               </span>
               Activité récente
