@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { DAY_NAMES, computeOpenState, dayNames, type OpeningHourRow } from '@/lib/site/hours';
+import {
+  DAY_NAMES,
+  computeOpenState,
+  dayNames,
+  type OpenStateLabels,
+  type OpeningHourRow,
+} from '@/lib/site/hours';
 import { DICTIONARY } from '@/lib/i18n/dictionary';
 
 /**
@@ -33,7 +39,7 @@ const WEEK: OpeningHourRow[] = Array.from({ length: 7 }, (_, day) => ({
  * affirmation et échouait selon l'heure de lancement ; il calcule désormais
  * ses fuseaux (voir plus bas).
  */
-function stateAt(timezone: string, dict: typeof FR) {
+function stateAt(timezone: string, dict: OpenStateLabels) {
   return computeOpenState(WEEK, timezone, dict, 'fr');
 }
 

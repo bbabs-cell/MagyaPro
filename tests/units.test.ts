@@ -20,7 +20,8 @@ import {
  */
 
 const BOTTLE: UnitOption = {
-  code: 'UNIT',
+  unitId: 'UNIT',
+  price: null,
   label: 'bouteille',
   labelPlural: 'bouteilles',
   factor: 1,
@@ -28,7 +29,8 @@ const BOTTLE: UnitOption = {
   isDecimal: false,
 };
 const PACK: UnitOption = {
-  code: 'PACK',
+  unitId: 'PACK',
+  price: null,
   label: 'pack',
   labelPlural: 'packs',
   factor: 6,
@@ -36,7 +38,8 @@ const PACK: UnitOption = {
   isDecimal: false,
 };
 const CRATE: UnitOption = {
-  code: 'CRATE',
+  unitId: 'CRATE',
+  price: null,
   label: 'carton',
   labelPlural: 'cartons',
   factor: 24,
@@ -93,7 +96,8 @@ describe('Décomposition en conditionnements', () => {
   it('laisse une base fractionnable telle quelle', () => {
     // « 1,5 kg » se lit mieux que « 1 kg + 500 g ».
     const kg: UnitOption = {
-      code: 'KG',
+      unitId: 'KG',
+      price: null,
       label: 'kg',
       labelPlural: 'kg',
       factor: 1,
@@ -101,7 +105,8 @@ describe('Décomposition en conditionnements', () => {
       isDecimal: true,
     };
     const sack: UnitOption = {
-      code: 'SACK',
+      unitId: 'SACK',
+      price: null,
       label: 'sac',
       labelPlural: 'sacs',
       factor: 25,
