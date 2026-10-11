@@ -155,6 +155,17 @@ export function effectiveStorePermissions(
   return set;
 }
 
+/** Équivalent Boutique de `permissionsBeyond` — voir `src/lib/rbac.ts`. */
+export function storePermissionsBeyond(
+  granter: ReadonlySet<StorePermission>,
+  role: StoreRole,
+  extraPermissions: string[] = [],
+): StorePermission[] {
+  return [...effectiveStorePermissions(role, extraPermissions)].filter(
+    (permission) => !granter.has(permission),
+  );
+}
+
 export function isStorePermission(value: string): value is StorePermission {
   return (STORE_PERMISSIONS as readonly string[]).includes(value);
 }

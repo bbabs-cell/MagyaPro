@@ -2,7 +2,8 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { teamMemberSchema } from '@/lib/validation';
-import { ConflictError } from '@/lib/errors';
+import { ConflictError, ForbiddenError } from '@/lib/errors';
+import { permissionsBeyond } from '@/lib/rbac';
 import { FEATURES, getEntitlements, requireFeature, requireWithinLimit } from '@/lib/entitlements';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken } from '@/lib/auth/tokens';
@@ -42,6 +43,9 @@ export const POST = route(async (request) => {
   await requireWithinLimit(context.restaurant.id, 'maxUsers', entitlements);
 
   const input = parseOrThrow(teamMemberSchema, await readJson(request));
+  if (permissionsBeyond(context.permissions, input.role, input.extraPermissions).length > 0) {
+    throw new ForbiddenError("Vous ne pouvez pas accorder des droits que vous n'avez pas vous-même.");
+  }
 
   const user = await prisma.user.findUnique({ where: { email: input.email } });
 

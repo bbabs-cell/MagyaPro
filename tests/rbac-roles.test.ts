@@ -6,8 +6,10 @@ import {
   ROLE_DESCRIPTIONS,
   ROLE_LABELS,
   effectivePermissions,
+  permissionsBeyond,
   permissionsForRole,
 } from '@/lib/rbac';
+import { effectiveStorePermissions, storePermissionsBeyond } from '@/lib/boutique/rbac';
 
 /**
  * Cloisonnement des rôles restreints.
@@ -132,5 +134,32 @@ describe('Permissions supplémentaires', () => {
     for (const permission of granted) {
       expect(PERMISSIONS).toContain(permission);
     }
+  });
+});
+
+describe('Délégation des droits', () => {
+  // Une personne qui gère l'équipe ne peut accorder que ce qu'elle détient :
+  // sans ce plafond, un administrateur de boutique s'octroyait l'abonnement
+  // et la suppression de la boutique.
+  it('laisse le propriétaire accorder n’importe quel rôle', () => {
+    const owner = effectivePermissions('OWNER');
+    expect(permissionsBeyond(owner, 'ADMIN', ['team:manage', 'restaurant:delete'])).toEqual([]);
+  });
+
+  it('refuse d’accorder une permission que l’on n’a pas', () => {
+    const delegate = effectivePermissions('ADMIN', ['team:manage']);
+    expect(permissionsBeyond(delegate, 'EMPLOYEE', ['subscription:manage'])).toEqual([
+      'subscription:manage',
+    ]);
+    expect(permissionsBeyond(delegate, 'EMPLOYEE')).toEqual([]);
+  });
+
+  it('empêche un administrateur de boutique de s’élever au rang de propriétaire', () => {
+    const admin = effectiveStorePermissions('ADMIN');
+    expect(storePermissionsBeyond(admin, 'ADMIN', ['subscription:manage', 'store:delete'])).toEqual([
+      'subscription:manage',
+      'store:delete',
+    ]);
+    expect(storePermissionsBeyond(admin, 'CASHIER')).toEqual([]);
   });
 });

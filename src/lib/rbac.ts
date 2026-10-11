@@ -184,6 +184,25 @@ export function effectivePermissions(
   return set;
 }
 
+/**
+ * Permissions qu'un rôle et ses ajouts individuels donneraient au-delà de
+ * celles de la personne qui les accorde.
+ *
+ * Un gestionnaire d'équipe ne délègue que ce qu'il détient : sans ce plafond,
+ * `team:manage` accordé en supplément suffisait à s'octroyer — ou à octroyer
+ * à un compte complice — toutes les permissions du propriétaire, abonnement
+ * et suppression du restaurant compris.
+ */
+export function permissionsBeyond(
+  granter: ReadonlySet<Permission>,
+  role: MembershipRole,
+  extraPermissions: string[] = [],
+): Permission[] {
+  return [...effectivePermissions(role, extraPermissions)].filter(
+    (permission) => !granter.has(permission),
+  );
+}
+
 export function isPermission(value: string): value is Permission {
   return (PERMISSIONS as readonly string[]).includes(value);
 }

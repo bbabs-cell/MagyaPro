@@ -9,10 +9,12 @@ import {
 import { generateToken, hashToken } from '@/lib/auth/tokens';
 import {
   authenticate,
+  issueVerificationToken,
   registerAccount,
   requestPasswordReset,
   resetPassword,
   verifyEmail,
+  verifyTwoFactorLogin,
 } from '@/lib/auth/service';
 import { RATE_LIMITS, hit, resetAll } from '@/lib/rate-limit';
 
@@ -341,5 +343,40 @@ describe('Limitation de débit', () => {
 
     // Une autre IP ne doit pas être pénalisée par la première.
     await expect(hit('ip:5.6.7.8', RATE_LIMITS.login)).resolves.not.toThrow();
+  });
+});
+
+describe('Double authentification', () => {
+  it('limite les essais par compte, même en changeant de jeton de connexion', async () => {
+    // Le défaut corrigé : le compteur ne portait que sur le jeton. Une
+    // connexion réussie au mot de passe en émettait un neuf, avec huit
+    // nouveaux essais — de quoi deviner les six chiffres en enchaînant.
+    await resetAll();
+    const user = await prisma.user.create({
+      data: {
+        name: 'Deux Facteurs',
+        email: `2fa-${Date.now()}@example.test`,
+        passwordHash: await hashPassword('MonMotDePasse!1'),
+        // Secret base32 quelconque : aucun des codes essayés ne sera bon.
+        totpSecret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+        totpEnabled: true,
+      },
+    });
+
+    let attempts = 0;
+    while (attempts < RATE_LIMITS.twoFactor.limit) {
+      // Un jeton neuf toutes les trois tentatives, comme après une reconnexion.
+      const pendingToken = await issueVerificationToken(user.id, 'TWO_FACTOR_LOGIN', 5, 'minutes');
+      for (let i = 0; i < 3 && attempts < RATE_LIMITS.twoFactor.limit; i++, attempts++) {
+        await expect(
+          verifyTwoFactorLogin({ pendingToken, code: '000000' }),
+        ).rejects.toThrow(/code invalide/i);
+      }
+    }
+
+    const freshToken = await issueVerificationToken(user.id, 'TWO_FACTOR_LOGIN', 5, 'minutes');
+    await expect(
+      verifyTwoFactorLogin({ pendingToken: freshToken, code: '000000' }),
+    ).rejects.toThrow(/trop de tentatives/i);
   });
 });

@@ -2,7 +2,8 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { storeTeamMemberSchema } from '@/lib/validation';
-import { ConflictError } from '@/lib/errors';
+import { ConflictError, ForbiddenError } from '@/lib/errors';
+import { storePermissionsBeyond } from '@/lib/boutique/rbac';
 import { STORE_FEATURES, getStoreEntitlements, requireStoreFeature, requireStoreWithinLimit } from '@/lib/boutique/entitlements';
 import { hashPassword } from '@/lib/auth/password';
 import { generateToken } from '@/lib/auth/tokens';
@@ -37,6 +38,9 @@ export const POST = route(async (request) => {
   await requireStoreWithinLimit(context.store.id, 'maxUsers', entitlements);
 
   const input = parseOrThrow(storeTeamMemberSchema, await readJson(request));
+  if (storePermissionsBeyond(context.permissions, input.role, input.extraPermissions).length > 0) {
+    throw new ForbiddenError("Vous ne pouvez pas accorder des droits que vous n'avez pas vous-même.");
+  }
 
   const user = await prisma.user.findUnique({ where: { email: input.email } });
 

@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
-import { ConflictError, NotFoundError } from '@/lib/errors';
-import { ASSIGNABLE_ROLES, PERMISSIONS } from '@/lib/rbac';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
+import { ASSIGNABLE_ROLES, PERMISSIONS, permissionsBeyond } from '@/lib/rbac';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 
 type Params = { params: Promise<{ id: string }> };
@@ -42,6 +42,15 @@ export const PATCH = route(async (request, { params }: Params) => {
 
   const membership = await loadMembership(context.restaurant.id, id);
   const input = parseOrThrow(updateSchema, await readJson(request));
+
+  // Sans ce contrôle, un membre à qui l'on a confié l'équipe pouvait
+  // s'accorder à lui-même les permissions qui lui manquaient.
+  if (membership.userId === context.user.id) {
+    throw new ForbiddenError('Vous ne pouvez pas modifier votre propre accès.');
+  }
+  if (permissionsBeyond(context.permissions, input.role, input.extraPermissions).length > 0) {
+    throw new ForbiddenError("Vous ne pouvez pas accorder des droits que vous n'avez pas vous-même.");
+  }
 
   const updated = await prisma.restaurantUser.update({
     where: { id: membership.id },
