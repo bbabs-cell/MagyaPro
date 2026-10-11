@@ -99,7 +99,7 @@ export function PlanGrid({ plans }: { plans: Plan[] }) {
               ))}
               {plan.features.map((feature) => (
                 <li key={feature} className="flex gap-2 text-ink">
-                  <span aria-hidden="true" className="text-brand">✓</span>
+                  <span aria-hidden="true" className="text-brand-strong">✓</span>
                   {FEATURE_LABELS[feature as Feature] ?? feature}
                 </li>
               ))}
@@ -122,7 +122,7 @@ export function PlanGrid({ plans }: { plans: Plan[] }) {
         <ul className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           {INCLUDED_EVERYWHERE.map((item) => (
             <li key={item} className="flex gap-2 text-ink-muted">
-              <span aria-hidden="true" className="shrink-0 text-brand">✓</span>
+              <span aria-hidden="true" className="shrink-0 text-brand-strong">✓</span>
               {item}
             </li>
           ))}

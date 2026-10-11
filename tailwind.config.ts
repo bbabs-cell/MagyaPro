@@ -74,6 +74,13 @@ const config: Config = {
           DEFAULT: themed('--brand', '#ff5e2e'),
           soft: themed('--brand-soft', '#fff1e6'),
           ink: themed('--brand-ink', '#ffffff'),
+          /// Braise foncée : fond du bouton principal et texte orange sur fond
+          /// clair. `#ff5e2e` n'offre que 3,05:1 avec du blanc et 2,87:1 sur
+          /// le sable — sous le seuil de lecture d'un texte courant, et c'est
+          /// au soleil que le produit se lit. Celle-ci donne 5,0 et 4,7.
+          /// L'orange vif reste pour ce qui ne porte pas de texte : graphiques,
+          /// halos, rails, pastilles de couleur.
+          strong: themed('--brand-strong', '#c93f1a'),
         },
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
@@ -96,7 +103,7 @@ const config: Config = {
         ink: {
           DEFAULT: themed('--ink', '#211d16'),
           muted: themed('--ink-muted', '#6a6153'),
-          faint: themed('--ink-faint', '#948b7b'),
+          faint: themed('--ink-faint', '#756b5c'),
         },
         surface: {
           DEFAULT: themed('--surface', '#fbf8f2'),

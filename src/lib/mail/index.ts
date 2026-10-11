@@ -156,16 +156,16 @@ export async function sendVerificationEmail(
   const link = `${env.appUrl}/verifier-email?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
-    subject: 'Confirmez votre adresse email — Magyapro',
+    subject: 'Confirmez votre adresse email — MagyaPro',
     text: [
       `Bonjour ${name},`,
       '',
-      'Bienvenue sur Magyapro. Confirmez votre adresse email pour activer votre compte :',
+      'Bienvenue sur MagyaPro. Confirmez votre adresse email pour activer votre compte :',
       link,
       '',
       "Ce lien expire dans 48 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.",
       '',
-      "L'équipe Magyapro",
+      "L'équipe MagyaPro",
     ].join('\n'),
   });
 }
@@ -178,7 +178,7 @@ export async function sendPasswordResetEmail(
   const link = `${env.appUrl}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
   await sendMail({
     to,
-    subject: 'Réinitialisation de votre mot de passe — Magyapro',
+    subject: 'Réinitialisation de votre mot de passe — MagyaPro',
     text: [
       `Bonjour ${name},`,
       '',
@@ -188,7 +188,7 @@ export async function sendPasswordResetEmail(
       "Ce lien expire dans 60 minutes et ne peut servir qu'une fois.",
       "Si vous n'êtes pas à l'origine de cette demande, aucune action n'est nécessaire : votre mot de passe reste inchangé.",
       '',
-      "L'équipe Magyapro",
+      "L'équipe MagyaPro",
     ].join('\n'),
   });
 }

@@ -79,16 +79,16 @@ export const POST = route(async (request) => {
   if (!user) {
     await sendMail({
       to: input.email,
-      subject: `Vous avez été ajouté à ${context.store.name} sur Magyapro Boutique`,
+      subject: `Vous avez été ajouté à ${context.store.name} sur MagyaPro Boutique`,
       text: [
         `Bonjour ${input.name},`,
         '',
-        `${context.user.name} vous a ajouté à l'équipe de « ${context.store.name} » sur Magyapro Boutique.`,
+        `${context.user.name} vous a ajouté à l'équipe de « ${context.store.name} » sur MagyaPro Boutique.`,
         '',
         'Définissez votre mot de passe pour accéder à votre espace :',
         `${env.appUrl}/mot-de-passe-oublie`,
         '',
-        "L'équipe Magyapro",
+        "L'équipe MagyaPro",
       ].join('\n'),
     });
   }

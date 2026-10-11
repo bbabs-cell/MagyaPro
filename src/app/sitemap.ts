@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next';
 import { env } from '@/lib/env';
 
 /**
- * Sitemap du domaine principal : la vitrine de Magyapro.
+ * Sitemap du domaine principal : la vitrine de MagyaPro.
  *
  * Il ne liste pas les restaurants : chacun possède son propre domaine et son
  * propre sitemap. Les référencer ici créerait du contenu dupliqué et diluerait

@@ -309,14 +309,14 @@ export function AdminSidebar({
                   className={cx(
                     'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
                     active
-                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                      ? 'bg-gradient-to-r from-[#d9461c] to-[#c93f1a] text-white shadow-sm'
                       : 'text-white/60 hover:bg-white/5 hover:text-white',
                   )}
                 >
                   <span className="shrink-0">{link.icon}</span>
                   <span className="min-w-0 flex-1 truncate">{visible}</span>
                   {link.href === '/admin/notifications' && unreadNotifications > 0 && (
-                    <span className="shrink-0 rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white">
+                    <span className="shrink-0 rounded-full bg-[#c93f1a] px-1.5 py-0.5 text-xs font-semibold text-white">
                       {unreadNotifications}
                     </span>
                   )}

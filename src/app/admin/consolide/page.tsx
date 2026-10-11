@@ -12,6 +12,7 @@ import {
   primaryCurrency,
 } from '@/lib/money';
 import { BarChart, GroupedBarChart, Metric } from '@/components/admin/charts';
+import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Vue consolidée' };
 export const dynamic = 'force-dynamic';
@@ -164,7 +165,7 @@ export default async function AdminConsolidatedPage() {
             value={String(cancelled)}
             hint={
               activeBefore > 0
-                ? `${((cancelled / activeBefore) * 100).toFixed(1)} % des abonnés de plus de 30 jours, les deux produits confondus`
+                ? `${formatPercent((cancelled / activeBefore) * 100)} des abonnés de plus de 30 jours, les deux produits confondus`
                 : 'Pas assez de recul pour un taux.'
             }
           />

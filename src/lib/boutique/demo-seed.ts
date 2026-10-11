@@ -91,7 +91,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-fil-et-aiguille',
     name: 'Fil & Aiguille',
     description:
-      'Tissus au mètre, mercerie et fournitures de couture. Boutique de démonstration Magyapro.',
+      'Tissus au mètre, mercerie et fournitures de couture. Boutique de démonstration MagyaPro.',
     businessType: 'MERCERIE',
     city: 'Bamako',
     country: 'Mali',
@@ -184,7 +184,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-marche-du-coin',
     name: 'Marché du Coin',
     description:
-      'Épicerie de quartier : riz, huile, boissons et produits frais. Boutique de démonstration Magyapro.',
+      'Épicerie de quartier : riz, huile, boissons et produits frais. Boutique de démonstration MagyaPro.',
     businessType: 'GROCERY',
     city: 'Cotonou',
     country: 'Bénin',
@@ -296,7 +296,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-wax-style',
     name: 'Wax & Style',
     description:
-      'Prêt-à-porter et pagnes wax, coupes pour toute la famille. Boutique de démonstration Magyapro.',
+      'Prêt-à-porter et pagnes wax, coupes pour toute la famille. Boutique de démonstration MagyaPro.',
     businessType: 'CLOTHING',
     city: 'Abidjan',
     country: "Côte d'Ivoire",
@@ -386,7 +386,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-pas-a-pas',
     name: 'Pas à Pas',
     description:
-      'Chaussures ville, sport et enfants, toutes pointures. Boutique de démonstration Magyapro.',
+      'Chaussures ville, sport et enfants, toutes pointures. Boutique de démonstration MagyaPro.',
     businessType: 'SHOES',
     city: 'Lomé',
     country: 'Togo',
@@ -491,7 +491,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-teranga-tech',
     name: 'Teranga Tech',
     description:
-      'Téléphones, accessoires et petit électroménager. Boutique de démonstration Magyapro.',
+      'Téléphones, accessoires et petit électroménager. Boutique de démonstration MagyaPro.',
     businessType: 'ELECTRONICS',
     city: 'Dakar',
     country: 'Sénégal',
@@ -582,7 +582,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-le-bon-outil',
     name: 'Le Bon Outil',
     description:
-      'Quincaillerie générale : visserie, plomberie, électricité, outillage. Boutique de démonstration Magyapro.',
+      'Quincaillerie générale : visserie, plomberie, électricité, outillage. Boutique de démonstration MagyaPro.',
     businessType: 'HARDWARE',
     city: 'Ouagadougou',
     country: 'Burkina Faso',
@@ -676,7 +676,7 @@ const DEMO_STORES: DemoStoreDefinition[] = [
     slug: 'demo-eclat-naturel',
     name: 'Éclat Naturel',
     description:
-      'Cosmétiques, soins capillaires et parfums. Boutique de démonstration Magyapro.',
+      'Cosmétiques, soins capillaires et parfums. Boutique de démonstration MagyaPro.',
     businessType: 'COSMETICS',
     city: 'Douala',
     country: 'Cameroun',
@@ -783,6 +783,8 @@ function daysAgo(days: number): Date {
 
 function slugify(value: string): string {
   return value
+    .replace(/[œŒ]/g, 'oe')
+    .replace(/[æÆ]/g, 'ae')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()

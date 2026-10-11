@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Vue d\'ensemble' };
 export const dynamic = 'force-dynamic';
@@ -219,7 +220,7 @@ export default async function DashboardPage() {
             hint={
               metrics.revenueChange === null
                 ? 'Pas de période précédente à comparer'
-                : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} % vs 30 j précédents`
+                : `${formatPercent(metrics.revenueChange, { signed: true })} vs 30 j précédents`
             }
             tone={
               metrics.revenueChange === null
@@ -238,7 +239,7 @@ export default async function DashboardPage() {
             hint={
               metrics.ordersChange === null
                 ? 'Pas de période précédente à comparer'
-                : `${metrics.ordersChange > 0 ? '+' : ''}${metrics.ordersChange} % vs 30 j précédents`
+                : `${formatPercent(metrics.ordersChange, { signed: true })} vs 30 j précédents`
             }
             tone={
               metrics.ordersChange === null
@@ -275,7 +276,7 @@ export default async function DashboardPage() {
         <section aria-label="Évolution du chiffre d'affaires" className="lg:col-span-2">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
                 {STAT_ICONS.revenue}
               </span>
               Chiffre d&apos;affaires sur 30 jours
@@ -295,7 +296,7 @@ export default async function DashboardPage() {
         <section aria-label="Plats les plus commandés">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
                 {STAT_ICONS.basket}
               </span>
               Plats les plus commandés
@@ -329,7 +330,7 @@ export default async function DashboardPage() {
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-strong">
                 {STAT_ICONS.orders}
               </span>
               Activité récente

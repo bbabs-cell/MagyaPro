@@ -497,7 +497,7 @@ export function DashboardShell({
                   className={cx(
                     NAV_ITEM,
                     isActive(item)
-                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-sm'
+                      ? 'bg-gradient-to-r from-[#d9461c] to-[#c93f1a] text-white shadow-sm'
                       : 'text-white/60 hover:translate-x-1 hover:bg-white/5 hover:text-white',
                   )}
                 >
@@ -691,7 +691,7 @@ export function DashboardShell({
                   href="/admin"
                   className="mt-1 block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
                 >
-                  Administration Magyapro
+                  Administration MagyaPro
                 </Link>
               )}
 

@@ -13,6 +13,11 @@ const RESERVED_SLUGS = new Set([
  */
 export function slugify(input: string): string {
   return input
+    // Ligatures : NFD ne les décompose pas, et elles disparaissaient
+    // (« Œufs » donnait « ufs »).
+    .replace(/[œŒ]/g, 'oe')
+    .replace(/[æÆ]/g, 'ae')
+    .replace(/ß/g, 'ss')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // diacritiques
     .toLowerCase()

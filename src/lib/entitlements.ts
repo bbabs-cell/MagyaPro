@@ -37,7 +37,7 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   advanced_analytics: 'Statistiques avancées',
   multiple_users: 'Plusieurs comptes utilisateurs',
   premium_templates: 'Templates premium',
-  remove_branding: 'Retirer la mention « Propulsé par Magyapro »',
+  remove_branding: 'Retirer la mention « Propulsé par MagyaPro »',
   reviews: 'Avis clients',
   reservations: 'Réservations de table',
   table_service: 'Service à table (QR code)',

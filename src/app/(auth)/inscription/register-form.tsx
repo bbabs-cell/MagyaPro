@@ -54,7 +54,7 @@ export function RegisterForm({ turnstileSiteKey }: { turnstileSiteKey: string | 
   return (
     <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
       {planName && (
-        <p className="flex items-center gap-2 rounded-xl bg-brand-soft px-4 py-2.5 text-sm font-medium text-brand">
+        <p className="flex items-center gap-2 rounded-xl bg-brand-soft px-4 py-2.5 text-sm font-medium text-brand-strong">
           Plan sélectionné : {planName}
         </p>
       )}

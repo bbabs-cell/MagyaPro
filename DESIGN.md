@@ -3,6 +3,7 @@ name: MagyaPro
 description: Outil de gestion pour commerçants d'Afrique de l'Ouest — caisse, stock et commandes, sur un téléphone.
 colors:
   braise: "#ff5e2e"
+  braise-strong: "#c93f1a"
   braise-soft: "#fff1e6"
   braise-ink: "#ffffff"
   surface: "#fbf8f2"
@@ -11,7 +12,7 @@ colors:
   surface-border: "#ddd3c1"
   ink: "#211d16"
   ink-muted: "#6a6153"
-  ink-faint: "#948b7b"
+  ink-faint: "#756b5c"
   nav: "#2a2118"
   nav-raised: "#35291d"
   nav-ink: "#f5efe3"
@@ -76,7 +77,7 @@ spacing:
   block: "2.5rem"
 components:
   button-primary:
-    backgroundColor: "{colors.braise}"
+    backgroundColor: "{colors.braise-strong}"
     textColor: "{colors.braise-ink}"
     rounded: "{rounded.button}"
     padding: "0 1rem"
@@ -164,6 +165,13 @@ seule braise orange.
   remplacée par la couleur du restaurant lui-même : la variable `--brand` est
   pilotée par le tenant, et c'est voulu — l'identité affichée au client final
   est celle du commerce, pas celle de MagyaPro.
+- **Braise foncée** (`#c93f1a`) : le fond du bouton principal, l'entrée de
+  menu active et tout texte orange posé sur un fond clair. L'orange vif ne
+  donne que 3,05:1 avec du blanc et 2,87:1 sur le sable, sous le seuil de
+  lecture d'un texte courant ; la braise foncée donne 5,0 et 4,7. Les deux
+  sont la même couleur à la lumière près : l'orange vif garde tout ce qui ne
+  porte pas de texte (graphiques, halos, rails, logo). Sur les vitrines des
+  restaurants, elle reprend la couleur choisie par le restaurateur.
 - **Braise pâle** (`#fff1e6`) : fond des pastilles de marque et des zones
   d'appel discrètes.
 
@@ -188,7 +196,7 @@ seule braise orange.
 - **Filet** (`#ddd3c1`) : bordures et séparateurs.
 - **Encre** (`#211d16`) : le texte. Un brun très sombre, jamais un noir neutre.
 - **Encre atténuée** (`#6a6153`) : texte secondaire, intitulés de champs.
-- **Encre pâle** (`#948b7b`) : indices, texte d'invite, intitulés de cellules
+- **Encre pâle** (`#756b5c`, 4,9:1 sur le sable) : indices, texte d'invite, intitulés de cellules
   sur mobile.
 
 ### Named Rules
@@ -411,7 +419,7 @@ se lit à la couleur avant même d'être lue au texte.
 
 - **Shape:** angles adoucis (0,875rem), hauteur fixe par taille — 2,25rem,
   2,75rem, 3rem.
-- **Primary:** fond braise, texte blanc, ombre portée teintée de braise à 30 %.
+- **Primary:** fond braise foncée, texte blanc, ombre portée teintée de braise à 30 %.
   Au survol, la luminosité monte de 10 % plutôt qu'un changement de teinte : la
   couleur reste la même, elle s'active.
 - **Hover / Focus:** transition de 150ms sur la couleur, la transformation et
@@ -467,8 +475,8 @@ balayer une liste de vingt produits sans lire un seul mot.
 
 ### Do:
 
-- **Do** réserver la braise (`#ff5e2e`) à une seule action par écran, et à
-  l'entrée de menu active.
+- **Do** réserver la braise à une seule action par écran, et à l'entrée de
+  menu active — en braise foncée (`#c93f1a`) dès qu'elle porte du texte.
 - **Do** aligner tout nombre lu en colonne avec `tabular-nums`.
 - **Do** donner un `data-label` à chaque cellule de tableau — sans lui, la
   valeur devient anonyme sous 768px.

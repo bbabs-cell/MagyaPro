@@ -831,7 +831,7 @@ export function SettingsPanels({
               <h2 className="text-sm font-medium">Suivi des visiteurs</h2>
               <p className="mt-1 text-xs text-ink-muted">
                 Vos propres identifiants Google Analytics / Meta Pixel, pour
-                suivre les visites de votre site — Magyapro ne collecte rien
+                suivre les visites de votre site — MagyaPro ne collecte rien
                 pour vous.
               </p>
 
@@ -891,7 +891,7 @@ export function SettingsPanels({
               <>
                 <Badge tone="danger">Suspendu</Badge>
                 <span className="text-ink-muted">
-                  Contactez le support Magyapro pour réactiver votre restaurant.
+                  Contactez le support MagyaPro pour réactiver votre restaurant.
                 </span>
               </>
             ) : (
@@ -977,7 +977,7 @@ export function SettingsPanels({
  *
  * La vérification par enregistrement TXT prouve que le restaurateur possède
  * bien le domaine. Elle ne suffit pas à rendre le site joignable : il reste à
- * déclarer l'adresse auprès de l'hébergeur, ce que Magyapro ne fait pas encore
+ * déclarer l'adresse auprès de l'hébergeur, ce que MagyaPro ne fait pas encore
  * automatiquement. L'écran l'annonce au lieu de laisser croire que tout est
  * terminé — l'ancienne version promettait un certificat « émis
  * automatiquement », ce qui n'était pas vrai.
@@ -1034,7 +1034,7 @@ function DomainsPanel({
     <Card className="p-4 sm:p-5">
       <h2 className="text-sm font-medium">Mon domaine</h2>
       <p className="mt-1 text-sm text-ink-muted">
-        Votre site est déjà en ligne à votre adresse Magyapro. Vous pouvez en plus y brancher
+        Votre site est déjà en ligne à votre adresse MagyaPro. Vous pouvez en plus y brancher
         votre propre nom de domaine, si vous en avez acheté un.
       </p>
 
@@ -1050,7 +1050,7 @@ function DomainsPanel({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="flex min-w-0 flex-wrap items-center gap-2 font-mono text-sm">
                   {domain.hostname}
-                  {isPlatform && <Badge tone="neutral">Adresse Magyapro</Badge>}
+                  {isPlatform && <Badge tone="neutral">Adresse MagyaPro</Badge>}
                 </p>
                 {!isPlatform && (
                   <div className="flex shrink-0 gap-1.5">
@@ -1130,7 +1130,7 @@ function DomainsPanel({
       ) : (
         <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Les domaines personnalisés sont inclus dans les plans supérieurs.
-          Votre adresse Magyapro reste disponible et fonctionnelle.
+          Votre adresse MagyaPro reste disponible et fonctionnelle.
         </p>
       )}
 

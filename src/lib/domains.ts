@@ -14,7 +14,7 @@ import { env, rootHostname } from '@/lib/env';
  * Elle établit que le restaurateur possède bien le domaine. Elle **ne rend pas
  * le site joignable pour autant** : l'adresse doit encore être déclarée auprès
  * de l'hébergeur, faute de quoi un visiteur tombe sur une erreur de
- * l'hébergeur et non sur le restaurant. Magyapro ne fait pas cette déclaration
+ * l'hébergeur et non sur le restaurant. MagyaPro ne fait pas cette déclaration
  * automatiquement aujourd'hui — les domaines vérifiés en attente sont listés
  * sur la vue d'ensemble de l'administration, pour être traités à la main.
  *

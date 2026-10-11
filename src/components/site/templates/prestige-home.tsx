@@ -8,6 +8,7 @@ import type { ElegantHomeData } from '@/components/site/templates/elegant-home';
 import type { MenuCategoryData } from '@/components/site/templates';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
+import { formatDecimal } from '@/lib/numbers';
 
 /**
  * Page d'accueil dédiée au template « prestige » — une seule page qui
@@ -43,7 +44,7 @@ export async function PrestigeHomePage({ data }: { data: ElegantHomeData }) {
 
       {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
       {hasReviews && (
-        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} locale={locale} />
       )}
 
       <LocationSection
@@ -328,10 +329,12 @@ function ReviewsSection({
   reviews,
   averageRating,
   dict,
+  locale,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
   dict: Dictionary;
+  locale: string;
 }) {
   return (
     <section className="border-t" style={{ borderColor: 'rgba(205,164,94,0.15)' }}>
@@ -343,7 +346,7 @@ function ReviewsSection({
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-white/20">{'★'.repeat(5 - Math.round(averageRating))}</span>
               <span className="ms-2 text-sm text-white/50">
-                {dict.templates.ratingOutOf(averageRating.toFixed(1), reviews.length)}
+                {dict.templates.ratingOutOf(formatDecimal(averageRating, 1, locale), reviews.length)}
               </span>
             </p>
           )}

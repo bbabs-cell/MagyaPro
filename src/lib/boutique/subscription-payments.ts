@@ -54,7 +54,7 @@ export async function createStoreSubscriptionPaymentRequest(params: {
     params.provider === 'wave_manual' ? settings?.waveNumber : settings?.orangeMoneyNumber;
   if (!receivingNumber) {
     throw new ValidationError(
-      `${PROVIDER_LABELS[params.provider]} n'est pas encore configuré par Magyapro. Réessayez plus tard.`,
+      `${PROVIDER_LABELS[params.provider]} n'est pas encore configuré par MagyaPro. Réessayez plus tard.`,
     );
   }
 
@@ -283,8 +283,8 @@ export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified:
     if (subscription.store.email) {
       await sendMail({
         to: subscription.store.email,
-        subject: `Votre abonnement Magyapro Boutique expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
-        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.store.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre boutique reste active sans interruption.\n\nL'équipe Magyapro`,
+        subject: `Votre abonnement MagyaPro Boutique expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.store.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre boutique reste active sans interruption.\n\nL'équipe MagyaPro`,
       });
     }
 
@@ -334,8 +334,8 @@ export async function processStoreSubscriptionLifecycle(): Promise<{
     if (subscription.store.email) {
       await sendMail({
         to: subscription.store.email,
-        subject: 'Votre abonnement Magyapro Boutique est arrivé à son terme',
-        text: `Bonjour,\n\nL'abonnement de ${subscription.store.name} est arrivé à son terme. Vous avez ${GRACE_PERIOD_DAYS} jours pour le renouveler depuis votre tableau de bord (Abonnement) avant de basculer automatiquement sur le plan gratuit.\n\nL'équipe Magyapro`,
+        subject: 'Votre abonnement MagyaPro Boutique est arrivé à son terme',
+        text: `Bonjour,\n\nL'abonnement de ${subscription.store.name} est arrivé à son terme. Vous avez ${GRACE_PERIOD_DAYS} jours pour le renouveler depuis votre tableau de bord (Abonnement) avant de basculer automatiquement sur le plan gratuit.\n\nL'équipe MagyaPro`,
       });
     }
   }
@@ -374,8 +374,8 @@ export async function processStoreSubscriptionLifecycle(): Promise<{
     if (to) {
       await sendMail({
         to,
-        subject: 'Votre abonnement Magyapro Boutique a expiré',
-        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.store.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe Magyapro`,
+        subject: 'Votre abonnement MagyaPro Boutique a expiré',
+        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.store.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe MagyaPro`,
       });
     }
   }

@@ -325,7 +325,7 @@ export function howItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
 
 /**
  * Logo de la page d'accueil de MagyaPro Boutique (`/boutique`) — asset
- * plateforme distinct du logo Magyapro général (`platform/logo.png`) et de
+ * plateforme distinct du logo MagyaPro général (`platform/logo.png`) et de
  * celui d'une boutique individuelle (`Store.logoUrl`, propre à chaque
  * tenant) : même logique de clé fixe.
  */

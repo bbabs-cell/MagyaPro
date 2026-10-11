@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { AlertMessage, Badge, Button, Card, EmptyState, cx } from '@/components/ui';
+import { formatDecimal } from '@/lib/numbers';
 
 type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -86,7 +87,7 @@ export function ReviewsManager({
           </p>
           <p className="mt-1 flex items-baseline gap-2">
             <span className="text-2xl font-semibold tracking-tight">
-              {averageRating.toFixed(1)}
+              {formatDecimal(averageRating)}
             </span>
             <Stars rating={Math.round(averageRating)} />
             <span className="text-sm text-ink-muted">

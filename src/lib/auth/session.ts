@@ -158,7 +158,7 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireSuperAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (user.platformRole !== 'SUPER_ADMIN') {
-    throw new UnauthorizedError("Accès réservé à l'administration Magyapro.");
+    throw new UnauthorizedError("Accès réservé à l'administration MagyaPro.");
   }
   return user;
 }

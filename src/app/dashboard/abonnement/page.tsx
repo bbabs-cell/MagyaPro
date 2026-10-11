@@ -200,7 +200,7 @@ export default async function SubscriptionPage() {
       <p className="mt-6 text-xs text-ink-faint">
         Les plans payants demandent un envoi Wave/Orange Money au numéro de la
         plateforme puis une preuve de paiement : le nouveau plan s&apos;active
-        une fois la réception validée par Magyapro. Les plans gratuits
+        une fois la réception validée par MagyaPro. Les plans gratuits
         s&apos;appliquent immédiatement.
       </p>
 
@@ -224,7 +224,7 @@ export default async function SubscriptionPage() {
                 <a
                   href={`/recu/abonnement/${payment.id}`}
                   target="_blank"
-                  className="shrink-0 text-xs font-medium text-brand underline underline-offset-4"
+                  className="shrink-0 text-xs font-medium text-brand-strong underline underline-offset-4"
                 >
                   Reçu
                 </a>

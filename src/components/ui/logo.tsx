@@ -3,10 +3,10 @@
 import { useState } from 'react';
 
 /**
- * Logo Magyapro.
+ * Logo MagyaPro.
  *
  * Une seule source : l'image envoyée depuis Administration → Images → « Logo
- * Magyapro ». Il n'existe plus de marque dessinée en dur dans le code.
+ * MagyaPro ». Il n'existe plus de marque dessinée en dur dans le code.
  *
  * L'ancienne version en contenait une, un carré bleu surmonté d'un dôme
  * orange, affichée dès que l'image n'était pas disponible. Une marque de repli
@@ -38,14 +38,14 @@ export function Logo({
         // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
         <img
           src={src}
-          alt="Magyapro"
+          alt="MagyaPro"
           className={`${className} object-contain`}
           onError={() => setFailed(true)}
         />
       )}
       {showText && (
         <span className={`font-semibold tracking-tight ${textClassName}`}>
-          Magya<span className="text-[#ff5e2e]">pro</span>
+          Magya<span className="text-[#ff5e2e]">Pro</span>
         </span>
       )}
     </span>

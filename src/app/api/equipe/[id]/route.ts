@@ -78,7 +78,7 @@ export const DELETE = route(async (_request, { params }: Params) => {
   const membership = await loadMembership(context.restaurant.id, id);
 
   // Retirer un membre supprime son accès à ce restaurant, pas son compte
-  // Magyapro : il peut appartenir à d'autres équipes.
+  // MagyaPro : il peut appartenir à d'autres équipes.
   await prisma.restaurantUser.delete({ where: { id: membership.id } });
 
   await recordAudit({

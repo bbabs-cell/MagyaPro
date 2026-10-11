@@ -271,7 +271,7 @@ export function NewOrderForm({
                         la carte : au comptoir on ajoute vite, et on se demande
                         aussitôt si on a bien ajouté. */}
                     {chosen > 0 && (
-                      <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium tabular-nums text-brand">
+                      <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium tabular-nums text-brand-strong">
                         ×{chosen}
                       </span>
                     )}

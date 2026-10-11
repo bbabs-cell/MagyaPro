@@ -286,7 +286,7 @@ export function StoreSubscriptionPaymentFlow({
               <ul className="mt-4 space-y-1.5 text-sm text-ink">
                 {[...plan.limits, ...plan.features].map((line) => (
                   <li key={line} className="flex gap-2">
-                    <span aria-hidden="true" className="text-brand">✓</span>
+                    <span aria-hidden="true" className="text-brand-strong">✓</span>
                     {line}
                   </li>
                 ))}
@@ -344,7 +344,7 @@ export function StoreSubscriptionPaymentFlow({
                         className={cx(
                           'rounded-lg border px-3 py-1.5 text-sm',
                           provider === id
-                            ? 'border-brand bg-brand-soft text-brand'
+                            ? 'border-brand bg-brand-soft text-brand-strong'
                             : 'border-surface-border text-ink-muted',
                         )}
                       >

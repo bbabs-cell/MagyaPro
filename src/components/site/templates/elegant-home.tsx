@@ -7,6 +7,7 @@ import { QuickAddButton } from '@/components/site/quick-add-button';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
+import { formatDecimal } from '@/lib/numbers';
 
 /**
  * Page d'accueil dédiée au template « elegant » — une seule page qui défile,
@@ -94,7 +95,7 @@ export async function ElegantHomePage({ data }: { data: ElegantHomeData }) {
 
       {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
       {hasReviews && (
-        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} locale={locale} />
       )}
 
       <LocationSection
@@ -403,10 +404,12 @@ function ReviewsSection({
   reviews,
   averageRating,
   dict,
+  locale,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
   dict: Dictionary;
+  locale: string;
 }) {
   return (
     <section id="avis" aria-labelledby="avis-titre" className="border-t border-surface-border bg-surface">
@@ -422,7 +425,7 @@ function ReviewsSection({
                 {'★'.repeat(5 - Math.round(averageRating))}
               </span>
               <span className="ms-2 text-sm text-ink-muted">
-                {dict.templates.ratingOutOf(averageRating.toFixed(1), reviews.length)}
+                {dict.templates.ratingOutOf(formatDecimal(averageRating, 1, locale), reviews.length)}
               </span>
             </p>
           )}

@@ -91,7 +91,7 @@ export default async function BoutiquePublicLayout({ children }: { children: Rea
           </div>
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-[#f3ece1]/40">
-              © {new Date().getFullYear()} Magyapro. Tous droits réservés.
+              © {new Date().getFullYear()} MagyaPro. Tous droits réservés.
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#f3ece1]/40">
               <Link href="/mentions-legales" className="hover:text-[#f3ece1]/70">Mentions légales</Link>

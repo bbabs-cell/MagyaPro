@@ -413,7 +413,7 @@ export function DashboardShell({
                   className={cx(
                     NAV_ITEM,
                     isActive(item)
-                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-elev1'
+                      ? 'bg-gradient-to-r from-[#d9461c] to-[#c93f1a] text-white shadow-elev1'
                       : 'text-nav-muted hover:translate-x-1 hover:bg-nav-raised hover:text-nav-ink',
                   )}
                 >
@@ -423,7 +423,7 @@ export function DashboardShell({
                     // La clé rejoue le rebond à chaque changement du nombre.
                     <span
                       key={item.badge}
-                      className="shrink-0 animate-pop rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white"
+                      className="shrink-0 animate-pop rounded-full bg-[#c93f1a] px-1.5 py-0.5 text-xs font-semibold text-white"
                     >
                       {item.badge}
                     </span>

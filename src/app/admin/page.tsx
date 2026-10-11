@@ -20,6 +20,7 @@ import {
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
 import { StatusPill } from '@/components/admin/state-badge';
+import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -250,7 +251,7 @@ export default async function AdminDashboardPage() {
       {/* --- Domaines à activer chez l'hébergeur -------------------------
           Un domaine vérifié prouve que le restaurateur en est propriétaire.
           Il ne suffit pas à rendre le site joignable : l'adresse doit encore
-          être déclarée chez l'hébergeur, ce que Magyapro ne fait pas
+          être déclarée chez l'hébergeur, ce que MagyaPro ne fait pas
           automatiquement. L'écran du restaurateur l'invite à écrire ; sans
           cette liste, la demande n'aurait aucun endroit où atterrir. */}
       {pendingDomains.length > 0 && (
@@ -314,7 +315,7 @@ export default async function AdminDashboardPage() {
             <p className="mt-1 text-xs text-white/50">
               {monthChange === null
                 ? `Pas de comparaison possible : rien d’encaissé au ${revenue.comparisonDayOfMonth} du mois dernier.`
-                : `${monthChange >= 0 ? '+' : ''}${monthChange} % par rapport au mois dernier à la même date (${formatMoney(lastMonth, currency)} au ${revenue.comparisonDayOfMonth}).`}
+                : `${formatPercent(monthChange, { signed: true })} par rapport au mois dernier à la même date (${formatMoney(lastMonth, currency)} au ${revenue.comparisonDayOfMonth}).`}
             </p>
             <p className="mt-0.5 text-xs text-white/40">
               Mois dernier en entier : {formatMoney(amountIn(revenue.previousMonthFull, currency), currency)}.
@@ -459,7 +460,7 @@ export default async function AdminDashboardPage() {
 
       <p className="mt-3 text-xs text-white/40">
         Le volume traité correspond au montant des commandes passées chez les
-        restaurants ; il ne s&apos;agit pas du revenu de Magyapro, qui provient des
+        restaurants ; il ne s&apos;agit pas du revenu de MagyaPro, qui provient des
         abonnements.
       </p>
 

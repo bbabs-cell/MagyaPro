@@ -37,7 +37,7 @@ export const env = {
 
   storageDriver: process.env.STORAGE_DRIVER ?? 'local',
   mailDriver: process.env.MAIL_DRIVER ?? 'console',
-  mailFrom: process.env.MAIL_FROM ?? 'Magyapro <no-reply@magyapro.app>',
+  mailFrom: process.env.MAIL_FROM ?? 'MagyaPro <no-reply@magyapro.app>',
 
   smtpHost: process.env.SMTP_HOST,
   smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,

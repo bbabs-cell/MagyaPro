@@ -22,7 +22,7 @@ import { loadSubscriptionScreen } from '@/lib/subscription-screen';
 
 export const metadata: Metadata = {
   manifest: '/dashboard/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Magyapro', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'MagyaPro', statusBarStyle: 'default' },
 };
 
 export default async function DashboardLayout({

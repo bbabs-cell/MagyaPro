@@ -40,7 +40,7 @@ type Props = {
  *
  * Chaque restaurant produit ses propres balises : titre, description, image de
  * partage et favicon. C'est ce qui rend chaque site indexable pour lui-même
- * plutôt que comme une page de Magyapro.
+ * plutôt que comme une page de MagyaPro.
  */
 export async function generateMetadata({
   params,
@@ -74,7 +74,7 @@ export async function generateMetadata({
   return {
     title: { default: title, template: `%s — ${restaurant.name}` },
     description,
-    // Le site du restaurant ne doit pas hériter du template de titre de Magyapro.
+    // Le site du restaurant ne doit pas hériter du template de titre de MagyaPro.
     applicationName: restaurant.name,
     manifest: `/r/${host}/manifest.webmanifest`,
     appleWebApp: { capable: true, title: restaurant.name, statusBarStyle: 'default' },
@@ -131,7 +131,7 @@ export default async function PublicSiteLayout({ params, children }: Props) {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
       {/* Suivi propre au restaurant — ses identifiants, jamais ceux de
-          Magyapro. Absent tant qu'il n'en a configuré aucun. */}
+          MagyaPro. Absent tant qu'il n'en a configuré aucun. */}
       {restaurant.settings?.googleAnalyticsId && (
         <>
           <Script
