@@ -54,7 +54,7 @@ export default async function AuthLayout({
         </div>
 
         <div className="relative p-10 text-xs text-white/35">
-          © {new Date().getFullYear()} Magyapro
+          © {new Date().getFullYear()} MagyaPro
         </div>
       </aside>
 

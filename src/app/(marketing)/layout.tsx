@@ -44,7 +44,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
                   // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
                   <img src={logoUrl} alt="" className="h-6 w-6 object-contain" />
                 )}
-                <p className="font-semibold">Magyapro</p>
+                <p className="font-semibold">MagyaPro</p>
               </span>
               <p className="mt-1 text-sm text-ink-muted">
                 Deux produits, une même plateforme : Restaurant et Boutique.
@@ -57,7 +57,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
           </div>
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-faint">
-              © {new Date().getFullYear()} Magyapro. Tous droits réservés.
+              © {new Date().getFullYear()} MagyaPro. Tous droits réservés.
             </p>
             {/* `py-1` : ces liens mesuraient 16 px de haut, sous le minimum de
                 24 px attendu pour une cible tactile. Le texte n'a pas grossi,

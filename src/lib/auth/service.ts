@@ -18,6 +18,7 @@ import {
 import { generateQrDataUrl } from '@/lib/qrcode';
 import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/mail';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { RATE_LIMITS, hit, reset } from '@/lib/rate-limit';
 import { uniqueRestaurantSlug } from '@/lib/slug';
 
 /**
@@ -203,7 +204,7 @@ export async function authenticate(input: {
 
   if (user.status !== 'ACTIVE') {
     throw new UnauthorizedError(
-      'Ce compte est suspendu. Contactez le support Magyapro.',
+      'Ce compte est suspendu. Contactez le support MagyaPro.',
     );
   }
 
@@ -325,6 +326,14 @@ export async function verifyTwoFactorLogin(input: {
   const user = record.user;
   const code = input.code.trim();
 
+  // Compteur par compte, en plus de celui par jeton que pose la route. Une
+  // connexion réussie au mot de passe remet à zéro les compteurs de
+  // connexion et émet un nouveau jeton : quiconque connaît le mot de passe
+  // pouvait donc enchaîner les jetons, huit essais chacun, et finir par
+  // deviner les six chiffres. Celui-ci survit au changement de jeton.
+  const accountKey = `2fa:user:${user.id}`;
+  await hit(accountKey, RATE_LIMITS.twoFactor);
+
   let usedBackupCode: string | null = null;
   let valid = user.totpSecret ? await verifyTotpCode(user.totpSecret, code) : false;
   if (!valid) {
@@ -366,6 +375,8 @@ export async function verifyTwoFactorLogin(input: {
     actorEmail: user.email,
     ip: input.ip,
   });
+
+  await reset(accountKey);
 
   return user;
 }

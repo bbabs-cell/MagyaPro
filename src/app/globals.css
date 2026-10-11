@@ -37,7 +37,10 @@
 
     --ink: #211d16;
     --ink-muted: #6a6153;
-    --ink-faint: #948b7b;
+    /* 4,9:1 sur le sable (l'ancienne valeur, #948b7b, n'en donnait que 3,2) :
+       elle porte les intitulés de cellules sur mobile et les indications de
+       champ, lus en plein soleil. */
+    --ink-faint: #756b5c;
 
     /* Couleurs sémantiques par défaut — exactement les valeurs Tailwind
        utilisées jusqu'ici (emerald/amber/red 50 et 700), pour que Restaurant,
@@ -279,6 +282,16 @@
   --nav-muted: #b3a894;
   --nav-border: rgba(245, 239, 227, 0.1);
 
+  /* Signature de MagyaPro Boutique : l'or, comme sur sa page de
+     présentation. Restaurant garde la braise. Le bouton principal est or à
+     libellé encre (9,8:1) ; l'or employé comme texte sur le sable passe à
+     un or brûlé (5,5:1), l'or vif y serait illisible. */
+  --brand: #b8891c;
+  --brand-strong: #e0bd52;
+  --brand-ink: #1c1712;
+  --brand-text: #806010;
+  --brand-soft: #f6ecd0;
+
   --state-ok: #2f6b4a;
   --state-ok-soft: #dcece2;
   --state-warn: #a8700f;
@@ -302,13 +315,19 @@
 
   --ink: #f0e9dc;
   --ink-muted: #b5ac9c;
-  --ink-faint: #857d6f;
+  --ink-faint: #908878;
 
   --nav: #0f0d09;
   --nav-raised: #1a1610;
   --nav-ink: #f0e9dc;
   --nav-muted: #9a9081;
   --nav-border: rgba(240, 233, 220, 0.08);
+
+  --brand: #e0bd52;
+  --brand-strong: #e0bd52;
+  --brand-ink: #1c1712;
+  --brand-text: #e0bd52;
+  --brand-soft: rgba(224, 189, 82, 0.14);
 
   --state-ok: #74c298;
   --state-ok-soft: #1a2c22;
@@ -359,6 +378,20 @@
   inset: 0 auto 0 0;
   width: 3px;
   background: var(--rail, transparent);
+}
+
+/* Sur une ligne de tableau affichée en tableau, le pseudo-élément devient une
+   cellule anonyme pour le navigateur : toute la ligne glissait d'une colonne
+   sous ses en-têtes (nom du produit sous « Catégorie », prix sous « Stock »).
+   Le rail y est donc porté par la première cellule. Sous 768px la ligne
+   redevient un bloc (`.table-stack`) et le pseudo-élément reprend sa place. */
+@media (min-width: 768px) {
+  tr.state-rail::before {
+    content: none;
+  }
+  tr.state-rail > :first-child {
+    box-shadow: inset 3px 0 0 var(--rail, transparent);
+  }
 }
 
 /* Masque visuellement sans retirer du flux d'accessibilité. */

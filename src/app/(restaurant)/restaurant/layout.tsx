@@ -77,7 +77,7 @@ export default async function MarketingLayout({
                   // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
                   <img src={logoUrl} alt="" className="h-6 w-6 object-contain" />
                 )}
-                <p className="font-semibold">Magyapro</p>
+                <p className="font-semibold">MagyaPro</p>
               </span>
               <p className="mt-1 text-sm text-ink-muted">
                 La présence en ligne des restaurants, sans complexité technique.
@@ -92,7 +92,7 @@ export default async function MarketingLayout({
           </div>
           <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-ink-faint">
-              © {new Date().getFullYear()} Magyapro. Tous droits réservés.
+              © {new Date().getFullYear()} MagyaPro. Tous droits réservés.
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
               <Link href="/mentions-legales" className="hover:text-ink-muted">Mentions légales</Link>

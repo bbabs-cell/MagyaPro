@@ -413,7 +413,7 @@ export function DashboardShell({
                   className={cx(
                     NAV_ITEM,
                     isActive(item)
-                      ? 'bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-white shadow-elev1'
+                      ? 'bg-brand-strong text-brand-ink shadow-elev1'
                       : 'text-nav-muted hover:translate-x-1 hover:bg-nav-raised hover:text-nav-ink',
                   )}
                 >
@@ -423,7 +423,7 @@ export function DashboardShell({
                     // La clé rejoue le rebond à chaque changement du nombre.
                     <span
                       key={item.badge}
-                      className="shrink-0 animate-pop rounded-full bg-[#ff5e2e] px-1.5 py-0.5 text-xs font-semibold text-white"
+                      className="shrink-0 animate-pop rounded-full bg-brand-strong px-1.5 py-0.5 text-xs font-semibold text-brand-ink"
                     >
                       {item.badge}
                     </span>
@@ -570,11 +570,11 @@ export function DashboardShell({
         <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-nav text-nav-ink lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto print:hidden">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-[#ff5e2e] opacity-[0.08] blur-[100px] lg:block"
+            className="pointer-events-none absolute -left-8 -top-16 hidden h-64 w-64 rounded-full bg-brand opacity-[0.08] blur-[100px] lg:block"
           />
           <div className="relative flex h-full flex-col p-4">
             <Link href="/boutique/dashboard" className="flex items-center gap-2 px-2 py-2">
-              <Logo src={platformLogoUrl} />
+              <Logo src={platformLogoUrl} product="boutique" />
             </Link>
 
             <StoreSwitcher
@@ -588,7 +588,7 @@ export function DashboardShell({
 
             <div className="mt-6 border-t border-nav-border pt-4">
               <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff9a4d] to-[#ff5e2e] text-xs font-bold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-strong text-xs font-bold text-brand-ink">
                   {userName.charAt(0).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">

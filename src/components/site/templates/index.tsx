@@ -6,6 +6,7 @@ import { DEFAULT_TEMPLATE_KEY } from '@/lib/templates/registry';
 import { QuickAddButton } from '@/components/site/quick-add-button';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
+import { DishPlaceholder, MenuBoard, type BoardItem } from '@/components/site/templates/menu-board';
 
 /**
  * Rendus de templates.
@@ -32,6 +33,8 @@ export type HeroData = {
   menuHref: string;
   infosHref: string;
   orderingEnabled: boolean;
+  /** Plats affichés sur l'ardoise quand il n'y a pas de photo de couverture. */
+  board: BoardItem[];
 };
 
 export type MenuProduct = {
@@ -128,10 +131,11 @@ async function HeroModern({ data }: { data: HeroData }) {
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
               <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
-              <div
-                aria-hidden="true"
-                className="h-full w-full"
-                style={{ backgroundColor: data.primaryColor }}
+              <MenuBoard
+                name={data.name}
+                items={data.board}
+                title={dict.templates.boardTitle}
+                primaryColor={data.primaryColor}
               />
             )}
           </div>
@@ -210,10 +214,12 @@ async function HeroAfricanPremium({ data }: { data: HeroData }) {
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
               <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
-              <div
-                aria-hidden="true"
-                className="h-full w-full"
-                style={{ backgroundColor: data.primaryColor }}
+              <MenuBoard
+                name={data.name}
+                items={data.board}
+                title={dict.templates.boardTitle}
+                primaryColor={data.primaryColor}
+                className="border border-white/10"
               />
             )}
           </div>
@@ -553,7 +559,9 @@ function BentoProductCard({
             loading="lazy"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-        ) : null}
+        ) : (
+          <DishPlaceholder name={product.name} tone="deep" />
+        )}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"
@@ -817,7 +825,7 @@ function TraditionalProductCard({
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div aria-hidden="true" className="h-full w-full" />
+            <DishPlaceholder name={product.name} />
           )}
           {product.badge !== 'NONE' && badges[product.badge] && (
             <span className="absolute start-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-black shadow-sm">
@@ -921,7 +929,9 @@ function FastFoodProductCard({
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-          ) : null}
+          ) : (
+            <DishPlaceholder name={product.name} />
+          )}
           {product.badge !== 'NONE' && badgeLabels(dict)[product.badge] && (
             <span className="absolute start-2 top-2 -rotate-3 rounded-full bg-black px-2.5 py-1 text-xs font-bold uppercase text-white">
               {badgeLabels(dict)[product.badge]}

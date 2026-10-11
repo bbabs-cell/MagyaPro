@@ -9,7 +9,7 @@ import { RegisterForm } from './register-form';
 
 export const metadata: Metadata = {
   title: 'Créer un compte',
-  description: 'Créez votre compte Magyapro et mettez votre restaurant en ligne.',
+  description: 'Créez votre compte MagyaPro et mettez votre restaurant en ligne.',
 };
 
 export default async function RegisterPage() {

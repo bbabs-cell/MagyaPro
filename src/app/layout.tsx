@@ -11,7 +11,7 @@ import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
 /**
- * Favicon : le logo envoyé depuis Administration → Images → « Logo Magyapro »
+ * Favicon : le logo envoyé depuis Administration → Images → « Logo MagyaPro »
  * sert aussi d'icône d'onglet.
  *
  * Il n'y a volontairement pas de repli. Le fichier `app/icon.svg` qui tenait
@@ -25,16 +25,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(env.appUrl),
     title: {
-      default: 'Magyapro — Créez votre restaurant en ligne simplement',
-      template: '%s — Magyapro',
+      default: 'MagyaPro — Créez votre restaurant en ligne simplement',
+      template: '%s — MagyaPro',
     },
     description:
-      'Magyapro vous permet de créer rapidement un site professionnel pour votre restaurant, présenter votre menu, recevoir des commandes et développer votre présence digitale.',
-    applicationName: 'Magyapro',
+      'MagyaPro vous permet de créer rapidement un site professionnel pour votre restaurant, présenter votre menu, recevoir des commandes et développer votre présence digitale.',
+    applicationName: 'MagyaPro',
     icons: logoUrl ? { icon: logoUrl } : undefined,
     openGraph: {
       type: 'website',
-      siteName: 'Magyapro',
+      siteName: 'MagyaPro',
       locale: 'fr_FR',
     },
   };

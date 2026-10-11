@@ -6,8 +6,10 @@ import { OfferCountdown } from '@/components/site/templates/offer-countdown';
 import { StreetFoodMenuFilter } from '@/components/site/templates/street-food-menu-filter';
 import { GalleryLightbox } from '@/components/site/templates/gallery-lightbox';
 import type { HeroData, MenuCategoryData } from '@/components/site/templates';
+import { MenuBoard } from '@/components/site/templates/menu-board';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
+import { formatDecimal } from '@/lib/numbers';
 
 /**
  * Page d'accueil dédiée au template « street-food » — une seule page qui
@@ -61,6 +63,7 @@ export async function StreetFoodHomePage({ data }: { data: StreetFoodHomeData })
         averageRating={data.averageRating}
         reviewCount={data.reviews.length}
         dict={dict}
+        locale={locale}
       />
 
       {categoryNames.length > 0 && <MarqueeStrip items={categoryNames} />}
@@ -78,7 +81,7 @@ export async function StreetFoodHomePage({ data }: { data: StreetFoodHomeData })
       {data.offer && <OfferSection offer={data.offer} dict={dict} />}
       {hasGallery && <GallerySection images={data.gallery} dict={dict} />}
       {hasReviews && (
-        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} />
+        <ReviewsSection reviews={data.reviews} averageRating={data.averageRating} dict={dict} locale={locale} />
       )}
 
       <LocationSection
@@ -103,11 +106,13 @@ function StreetFoodHero({
   averageRating,
   reviewCount,
   dict,
+  locale,
 }: {
   data: HeroData;
   averageRating: number | null;
   reviewCount: number;
   dict: Dictionary;
+  locale: string;
 }) {
   return (
     <section className="relative overflow-hidden text-white" style={{ backgroundColor: 'var(--brand)' }}>
@@ -155,7 +160,12 @@ function StreetFoodHero({
               // eslint-disable-next-line @next/next/no-img-element -- image de tenant
               <img src={data.coverUrl} alt="" fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
             ) : (
-              <div aria-hidden="true" className="h-full w-full bg-black/15" />
+              <MenuBoard
+                name={data.name}
+                items={data.board}
+                title={dict.templates.boardTitle}
+                primaryColor="#ffffff"
+              />
             )}
           </div>
 
@@ -163,7 +173,7 @@ function StreetFoodHero({
             <div className="absolute -left-4 top-6 flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-black shadow-lg">
               <span className="text-lg">★</span>
               <div className="leading-tight">
-                <span className="block text-sm font-black">{averageRating.toFixed(1)}/5</span>
+                <span className="block text-sm font-black">{formatDecimal(averageRating, 1, locale)}/5</span>
                 <span className="block text-[0.65rem] text-ink-muted">
                   {dict.templates.reviewCount(reviewCount)}
                 </span>
@@ -357,10 +367,12 @@ function ReviewsSection({
   reviews,
   averageRating,
   dict,
+  locale,
 }: {
   reviews: Array<{ id: string; customerName: string; rating: number; comment: string | null }>;
   averageRating: number | null;
   dict: Dictionary;
+  locale: string;
 }) {
   return (
     <section className="border-b border-surface-border bg-surface">
@@ -377,7 +389,7 @@ function ReviewsSection({
               {'★'.repeat(Math.round(averageRating))}
               <span className="text-surface-border">{'★'.repeat(5 - Math.round(averageRating))}</span>
               <span className="ms-2 text-sm text-ink-muted">
-                {dict.templates.ratingSimple(averageRating.toFixed(1))}
+                {dict.templates.ratingSimple(formatDecimal(averageRating, 1, locale))}
               </span>
             </p>
           )}

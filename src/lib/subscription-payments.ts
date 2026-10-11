@@ -48,7 +48,7 @@ export async function createSubscriptionPaymentRequest(params: {
     params.provider === 'wave_manual' ? settings?.waveNumber : settings?.orangeMoneyNumber;
   if (!receivingNumber) {
     throw new ValidationError(
-      `${PROVIDER_LABELS[params.provider]} n'est pas encore configuré par Magyapro. Réessayez plus tard.`,
+      `${PROVIDER_LABELS[params.provider]} n'est pas encore configuré par MagyaPro. Réessayez plus tard.`,
     );
   }
 
@@ -285,15 +285,15 @@ export async function sendExpiringSubscriptionAlerts(): Promise<{ notified: numb
     if (recipient) {
       await sendMail({
         to: recipient,
-        subject: `Votre abonnement Magyapro expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
-        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.restaurant.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre site reste actif sans interruption.\n\nL'équipe Magyapro`,
+        subject: `Votre abonnement MagyaPro expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.restaurant.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre site reste actif sans interruption.\n\nL'équipe MagyaPro`,
       });
     }
 
     if (subscription.restaurant.phone) {
       await sendSms(
         subscription.restaurant.phone,
-        `Magyapro : votre abonnement « ${subscription.plan.name} » expire le ${dateLabel} (dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}). Renouvelez-le depuis votre tableau de bord.`,
+        `MagyaPro : votre abonnement « ${subscription.plan.name} » expire le ${dateLabel} (dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}). Renouvelez-le depuis votre tableau de bord.`,
       );
     }
 
@@ -357,8 +357,8 @@ export async function processSubscriptionLifecycle(): Promise<{
     if (recipient) {
       await sendMail({
         to: recipient,
-        subject: 'Votre abonnement Magyapro est arrivé à son terme',
-        text: `Bonjour,\n\nL'abonnement de ${subscription.restaurant.name} est arrivé à son terme. Vous avez ${GRACE_PERIOD_DAYS} jours pour le renouveler depuis votre tableau de bord (Abonnement) avant de basculer automatiquement sur le plan gratuit.\n\nL'équipe Magyapro`,
+        subject: 'Votre abonnement MagyaPro est arrivé à son terme',
+        text: `Bonjour,\n\nL'abonnement de ${subscription.restaurant.name} est arrivé à son terme. Vous avez ${GRACE_PERIOD_DAYS} jours pour le renouveler depuis votre tableau de bord (Abonnement) avant de basculer automatiquement sur le plan gratuit.\n\nL'équipe MagyaPro`,
       });
     }
   }
@@ -397,8 +397,8 @@ export async function processSubscriptionLifecycle(): Promise<{
     if (to) {
       await sendMail({
         to,
-        subject: 'Votre abonnement Magyapro a expiré',
-        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.restaurant.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe Magyapro`,
+        subject: 'Votre abonnement MagyaPro a expiré',
+        text: `Bonjour,\n\nFaute de renouvellement, l'accès de ${subscription.restaurant.name} est suspendu.\n\nVos données — stock, ventes et clients — sont intégralement conservées et redeviennent accessibles dès la validation de votre paiement.\n\nPour reprendre : connectez-vous et choisissez votre plan.\n\nL'équipe MagyaPro`,
       });
     }
   }

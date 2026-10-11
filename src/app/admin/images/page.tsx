@@ -49,7 +49,7 @@ export default async function AdminImagesPage() {
         aria-label="Marque"
         className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
       >
-        <h2 className="text-sm font-medium">Logo Magyapro</h2>
+        <h2 className="text-sm font-medium">Logo MagyaPro</h2>
         <p className="mt-1 text-xs text-white/50">
           Utilisé partout où la marque apparaît (accueil, connexion, tableau de bord, administration).
         </p>
@@ -79,7 +79,7 @@ export default async function AdminImagesPage() {
       >
         <h2 className="text-sm font-medium">Page d&apos;accueil MagyaPro Boutique</h2>
         <p className="mt-1 text-xs text-white/50">
-          Logo affiché sur <code>/boutique</code> — distinct du logo Magyapro général et du logo
+          Logo affiché sur <code>/boutique</code> — distinct du logo MagyaPro général et du logo
           propre à chaque boutique (réglé par son propriétaire).
         </p>
         <div className="mt-3">

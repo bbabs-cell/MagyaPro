@@ -61,6 +61,11 @@ export function CookieConsent({
     }
   }
 
+  // Sans outil de mesure configuré, il n'y a rien à accepter ni à refuser :
+  // seuls des cookies strictement nécessaires sont posés, qui ne demandent
+  // pas de consentement. Le bandeau ne ferait que masquer la page.
+  if (!metaPixelId && !gaMeasurementId) return null;
+
   return (
     <>
       {ready && consent === 'accepted' && (
@@ -117,7 +122,11 @@ export function CookieConsent({
               <button
                 type="button"
                 onClick={() => choose('rejected')}
-                className="inline-flex h-10 items-center rounded-lg border border-surface-border px-4 text-sm font-medium hover:bg-surface-sunken"
+                // Couleurs explicites : sans elles le bouton héritait du texte
+                // clair des pages sombres (vitrine Boutique) et devenait
+                // illisible sur le fond du bandeau. Refuser doit rester aussi
+                // visible qu'accepter.
+                className="inline-flex h-10 items-center rounded-lg border border-ink/25 bg-surface px-4 text-sm font-medium text-ink hover:bg-surface-sunken"
               >
                 Refuser
               </button>

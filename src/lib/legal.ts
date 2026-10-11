@@ -40,7 +40,7 @@ export function pending(label: string): string {
  * titre de page et du logo.
  *
  * À noter : `DESIGN.md` écrit « MagyaPro », avec un P majuscule, tandis que le
- * produit écrit « Magyapro » dans quarante-cinq fichiers, y compris le titre
+ * produit écrit « MagyaPro » dans quarante-cinq fichiers, y compris le titre
  * de l'onglet et le texte alternatif du logo. Les pages légales suivent ce que
  * l'écran affiche : une mention légale qui nommerait l'éditeur autrement que
  * l'en-tête au-dessus d'elle serait la première incohérence que l'on
@@ -48,7 +48,7 @@ export function pending(label: string): string {
  * la marque ; le jour où c'est fait, cette constante est le seul endroit à
  * changer pour ces trois pages.
  */
-export const BRAND = 'Magyapro';
+export const BRAND = 'MagyaPro';
 
 /**
  * Adresse de contact.

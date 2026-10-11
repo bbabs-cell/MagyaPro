@@ -115,7 +115,7 @@ export function StoreTeamManager({
   async function remove(member: Member) {
     if (
       !window.confirm(
-        `Retirer ${member.name} de l'équipe ? Son compte Magyapro n'est pas supprimé.`,
+        `Retirer ${member.name} de l'équipe ? Son compte MagyaPro n'est pas supprimé.`,
       )
     ) {
       return;

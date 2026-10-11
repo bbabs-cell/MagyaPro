@@ -3,6 +3,7 @@ name: MagyaPro
 description: Outil de gestion pour commerçants d'Afrique de l'Ouest — caisse, stock et commandes, sur un téléphone.
 colors:
   braise: "#ff5e2e"
+  braise-strong: "#c93f1a"
   braise-soft: "#fff1e6"
   braise-ink: "#ffffff"
   surface: "#fbf8f2"
@@ -11,12 +12,15 @@ colors:
   surface-border: "#ddd3c1"
   ink: "#211d16"
   ink-muted: "#6a6153"
-  ink-faint: "#948b7b"
+  ink-faint: "#756b5c"
   nav: "#2a2118"
   nav-raised: "#35291d"
   nav-ink: "#f5efe3"
   nav-muted: "#b3a894"
   navy: "#0b1730"
+  or: "#e0bd52"
+  or-text: "#806010"
+  or-ink: "#1c1712"
   state-ok: "#2f6b4a"
   state-ok-soft: "#dcece2"
   state-warn: "#a8700f"
@@ -76,7 +80,7 @@ spacing:
   block: "2.5rem"
 components:
   button-primary:
-    backgroundColor: "{colors.braise}"
+    backgroundColor: "{colors.braise-strong}"
     textColor: "{colors.braise-ink}"
     rounded: "{rounded.button}"
     padding: "0 1rem"
@@ -127,9 +131,10 @@ components:
 **Creative North Star: "La Braise"**
 
 Une braise ne fait pas de flamme. Elle est sombre, chaude au toucher, et elle
-tient toute la nuit. C'est le registre de MagyaPro : une navigation brun
-torréfié qui ne bouge pas, des surfaces sable et crème qui portent le travail,
-et un seul orange vif — rare, jamais décoratif — qui dit où appuyer.
+tient toute la nuit. C'est le registre de MagyaPro : une navigation sombre
+qui ne bouge pas, des surfaces sable et crème qui portent le travail, et un
+seul accent — braise pour Restaurant, or pour Boutique, rare, jamais
+décoratif — qui dit où appuyer.
 
 Le produit tient la caisse d'un commerce. Il est consulté debout, entre deux
 clients, sur un téléphone dont l'écran prend le soleil. La densité sert la
@@ -143,10 +148,47 @@ sont pas comptables et ne doivent pas se sentir jugés par leur écran. Un
 commerçant qui ouvre l'application doit reconnaître son commerce, pas subir un
 formulaire.
 
+### Deux produits, deux signatures, un seul socle
+
+MagyaPro Restaurant et MagyaPro Boutique se sont donné, au fil des phases,
+deux identités distinctes — sans qu'on l'ait décidé. Elles sont désormais
+**assumées**, parce qu'elles servent : un commerçant qui ouvre l'un ou l'autre
+sait immédiatement où il est, et les deux pages de présentation ne se
+ressemblent pas au point de se confondre.
+
+| | Restaurant | Boutique |
+|---|---|---|
+| Navigation | bleu nuit `#0b1730` | brun torréfié `#2a2118` |
+| Accent (bouton principal, menu actif) | braise foncée `#c93f1a`, libellé blanc | or `#e0bd52`, libellé encre `#1c1712` |
+| Accent en texte sur fond clair | braise foncée `#c93f1a` | or brûlé `#806010` |
+| Logo | « Pro » en braise | « Pro » en or |
+| Page de présentation | bleu nuit et braise | brun et or, page sombre |
+
+**Tout le reste est commun** : fonds sable, encre brune, couleurs d'état,
+polices, rayons, ombres, mouvement. La différence tient dans quatre
+variables (`--brand`, `--brand-strong`, `--brand-text`, `--brand-ink`) que le
+tableau de bord Boutique redéfinit à sa racine, à côté de ses thèmes clair et
+sombre. Aucun composant n'est écrit deux fois pour autant.
+
+Les rôles de ces variables :
+
+- `brand` — la couleur décorative : graphiques, halos, rails, pastilles.
+- `brand-strong` — le fond de ce qui porte un libellé : bouton principal,
+  onglet actif, entrée de menu active.
+- `brand-ink` — le libellé posé sur `brand-strong`.
+- `brand-text` — la couleur de marque **écrite** sur un fond clair. Elle est
+  séparée de `brand-strong` parce qu'une couleur peut faire un bon fond et un
+  mauvais texte : l'or porte très bien un libellé encre, mais écrit en or sur
+  le sable il est illisible.
+
+Sur les vitrines des restaurants, les quatre prennent la couleur choisie par
+le restaurateur : l'identité affichée au client final est la sienne.
+
 **Key Characteristics:**
 
 - Navigation sombre et stable, contenu clair et changeant.
-- Un seul accent orange, réservé à l'action principale.
+- Un seul accent par écran — braise ou or selon le produit —, réservé à
+  l'action principale.
 - Cartes légèrement surélevées au repos, comme des fiches posées sur le comptoir.
 - Couleurs d'état séparées de la couleur de marque : un stock en rupture n'est
   jamais « de la couleur de MagyaPro ».
@@ -164,6 +206,13 @@ seule braise orange.
   remplacée par la couleur du restaurant lui-même : la variable `--brand` est
   pilotée par le tenant, et c'est voulu — l'identité affichée au client final
   est celle du commerce, pas celle de MagyaPro.
+- **Braise foncée** (`#c93f1a`) : le fond du bouton principal, l'entrée de
+  menu active et tout texte orange posé sur un fond clair. L'orange vif ne
+  donne que 3,05:1 avec du blanc et 2,87:1 sur le sable, sous le seuil de
+  lecture d'un texte courant ; la braise foncée donne 5,0 et 4,7. Les deux
+  sont la même couleur à la lumière près : l'orange vif garde tout ce qui ne
+  porte pas de texte (graphiques, halos, rails, logo). Sur les vitrines des
+  restaurants, elle reprend la couleur choisie par le restaurateur.
 - **Braise pâle** (`#fff1e6`) : fond des pastilles de marque et des zones
   d'appel discrètes.
 
@@ -174,9 +223,14 @@ seule braise orange.
   s'éclaircit ou s'assombrit.
 - **Brun relevé** (`#35291d`) : élément de navigation survolé, et fond des
   regroupements à l'intérieur de la barre.
-- **Bleu nuit** (`#0b1730`) : réservé à l'administration de la plateforme et au
-  héros du site marketing. Ce n'est pas une couleur produit ; elle ne doit
-  jamais apparaître dans un tableau de bord commerçant.
+- **Bleu nuit** (`#0b1730`) : la navigation de MagyaPro Restaurant, sa page
+  de présentation et l'administration de la plateforme. (Une version
+  antérieure de ce document l'interdisait dans un tableau de bord commerçant,
+  alors que Restaurant l'employait déjà : la règle a suivi le produit.)
+- **Or** (`#e0bd52`) : la signature de MagyaPro Boutique — bouton principal,
+  entrée de menu active, page de présentation. Toujours avec un libellé encre
+  (`#1c1712`, 9,8:1), jamais blanc. Écrit sur fond clair, il devient **or
+  brûlé** (`#806010`, 5,5:1).
 
 ### Neutral
 
@@ -188,7 +242,7 @@ seule braise orange.
 - **Filet** (`#ddd3c1`) : bordures et séparateurs.
 - **Encre** (`#211d16`) : le texte. Un brun très sombre, jamais un noir neutre.
 - **Encre atténuée** (`#6a6153`) : texte secondaire, intitulés de champs.
-- **Encre pâle** (`#948b7b`) : indices, texte d'invite, intitulés de cellules
+- **Encre pâle** (`#756b5c`, 4,9:1 sur le sable) : indices, texte d'invite, intitulés de cellules
   sur mobile.
 
 ### Named Rules
@@ -411,7 +465,7 @@ se lit à la couleur avant même d'être lue au texte.
 
 - **Shape:** angles adoucis (0,875rem), hauteur fixe par taille — 2,25rem,
   2,75rem, 3rem.
-- **Primary:** fond braise, texte blanc, ombre portée teintée de braise à 30 %.
+- **Primary:** fond braise foncée, texte blanc, ombre portée teintée de braise à 30 %.
   Au survol, la luminosité monte de 10 % plutôt qu'un changement de teinte : la
   couleur reste la même, elle s'active.
 - **Hover / Focus:** transition de 150ms sur la couleur, la transformation et
@@ -450,10 +504,11 @@ se lit à la couleur avant même d'être lue au texte.
 
 ### Navigation
 
-- **Style:** fond brun torréfié constant, entrées en 0,875rem, icône à gauche,
-  libellé tronqué plutôt que replié.
-- **Active:** dégradé braise, texte blanc — le seul endroit où l'accent apparaît
-  hors bouton principal.
+- **Style:** fond sombre constant — bleu nuit pour Restaurant, brun torréfié
+  pour Boutique —, entrées en 0,875rem, icône à gauche, libellé tronqué plutôt
+  que replié.
+- **Active:** braise foncée et texte blanc (Restaurant), or et texte encre
+  (Boutique) — le seul endroit où l'accent apparaît hors bouton principal.
 - **Hover:** fond légèrement relevé, texte qui remonte du muet au plein.
 - **Mobile:** tiroir borné et défilant, fermé au choix d'une entrée.
 
@@ -467,8 +522,8 @@ balayer une liste de vingt produits sans lire un seul mot.
 
 ### Do:
 
-- **Do** réserver la braise (`#ff5e2e`) à une seule action par écran, et à
-  l'entrée de menu active.
+- **Do** réserver la braise à une seule action par écran, et à l'entrée de
+  menu active — en braise foncée (`#c93f1a`) dès qu'elle porte du texte.
 - **Do** aligner tout nombre lu en colonne avec `tabular-nums`.
 - **Do** donner un `data-label` à chaque cellule de tableau — sans lui, la
   valeur devient anonyme sous 768px.
@@ -480,8 +535,11 @@ balayer une liste de vingt produits sans lire un seul mot.
 
 ### Don't:
 
-- **Don't** utiliser le bleu nuit (`#0b1730`) dans un tableau de bord
-  commerçant : il appartient à l'administration de la plateforme.
+- **Don't** mélanger les signatures : pas de braise dans le tableau de bord
+  Boutique, pas d'or dans celui de Restaurant. Passer par `brand-*` plutôt
+  qu'écrire une couleur en dur suffit à l'éviter.
+- **Don't** laisser un cadre vide. Une image absente n'est pas une raison
+  d'afficher un rectangle de couleur : voir « La règle du cadre jamais vide ».
 - **Don't** colorer une carte avec la couleur de marque pour signaler un état.
   Les états ont leurs propres couleurs, délibérément séparées.
 - **Don't** poser une surface de travail en blanc pur.
@@ -545,6 +603,28 @@ prouve — et à ces cinq conditions, pas à un principe général. Les deux vid
 partagent le même composant (`presentation-video.tsx`) et la même scène
 (`scripts/motion/scene.html`) : deux comportements pour la même promesse
 finiraient par diverger.
+
+### La règle du cadre jamais vide
+
+Un emplacement prévu pour une image affiche, quand l'image manque, **une
+information réelle** plutôt qu'un aplat. C'est ce qui distingue un produit
+inachevé d'un produit qui attend ses photos.
+
+- **Héros d'une vitrine sans photo de couverture** : l'ardoise
+  (`site/templates/menu-board.tsx`) — quatre plats réellement servis et leurs
+  prix, les populaires d'abord. Sans aucun plat, l'initiale du restaurant.
+- **Plat sans photo** : une tuile teintée de la couleur du restaurant, avec
+  l'initiale du plat. Jamais une case grise.
+- **Modèle de vitrine sans capture** : son croquis (`site/template-sketch.tsx`),
+  qui en dessine la structure dans ses couleurs — page de présentation comme
+  écran Apparence.
+- **Étape sans illustration** : le numéro de l'étape devient l'élément
+  visuel ; la carte raccourcit au lieu de garder un cadre creux.
+- **Secteur Boutique sans illustration** : les unités de vente réellement
+  prêtes pour ce secteur.
+
+Aucun de ces replis n'invente de contenu : la décision de ne pas utiliser
+d'images générées ni de photos de banque (phase 15) reste entière.
 
 ### Une seule déclaration des neutres
 

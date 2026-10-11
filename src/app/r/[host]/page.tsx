@@ -97,6 +97,18 @@ export default async function RestaurantHomePage({ params }: Props) {
     })),
   }));
 
+  // L'ardoise du héros sans photo : quatre plats réellement servis, les
+  // populaires d'abord. Un plat épuisé n'y a pas sa place.
+  const board = categories
+    .flatMap((category) => category.products)
+    .filter((product) => product.isAvailable && product.badge !== 'SOLD_OUT')
+    .sort((a, b) => Number(b.badge === 'POPULAR') - Number(a.badge === 'POPULAR'))
+    .slice(0, 4)
+    .map((product) => ({
+      name: localize(product.name, { en: product.nameEn, ar: product.nameAr }, locale),
+      price: formatMoney(product.price, restaurant.currency),
+    }));
+
   const heroData = {
     name: restaurant.name,
     description: restaurant.description,
@@ -111,6 +123,7 @@ export default async function RestaurantHomePage({ params }: Props) {
     menuHref: `${base}/menu`,
     infosHref: `${base}/infos`,
     orderingEnabled,
+    board,
   };
 
   // « elegant », « street-food » et « prestige » sont des pages uniques qui

@@ -1013,7 +1013,7 @@ export function Pos({
             <button
               type="button"
               onClick={addPaymentLine}
-              className="mt-2 text-sm font-medium text-brand hover:underline"
+              className="mt-2 text-sm font-medium text-brand-text hover:underline"
             >
               + Scinder le paiement
             </button>

@@ -183,7 +183,7 @@ export function SubscriptionPaymentFlow({
             />
             <label
               htmlFor="subscription-proof-upload"
-              className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-brand px-4 text-sm font-medium text-white"
+              className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-brand-strong px-4 text-sm font-medium text-brand-ink"
             >
               Déposer ma preuve de paiement
             </label>
@@ -245,7 +245,7 @@ export function SubscriptionPaymentFlow({
                 ))}
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex gap-2">
-                    <span aria-hidden="true" className="text-brand">✓</span>
+                    <span aria-hidden="true" className="text-brand-text">✓</span>
                     {feature}
                   </li>
                 ))}
@@ -300,7 +300,7 @@ export function SubscriptionPaymentFlow({
                         className={cx(
                           'rounded-lg border px-3 py-1.5 text-sm',
                           provider === id
-                            ? 'border-brand bg-brand-soft text-brand'
+                            ? 'border-brand bg-brand-soft text-brand-text'
                             : 'border-surface-border text-ink-muted',
                         )}
                       >

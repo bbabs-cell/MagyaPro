@@ -12,6 +12,7 @@ import {
 import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
 import { Badge, Card, EmptyState, LinkButton, PageHeader, StatCard, cx } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
+import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: "Vue d'ensemble" };
 export const dynamic = 'force-dynamic';
@@ -208,7 +209,7 @@ export default async function BoutiqueDashboardPage() {
           hint={
             metrics.revenueChange === null
               ? 'Pas de période précédente à comparer'
-              : `${metrics.revenueChange > 0 ? '+' : ''}${metrics.revenueChange} % vs 30 j précédents`
+              : `${formatPercent(metrics.revenueChange, { signed: true })} vs 30 j précédents`
           }
           tone={
             metrics.revenueChange === null
@@ -225,7 +226,7 @@ export default async function BoutiqueDashboardPage() {
           hint={
             metrics.salesChange === null
               ? 'Pas de période précédente à comparer'
-              : `${metrics.salesChange > 0 ? '+' : ''}${metrics.salesChange} % vs 30 j précédents`
+              : `${formatPercent(metrics.salesChange, { signed: true })} vs 30 j précédents`
           }
           tone={
             metrics.salesChange === null ? undefined : metrics.salesChange >= 0 ? 'success' : 'danger'
@@ -249,7 +250,7 @@ export default async function BoutiqueDashboardPage() {
         <section aria-label="Évolution du chiffre d'affaires" className="lg:col-span-2">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.revenue}
               </span>
               Chiffre d&apos;affaires sur 30 jours
@@ -269,7 +270,7 @@ export default async function BoutiqueDashboardPage() {
         <section aria-label="Produits les plus vendus">
           <Card className="p-4 sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.basket}
               </span>
               Produits les plus vendus
@@ -299,7 +300,7 @@ export default async function BoutiqueDashboardPage() {
         <Card className="p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-medium text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand-text">
                 {STAT_ICONS.sales}
               </span>
               Activité récente
@@ -329,7 +330,7 @@ export default async function BoutiqueDashboardPage() {
               {recentSales.map((sale) => (
                 <li key={sale.id} className="flex items-center justify-between gap-3 px-1 py-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#ff9a4d] text-xs font-bold text-white">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-strong text-xs font-bold text-brand-ink">
                       {(sale.customer?.name ?? 'V').charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">

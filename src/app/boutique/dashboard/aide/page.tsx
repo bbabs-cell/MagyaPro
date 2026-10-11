@@ -111,7 +111,7 @@ const SECTIONS: Section[] = [
     entries: [
       {
         q: 'Comment payer mon abonnement ?',
-        a: 'Depuis Abonnement, choisissez un plan et un moyen de paiement (Wave ou Orange Money). Vous envoyez le montant au numéro indiqué, déposez une preuve, et le nouveau plan s\'active dès validation par Magyapro.',
+        a: 'Depuis Abonnement, choisissez un plan et un moyen de paiement (Wave ou Orange Money). Vous envoyez le montant au numéro indiqué, déposez une preuve, et le nouveau plan s\'active dès validation par MagyaPro.',
       },
       {
         q: 'Où trouver mes reçus de paiement ?',
@@ -174,7 +174,7 @@ export default function BoutiqueHelpPage() {
       </div>
 
       <p className="mt-8 text-sm text-ink-muted">
-        Une question sans réponse ici ? Contactez le support Magyapro depuis votre espace Super Admin, ou par email si vous en avez un configuré.
+        Une question sans réponse ici ? Contactez le support MagyaPro depuis votre espace Super Admin, ou par email si vous en avez un configuré.
       </p>
     </>
   );

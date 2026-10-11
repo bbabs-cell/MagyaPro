@@ -7,6 +7,7 @@ import { computeOpenState, dayNames } from '@/lib/site/hours';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { getServerDictionary } from '@/lib/i18n/server';
+import { formatDecimal } from '@/lib/numbers';
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -247,7 +248,7 @@ export default async function InfoPage({ params }: Props) {
                     </span>
                   </span>{' '}
                   <span className="text-ink-muted">
-                    {dict.info.ratingSummary(averageRating.toFixed(1), reviews.length)}
+                    {dict.info.ratingSummary(formatDecimal(averageRating, 1, locale), reviews.length)}
                   </span>
                 </p>
               )}

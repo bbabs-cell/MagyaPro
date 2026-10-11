@@ -8,7 +8,7 @@ import { requireTenant } from '@/lib/tenant';
  * Export complet des données du restaurant, au format JSON.
  *
  * Une sauvegarde de secours et un moyen de partir avec ses données : rien
- * n'est propriétaire de Magyapro. Les commandes et clients sont inclus tels
+ * n'est propriétaire de MagyaPro. Les commandes et clients sont inclus tels
  * quels ; c'est au restaurateur de traiter ce fichier avec la même prudence
  * que n'importe quel export contenant des coordonnées de clients.
  */

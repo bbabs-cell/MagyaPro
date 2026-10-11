@@ -24,11 +24,29 @@ export type ProductMargin = {
   marginPercent: number;
 };
 
+/**
+ * Nom lisible d'une variante : le produit, puis ses attributs (« T-shirt ·
+ * M / Bleu »). La référence technique (`sku`) y figurait auparavant, y
+ * compris quand elle était générée automatiquement — « Œufs · ufs-1 » —
+ * ce qui n'apprenait rien au commerçant et n'aidait pas à distinguer deux
+ * déclinaisons.
+ */
+function variantLabel(productName: string, attributes: unknown): string {
+  const values =
+    attributes && typeof attributes === 'object' && !Array.isArray(attributes)
+      ? Object.values(attributes as Record<string, unknown>)
+          .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+          .map(String)
+          .filter(Boolean)
+      : [];
+  return values.length > 0 ? `${productName} · ${values.join(' / ')}` : productName;
+}
+
 /** Marge par variante — uniquement celles ayant un coût d'achat renseigné. */
 export async function getStoreProductMargins(storeId: string): Promise<ProductMargin[]> {
   const variants = await prisma.storeProductVariant.findMany({
     where: { product: { storeId }, cost: { gt: 0 } },
-    select: { id: true, price: true, cost: true, product: { select: { name: true } }, sku: true },
+    select: { id: true, price: true, cost: true, product: { select: { name: true } }, attributes: true },
     orderBy: { product: { name: 'asc' } },
   });
 
@@ -36,7 +54,7 @@ export async function getStoreProductMargins(storeId: string): Promise<ProductMa
     const margin = variant.price - variant.cost;
     return {
       id: variant.id,
-      name: variant.sku ? `${variant.product.name} · ${variant.sku}` : variant.product.name,
+      name: variantLabel(variant.product.name, variant.attributes),
       price: variant.price,
       costPrice: variant.cost,
       margin,

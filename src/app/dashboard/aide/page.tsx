@@ -51,7 +51,7 @@ const SECTIONS: Section[] = [
     entries: [
       {
         q: 'Comment payer mon abonnement ?',
-        a: 'Depuis Abonnement, choisissez un plan et un moyen de paiement (Wave ou Orange Money). Vous envoyez le montant au numéro indiqué, déposez une preuve, et le nouveau plan s\'active dès validation par Magyapro.',
+        a: 'Depuis Abonnement, choisissez un plan et un moyen de paiement (Wave ou Orange Money). Vous envoyez le montant au numéro indiqué, déposez une preuve, et le nouveau plan s\'active dès validation par MagyaPro.',
       },
       {
         q: 'Que se passe-t-il si je ne renouvelle pas à temps ?',
@@ -85,7 +85,7 @@ const SECTIONS: Section[] = [
       },
       {
         q: 'Comment suivre mes visiteurs avec Google Analytics ou Meta Pixel ?',
-        a: 'Toujours dans Réglages → Avancé, renseignez vos propres identifiants GA4 et/ou Meta Pixel. Magyapro ne collecte rien pour vous : ce sont vos identifiants, sur votre site.',
+        a: 'Toujours dans Réglages → Avancé, renseignez vos propres identifiants GA4 et/ou Meta Pixel. MagyaPro ne collecte rien pour vous : ce sont vos identifiants, sur votre site.',
       },
       {
         q: 'Comment récupérer toutes mes données ?',
@@ -109,7 +109,7 @@ export default function HelpPage() {
     <>
       <PageHeader
         title="Centre d'aide"
-        description="Les réponses aux questions les plus courantes sur Magyapro."
+        description="Les réponses aux questions les plus courantes sur MagyaPro."
       />
 
       <div className="space-y-8">
@@ -139,7 +139,7 @@ export default function HelpPage() {
       </div>
 
       <p className="mt-8 text-sm text-ink-muted">
-        Une question sans réponse ici ? Contactez le support Magyapro depuis votre espace Super Admin, ou par email si vous en avez un configuré.
+        Une question sans réponse ici ? Contactez le support MagyaPro depuis votre espace Super Admin, ou par email si vous en avez un configuré.
       </p>
     </>
   );

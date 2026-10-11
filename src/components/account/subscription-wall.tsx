@@ -123,7 +123,7 @@ export function SubscriptionWall({
                 }
               >
                 {highlighted && (
-                  <span className="absolute right-0 top-0 rounded-bl-xl bg-brand px-3 py-1 text-xs font-medium text-white">
+                  <span className="absolute right-0 top-0 rounded-bl-xl bg-brand-strong px-3 py-1 text-xs font-medium text-brand-ink">
                     Sans limite
                   </span>
                 )}
@@ -162,7 +162,7 @@ export function SubscriptionWall({
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3">
           <Link
             href={subscribeHref}
-            className="inline-flex h-12 items-center rounded-xl bg-brand px-7 text-sm font-medium text-white transition-[filter] hover:brightness-110"
+            className="inline-flex h-12 items-center rounded-xl bg-brand-strong px-7 text-sm font-medium text-brand-ink transition-[filter] hover:brightness-110"
           >
             Choisir un plan et payer
           </Link>

@@ -3,10 +3,10 @@
 import { useState } from 'react';
 
 /**
- * Logo Magyapro.
+ * Logo MagyaPro.
  *
  * Une seule source : l'image envoyée depuis Administration → Images → « Logo
- * Magyapro ». Il n'existe plus de marque dessinée en dur dans le code.
+ * MagyaPro ». Il n'existe plus de marque dessinée en dur dans le code.
  *
  * L'ancienne version en contenait une, un carré bleu surmonté d'un dôme
  * orange, affichée dès que l'image n'était pas disponible. Une marque de repli
@@ -23,12 +23,19 @@ export function Logo({
   className = 'h-8 w-8',
   textClassName = 'text-lg',
   showText = true,
+  product = 'restaurant',
 }: {
   /** URL du logo envoyé par le Super Admin. Absent ou en erreur : seul le nom s'affiche. */
   src?: string | null;
   className?: string;
   textClassName?: string;
   showText?: boolean;
+  /**
+   * Produit dont c'est le logo : il fixe la couleur de « Pro ». Braise pour
+   * Restaurant (et la plateforme), or pour Boutique — la même signature que
+   * leurs pages de présentation et leurs tableaux de bord respectifs.
+   */
+  product?: 'restaurant' | 'boutique';
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -38,14 +45,15 @@ export function Logo({
         // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
         <img
           src={src}
-          alt="Magyapro"
+          alt="MagyaPro"
           className={`${className} object-contain`}
           onError={() => setFailed(true)}
         />
       )}
       {showText && (
         <span className={`font-semibold tracking-tight ${textClassName}`}>
-          Magya<span className="text-[#ff5e2e]">pro</span>
+          Magya
+          <span className={product === 'boutique' ? 'text-[#e0bd52]' : 'text-[#ff5e2e]'}>Pro</span>
         </span>
       )}
     </span>

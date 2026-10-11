@@ -214,3 +214,112 @@ comportement sous un afflux distribué n'a pas été éprouvé.
 ouvrez votre vitrine : elle doit réellement changer. Puis téléversez une photo
 de plat et rechargez la page publique — elle doit s'afficher immédiatement,
 sans redémarrage.
+
+---
+
+# Audit complet — octobre 2026
+
+Revue de code de toutes les routes, puis sondes HTTP sur un build de
+production avec de vraies sessions. Trois failles corrigées, une mise à jour
+de dépendance qui comptait, et des points laissés à votre décision.
+
+## Corrigé
+
+### 1. Élévation de privilèges par la gestion d'équipe — élevé
+
+Côté Boutique, le rôle **Administrateur** détient `employees:manage`. Rien ne
+limitait ce qu'il pouvait accorder : il pouvait s'attribuer, sur sa propre
+adhésion, `subscription:manage`, `store:delete`, `cash:manage`… ou créer un
+compte complice avec ces droits. Même défaut côté Restaurant dès qu'un
+propriétaire déléguait `team:manage`.
+
+Désormais, on ne délègue que ce que l'on détient (`permissionsBeyond`,
+`storePermissionsBeyond`), et personne ne modifie sa propre adhésion.
+Sonde HTTP, connecté en Administrateur :
+
+| tentative | réponse |
+|---|---|
+| s'accorder `subscription:manage` + `store:delete` | 403 |
+| créer un complice avec `subscription:manage` | 403 |
+| contrôle positif : créer un caissier sans ajout | 201 |
+
+### 2. Code 2FA devinable avec le mot de passe — moyen
+
+Le compteur d'essais portait sur le **jeton** de connexion en attente. Une
+connexion réussie au mot de passe remet les compteurs de connexion à zéro et
+émet un nouveau jeton, avec huit nouveaux essais : on pouvait enchaîner et
+finir par trouver les six chiffres. Un compteur **par compte**
+(`2fa:user:<id>`) survit maintenant au changement de jeton. Un test le
+prouve, et il échoue sans le correctif.
+
+### 3. `sharp` / libvips atteignable — élevé (dépendance)
+
+La phase 20 jugeait `sharp` inatteignable parce que l'optimiseur refuse les
+images distantes. Il accepte en revanche les **chemins locaux** :
+`/_next/image?url=/uploads/…` fait décoder par libvips une image téléversée,
+y compris une preuve de paiement envoyée **sans compte**, en AVIF (format
+concerné par les avis libheif). `sharp` passe en 0.35.5 ; l'optimiseur a été
+vérifié en marche (200, WebP 256×256).
+
+Next.js passe aussi en **15.5.27** (deux avis d'empoisonnement du cache
+SSG/ISR en auto-hébergement, ce qui concerne le déploiement Railway).
+
+`npm audit --omit=dev` : 11 → 8.
+
+### 4. Identifiants de mesure d'audience — durcissement
+
+`googleAnalyticsId` et `metaPixelId` n'acceptent plus que lettres, chiffres
+et tirets. Ils ne sont pas encore injectés sur les vitrines, mais
+`cookie-consent.tsx` interpole ce type de valeur dans un script inline :
+une apostrophe y aurait suffi.
+
+## À décider — non corrigé
+
+**Adresse IP falsifiable (moyen).** `clientIp` lit le premier élément de
+`X-Forwarded-For`, que le client contrôle si le proxy ajoute au lieu de
+remplacer (Cloudflare, Railway selon configuration). Vérifié en direct :
+10 mauvaises connexions avec un `X-Forwarded-For` différent à chaque fois,
+10 réponses 401 et aucun 429 ; sans l'en-tête, 429 dès la neuvième.
+Concerne tous les compteurs par IP — mot de passe oublié, avis, preuves de
+paiement, visite de démonstration — et l'IP du journal d'audit. Les
+compteurs par e-mail et par téléphone tiennent. La correction dépend de
+l'hébergeur : lire `x-real-ip` sur Vercel, `cf-connecting-ip` sur
+Cloudflare, l'élément le plus à droite derrière un seul proxy qui ajoute.
+Une mauvaise règle mettrait tous les visiteurs dans un seul compteur, d'où
+une variable d'environnement à fixer par déploiement plutôt qu'un
+changement par défaut.
+
+**Pas de contrôle d'`Origin` sur les écritures (faible).** La protection
+CSRF repose sur `SameSite=Lax`. Les sous-domaines des vitrines sont « même
+site » que le domaine racine ; aucun commerçant ne peut y publier de HTML
+aujourd'hui, mais refuser un `Origin` étranger dans `route()` fermerait la
+porte pour de bon.
+
+**Faibles :**
+- un domaine personnalisé revendiqué sans vérification bloque son vrai
+  propriétaire ;
+- les preuves de paiement sont publiques derrière une URL imprévisible ;
+- suivi et annulation de réservation reposent sur un `cuid()` v1, qui n'est
+  pas un aléa cryptographique ;
+- le secret cron n'est pas comparé à temps constant, et un code TOTP reste
+  rejouable pendant sa fenêtre.
+
+**Dépendances restantes :** `nodemailer` (corrigé seulement en 10.x, majeure
+à tester avec un envoi réel), `postcss` interne à Next et `deepmerge-ts`
+(build seulement), `uuid` via `exceljs` (fonctions v3/v5/v6 avec tampon,
+non utilisées).
+
+## Vérifié, et qui tient
+
+Toutes les routes non publiques passent par un garde ; le commerce vient
+toujours de la session. Les prix sont recalculés côté serveur, et produits,
+zones et codes promo filtrés par restaurant. Webhook Wave : HMAC à temps
+constant et horodatage à ±5 min. Téléversements : type lu dans la signature
+binaire. La visite de démonstration ne peut pas encaisser. Les URL saisies
+sont limitées à http/https. Jetons de session et de réinitialisation hachés,
+sessions révoquées au changement de mot de passe.
+
+**35 fichiers, 382 tests, tous au vert** ; `tsc`, `eslint` et le build de
+production sans erreur. `npm run typecheck:tests` échouait déjà avant cet
+audit (`units.test.ts`, `opening-hours.test.ts`), sans lien avec ces
+changements.

@@ -13,8 +13,8 @@ export async function GET() {
 
   return NextResponse.json(
     {
-      name: 'Magyapro — Tableau de bord',
-      short_name: 'Magyapro',
+      name: 'MagyaPro — Tableau de bord',
+      short_name: 'MagyaPro',
       description: 'Gérez votre restaurant : menu, commandes, livraisons, réservations.',
       start_url: '/dashboard',
       scope: '/dashboard',

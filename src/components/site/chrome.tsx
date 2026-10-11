@@ -75,6 +75,10 @@ export function SiteChrome({
       style={
         {
           '--brand': restaurant.primaryColor,
+          // La braise foncée de la plateforme ne s'applique pas ici : le
+          // restaurateur a choisi sa couleur, ses boutons la gardent telle quelle.
+          '--brand-strong': restaurant.primaryColor,
+          '--brand-text': restaurant.primaryColor,
           '--brand-ink': '#ffffff',
           '--font-sans': siteFontStack(restaurant.fontFamily),
           // Police des titres : distincte du choix de police du restaurant,
@@ -215,7 +219,7 @@ export function SiteChrome({
               target="_blank"
               rel="noopener"
             >
-              Magyapro
+              MagyaPro
             </a>
           </p>
         </div>

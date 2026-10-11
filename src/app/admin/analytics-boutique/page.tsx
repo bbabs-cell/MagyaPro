@@ -10,6 +10,7 @@ import {
   primaryCurrency,
 } from '@/lib/money';
 import { BarChart, Metric } from '@/components/admin/charts';
+import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Analytics Boutique' };
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,7 @@ export default async function AdminStoreAnalyticsPage() {
           value={String(analytics.churn.cancelledLast30)}
           hint={
             analytics.churn.rate !== null
-              ? `${(analytics.churn.rate * 100).toFixed(1)} % des abonnés actifs depuis plus de 30 jours`
+              ? `${formatPercent(analytics.churn.rate * 100)} des abonnés actifs depuis plus de 30 jours`
               : 'Pas assez de recul pour un taux.'
           }
         />

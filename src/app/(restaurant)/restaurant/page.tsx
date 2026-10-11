@@ -7,6 +7,7 @@ import { getActivePromo } from '@/lib/platform-settings';
 import { Logo } from '@/components/ui/logo';
 import { PlanGrid } from '@/components/marketing/plan-grid';
 import { Ticket } from '@/components/marketing/ticket';
+import { TemplateSketch } from '@/components/site/template-sketch';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
 import { FEATURES, type Feature } from '@/lib/entitlements';
@@ -268,7 +269,7 @@ export default async function LandingPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/inscription"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#c93f1a] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
                 >
                   Commencer gratuitement
                 </Link>
@@ -415,25 +416,32 @@ export default async function LandingPage() {
                   key={item.step}
                   className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/25"
                 >
-                  <div className="relative h-40 w-full">
-                    {imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
+                  {imageUrl ? (
+                    <div className="relative h-40 w-full">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire */}
                       <img
                         src={imageUrl}
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                    ) : (
-                      <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-[#2f5bd8]/60 to-[#ff5e2e]/40" />
-                    )}
-                    <div
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
+                      />
+                      <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-[#c93f1a] text-sm font-bold text-white shadow-lg">
+                        {item.step}
+                      </span>
+                    </div>
+                  ) : (
+                    // Sans illustration, pas de cadre vide : le numéro de
+                    // l'étape devient lui-même l'élément visuel de la carte.
+                    <p
                       aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent"
-                    />
-                    <span className="absolute bottom-3 left-4 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-[#ff9a4d] to-[#ff5e2e] text-sm font-bold text-white shadow-lg">
-                      {item.step}
-                    </span>
-                  </div>
+                      className="px-5 pt-5 font-mono text-4xl font-medium tracking-tight text-[#ff9a4d]"
+                    >
+                      {String(item.step).padStart(2, '0')}
+                    </p>
+                  )}
                   <div className="p-5">
                     <h3 className="font-semibold text-white">{item.title}</h3>
                     <p className="mt-1 text-sm text-white/55">{item.detail}</p>
@@ -484,7 +492,7 @@ export default async function LandingPage() {
             },
           ].map((item) => (
             <div key={item.title} className="lg:border-l lg:border-surface-border lg:px-8 lg:first:border-l-0 lg:first:pl-0">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand-text">
                 {item.icon}
               </span>
               <h3 className="mt-5 font-display text-xl font-bold tracking-[-0.01em] text-ink">{item.title}</h3>
@@ -499,7 +507,7 @@ export default async function LandingPage() {
         <div className="mt-8 grid gap-x-12 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURE_GROUPS.map((cluster) => (
             <div key={cluster.group}>
-              <h4 className="border-b border-surface-border pb-3 font-display text-sm font-semibold text-brand">
+              <h4 className="border-b border-surface-border pb-3 font-display text-sm font-semibold text-brand-text">
                 {cluster.group}
               </h4>
               <dl className="mt-5 space-y-5">
@@ -556,9 +564,9 @@ export default async function LandingPage() {
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div
-                        aria-hidden="true"
-                        className="h-full w-full bg-gradient-to-br from-[#0b1730] to-[#2f5bd8]"
+                      <TemplateSketch
+                        templateKey={template.key}
+                        className="h-full w-full transition-transform duration-300 group-hover:scale-105"
                       />
                     )}
                   </div>
@@ -583,7 +591,7 @@ export default async function LandingPage() {
         <section className="container-page py-16 sm:py-24">
           <div className="max-w-2xl">
             <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] sm:text-4xl">
-              Voir Magyapro en situation
+              Voir MagyaPro en situation
             </h2>
             <p className="mt-3 text-ink-muted">
               Ces restaurants sont des exemples créés pour la démonstration. Ils
@@ -608,7 +616,7 @@ export default async function LandingPage() {
                     {demo.description}
                   </p>
                 )}
-                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-brand">
+                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-brand-text">
                   Voir le site
                   <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
                 </p>
@@ -632,7 +640,7 @@ export default async function LandingPage() {
             </div>
             <Link
               href="/restaurant/tarifs"
-              className="text-sm font-medium text-brand underline-offset-4 hover:underline"
+              className="text-sm font-medium text-brand-text underline-offset-4 hover:underline"
             >
               Voir tous les détails →
             </Link>
@@ -661,7 +669,7 @@ export default async function LandingPage() {
           {[
             {
               q: 'Faut-il des connaissances techniques ?',
-              a: "Non. Vous remplissez des formulaires depuis votre téléphone ou votre ordinateur, et Magyapro construit le site. Aucun hébergement ni nom de domaine à acheter pour démarrer.",
+              a: "Non. Vous remplissez des formulaires depuis votre téléphone ou votre ordinateur, et MagyaPro construit le site. Aucun hébergement ni nom de domaine à acheter pour démarrer.",
             },
             {
               q: 'Combien de temps pour être en ligne ?',
@@ -669,7 +677,7 @@ export default async function LandingPage() {
             },
             {
               q: 'Puis-je utiliser mon propre nom de domaine ?',
-              a: "Oui, sur les plans qui incluent cette option. Vous ajoutez votre domaine, Magyapro vous indique l'enregistrement DNS à créer, puis vérifie la configuration.",
+              a: "Oui, sur les plans qui incluent cette option. Vous ajoutez votre domaine, MagyaPro vous indique l'enregistrement DNS à créer, puis vérifie la configuration.",
             },
             {
               q: 'Comment mes clients paient-ils ?',
@@ -716,7 +724,7 @@ export default async function LandingPage() {
           <div className="mt-9">
             <Link
               href="/inscription"
-              className="inline-flex items-center justify-center rounded-xl bg-[#ff5e2e] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
+              className="inline-flex items-center justify-center rounded-xl bg-[#c93f1a] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
             >
               Commencer gratuitement
             </Link>

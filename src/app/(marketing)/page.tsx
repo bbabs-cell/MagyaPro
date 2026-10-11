@@ -5,8 +5,8 @@ import { platformLogoUrl } from '@/lib/storage';
 import { Logo } from '@/components/ui/logo';
 
 export const metadata: Metadata = {
-  // Le gabarit de `layout.tsx` ajoute déjà « — Magyapro » : le répéter ici
-  // donnait « Magyapro — Restaurant ou Boutique — Magyapro » dans l'onglet et
+  // Le gabarit de `layout.tsx` ajoute déjà « — MagyaPro » : le répéter ici
+  // donnait « MagyaPro — Restaurant ou Boutique — MagyaPro » dans l'onglet et
   // dans les résultats de recherche.
   title: 'Restaurant ou Boutique',
   description: 'Choisissez votre activité : MagyaPro Restaurant ou MagyaPro Boutique.',
@@ -48,7 +48,7 @@ export default function HubPage() {
           Quelle activité gérez-vous ?
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-ink-muted">
-          Magyapro propose deux plateformes distinctes, chacune pensée pour son métier.
+          MagyaPro propose deux plateformes distinctes, chacune pensée pour son métier.
           Choisissez la vôtre.
         </p>
       </div>

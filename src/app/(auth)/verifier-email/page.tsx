@@ -28,7 +28,7 @@ export default async function VerifyEmailPage({
       <div className="card p-6 text-center sm:p-8">
         <div
           aria-hidden="true"
-          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-xl text-brand"
+          className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-xl text-brand-text"
         >
           ✉️
         </div>

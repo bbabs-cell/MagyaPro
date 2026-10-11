@@ -28,7 +28,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   // Le seul bouton orange de l'écran : il porte aussi le seul reflet, et se
   // soulève d'un demi-cran au survol (skill « animations vivantes »).
   primary:
-    'shine bg-brand text-white shadow-sm shadow-brand/30 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0',
+    'shine bg-brand-strong text-brand-ink shadow-sm shadow-brand/30 hover:-translate-y-0.5 hover:shadow-glow hover:brightness-110 active:translate-y-0',
   secondary:
     'border border-surface-border bg-surface text-ink hover:bg-surface-sunken',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
@@ -306,7 +306,7 @@ const BADGE_TONES: Record<BadgeTone, string> = {
   warning: 'bg-state-warn-soft text-state-warn',
   danger: 'bg-state-bad-soft text-state-bad',
   info: 'bg-sky-50 text-sky-700',
-  brand: 'bg-brand-soft text-brand',
+  brand: 'bg-brand-soft text-brand-text',
 };
 
 export function Badge({

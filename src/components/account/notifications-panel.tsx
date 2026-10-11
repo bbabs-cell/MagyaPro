@@ -106,7 +106,7 @@ export function NotificationsPanel({
                   {notification.href && (
                     <Link
                       href={notification.href}
-                      className="mt-1 inline-block text-sm text-brand underline underline-offset-4"
+                      className="mt-1 inline-block text-sm text-brand-text underline underline-offset-4"
                     >
                       Voir
                     </Link>
