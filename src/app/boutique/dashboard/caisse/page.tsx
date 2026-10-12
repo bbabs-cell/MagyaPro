@@ -8,6 +8,7 @@ import { parseVariantAxes, type VariantAxis } from '@/lib/boutique/variants';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
 import { loadEarliestExpiry } from '@/lib/boutique/expiry-load';
 import { PageHeader, EmptyState, LinkButton } from '@/components/ui';
+import { PrinterSettingsPanel } from '@/components/boutique/printer-settings-panel';
 import { Pos } from '@/components/boutique/pos';
 import { CashSessionBar } from '@/components/boutique/cash-session-bar';
 import { OfflineSyncBar } from '@/components/boutique/offline-sync-bar';
@@ -190,6 +191,13 @@ export default async function BoutiqueCaissePage() {
           paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
           storeName={context.store.name}
           country={context.store.country}
+          ticketStore={{
+            name: context.store.name,
+            addressLine: context.store.addressLine,
+            city: context.store.city,
+            phone: context.store.phone,
+            legalId: context.store.legalId,
+          }}
           readOnly={context.isDemoTour}
           canLinkBarcodes={!context.isDemoTour && canStore(context, 'products:manage')}
           // Instant figé côté serveur : sans lui, « périme dans N jours »
@@ -198,6 +206,19 @@ export default async function BoutiqueCaissePage() {
           now={Date.now()}
         />
       )}
+
+      {/* Replié : on le règle une fois par appareil, puis on n'y touche plus. */}
+      <details className="group mt-6">
+        <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
+          <span className="group-open:hidden">▸</span>
+          <span className="hidden group-open:inline">▾</span> Imprimante de tickets
+        </summary>
+        <PrinterSettingsPanel
+          storeName={context.store.name}
+          currency={context.store.currency}
+          className="mt-3 max-w-2xl"
+        />
+      </details>
     </>
   );
 }

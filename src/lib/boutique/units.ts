@@ -58,6 +58,21 @@ export type UnitOption = {
   isBase: boolean;
 };
 
+/**
+ * Accorde un nom d'unité gardé au singulier (celui d'une vente passée) :
+ * « 2 bouteilles », « 3 cartons », mais jamais les symboles — « kg », « L »,
+ * « mL » restent invariables.
+ */
+export function pluralizeUnitLabel(label: string, quantity: number): string {
+  if (quantity < 2 || label.length <= 2 || /[sxz]$/i.test(label) || !/^[\p{L}\s'-]+$/u.test(label)) {
+    return label;
+  }
+  return label
+    .split(' ')
+    .map((word, index) => (index === 0 ? `${word}s` : word))
+    .join(' ');
+}
+
 /** Accorde le libellé d'une unité selon la quantité. */
 export function unitLabelFor(unit: { label: string; labelPlural: string }, quantity: number): string {
   return Math.abs(quantity) >= 2 ? unit.labelPlural : unit.label;

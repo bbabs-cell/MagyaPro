@@ -9,6 +9,7 @@ import { IdentitySettingsPanel } from '@/components/boutique/identity-settings-p
 import { SectorSettingsPanel } from '@/components/boutique/sector-settings-panel';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
 import { toQty } from '@/lib/boutique/quantity';
+import { PrinterSettingsPanel } from '@/components/boutique/printer-settings-panel';
 import { NotificationSoundPanel } from '@/components/boutique/notification-sound-panel';
 import { PaymentMethodsManager } from '@/components/boutique/payment-methods-manager';
 import { getEnabledPaymentMethods } from '@/lib/boutique/payment-methods';
@@ -83,6 +84,7 @@ export default async function BoutiqueSettingsPage() {
           notificationSoundUrl={context.store.notificationSoundUrl}
           canManage={canManage}
         />
+        <PrinterSettingsPanel storeName={context.store.name} currency={context.store.currency} />
       </div>
     </>
   );

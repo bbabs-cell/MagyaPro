@@ -13,7 +13,10 @@ import {
 } from '@/lib/boutique/labels';
 import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { formatDecimal } from '@/lib/numbers';
+import { pluralizeUnitLabel } from '@/lib/boutique/units';
 import { saleReceiptMessage, whatsAppLinkFor } from '@/lib/whatsapp';
+import type { TicketData } from '@/lib/boutique/ticket';
+import { printTicket } from '@/lib/client/thermal-printer';
 
 type SaleItem = {
   productVariantId: string;
@@ -39,21 +42,6 @@ type Sale = {
   customer: { name: string; phone: string } | null;
 };
 
-/**
- * La vente ne garde que le nom d'unité au singulier. On accorde les mots
- * (« 2 bouteilles », « 3 cartons ») mais jamais les symboles : « kg », « L »,
- * « mL » restent invariables.
- */
-function pluralizeUnit(label: string, quantity: number): string {
-  if (quantity <= 1 || label.length <= 2 || /[sxz]$/i.test(label) || !/^[\p{L}\s'-]+$/u.test(label)) {
-    return label;
-  }
-  return label
-    .split(' ')
-    .map((word, index) => (index === 0 ? `${word}s` : word))
-    .join(' ');
-}
-
 /** Reçu d'une vente passée, prêt pour WhatsApp — voir `saleReceiptMessage`. */
 function receiptLink(sale: Sale, currency: string, storeName: string, country: string | null): string {
   const message = saleReceiptMessage({
@@ -67,7 +55,7 @@ function receiptLink(sale: Sale, currency: string, storeName: string, country: s
       const amount = formatDecimal(sold, Number.isInteger(sold) ? 0 : 1);
       return {
         label: item.variantLabel ? `${item.productName} (${item.variantLabel})` : item.productName,
-        quantity: item.unitLabel ? `${amount} ${pluralizeUnit(item.unitLabel, sold)}` : amount,
+        quantity: item.unitLabel ? `${amount} ${pluralizeUnitLabel(item.unitLabel, sold)}` : amount,
         total: formatMoney(item.total, currency),
       };
     }),
@@ -278,6 +266,7 @@ export function SalesManager({
                     >
                       Facture
                     </LinkButton>
+                    {sale.status !== 'CANCELLED' && <ReprintButton saleId={sale.id} />}
                     {sale.status !== 'CANCELLED' && (
                       <WhatsAppButton href={receiptLink(sale, currency, storeName, country)}>
                         Reçu
@@ -296,5 +285,48 @@ export function SalesManager({
         </tbody>
       </table>
     </Card>
+  );
+}
+
+/**
+ * Réimpression du ticket d'une vente passée. En Bluetooth, le ticket est
+ * relu sur le serveur puis envoyé à l'imprimante ; en mode système, la page
+ * du ticket s'ouvre directement — dans le même geste, sans quoi le
+ * navigateur bloquerait la fenêtre.
+ */
+function ReprintButton({ saleId }: { saleId: string }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function reprint() {
+    setState('busy');
+    setMessage(null);
+    try {
+      await printTicket(
+        async () =>
+          (
+            await api.get<{ ticket: TicketData }>(`/api/boutique/sales/${encodeURIComponent(saleId)}/ticket`)
+          ).ticket,
+        { saleId },
+      );
+      setState('done');
+    } catch (err) {
+      setState('error');
+      setMessage(err instanceof Error ? err.message : 'Impression impossible.');
+    }
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={reprint}
+      loading={state === 'busy'}
+      title={message ?? 'Imprimer le ticket de caisse'}
+      aria-label={message ? `Ticket : ${message}` : 'Imprimer le ticket de caisse'}
+      className={cx(state === 'error' && 'border-state-bad text-state-bad')}
+    >
+      {state === 'done' ? 'Imprimé' : state === 'error' ? 'Réessayer' : 'Ticket'}
+    </Button>
   );
 }

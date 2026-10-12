@@ -20,6 +20,8 @@ import {
   type UnitOption,
 } from '@/lib/boutique/units';
 import { enqueueSale } from '@/lib/boutique/offline-queue';
+import { buildTicket, type TicketData, type TicketSale } from '@/lib/boutique/ticket';
+import { printTicket, readPrinterSettings } from '@/lib/client/thermal-printer';
 import { BarcodeScannerButton, type ScanResult } from '@/components/boutique/barcode-scanner';
 import {
   EXPIRY_ICONS,
@@ -133,9 +135,12 @@ export function Pos({
   now,
   storeName,
   country,
+  ticketStore,
 }: {
   /** Nom affiché sur le reçu envoyé au client. */
   storeName: string;
+  /** En-tête du ticket imprimé — voir `ticket.ts`. */
+  ticketStore: TicketData['store'];
   /** Pays de la boutique : indicatif ajouté aux numéros saisis sans lui. */
   country: string | null;
   storeId: string;
@@ -185,7 +190,12 @@ export function Pos({
     /** Lien WhatsApp vers le client (ou le choix du contact), reçu déjà rédigé. */
     whatsAppHref: string;
     customerName: string | null;
+    saleId: string;
+    ticket: TicketData;
   } | null>(null);
+  /** Résultat de la dernière impression de ticket, affiché sous la vente. */
+  const [printStatus, setPrintStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [printing, setPrinting] = useState(false);
   const [queuedOffline, setQueuedOffline] = useState(false);
   /**
    * Panier ouvert en feuille sur téléphone. Sur grand écran il occupe sa
@@ -435,6 +445,19 @@ export function Pos({
     setPayments((current) => current.filter((_, i) => i !== index));
   }
 
+  async function printReceipt(ticket: TicketData, saleId: string) {
+    setPrinting(true);
+    setPrintStatus(null);
+    try {
+      await printTicket(ticket, { saleId });
+      setPrintStatus({ ok: true, text: 'Ticket envoyé à l’imprimante.' });
+    } catch (err) {
+      setPrintStatus({ ok: false, text: err instanceof Error ? err.message : 'Impression impossible.' });
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   async function checkout() {
     if (cart.length === 0) return;
     if (readOnly) {
@@ -444,6 +467,7 @@ export function Pos({
     setPending(true);
     setError(null);
     setLastReceipt(null);
+    setPrintStatus(null);
     setQueuedOffline(false);
 
     const payload = {
@@ -476,7 +500,7 @@ export function Pos({
     }
 
     try {
-      const { sale } = await api.post<{ sale: { number: number; total: number } }>(
+      const { sale } = await api.post<{ sale: TicketSale & { id: string } }>(
         '/api/boutique/sales',
         payload,
       );
@@ -500,12 +524,25 @@ export function Pos({
         due: remaining > 0 ? formatMoney(remaining, currency) : null,
         customerName: customer?.name ?? null,
       });
+      // Le ticket se construit à partir de la vente renvoyée par le serveur :
+      // il s'imprime aussitôt, sans second aller-retour.
+      const ticket = buildTicket({
+        store: ticketStore,
+        sale: { ...sale, customer: customer ? { name: customer.name } : null },
+        currency,
+        paymentLabel: (method) => paymentMethods.find((m) => m.value === method)?.label ?? method,
+      });
       setLastReceipt({
         number: sale.number,
         total: sale.total,
         whatsAppHref: whatsAppLinkFor(customer?.phone, country, receiptMessage),
         customerName: customer?.name ?? null,
+        saleId: sale.id,
+        ticket,
       });
+      if (readPrinterSettings().autoPrint) {
+        void printReceipt(ticket, sale.id);
+      }
       resetCart();
       // Rafraîchissement en arrière-plan, volontairement non bloquant.
       //
@@ -860,11 +897,30 @@ export function Pos({
             <p>
               Vente n°{lastReceipt.number} enregistrée — {formatMoney(lastReceipt.total, currency)}
             </p>
-            <WhatsAppButton href={lastReceipt.whatsAppHref} size="xs" className="mt-2">
-              {lastReceipt.customerName
-                ? `Envoyer le reçu à ${lastReceipt.customerName.split(' ')[0]}`
-                : 'Envoyer le reçu par WhatsApp'}
-            </WhatsAppButton>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => printReceipt(lastReceipt.ticket, lastReceipt.saleId)}
+                disabled={printing}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-current/30 bg-surface px-3 text-xs font-medium text-ink disabled:opacity-60"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
+                  <path d="M7 9V3h10v6M7 18H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <path d="M7 14h10v7H7z" />
+                </svg>
+                {printing ? 'Impression…' : 'Imprimer le ticket'}
+              </button>
+              <WhatsAppButton href={lastReceipt.whatsAppHref} size="xs">
+                {lastReceipt.customerName
+                  ? `Envoyer le reçu à ${lastReceipt.customerName.split(' ')[0]}`
+                  : 'Envoyer le reçu par WhatsApp'}
+              </WhatsAppButton>
+            </div>
+            {printStatus && (
+              <p className={cx('mt-2 text-xs', printStatus.ok ? 'text-state-ok' : 'text-state-bad')}>
+                {printStatus.text}
+              </p>
+            )}
           </div>
         )}
 
