@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
+import { paymentReference } from '@/lib/boutique/subscription-reference';
 
 /**
  * Copie de `subscription-payment-review.tsx` (Restaurant) pointant vers les
@@ -86,7 +87,11 @@ export function StoreSubscriptionPaymentReview({
               {billingNote}
             </p>
           )}
-          <p className="mt-0.5 text-xs text-white/40">Déposé {submittedLabel}</p>
+          <p className="mt-0.5 text-xs text-white/40">
+            Déposé {submittedLabel} · référence{' '}
+            {/* Celle que le commerçant met dans le motif de son envoi. */}
+            <span className="font-mono text-white/70">{paymentReference(paymentId)}</span>
+          </p>
         </div>
 
         {proofImageUrl ? (

@@ -7,10 +7,10 @@ import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { getActivePromo, getPlatformSettings } from '@/lib/platform-settings';
 import { getGroupPlanKey, getStoreSubscriptionPrice } from '@/lib/boutique/store-pricing';
-import { expiresIn } from '@/lib/auth/tokens';
 import { createNotification } from '@/lib/notifications';
 import { sendMail } from '@/lib/mail';
 import { formatMoney } from '@/lib/money';
+import { paymentReference } from '@/lib/boutique/subscription-reference';
 
 /**
  * Paiement manuel de l'abonnement Boutique — même mécanique que
@@ -143,7 +143,7 @@ export async function attachStoreSubscriptionPaymentProof(params: {
   await createPlatformNotification({
     type: PLATFORM_NOTIFICATION_TYPES.SUBSCRIPTION_PAYMENT,
     title: `Paiement Boutique à valider — ${updated.store.name}`,
-    body: `${updated.store.name} a déposé une preuve de paiement de ${formatMoney(updated.amount, updated.currency)} pour le plan ${updated.plan.name}.`,
+    body: `${updated.store.name} a déposé une preuve de paiement de ${formatMoney(updated.amount, updated.currency)} pour le plan ${updated.plan.name} (référence ${paymentReference(updated.id)}).`,
     href: '/admin/boutique-abonnements',
     metadata: { paymentId: updated.id, storeId: params.storeId, amount: updated.amount },
   });
@@ -167,6 +167,21 @@ export async function approveStoreSubscriptionPayment(params: {
 
   const periodDays = payment.plan.interval === 'YEAR' ? 365 : 30;
 
+  // Un renouvellement payé avant l'échéance prolonge la période en cours au
+  // lieu de repartir d'aujourd'hui : jusqu'ici, payer cinq jours en avance —
+  // ce que les rappels encouragent — faisait perdre ces cinq jours.
+  const current = await prisma.storeSubscription.findUnique({
+    where: { storeId: payment.storeId },
+    select: { status: true, currentPeriodEnd: true },
+  });
+  const now = new Date();
+  const stillRunning =
+    current &&
+    ['ACTIVE', 'TRIALING', 'PAST_DUE'].includes(current.status) &&
+    current.currentPeriodEnd > now;
+  const periodStart = stillRunning ? current.currentPeriodEnd : now;
+  const periodEnd = new Date(periodStart.getTime() + periodDays * 24 * 60 * 60 * 1000);
+
   await prisma.$transaction([
     prisma.storeSubscriptionPayment.update({
       where: { id: payment.id },
@@ -182,13 +197,13 @@ export async function approveStoreSubscriptionPayment(params: {
         storeId: payment.storeId,
         planId: payment.planId,
         status: 'ACTIVE',
-        currentPeriodEnd: expiresIn(periodDays, 'days'),
+        currentPeriodEnd: periodEnd,
       },
       update: {
         planId: payment.planId,
         status: 'ACTIVE',
         cancelledAt: null,
-        currentPeriodEnd: expiresIn(periodDays, 'days'),
+        currentPeriodEnd: periodEnd,
         expiryAlertSentAt: null,
         graceEndsAt: null,
       },
@@ -202,10 +217,72 @@ export async function approveStoreSubscriptionPayment(params: {
     storeId: payment.storeId,
     targetType: 'store_subscription_payment',
     targetId: payment.id,
-    metadata: { planKey: payment.plan.key, amount: payment.amount },
+    metadata: { planKey: payment.plan.key, amount: payment.amount, periodEnd: periodEnd.toISOString() },
   });
 
+  // Le commerçant l'apprend tout de suite, et sur son téléphone : jusqu'ici,
+  // il devait revenir vérifier lui-même si son paiement avait été accepté.
+  const endLabel = formatDay(periodEnd);
+  const store = await prisma.store.findUnique({ where: { id: payment.storeId }, select: { name: true, email: true } });
+  await createNotification({
+    storeId: payment.storeId,
+    type: 'PAYMENT_RECEIVED',
+    title: 'Paiement d’abonnement validé',
+    body: `Merci ! Votre abonnement « ${payment.plan.name} » est actif jusqu'au ${endLabel}.`,
+    href: '/boutique/dashboard/abonnement',
+    metadata: { paymentId: payment.id },
+  });
+  if (store?.email) {
+    await sendMail({
+      to: store.email,
+      subject: 'Votre paiement MagyaPro Boutique est validé',
+      text: `Bonjour,\n\nNous avons bien reçu votre paiement de ${formatMoney(payment.amount, payment.currency)} pour ${store.name}.\nVotre abonnement « ${payment.plan.name} » est actif jusqu'au ${endLabel}.\n\nMerci de votre confiance,\nL'équipe MagyaPro`,
+    });
+  }
+
   return payment;
+}
+
+function formatDay(date: Date): string {
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/**
+ * Annule une demande de paiement restée sans preuve — mauvais plan, mauvais
+ * moyen de paiement, ou simple changement d'avis. Sans cette sortie, une
+ * demande oubliée bloquait toute nouvelle demande (« une demande est déjà en
+ * attente »). Une demande avec preuve, elle, attend la décision : l'argent a
+ * peut-être déjà été envoyé.
+ */
+export async function cancelStoreSubscriptionPaymentRequest(params: {
+  storeId: string;
+  paymentId: string;
+  actorUserId: string;
+  actorEmail: string;
+}) {
+  const payment = await prisma.storeSubscriptionPayment.findFirst({
+    where: { id: params.paymentId, storeId: params.storeId },
+  });
+  if (!payment) throw new NotFoundError('Demande de paiement introuvable.');
+  if (payment.status !== 'PENDING') throw new ConflictError('Cette demande a déjà été traitée.');
+  if (payment.proofImageUrl) {
+    throw new ConflictError('Une preuve a déjà été déposée : la demande attend la vérification de MagyaPro.');
+  }
+
+  const deleted = await prisma.storeSubscriptionPayment.deleteMany({
+    where: { id: payment.id, status: 'PENDING', proofImageUrl: null },
+  });
+  if (deleted.count === 0) throw new ConflictError('Cette demande vient d’être modifiée. Rechargez la page.');
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.SUBSCRIPTION_PAYMENT_CANCELLED,
+    actorUserId: params.actorUserId,
+    actorEmail: params.actorEmail,
+    storeId: params.storeId,
+    targetType: 'store_subscription_payment',
+    targetId: payment.id,
+    metadata: { amount: payment.amount, provider: payment.provider },
+  });
 }
 
 export async function rejectStoreSubscriptionPayment(params: {
@@ -240,19 +317,39 @@ export async function rejectStoreSubscriptionPayment(params: {
     metadata: { note: params.note ?? null },
   });
 
+  await createNotification({
+    storeId: payment.storeId,
+    type: 'SYSTEM_ALERT',
+    title: 'Paiement d’abonnement non validé',
+    body: params.note
+      ? `Votre paiement n'a pas pu être validé : ${params.note}. Vous pouvez faire une nouvelle demande.`
+      : "Votre paiement n'a pas pu être validé. Vérifiez le montant et le numéro, puis faites une nouvelle demande.",
+    href: '/boutique/dashboard/abonnement',
+    metadata: { paymentId: payment.id },
+  });
+
   return updated;
 }
 
-/** Alerte les boutiques dont l'abonnement expire dans 5 jours ou moins. */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Rappels avant l'échéance : un premier à 5 jours, un second la veille.
+ *
+ * Une seule colonne (`expiryAlertSentAt`) suffit à ne jamais envoyer deux
+ * fois le même rappel : le second ne part que si le premier date d'avant la
+ * dernière journée. Le rappel donne le montant exact et rappelle que payer
+ * en avance ne fait perdre aucun jour (voir `approveStoreSubscriptionPayment`).
+ */
 export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified: number }> {
   const now = new Date();
-  const threshold = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+  const firstThreshold = new Date(now.getTime() + 5 * DAY_MS);
+  const lastThreshold = new Date(now.getTime() + 1.5 * DAY_MS);
 
   const subscriptions = await prisma.storeSubscription.findMany({
     where: {
       status: { in: ['ACTIVE', 'TRIALING'] },
-      currentPeriodEnd: { gt: now, lte: threshold },
-      expiryAlertSentAt: null,
+      currentPeriodEnd: { gt: now, lte: firstThreshold },
     },
     include: {
       plan: { select: { name: true, price: true, currency: true } },
@@ -260,22 +357,33 @@ export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified:
     },
   });
 
+  let notified = 0;
   for (const subscription of subscriptions) {
-    const daysLeft = Math.max(
-      1,
-      Math.ceil((subscription.currentPeriodEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)),
-    );
-    const dateLabel = subscription.currentPeriodEnd.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
+    const end = subscription.currentPeriodEnd.getTime();
+    const sentAt = subscription.expiryAlertSentAt?.getTime() ?? null;
+    const isLastCall = end <= lastThreshold.getTime();
+    // Premier rappel : jamais envoyé. Dernier rappel : la veille, si le
+    // précédent est parti avant les dernières 36 heures.
+    const due = sentAt === null || (isLastCall && sentAt < end - 1.5 * DAY_MS);
+    if (!due) continue;
+
+    // Une boutique déjà en train de payer n'a pas besoin qu'on le lui rappelle.
+    const pending = await prisma.storeSubscriptionPayment.count({
+      where: { storeId: subscription.store.id, status: 'PENDING', proofImageUrl: { not: null } },
     });
+    if (pending > 0) continue;
+
+    const daysLeft = Math.max(1, Math.ceil((end - now.getTime()) / DAY_MS));
+    const dateLabel = formatDay(subscription.currentPeriodEnd);
+    const price = await getStoreSubscriptionPrice(subscription.store.id, subscription.plan.price);
+    const amountLabel = formatMoney(price.amount, subscription.plan.currency);
+    const when = isLastCall ? 'demain' : `dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`;
 
     await createNotification({
       storeId: subscription.store.id,
       type: 'SUBSCRIPTION_TRIAL_ENDING',
-      title: 'Abonnement bientôt à renouveler',
-      body: `Votre abonnement « ${subscription.plan.name} » expire le ${dateLabel} (dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}). Renouvelez-le depuis votre tableau de bord pour éviter toute interruption.`,
+      title: isLastCall ? 'Dernier rappel : abonnement à renouveler' : 'Abonnement bientôt à renouveler',
+      body: `Votre abonnement « ${subscription.plan.name} » expire ${when} (${dateLabel}). Montant : ${amountLabel}. En payant maintenant, vous ne perdez aucun jour : la nouvelle période commence à l'échéance.`,
       href: '/boutique/dashboard/abonnement',
       metadata: { subscriptionId: subscription.id, daysLeft },
     });
@@ -283,8 +391,10 @@ export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified:
     if (subscription.store.email) {
       await sendMail({
         to: subscription.store.email,
-        subject: `Votre abonnement MagyaPro Boutique expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
-        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » (${formatMoney(subscription.plan.price, subscription.plan.currency)}) de ${subscription.store.name} expire le ${dateLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) pour que votre boutique reste active sans interruption.\n\nL'équipe MagyaPro`,
+        subject: isLastCall
+          ? 'Votre abonnement MagyaPro Boutique expire demain'
+          : `Votre abonnement MagyaPro Boutique expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+        text: `Bonjour,\n\nL'abonnement « ${subscription.plan.name} » de ${subscription.store.name} expire le ${dateLabel}.\nMontant du renouvellement : ${amountLabel}.\n\nRenouvelez-le depuis votre tableau de bord (Abonnement) : envoyez le montant par Wave ou Orange Money, puis déposez la capture. En payant avant l'échéance, vous ne perdez aucun jour.\n\nL'équipe MagyaPro`,
       });
     }
 
@@ -292,9 +402,57 @@ export async function sendExpiringStoreSubscriptionAlerts(): Promise<{ notified:
       where: { id: subscription.id },
       data: { expiryAlertSentAt: now },
     });
+    notified += 1;
   }
 
-  return { notified: subscriptions.length };
+  return { notified };
+}
+
+/**
+ * Relances des paiements restés en chemin, une seule fois chacune : la tâche
+ * de nuit passe une fois par jour, et la fenêtre « entre 24 et 48 heures »
+ * n'attrape donc chaque demande qu'à un seul passage — sans colonne de suivi.
+ *
+ * - au commerçant, une demande créée sans preuve déposée ;
+ * - à MagyaPro, une preuve déposée qui attend toujours sa validation.
+ */
+export async function sendStalledStorePaymentReminders(now = new Date()): Promise<{
+  merchants: number;
+  admins: number;
+}> {
+  const windowStart = new Date(now.getTime() - 2 * DAY_MS);
+  const windowEnd = new Date(now.getTime() - DAY_MS);
+
+  const withoutProof = await prisma.storeSubscriptionPayment.findMany({
+    where: { status: 'PENDING', proofImageUrl: null, createdAt: { gte: windowStart, lt: windowEnd } },
+    include: { plan: { select: { name: true } } },
+  });
+  for (const payment of withoutProof) {
+    await createNotification({
+      storeId: payment.storeId,
+      type: 'SUBSCRIPTION_TRIAL_ENDING',
+      title: 'Votre paiement d’abonnement n’est pas terminé',
+      body: `Vous avez commencé à payer « ${payment.plan.name} » (${formatMoney(payment.amount, payment.currency)}, référence ${paymentReference(payment.id)}) sans déposer la capture de l'envoi. Déposez-la pour que nous puissions valider.`,
+      href: '/boutique/dashboard/abonnement',
+      metadata: { paymentId: payment.id },
+    });
+  }
+
+  const awaitingReview = await prisma.storeSubscriptionPayment.findMany({
+    where: { status: 'PENDING', proofSubmittedAt: { gte: windowStart, lt: windowEnd } },
+    include: { store: { select: { name: true } } },
+  });
+  for (const payment of awaitingReview) {
+    await createPlatformNotification({
+      type: PLATFORM_NOTIFICATION_TYPES.SUBSCRIPTION_PAYMENT,
+      title: `Paiement Boutique en attente depuis 24 h — ${payment.store.name}`,
+      body: `${formatMoney(payment.amount, payment.currency)} (référence ${paymentReference(payment.id)}) attend toujours votre validation.`,
+      href: '/admin/boutique-abonnements',
+      metadata: { paymentId: payment.id, storeId: payment.storeId },
+    });
+  }
+
+  return { merchants: withoutProof.length, admins: awaitingReview.length };
 }
 
 const GRACE_PERIOD_DAYS = 3;

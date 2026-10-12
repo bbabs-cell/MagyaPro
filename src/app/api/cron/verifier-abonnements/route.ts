@@ -5,6 +5,7 @@ import { processSubscriptionLifecycle, sendExpiringSubscriptionAlerts } from '@/
 import {
   processStoreSubscriptionLifecycle,
   sendExpiringStoreSubscriptionAlerts,
+  sendStalledStorePaymentReminders,
 } from '@/lib/boutique/subscription-payments';
 import { purgeExpiredData } from '@/lib/retention';
 
@@ -38,11 +39,12 @@ async function runSubscriptionLifecycle(request: Request) {
     throw new UnauthorizedError('Secret cron invalide.');
   }
 
-  const [alerts, lifecycle, storeAlerts, storeLifecycle] = await Promise.all([
+  const [alerts, lifecycle, storeAlerts, storeLifecycle, storeStalled] = await Promise.all([
     sendExpiringSubscriptionAlerts(),
     processSubscriptionLifecycle(),
     sendExpiringStoreSubscriptionAlerts(),
     processStoreSubscriptionLifecycle(),
+    sendStalledStorePaymentReminders(),
   ]);
 
   // Purge quotidienne, lancée après le cycle de vie et non en parallèle : les
@@ -53,7 +55,7 @@ async function runSubscriptionLifecycle(request: Request) {
 
   return ok({
     restaurants: { ...alerts, ...lifecycle },
-    stores: { ...storeAlerts, ...storeLifecycle },
+    stores: { ...storeAlerts, ...storeLifecycle, stalledPayments: storeStalled },
     purge,
   });
 }
