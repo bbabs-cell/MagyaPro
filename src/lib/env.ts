@@ -98,6 +98,12 @@ export const env = {
   /// la norme. À défaut, une adresse de la plateforme.
   vapidSubject: process.env.VAPID_SUBJECT,
 
+  /// D'où lire l'adresse IP du visiteur (compteurs anti-abus, journal
+  /// d'audit) — voir `clientIp`. Dépend de l'hébergeur : une mauvaise
+  /// valeur laisse falsifier l'adresse, ou range tout le monde sous une
+  /// seule. Vide : `vercel` sur Vercel, `rightmost` ailleurs.
+  clientIpSource: process.env.CLIENT_IP_SOURCE,
+
   /// SMS transactionnels (confirmation/statut de commande, alerte
   /// d'abonnement) via Africa's Talking. Fonctionnalité désactivée si
   /// absent — comme Turnstile, un manque de clés ne bloque rien.

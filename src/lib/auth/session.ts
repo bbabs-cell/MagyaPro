@@ -170,15 +170,56 @@ export async function pruneExpiredSessions(): Promise<void> {
     .catch(() => undefined);
 }
 
+export type ClientIpSource = 'vercel' | 'cloudflare' | 'rightmost' | 'leftmost';
+
+/**
+ * Règle de lecture de l'adresse IP, selon l'hébergeur (`CLIENT_IP_SOURCE`).
+ *
+ * - `vercel` : `x-real-ip`, posé par Vercel, qui écrase toute valeur
+ *   envoyée par le client. Choisi automatiquement sur Vercel.
+ * - `cloudflare` : `cf-connecting-ip`, posé par Cloudflare.
+ * - `rightmost` : dernier élément de `x-forwarded-for` — l'adresse vue par
+ *   le seul proxy de confiance, qui *ajoute* à l'en-tête. Défaut hors Vercel.
+ * - `leftmost` : premier élément, l'ancien comportement. Falsifiable dès que
+ *   le proxy ajoute au lieu de remplacer ; gardé pour un proxy qui remplace.
+ */
+export function clientIpSource(
+  configured: string | undefined = env.clientIpSource,
+  onVercel: boolean = Boolean(process.env.VERCEL),
+): ClientIpSource {
+  if (configured === 'vercel' || configured === 'cloudflare' || configured === 'rightmost' || configured === 'leftmost') {
+    return configured;
+  }
+  return onVercel ? 'vercel' : 'rightmost';
+}
+
 /**
  * Adresse IP du client, telle que vue derrière le proxy de déploiement.
- * `x-forwarded-for` peut contenir une chaîne de relais : le premier élément
- * est l'adresse d'origine.
+ *
+ * Elle alimente les compteurs anti-abus (connexion, mot de passe oublié,
+ * commandes publiques…) : lue au mauvais endroit, un attaquant change
+ * d'adresse à chaque essai en envoyant lui-même `X-Forwarded-For`, et
+ * aucun compteur par IP ne se déclenche plus (voir `docs/SECURITE.md`).
  */
-export function clientIp(headerList: Headers): string | null {
-  const forwarded = headerList.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]!.trim().slice(0, 64);
-  return headerList.get('x-real-ip')?.slice(0, 64) ?? null;
+export function clientIp(headerList: Headers, source: ClientIpSource = clientIpSource()): string | null {
+  const clean = (value: string | null | undefined) => value?.trim().slice(0, 64) || null;
+  const forwarded = headerList
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  switch (source) {
+    case 'vercel':
+      return clean(headerList.get('x-real-ip')) ?? clean(forwarded?.[0]);
+    case 'cloudflare':
+      return clean(headerList.get('cf-connecting-ip')) ?? clean(forwarded?.at(-1));
+    case 'leftmost':
+      return clean(forwarded?.[0]) ?? clean(headerList.get('x-real-ip'));
+    case 'rightmost':
+    default:
+      return clean(forwarded?.at(-1)) ?? clean(headerList.get('x-real-ip'));
+  }
 }
 
 export async function currentClientIp(): Promise<string | null> {

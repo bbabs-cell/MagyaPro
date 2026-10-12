@@ -273,21 +273,27 @@ et tirets. Ils ne sont pas encore injectés sur les vitrines, mais
 `cookie-consent.tsx` interpole ce type de valeur dans un script inline :
 une apostrophe y aurait suffi.
 
-## À décider — non corrigé
+### 5. Adresse IP falsifiable (moyen) — corrigé
 
-**Adresse IP falsifiable (moyen).** `clientIp` lit le premier élément de
-`X-Forwarded-For`, que le client contrôle si le proxy ajoute au lieu de
-remplacer (Cloudflare, Railway selon configuration). Vérifié en direct :
-10 mauvaises connexions avec un `X-Forwarded-For` différent à chaque fois,
-10 réponses 401 et aucun 429 ; sans l'en-tête, 429 dès la neuvième.
-Concerne tous les compteurs par IP — mot de passe oublié, avis, preuves de
-paiement, visite de démonstration — et l'IP du journal d'audit. Les
-compteurs par e-mail et par téléphone tiennent. La correction dépend de
-l'hébergeur : lire `x-real-ip` sur Vercel, `cf-connecting-ip` sur
-Cloudflare, l'élément le plus à droite derrière un seul proxy qui ajoute.
-Une mauvaise règle mettrait tous les visiteurs dans un seul compteur, d'où
-une variable d'environnement à fixer par déploiement plutôt qu'un
-changement par défaut.
+`clientIp` lisait le premier élément de `X-Forwarded-For`. C'est le client qui
+le contrôle quand le proxy ajoute à l'en-tête au lieu de le remplacer. Vérifié
+en direct : 10 mauvaises connexions avec un `X-Forwarded-For` différent à chaque
+fois donnaient 10 réponses 401 et aucun 429. Tous les compteurs par IP étaient
+concernés, ainsi que l'IP du journal d'audit.
+
+L'adresse est désormais lue selon l'hébergeur, avec `CLIENT_IP_SOURCE` :
+
+| Valeur | Lit | Quand |
+|---|---|---|
+| `vercel` | `x-real-ip` (posé et écrasé par Vercel) | automatique sur Vercel |
+| `cloudflare` | `cf-connecting-ip` | derrière Cloudflare |
+| `rightmost` | dernier élément de `X-Forwarded-For` | défaut hors Vercel, un seul proxy qui ajoute |
+| `leftmost` | premier élément (ancien comportement) | seulement derrière un proxy qui remplace l'en-tête |
+
+Sur la production actuelle (Vercel), aucun réglage n'est à faire : la variable
+`VERCEL` suffit à choisir `x-real-ip`. Tests : `tests/client-ip.test.ts`.
+
+## À décider — non corrigé
 
 **Pas de contrôle d'`Origin` sur les écritures (faible).** La protection
 CSRF repose sur `SameSite=Lax`. Les sous-domaines des vitrines sont « même
