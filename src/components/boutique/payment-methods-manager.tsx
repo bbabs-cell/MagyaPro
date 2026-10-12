@@ -81,8 +81,14 @@ export function PaymentMethodsManager({
 
       <ul className="mt-4 divide-y divide-surface-border">
         {methods.map((method) => (
-          <li key={method.id} className="flex items-center justify-between gap-3 py-2.5">
-            <p className="flex items-center gap-2 text-sm">
+          // Sur téléphone, les boutons passent sous le libellé : sur une même
+          // ligne, « Orange Money » + son code + l'état + deux boutons
+          // dépassaient de l'écran et poussaient toute la page de côté.
+          <li
+            key={method.id}
+            className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+          >
+            <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               {method.label}
               <span className="font-mono text-xs text-ink-faint">{method.method}</span>
               {method.isEnabled ? (
