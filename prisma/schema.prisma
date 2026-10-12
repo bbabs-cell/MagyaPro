@@ -70,6 +70,7 @@ model User {
   supportAccess      SupportAccess[]
   storeSupportAccess StoreSupportAccess[]
   notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
   courierOrders      Order[]              @relation("CourierOrders")
 
   @@index([platformRole])
@@ -1144,6 +1145,48 @@ enum NotificationType {
   OUT_OF_STOCK
   PAYMENT_RECEIVED
   SETTINGS_CHANGED
+}
+
+/// Abonnement aux notifications push d'un appareil (navigateur ou application
+/// installée). Un utilisateur en a un par appareil sur lequel il a accepté.
+///
+/// `endpoint` est l'adresse du service de push du navigateur (Google, Mozilla,
+/// Apple, Microsoft) ; `p256dh` et `auth` sont les clés publiques de l'appareil
+/// qui chiffrent le message de bout en bout. Rien de ce que contient la
+/// notification n'est lisible par le service de push.
+model PushSubscription {
+  id            String    @id @default(cuid())
+  userId        String
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+  /// Dernier envoi accepté par le service de push. Un abonnement refusé
+  /// (appareil désinscrit, 404/410) est supprimé, pas marqué.
+  lastSuccessAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+/// Clés VAPID de la plateforme, qui signent chaque envoi push. Générées
+/// automatiquement à la première utilisation (une seule ligne, `id =
+/// "default"`), pour qu'aucune configuration ne soit nécessaire. Les variables
+/// `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`, si elles sont définies, priment.
+///
+/// Table à part plutôt que colonnes de `PlatformSettings` : tout code qui lit
+/// les réglages de plateforme continuerait de fonctionner même si cette
+/// migration n'était pas encore appliquée.
+model PushKeys {
+  id         String   @id @default("default")
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+
+  @@map("push_keys")
 }
 
 model Notification {
