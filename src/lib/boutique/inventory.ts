@@ -40,6 +40,13 @@ export async function recordStockMovement(
      * stock.
      */
     allowNegativeStock?: boolean;
+    /**
+     * N'émet aucune alerte de rupture ou de stock faible. Réservé aux
+     * corrections que l'équipe vient de faire elle-même (inventaire) : la
+     * prévenir du résultat de son propre comptage, produit par produit,
+     * noierait la cloche sous des alertes qu'elle connaît déjà.
+     */
+    silent?: boolean;
   },
   tx: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
@@ -153,7 +160,7 @@ export async function recordStockMovement(
   // fait passer sous le seuil), jamais à chaque mouvement suivant : sans
   // quoi chaque vente d'un produit déjà bas noierait l'équipe d'alertes
   // redondantes.
-  if (params.quantityChange < 0) {
+  if (params.quantityChange < 0 && !params.silent) {
     const variant = await tx.storeProductVariant.findUnique({
       where: { id: params.productVariantId },
       select: { product: { select: { name: true, minStockAlert: true } } },

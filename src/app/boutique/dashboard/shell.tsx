@@ -125,6 +125,12 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M4 8h13l-3-3M20 16H7l3 3" />
     </svg>
   ),
+  '/boutique/dashboard/inventaire': (
+    <svg {...ICON_PROPS}>
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V3h6v1M9 12l2 2 4-4" />
+    </svg>
+  ),
   '/boutique/dashboard/analyses': (
     <svg {...ICON_PROPS}>
       <circle cx="12" cy="12" r="9" />
@@ -293,6 +299,7 @@ function getNavSections(
       items: [
         { href: '/boutique/dashboard/produits', label: 'Produits' },
         { href: '/boutique/dashboard/mouvements', label: 'Entrées et sorties' },
+        { href: '/boutique/dashboard/inventaire', label: 'Inventaire' },
         { href: '/boutique/dashboard/previsions', label: 'Ruptures à venir' },
         { href: '/boutique/dashboard/lots', label: 'Dates de péremption' },
         { href: '/boutique/dashboard/achats', label: 'Achats fournisseurs' },
