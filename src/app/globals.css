@@ -164,6 +164,25 @@
     .table-stack-titled tbody td:first-child::before {
       content: none;
     }
+    /* Cellule d'actions : sur toute la largeur de la fiche, sans intitulé,
+       boutons à la ligne si besoin. Coincée à droite de « ACTIONS », la
+       rangée de quatre boutons des ventes (Facture, Ticket, Reçu, Retourner)
+       n'avait plus que quelques pixels chacun, et leur texte se cassait
+       lettre par lettre. */
+    .table-stack tbody td[data-label='Actions'] {
+      display: block;
+      padding-top: 0.75rem;
+    }
+    .table-stack tbody td[data-label='Actions']::before {
+      content: none;
+    }
+    .table-stack tbody td[data-label='Actions'] > div {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+    .table-stack tbody td[data-label='Actions'] :is(a, button) {
+      white-space: nowrap;
+    }
   }
 }
 

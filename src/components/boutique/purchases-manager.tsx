@@ -225,7 +225,7 @@ export function PurchasesManager({
           {/* Les commandes à suivre d'abord, les closes ensuite. Mélangées par
               ordre de création, une livraison en retard se retrouvait sous
               trois commandes déjà reçues dont plus personne n'a rien à faire. */}
-          <table className="table-stack w-full text-sm">
+          <table className="table-stack table-stack-titled w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3 font-medium">Commande</th>

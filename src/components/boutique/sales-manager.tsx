@@ -209,7 +209,7 @@ export function SalesManager({
 
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="table-stack w-full text-sm">
+      <table className="table-stack table-stack-titled w-full text-sm">
         <thead>
           <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
             <th className="px-4 py-3 font-medium">Vente</th>
