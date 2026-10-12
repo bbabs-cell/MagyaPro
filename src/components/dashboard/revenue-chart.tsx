@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { formatMoney, toMajor } from '@/lib/money';
 
@@ -9,7 +9,19 @@ import { formatMoney, toMajor } from '@/lib/money';
  *
  * Une seule série : pas de légende, le titre de la carte nomme la mesure. Un
  * seul axe de valeurs, jamais deux échelles superposées. Les repères sont
- * volontairement discrets, la ligne porte l'information.
+ * volontairement discrets, la donnée porte l'information.
+ *
+ * **Des barres par jour, jusqu'à trois mois.** Une courbe relie des points :
+ * entre deux journées sans vente, elle dessinait des pics qui descendaient à
+ * zéro et remontaient, une dent de scie qui suggérait une évolution continue
+ * là où il n'y a que des journées séparées. Une barre par jour dit ce qui
+ * s'est passé ce jour-là, et un jour sans vente reste un vide lisible.
+ * Au-delà de trois mois (vue annuelle), les barres tomberaient sous le pixel :
+ * la courbe reprend, la tendance comptant alors plus que le jour.
+ *
+ * Couleur : `brand-text`, la teinte de marque qui tient le contraste sur le
+ * sable (plus de 4,5:1 dans les deux produits) — l'orange vif n'en donnait
+ * que 2,9.
  *
  * Un tableau équivalent est rendu sous le graphique (replié) : les données
  * restent accessibles au clavier et aux lecteurs d'écran, qui ne peuvent rien
@@ -24,9 +36,23 @@ import { formatMoney, toMajor } from '@/lib/money';
 
 type Point = { date: string; revenue: number; orders: number };
 
-const VIEW_WIDTH = 720;
-const VIEW_HEIGHT = 220;
+/**
+ * Largeur de dessin avant la première mesure (rendu serveur). Ensuite, le
+ * dessin prend la largeur réelle de son cadre : une unité = un pixel.
+ *
+ * Il était dessiné une fois pour toutes sur 720 de large puis réduit. Sur un
+ * téléphone, il rapetissait des deux tiers : bandes vides au-dessus et
+ * au-dessous, et repères d'échelle illisibles, à peine quatre pixels de haut.
+ */
+const DEFAULT_WIDTH = 720;
+const VIEW_HEIGHT = 200;
 const PADDING = { top: 16, right: 12, bottom: 28, left: 12 };
+/** Au-delà, une barre par jour ferait moins d'un pixel : retour à la courbe. */
+const MAX_BARS = 92;
+/** Espace entre deux barres, en unités du viewBox (≈ 2px à l'écran). */
+const BAR_GAP = 2.5;
+const BAR_RADIUS = 4;
+const MARK_COLOR = 'var(--brand-text, #c93f1a)';
 
 export function RevenueChart({
   points,
@@ -36,18 +62,36 @@ export function RevenueChart({
   currency: string;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [viewWidth, setViewWidth] = useState(DEFAULT_WIDTH);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry?.contentRect.width ?? 0);
+      if (width > 0) setViewWidth(width);
+    });
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
 
   const geometry = useMemo(() => {
     const max = Math.max(...points.map((p) => p.revenue), 1);
-    const innerWidth = VIEW_WIDTH - PADDING.left - PADDING.right;
+    const innerWidth = viewWidth - PADDING.left - PADDING.right;
     const innerHeight = VIEW_HEIGHT - PADDING.top - PADDING.bottom;
 
+    const asBars = points.length <= MAX_BARS;
+    const slot = innerWidth / Math.max(points.length, 1);
+
     const coords = points.map((point, index) => ({
-      x:
-        PADDING.left +
-        (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth),
+      x: asBars
+        ? PADDING.left + slot * (index + 0.5)
+        : PADDING.left +
+          (points.length === 1 ? innerWidth / 2 : (index / (points.length - 1)) * innerWidth),
       y: PADDING.top + innerHeight - (point.revenue / max) * innerHeight,
     }));
+    const barWidth = Math.max(slot - BAR_GAP, 1);
 
     const line = coords
       .map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`)
@@ -59,8 +103,8 @@ export function RevenueChart({
         ? `${line} L${coords[coords.length - 1]!.x.toFixed(1)},${baseline} L${coords[0]!.x.toFixed(1)},${baseline} Z`
         : '';
 
-    return { coords, line, area, max, baseline };
-  }, [points]);
+    return { coords, line, area, max, baseline, asBars, barWidth };
+  }, [points, viewWidth]);
 
   if (points.length === 0) return null;
 
@@ -68,7 +112,7 @@ export function RevenueChart({
   function indexFromPointer(event: React.PointerEvent<SVGSVGElement>): number {
     const box = event.currentTarget.getBoundingClientRect();
     if (box.width === 0) return 0;
-    const x = ((event.clientX - box.left) / box.width) * VIEW_WIDTH;
+    const x = ((event.clientX - box.left) / box.width) * viewWidth;
 
     let closest = 0;
     let smallest = Infinity;
@@ -95,10 +139,11 @@ export function RevenueChart({
         {formatMoney(total, currency)}.
       </figcaption>
 
-      <div className="relative">
+      <div ref={frameRef} className="relative">
         <svg
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          className="h-48 w-full touch-none"
+          viewBox={`0 0 ${viewWidth} ${VIEW_HEIGHT}`}
+          className="w-full touch-none"
+          style={{ height: VIEW_HEIGHT }}
           role="img"
           aria-label={`Évolution du chiffre d'affaires. Total ${formatMoney(total, currency)}. Meilleur jour : ${formatDay(peak.date)} avec ${formatMoney(peak.revenue, currency)}.`}
           // `onPointerLeave` couvre la souris qui sort du cadre. Au doigt,
@@ -125,7 +170,7 @@ export function RevenueChart({
               <g key={ratio}>
                 <line
                   x1={PADDING.left}
-                  x2={VIEW_WIDTH - PADDING.right}
+                  x2={viewWidth - PADDING.right}
                   y1={y}
                   y2={y}
                   stroke="var(--surface-border)"
@@ -135,7 +180,7 @@ export function RevenueChart({
                   x={PADDING.left}
                   y={y - 4}
                   fill="var(--ink-faint)"
-                  fontSize="10"
+                  fontSize="11"
                 >
                   {formatCompactMoney(value, currency)}
                 </text>
@@ -143,23 +188,42 @@ export function RevenueChart({
             );
           })}
 
-          <defs>
-            <linearGradient id="revenue-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--brand, #ff5e2e)" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="var(--brand, #ff5e2e)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={geometry.area} fill="url(#revenue-area)" />
-          <path
-            d={geometry.line}
-            fill="none"
-            stroke="var(--brand, #ff5e2e)"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+          {geometry.asBars ? (
+            geometry.coords.map((coord, index) => {
+              const height = geometry.baseline - coord.y;
+              if (height <= 0) return null;
+              return (
+                <path
+                  key={points[index]!.date}
+                  d={barPath(coord.x - geometry.barWidth / 2, coord.y, geometry.barWidth, height)}
+                  fill={MARK_COLOR}
+                  // Le jour désigné reste plein, les autres reculent : on lit
+                  // la barre choisie sans perdre l'ensemble de vue.
+                  opacity={hovered === null || hovered === index ? 1 : 0.45}
+                />
+              );
+            })
+          ) : (
+            <>
+              <defs>
+                <linearGradient id="revenue-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={MARK_COLOR} stopOpacity="0.22" />
+                  <stop offset="100%" stopColor={MARK_COLOR} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d={geometry.area} fill="url(#revenue-area)" />
+              <path
+                d={geometry.line}
+                fill="none"
+                stroke={MARK_COLOR}
+                strokeWidth="2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </>
+          )}
 
-          {activeCoord && (
+          {activeCoord && !geometry.asBars && (
             <>
               <line
                 x1={activeCoord.x}
@@ -175,7 +239,7 @@ export function RevenueChart({
                 cx={activeCoord.x}
                 cy={activeCoord.y}
                 r="5"
-                fill="var(--brand, #ff5e2e)"
+                fill={MARK_COLOR}
                 stroke="var(--surface)"
                 strokeWidth="2"
               />
@@ -188,7 +252,7 @@ export function RevenueChart({
           <div
             className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-lg bg-ink px-2.5 py-1.5 text-xs text-white shadow-sm"
             style={{
-              left: `${(activeCoord.x / VIEW_WIDTH) * 100}%`,
+              left: `${(activeCoord.x / viewWidth) * 100}%`,
               top: `${(activeCoord.y / VIEW_HEIGHT) * 100}%`,
               transform: 'translate(-50%, -130%)',
             }}
@@ -239,6 +303,24 @@ export function RevenueChart({
       </details>
     </figure>
   );
+}
+
+/**
+ * Barre arrondie en haut seulement, posée à plat sur la ligne de base : le
+ * haut se lit comme la valeur, le bas reste ancré au zéro.
+ */
+function barPath(x: number, y: number, width: number, height: number): string {
+  const r = Math.min(BAR_RADIUS, width / 2, height);
+  const bottom = y + height;
+  return [
+    `M${x.toFixed(1)},${bottom.toFixed(1)}`,
+    `V${(y + r).toFixed(1)}`,
+    `Q${x.toFixed(1)},${y.toFixed(1)} ${(x + r).toFixed(1)},${y.toFixed(1)}`,
+    `H${(x + width - r).toFixed(1)}`,
+    `Q${(x + width).toFixed(1)},${y.toFixed(1)} ${(x + width).toFixed(1)},${(y + r).toFixed(1)}`,
+    `V${bottom.toFixed(1)}`,
+    'Z',
+  ].join(' ');
 }
 
 /** Repère d'axe compact (« 15 k », « 1,2 M ») — l'unité est déjà donnée par

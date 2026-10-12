@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import { AnimatedValue } from './animated-value';
+import { formatPercent } from '@/lib/numbers';
 
 /**
  * Primitives d'interface partagées par le dashboard, l'administration et les
@@ -351,7 +352,7 @@ const STAT_ACCENT: Record<BadgeTone, string> = {
 export function changeProps(change: number | null): { hint: string; tone?: BadgeTone } {
   if (change === null) return { hint: 'Pas de comparaison possible' };
   return {
-    hint: `${change > 0 ? '+' : ''}${change} % vs période précédente`,
+    hint: `${formatPercent(change, { signed: true })} vs période précédente`,
     tone: change >= 0 ? 'success' : 'danger',
   };
 }
@@ -383,7 +384,10 @@ export function StatCard({
   icon?: ReactNode;
 }) {
   return (
-    <div className="hover-glow-sm card relative overflow-hidden p-4 sm:p-5">
+    // Pensée pour tenir en demi-largeur sur téléphone (grille 2 × 2) :
+    // l'icône s'efface sous 640px, la valeur descend d'un cran et peut passer
+    // à la ligne plutôt que de déborder.
+    <div className="hover-glow-sm card relative min-w-0 overflow-hidden p-3.5 sm:p-5">
       {tone && (
         <span aria-hidden="true" className={cx('absolute inset-x-0 top-0 h-1', STAT_ACCENT[tone])} />
       )}
@@ -394,7 +398,7 @@ export function StatCard({
         {icon && (
           <span
             className={cx(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+              'hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:flex',
               tone ? cx(STAT_ACCENT[tone], 'text-white') : 'bg-surface-sunken text-ink-faint',
             )}
           >
@@ -402,7 +406,7 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-ink">
+      <p className="mt-2 break-words text-xl font-bold tracking-tight text-ink sm:text-2xl">
         <AnimatedValue value={value} />
       </p>
       {hint && (
