@@ -132,6 +132,38 @@
     .table-stack tbody td[data-label='']::before {
       content: none;
     }
+    /* Le tableau entier passe en bloc : resté `display: table`, il prenait la
+       largeur de son contenu le plus long (un JSON, une adresse email) et
+       chaque fiche débordait de l'écran, coupée à droite. */
+    .table-stack,
+    .table-stack tbody {
+      display: block;
+      width: 100%;
+    }
+    .table-stack tbody td {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .table-stack tbody td::before {
+      flex-shrink: 0;
+    }
+    .table-stack tbody td > * {
+      min-width: 0;
+      max-width: 100%;
+    }
+    /* Variante « fiche titrée » : la première cellule (le nom du restaurant,
+       de la boutique, du compte) devient le titre de la fiche, aligné à
+       gauche, au lieu d'être coincée entre son intitulé et le bord droit. */
+    .table-stack-titled tbody td:first-child {
+      display: block;
+      text-align: left;
+      padding-bottom: 0.625rem;
+      margin-bottom: 0.25rem;
+      border-bottom: 1px solid var(--surface-border, rgba(0, 0, 0, 0.08));
+    }
+    .table-stack-titled tbody td:first-child::before {
+      content: none;
+    }
   }
 }
 

@@ -81,7 +81,7 @@ export default async function AdminUsersPage({
       </form>
 
       <div className="mt-6 overflow-x-auto">
-        <table className="table-stack w-full border-collapse text-sm">
+        <table className="table-stack table-stack-titled w-full border-collapse text-sm">
           <caption className="sr-only">Comptes utilisateurs</caption>
           <thead>
             <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">

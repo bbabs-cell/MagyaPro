@@ -5,6 +5,8 @@ import type { SubscriptionStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
+import { getPlatformSettings } from '@/lib/platform-settings';
+import { PaymentNumbersSummary } from '@/components/admin/payment-numbers-summary';
 import { StoreSubscriptionPaymentReview } from '@/components/admin/store-subscription-payment-review';
 import { getStoreBillingPositions } from '@/lib/boutique/store-pricing';
 import {
@@ -56,7 +58,7 @@ export default async function AdminStoreSubscriptionsPage({
     params.echeance && isDeadlineFilter(params.echeance) ? params.echeance : undefined;
   const page = Number.parseInt(params.page ?? '1', 10) || 1;
 
-  const [list, pendingPayments] = await Promise.all([
+  const [list, pendingPayments, platformSettings] = await Promise.all([
     listStoreSubscriptions({
       status: status === 'ALL' ? undefined : status,
       search,
@@ -72,6 +74,7 @@ export default async function AdminStoreSubscriptionsPage({
         store: { select: { id: true, name: true } },
       },
     }),
+    getPlatformSettings(),
   ]);
 
   // Rang de facturation de chaque boutique dont un paiement attend validation.
@@ -106,6 +109,11 @@ export default async function AdminStoreSubscriptionsPage({
         {list.total} abonnement{list.total > 1 ? 's' : ''} pour ce filtre
         {list.pageCount > 1 ? ` · page ${list.page} sur ${list.pageCount}` : ''}.
       </p>
+
+      <PaymentNumbersSummary
+        waveNumber={platformSettings?.waveNumber ?? null}
+        orangeMoneyNumber={platformSettings?.orangeMoneyNumber ?? null}
+      />
 
       {pendingPayments.length > 0 && (
         <section aria-label="Paiements en attente" className="mt-6">
@@ -154,7 +162,7 @@ export default async function AdminStoreSubscriptionsPage({
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto">
-          <table className="table-stack w-full border-collapse text-sm">
+          <table className="table-stack table-stack-titled w-full border-collapse text-sm">
             <caption className="sr-only">Abonnements des boutiques</caption>
             <thead>
               <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { auditActionLabel } from '@/lib/audit-labels';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
@@ -347,7 +348,7 @@ export default async function AdminDashboardPage() {
         {/* Douze mois d'encaissements. Barres rendues côté serveur : aucun
             script à charger pour une lecture d'un coup d'œil. */}
         <div className="mt-5 flex items-end gap-1.5" aria-hidden="true">
-          {revenue.byMonth.map((point) => {
+          {revenue.byMonth.map((point, index) => {
             const amount = amountIn(point.byCurrency, currency);
             return (
               // `min-w-0` : sans lui, la largeur plancher d'une colonne flex
@@ -365,7 +366,13 @@ export default async function AdminDashboardPage() {
                     style={{ height: `${Math.max(2, Math.round((amount / peak) * 100))}%` }}
                   />
                 </div>
-                <span className="w-full truncate text-center text-[11px] text-white/40">
+                {/* Sur téléphone, un mois sur trois : douze libellés dans
+                    trois cents pixels ne laissaient que « no… dé… ja… ». */}
+                <span
+                  className={`w-full whitespace-nowrap text-center text-[11px] text-white/40 ${
+                    index % 3 === 2 ? '' : 'max-sm:invisible'
+                  } sm:truncate`}
+                >
                   {point.month}
                 </span>
               </div>
@@ -417,7 +424,7 @@ export default async function AdminDashboardPage() {
 
       <section
         aria-label="Indicateurs de la plateforme"
-        className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
         <AdminStat label="Restaurants" value={String(metrics.restaurants)} icon={STAT_ICONS.restaurants} />
         <AdminStat
@@ -530,7 +537,7 @@ export default async function AdminDashboardPage() {
 
       <section
         aria-label="Indicateurs Boutique de la plateforme"
-        className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
         <AdminStat label="Boutiques" value={String(storeMetrics.stores)} icon={STAT_ICONS.restaurants} />
         <AdminStat
@@ -641,10 +648,10 @@ export default async function AdminDashboardPage() {
           <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4 text-sm">
             {recentLogs.map((log) => (
               <li key={log.id} className="flex justify-between gap-3">
-                <span className="min-w-0 truncate">
-                  <span className="font-mono text-xs text-white/70">{log.action}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-white/85">{auditActionLabel(log.action)}</span>
                   {log.actorEmail && (
-                    <span className="ml-2 text-white/50">{log.actorEmail}</span>
+                    <span className="block truncate text-xs text-white/45">{log.actorEmail}</span>
                   )}
                 </span>
                 <span className="shrink-0 text-xs text-white/40">
@@ -693,21 +700,23 @@ function AdminStat({
   tone?: 'success' | 'warning' | 'danger';
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition-colors hover:border-white/20 sm:p-4">
       {tone ? (
         <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${STAT_ACCENT[tone]}`} />
       ) : null}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs uppercase tracking-wide text-white/50">{label}</p>
+        <p className="min-w-0 text-[11px] uppercase tracking-wide text-white/50 sm:text-xs">{label}</p>
         {icon && (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/60">
+          // Masquée sur téléphone : en deux colonnes, l'icône prenait la
+          // place de l'intitulé, coupé en plein mot.
+          <span className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/60 sm:flex">
             {icon}
           </span>
         )}
       </div>
       {/* Chiffre en blanc plein : le dégradé précédent était décoratif et
           rendait les grands nombres moins lisibles sur fond sombre. */}
-      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-white">{value}</p>
+      <p className="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums text-white sm:text-2xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}
     </div>
   );

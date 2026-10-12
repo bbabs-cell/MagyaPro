@@ -8,6 +8,7 @@ import { cx } from '@/components/ui';
 import { Logo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 const ICON_PROPS = {
   width: 18,
@@ -178,6 +179,16 @@ const LINKS: Array<{ href: string; label: string; exact?: boolean; icon: React.R
     ),
   },
   {
+    href: '/admin/reglages',
+    label: 'Réglages',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/journal',
     label: 'Journal',
     icon: (
@@ -220,6 +231,8 @@ const SECTIONS: Array<{ title: string; items: Array<{ href: string; label?: stri
       { href: '/admin' },
       { href: '/admin/consolide', label: 'Vue consolidée' },
       { href: '/admin/journal' },
+      // Numéros de réception des paiements : communs aux deux produits.
+      { href: '/admin/reglages' },
     ],
   },
   {
@@ -254,6 +267,19 @@ const SECTIONS: Array<{ title: string; items: Array<{ href: string; label?: stri
 ];
 
 const LINK_BY_HREF = new Map(LINKS.map((link) => [link.href, link]));
+
+/**
+ * Barre du bas, sur téléphone — comme les tableaux de bord Restaurant et
+ * Boutique. Les quatre écrans ouverts le plus souvent : l'accueil, les deux
+ * files de paiements à valider, et les notifications qui les annoncent.
+ * « Plus » ouvre le menu complet.
+ */
+const BOTTOM_NAV: Array<{ href: string; label: string }> = [
+  { href: '/admin', label: 'Accueil' },
+  { href: '/admin/abonnements', label: 'Abo. resto' },
+  { href: '/admin/boutique-abonnements', label: 'Abo. boutique' },
+  { href: '/admin/notifications', label: 'Alertes' },
+];
 
 export function AdminSidebar({
   logoUrl,
@@ -329,8 +355,36 @@ export function AdminSidebar({
     </nav>
   );
 
+  const bottomItems = BOTTOM_NAV.map((entry) => {
+    const link = LINK_BY_HREF.get(entry.href)!;
+    return {
+      href: entry.href,
+      label: entry.label,
+      icon: link.icon,
+      active: isActive(link),
+      badge: entry.href === '/admin/notifications' ? unreadNotifications : undefined,
+      badgeTone: 'alert' as const,
+    };
+  });
+
   return (
     <>
+      {/* Couleur de texte propre à la barre : `--ink` reste sombre ailleurs,
+          pour les boutons blancs de l'administration. */}
+      <div
+        style={
+          (theme === 'dark'
+            ? { '--ink': '#ffffff', '--ink-muted': 'rgba(255, 255, 255, 0.6)' }
+            : { '--ink': '#1c1712', '--ink-muted': '#6a6153' }) as React.CSSProperties
+        }
+      >
+        <BottomNav
+          items={bottomItems}
+          moreOpen={menuOpen}
+          onMore={() => setMenuOpen((open) => !open)}
+          label="Navigation rapide de l'administration"
+        />
+      </div>
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/20 backdrop-blur lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button
@@ -359,7 +413,7 @@ export function AdminSidebar({
         {menuOpen && (
           <div
             id="admin-menu-mobile"
-            className="max-h-[calc(100vh-3.5rem)] overflow-y-auto border-t border-white/10 p-4"
+            className="max-h-[calc(100dvh-3.5rem-var(--bottom-nav,0px))] overflow-y-auto overscroll-contain border-t border-white/10 p-4"
           >
             {navigation}
             <div className="mt-4 space-y-1 border-t border-white/10 pt-4">

@@ -15,6 +15,38 @@ import { NotificationWatcher } from '@/components/account/notification-watcher';
  */
 const ADMIN_THEME_STORAGE_KEY = 'magyapro:admin-theme';
 
+/**
+ * Jetons de couleur des composants partagés avec les tableaux de bord —
+ * la barre de navigation du bas, d'abord. Ils lisent `--surface`, `--ink`,
+ * `--brand-strong`… : sans ces valeurs, la barre prendrait l'ivoire du
+ * Restaurant sur le bleu nuit de l'administration. Même braise que la
+ * navigation latérale.
+ *
+ * `--ink` n'est pas redéfini ici : les boutons blancs de l'administration
+ * (`bg-white text-ink`) comptent sur un texte sombre. La barre du bas reçoit
+ * le sien dans `sidebar.tsx`.
+ */
+const ADMIN_TOKENS: Record<'light' | 'dark', Record<string, string>> = {
+  dark: {
+    '--surface': '#0e1b36',
+    '--surface-border': 'rgba(255, 255, 255, 0.12)',
+    '--ink-faint': 'rgba(255, 255, 255, 0.4)',
+    '--surface-sunken': 'rgba(255, 255, 255, 0.05)',
+    '--brand-strong': '#d9461c',
+    '--brand-text': '#ff8a5c',
+    '--brand-ink': '#ffffff',
+  },
+  light: {
+    '--surface': '#ffffff',
+    '--surface-border': '#e4ddd0',
+    '--ink-faint': '#857a69',
+    '--surface-sunken': '#f1ece3',
+    '--brand-strong': '#c93f1a',
+    '--brand-text': '#b2361a',
+    '--brand-ink': '#ffffff',
+  },
+};
+
 export function AdminThemeRoot({
   logoUrl,
   userEmail,
@@ -61,7 +93,11 @@ export function AdminThemeRoot({
   // place. Le tableau de bord Boutique, dont la racine n'a pas cette classe,
   // ne connaissait pas le problème — d'où la différence entre les deux.
   return (
-    <div data-admin-theme={theme} className="relative min-h-screen bg-navy text-white">
+    <div
+      data-admin-theme={theme}
+      className="relative min-h-screen bg-navy text-white"
+      style={ADMIN_TOKENS[theme] as React.CSSProperties}
+    >
       {theme === 'dark' && (
         // Le débordement est contenu par cette enveloppe plutôt que par la
         // racine : elle recouvre la page, rogne ce qui dépasse, et n'est le
@@ -93,7 +129,8 @@ export function AdminThemeRoot({
           unreadNotifications={unreadNotifications}
         />
 
-        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        {/* `pb-24` sous 1024 px : la barre du bas ne recouvre jamais la fin de page. */}
+        <main id="contenu" className="min-w-0 flex-1 p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8">
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
