@@ -6,7 +6,7 @@ import { toQty } from '@/lib/boutique/quantity';
 import { ensureStoreUnitsReady } from '@/lib/boutique/units-engine';
 import { loadEarliestExpiry } from '@/lib/boutique/expiry-load';
 import { parseVariantAxes } from '@/lib/boutique/variants';
-import { PageHeader } from '@/components/ui';
+import { LinkButton, PageHeader } from '@/components/ui';
 import { ProductManager } from '@/components/boutique/product-manager';
 import { ExcelImportExport } from '@/components/boutique/excel-import-export';
 
@@ -87,6 +87,13 @@ export default async function BoutiqueProductsPage() {
       <PageHeader
         title="Produits"
         description="Votre catalogue et le suivi de votre stock."
+        action={
+          context.permissions.has('inventory:manage') ? (
+            <LinkButton href="/boutique/dashboard/inventaire" variant="secondary" size="sm">
+              Faire l&apos;inventaire
+            </LinkButton>
+          ) : undefined
+        }
       />
       <ExcelImportExport canImport={context.permissions.has('products:manage')} />
       <ProductManager
