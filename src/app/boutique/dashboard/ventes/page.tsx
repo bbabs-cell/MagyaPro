@@ -140,7 +140,12 @@ export default async function BoutiqueSalesPage({
           </div>
 
           <div className="mt-3">
-            <SalesManager sales={rows} currency={context.store.currency} />
+            <SalesManager
+              sales={rows}
+              currency={context.store.currency}
+              storeName={context.store.name}
+              country={context.store.country}
+            />
           </div>
 
           {pageCount > 1 ? (

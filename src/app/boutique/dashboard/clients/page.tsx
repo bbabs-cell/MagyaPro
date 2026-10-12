@@ -144,6 +144,8 @@ export default async function BoutiqueCustomersPage({
         currency={context.store.currency}
         canManage={context.permissions.has('customers:manage')}
         canManageCredit={context.permissions.has('credits:manage')}
+        storeName={context.store.name}
+        country={context.store.country}
       />
     </>
   );

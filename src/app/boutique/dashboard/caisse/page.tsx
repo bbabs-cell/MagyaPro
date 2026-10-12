@@ -188,6 +188,8 @@ export default async function BoutiqueCaissePage() {
           taxEnabled={context.store.taxEnabled}
           taxRate={context.store.taxRate}
           paymentMethods={paymentMethods.map((m) => ({ value: m.method, label: m.label }))}
+          storeName={context.store.name}
+          country={context.store.country}
           readOnly={context.isDemoTour}
           canLinkBarcodes={!context.isDemoTour && canStore(context, 'products:manage')}
           // Instant figé côté serveur : sans lui, « périme dans N jours »
