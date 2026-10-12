@@ -6,9 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { getPlatformSettings } from '@/lib/platform-settings';
-import { PlatformPaymentSettings } from '@/components/admin/platform-payment-settings';
-import { DEFAULT_ADDITIONAL_STORE_PERCENT } from '@/lib/boutique/store-pricing';
-import { PlatformSoundSettings } from '@/components/admin/platform-sound-settings';
+import { PaymentNumbersSummary } from '@/components/admin/payment-numbers-summary';
 import { SubscriptionPaymentReview } from '@/components/admin/subscription-payment-review';
 import {
   SUBSCRIPTION_STATUSES,
@@ -106,29 +104,10 @@ export default async function AdminSubscriptionsPage({
         {list.pageCount > 1 ? ` · page ${list.page} sur ${list.pageCount}` : ''}.
       </p>
 
-      <section
-        aria-label="Encaissement des abonnements"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
-      >
-        <h2 className="text-sm font-medium">Numéros de réception (paiement manuel)</h2>
-        <p className="mt-1 text-xs text-white/50">
-          Les restaurateurs envoient le montant de leur abonnement à ces numéros, puis déposent une preuve à valider ci-dessous.
-        </p>
-        <div className="mt-3">
-          <PlatformPaymentSettings
-            waveNumber={platformSettings?.waveNumber ?? null}
-            orangeMoneyNumber={platformSettings?.orangeMoneyNumber ?? null}
-            promoDiscountPercent={platformSettings?.promoDiscountPercent ?? null}
-            promoEndsAt={platformSettings?.promoEndsAt ?? null}
-            promoLabel={platformSettings?.promoLabel ?? null}
-            additionalStorePercent={
-              platformSettings?.additionalStorePercent ?? DEFAULT_ADDITIONAL_STORE_PERCENT
-            }
-          />
-
-          <PlatformSoundSettings soundUrl={platformSettings?.notificationSoundUrl ?? null} />
-        </div>
-      </section>
+      <PaymentNumbersSummary
+        waveNumber={platformSettings?.waveNumber ?? null}
+        orangeMoneyNumber={platformSettings?.orangeMoneyNumber ?? null}
+      />
 
       {pendingPayments.length > 0 && (
         <section aria-label="Paiements en attente" className="mt-6">
@@ -172,7 +151,7 @@ export default async function AdminSubscriptionsPage({
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto">
-          <table className="table-stack w-full border-collapse text-sm">
+          <table className="table-stack table-stack-titled w-full border-collapse text-sm">
             <caption className="sr-only">Abonnements des restaurants</caption>
             <thead>
               <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">

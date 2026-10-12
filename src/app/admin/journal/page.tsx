@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { auditActionLabel } from '@/lib/audit-labels';
 
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
@@ -79,7 +80,7 @@ export default async function AdminAuditPage({
       </nav>
 
       <div className="mt-6 overflow-x-auto">
-        <table className="table-stack w-full border-collapse text-sm">
+        <table className="table-stack table-stack-titled w-full border-collapse text-sm">
           <caption className="sr-only">Entrées du journal d&apos;audit</caption>
           <thead>
             <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">
@@ -103,7 +104,8 @@ export default async function AdminAuditPage({
                   })}
                 </td>
                 <td data-label="Action" className="py-3 pr-3">
-                  <span className="font-mono text-xs">{log.action}</span>
+                  <span className="block">{auditActionLabel(log.action)}</span>
+                  <span className="block font-mono text-[11px] text-white/40">{log.action}</span>
                 </td>
                 <td data-label="Auteur" className="py-3 pr-3 text-white/70">
                   {log.actorEmail ?? '—'}
