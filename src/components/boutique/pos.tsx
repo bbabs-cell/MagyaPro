@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
+import { formatDecimal } from '@/lib/numbers';
+import { saleReceiptMessage, whatsAppLinkFor } from '@/lib/whatsapp';
 import {
   UNIT_LABELS,
   STOCK_RAIL,
@@ -29,6 +31,7 @@ import {
 import { VoiceCommandButton, type VoiceResolution } from '@/components/boutique/voice-command';
 import { matchByName, normalize, type VoiceIntent } from '@/lib/boutique/voice-grammar';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 
 /**
  * Bouton d'unité d'un produit — le bouton le plus touché de la caisse. Il
@@ -128,7 +131,13 @@ export function Pos({
   readOnly = false,
   canLinkBarcodes = false,
   now,
+  storeName,
+  country,
 }: {
+  /** Nom affiché sur le reçu envoyé au client. */
+  storeName: string;
+  /** Pays de la boutique : indicatif ajouté aux numéros saisis sans lui. */
+  country: string | null;
   storeId: string;
   products: Product[];
   customers: Customer[];
@@ -170,7 +179,13 @@ export function Pos({
   const [promoCode, setPromoCode] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastReceipt, setLastReceipt] = useState<{ number: number; total: number } | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<{
+    number: number;
+    total: number;
+    /** Lien WhatsApp vers le client (ou le choix du contact), reçu déjà rédigé. */
+    whatsAppHref: string;
+    customerName: string | null;
+  } | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
   /**
    * Panier ouvert en feuille sur téléphone. Sur grand écran il occupe sa
@@ -465,7 +480,32 @@ export function Pos({
         '/api/boutique/sales',
         payload,
       );
-      setLastReceipt({ number: sale.number, total: sale.total });
+      // Le reçu est rédigé maintenant, avant que le panier ne soit vidé :
+      // c'est le seul moment où ses lignes existent encore côté caisse. Le
+      // total, lui, est celui que le serveur a retenu.
+      const receiptMessage = saleReceiptMessage({
+        storeName,
+        saleNumber: sale.number,
+        date: new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }),
+        lines: cart.map((line) => ({
+          label: line.name,
+          quantity: `${formatDecimal(line.quantity, Number.isInteger(line.quantity) ? 0 : 1)} ${
+            line.unitLabel
+              ? unitLabelFor({ label: line.unitLabel, labelPlural: line.unitLabelPlural }, line.quantity)
+              : (UNIT_LABELS[line.unit] ?? '')
+          }`.trim(),
+          total: formatMoney(line.unitPrice * line.quantity, currency),
+        })),
+        total: formatMoney(sale.total, currency),
+        due: remaining > 0 ? formatMoney(remaining, currency) : null,
+        customerName: customer?.name ?? null,
+      });
+      setLastReceipt({
+        number: sale.number,
+        total: sale.total,
+        whatsAppHref: whatsAppLinkFor(customer?.phone, country, receiptMessage),
+        customerName: customer?.name ?? null,
+      });
       resetCart();
       // Rafraîchissement en arrière-plan, volontairement non bloquant.
       //
@@ -817,7 +857,14 @@ export function Pos({
 
         {lastReceipt && (
           <div role="status" className="mt-3 rounded-xl bg-state-ok-soft px-4 py-3 text-sm text-state-ok">
-            Vente n°{lastReceipt.number} enregistrée — {formatMoney(lastReceipt.total, currency)}
+            <p>
+              Vente n°{lastReceipt.number} enregistrée — {formatMoney(lastReceipt.total, currency)}
+            </p>
+            <WhatsAppButton href={lastReceipt.whatsAppHref} size="xs" className="mt-2">
+              {lastReceipt.customerName
+                ? `Envoyer le reçu à ${lastReceipt.customerName.split(' ')[0]}`
+                : 'Envoyer le reçu par WhatsApp'}
+            </WhatsAppButton>
           </div>
         )}
 

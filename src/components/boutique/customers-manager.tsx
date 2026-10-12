@@ -6,6 +6,8 @@ import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { creditReminderMessage, whatsAppLinkFor } from '@/lib/whatsapp';
 
 type Customer = {
   id: string;
@@ -25,11 +27,16 @@ export function CustomersManager({
   currency,
   canManage,
   canManageCredit,
+  storeName,
+  country,
 }: {
   initialCustomers: Customer[];
   currency: string;
   canManage: boolean;
   canManageCredit: boolean;
+  storeName: string;
+  /** Pays de la boutique : indicatif ajouté aux numéros saisis sans lui. */
+  country: string | null;
 }) {
   const mutation = useServerMutation();
   /**
@@ -113,13 +120,30 @@ export function CustomersManager({
                   <td data-label="Actions" className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       {canManageCredit && customer.creditBalance > 0 && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setPayingId(customer.id)}
-                        >
-                          Encaisser
-                        </Button>
+                        <>
+                          {/* « Qui me doit de l'argent » trouve ici son geste
+                              suivant : relancer, sans quitter l'écran. */}
+                          <WhatsAppButton
+                            href={whatsAppLinkFor(
+                              customer.phone,
+                              country,
+                              creditReminderMessage({
+                                storeName,
+                                customerName: customer.name,
+                                balance: formatMoney(customer.creditBalance, currency),
+                              }),
+                            )}
+                          >
+                            Relancer
+                          </WhatsAppButton>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setPayingId(customer.id)}
+                          >
+                            Encaisser
+                          </Button>
+                        </>
                       )}
                       {canManage && (
                         <Button size="sm" variant="ghost" onClick={() => setEditingCustomer(customer)}>

@@ -11,13 +11,20 @@ import {
   SALE_STATUS_TONES,
   paymentMethodLabel,
 } from '@/lib/boutique/labels';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { formatDecimal } from '@/lib/numbers';
+import { saleReceiptMessage, whatsAppLinkFor } from '@/lib/whatsapp';
 
 type SaleItem = {
   productVariantId: string;
   productName: string;
   variantLabel: string | null;
+  /** En unité de base. */
   quantity: number;
   unitPrice: number;
+  unitLabel: string | null;
+  unitFactor: number;
+  total: number;
 };
 
 type Sale = {
@@ -29,9 +36,59 @@ type Sale = {
   items: SaleItem[];
   payments: Array<{ method: string }>;
   returnedByVariant: Record<string, number>;
+  customer: { name: string; phone: string } | null;
 };
 
-export function SalesManager({ sales, currency }: { sales: Sale[]; currency: string }) {
+/**
+ * La vente ne garde que le nom d'unité au singulier. On accorde les mots
+ * (« 2 bouteilles », « 3 cartons ») mais jamais les symboles : « kg », « L »,
+ * « mL » restent invariables.
+ */
+function pluralizeUnit(label: string, quantity: number): string {
+  if (quantity <= 1 || label.length <= 2 || /[sxz]$/i.test(label) || !/^[\p{L}\s'-]+$/u.test(label)) {
+    return label;
+  }
+  return label
+    .split(' ')
+    .map((word, index) => (index === 0 ? `${word}s` : word))
+    .join(' ');
+}
+
+/** Reçu d'une vente passée, prêt pour WhatsApp — voir `saleReceiptMessage`. */
+function receiptLink(sale: Sale, currency: string, storeName: string, country: string | null): string {
+  const message = saleReceiptMessage({
+    storeName,
+    saleNumber: sale.number,
+    date: new Date(sale.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }),
+    lines: sale.items.map((item) => {
+      // La quantité est stockée en unité de base : 24 bouteilles vendues en
+      // un carton s'affichent « 1 carton », comme sur le ticket.
+      const sold = item.unitFactor > 0 ? item.quantity / item.unitFactor : item.quantity;
+      const amount = formatDecimal(sold, Number.isInteger(sold) ? 0 : 1);
+      return {
+        label: item.variantLabel ? `${item.productName} (${item.variantLabel})` : item.productName,
+        quantity: item.unitLabel ? `${amount} ${pluralizeUnit(item.unitLabel, sold)}` : amount,
+        total: formatMoney(item.total, currency),
+      };
+    }),
+    total: formatMoney(sale.total, currency),
+    customerName: sale.customer?.name ?? null,
+  });
+  return whatsAppLinkFor(sale.customer?.phone, country, message);
+}
+
+export function SalesManager({
+  sales,
+  currency,
+  storeName,
+  country,
+}: {
+  sales: Sale[];
+  currency: string;
+  storeName: string;
+  /** Pays de la boutique : indicatif ajouté aux numéros saisis sans lui. */
+  country: string | null;
+}) {
   const router = useRouter();
   const [returning, setReturning] = useState<Sale | null>(null);
   const [resolution, setResolution] = useState<'REFUND' | 'EXCHANGE'>('REFUND');
@@ -221,6 +278,11 @@ export function SalesManager({ sales, currency }: { sales: Sale[]; currency: str
                     >
                       Facture
                     </LinkButton>
+                    {sale.status !== 'CANCELLED' && (
+                      <WhatsAppButton href={receiptLink(sale, currency, storeName, country)}>
+                        Reçu
+                      </WhatsAppButton>
+                    )}
                     {canReturn && (
                       <Button size="sm" variant="secondary" onClick={() => startReturn(sale)}>
                         Retourner
