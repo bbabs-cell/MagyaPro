@@ -131,6 +131,13 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
       <path d="M9 4V3h6v1M9 12l2 2 4-4" />
     </svg>
   ),
+  '/boutique/dashboard/transferts': (
+    <svg {...ICON_PROPS}>
+      <path d="M3 7h11l-3-3M21 17H10l3 3" />
+      <rect x="15" y="4" width="6" height="6" rx="1" />
+      <rect x="3" y="14" width="6" height="6" rx="1" />
+    </svg>
+  ),
   '/boutique/dashboard/analyses': (
     <svg {...ICON_PROPS}>
       <circle cx="12" cy="12" r="9" />
@@ -274,6 +281,7 @@ const NAV_ICONS: Record<string, React.ReactElement> = {
  */
 function getNavSections(
   canViewAllStores: boolean,
+  hasSeveralStores: boolean,
   unreadNotifications: number,
   isDemoTour: boolean,
 ): Array<{ title: string; items: NavItem[] }> {
@@ -300,6 +308,8 @@ function getNavSections(
         { href: '/boutique/dashboard/produits', label: 'Produits' },
         { href: '/boutique/dashboard/mouvements', label: 'Entrées et sorties' },
         { href: '/boutique/dashboard/inventaire', label: 'Inventaire' },
+        // Sans seconde boutique, il n'y a nulle part où envoyer du stock.
+        ...(hasSeveralStores ? [{ href: '/boutique/dashboard/transferts', label: 'Transferts' }] : []),
         { href: '/boutique/dashboard/previsions', label: 'Ruptures à venir' },
         { href: '/boutique/dashboard/lots', label: 'Dates de péremption' },
         { href: '/boutique/dashboard/achats', label: 'Achats fournisseurs' },
@@ -382,7 +392,7 @@ export function DashboardShell({
   const { theme, toggleTheme } = useBoutiqueTheme();
   const canViewAllStores =
     stores.length > 1 && stores.some((s) => s.role === 'OWNER' || s.role === 'ADMIN');
-  const navSections = getNavSections(canViewAllStores, unreadNotifications, isDemoTour);
+  const navSections = getNavSections(canViewAllStores, stores.length > 1, unreadNotifications, isDemoTour);
 
   async function handleEndSupport() {
     await api.post('/api/admin/boutique-support-access/fin');
