@@ -353,6 +353,11 @@ disparaissent et chaque cellule reprend son intitulé. C'est la bascule la plus
 structurante du système ; elle s'applique à tous les journaux — ventes,
 mouvements, achats, abonnements.
 
+Sur téléphone, les chiffres clés passent en **grille 2 × 2** plutôt qu'en
+colonne : quatre cartes empilées occupaient tout le premier écran. La caisse
+présente ses produits sur **deux colonnes**, les plus vendus des trente
+derniers jours en tête.
+
 Rythme vertical : 1rem à l'intérieur d'une carte, 1,5rem entre deux blocs d'une
 même section, 2,5rem entre deux sections. Les grilles de statistiques passent
 de quatre colonnes à deux, puis à une.
@@ -510,7 +515,12 @@ se lit à la couleur avant même d'être lue au texte.
 - **Active:** braise foncée et texte blanc (Restaurant), or et texte encre
   (Boutique) — le seul endroit où l'accent apparaît hors bouton principal.
 - **Hover:** fond légèrement relevé, texte qui remonte du muet au plein.
-- **Mobile:** tiroir borné et défilant, fermé au choix d'une entrée.
+- **Mobile:** une **barre du bas** (`ui/bottom-nav.tsx`) porte les quatre
+  écrans que la personne ouvre le plus, choisis selon ses droits — le patron
+  a « À traiter » et « Commandes », le cuisinier « Cuisine », le caissier
+  « Caisse » — et « Plus » ouvre le menu complet, tiroir borné et défilant,
+  fermé au choix d'une entrée. Sa hauteur est publiée dans `--bottom-nav` :
+  tout ce qui est fixé en bas d'écran (panier, messages) se place au-dessus.
 
 ### Le rail d'état
 

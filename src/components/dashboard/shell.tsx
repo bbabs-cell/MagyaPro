@@ -9,6 +9,7 @@ import { api } from '@/lib/client/api';
 import { Badge, cx } from '@/components/ui';
 import { NavPending } from '@/components/ui/nav-pending';
 import { Logo } from '@/components/ui/logo';
+import { BottomNav, pickBottomNavHrefs } from '@/components/ui/bottom-nav';
 import { AlertWatcher } from '@/components/dashboard/alert-watcher';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { AnnouncementBanner } from '@/components/dashboard/announcement-banner';
@@ -56,6 +57,35 @@ const ICON_PROPS = {
 };
 
 /** Icônes de la navigation — un trait simple par rubrique, cohérent avec les autres icônes de la plateforme. */
+/**
+ * Raccourcis de la barre du bas, du plus ouvert au moins ouvert pendant le
+ * service. Chaque personne reçoit les quatre premiers qu'elle a le droit
+ * d'ouvrir : le patron voit « À traiter » et « Commandes », le cuisinier
+ * « Cuisine », le livreur « Livraisons ».
+ */
+const BOTTOM_NAV_PRIORITY = [
+  '/dashboard',
+  '/dashboard/alertes',
+  '/dashboard/commandes',
+  '/dashboard/cuisine',
+  '/dashboard/livraisons',
+  '/dashboard/reservations',
+  '/dashboard/menu',
+  '/dashboard/notifications',
+];
+
+/** Libellés courts : la barre n'a qu'une soixantaine de pixels par entrée. */
+const BOTTOM_NAV_LABELS: Record<string, string> = {
+  '/dashboard': 'Accueil',
+  '/dashboard/alertes': 'À traiter',
+  '/dashboard/commandes': 'Commandes',
+  '/dashboard/cuisine': 'Cuisine',
+  '/dashboard/livraisons': 'Livraisons',
+  '/dashboard/reservations': 'Résa.',
+  '/dashboard/menu': 'Carte',
+  '/dashboard/notifications': 'Notifs',
+};
+
 const NAV_ICONS: Record<string, React.ReactElement> = {
   '/dashboard': (
     <svg {...ICON_PROPS}>
@@ -528,6 +558,29 @@ export function DashboardShell({
     </nav>
   );
 
+  const allItems = sections.flatMap((section) => section.items);
+  const bottomNavItems = pickBottomNavHrefs(
+    BOTTOM_NAV_PRIORITY,
+    new Set(allItems.map((item) => item.href)),
+  ).map((href) => {
+    const item = allItems.find((candidate) => candidate.href === href)!;
+    return {
+      href,
+      label: BOTTOM_NAV_LABELS[href] ?? item.label,
+      icon: NAV_ICONS[href],
+      active: isActive(item),
+      badge:
+        href === '/dashboard/alertes'
+          ? alertCount
+          : href === '/dashboard/commandes'
+            ? unreadCount
+            : href === '/dashboard/notifications'
+              ? notificationCount
+              : undefined,
+      badgeTone: href === '/dashboard/alertes' ? ('alert' as const) : ('neutral' as const),
+    };
+  });
+
   return (
     <div
       className="min-h-screen bg-surface-sunken"
@@ -716,13 +769,19 @@ export function DashboardShell({
           </div>
         </aside>
 
-        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <main id="contenu" className="min-w-0 flex-1 p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8">
           <div className="route-enter mx-auto max-w-5xl">
             {offline}
             {children}
           </div>
         </main>
       </div>
+
+      <BottomNav
+        items={bottomNavItems}
+        onMore={() => setMenuOpen(true)}
+        moreOpen={menuOpen}
+      />
     </div>
   );
 }

@@ -211,7 +211,7 @@ export default async function DashboardPage() {
       </section>
 
       <h2 className="mb-3 text-sm font-medium text-ink-muted">Sur 30 jours</h2>
-      <section aria-label="Indicateurs clés" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Indicateurs clés" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className="fade-in-up" style={{ animationDelay: '0ms' }}>
           <StatCard
             label="Chiffre d'affaires"

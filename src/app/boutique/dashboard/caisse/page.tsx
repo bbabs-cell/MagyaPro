@@ -135,6 +135,29 @@ export default async function BoutiqueCaissePage() {
     });
   }
 
+  // Les plus vendus d'abord : c'est eux que le caissier cherche cent fois
+  // par jour, et sur téléphone chaque ligne de défilement coûte. Le critère
+  // est le nombre de lignes de ticket sur trente jours, pas la quantité —
+  // vingt kilos de riz et deux bouteilles ne se comparent pas. Le tri est
+  // stable : à fréquence égale, l'ordre alphabétique est conservé.
+  const salesSince = new Date(Date.now() - 30 * 86_400_000);
+  const lineCounts = await prisma.saleItem.groupBy({
+    by: ['productVariantId'],
+    where: {
+      sale: { storeId: context.store.id, status: { not: 'CANCELLED' }, createdAt: { gte: salesSince } },
+    },
+    _count: { _all: true },
+  });
+  const productIdByVariant = new Map(variants.map((variant) => [variant.id, variant.productId]));
+  const salesByProduct = new Map<string, number>();
+  for (const row of lineCounts) {
+    const productId = productIdByVariant.get(row.productVariantId);
+    if (productId) {
+      salesByProduct.set(productId, (salesByProduct.get(productId) ?? 0) + row._count._all);
+    }
+  }
+  products.sort((a, b) => (salesByProduct.get(b.id) ?? 0) - (salesByProduct.get(a.id) ?? 0));
+
   return (
     <>
       <PageHeader

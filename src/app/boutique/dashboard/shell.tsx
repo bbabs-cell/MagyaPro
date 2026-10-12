@@ -16,6 +16,7 @@ import { SubscriptionAlert } from '@/components/account/subscription-alert';
 import { NotificationWatcher } from '@/components/account/notification-watcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ToastProvider } from '@/components/ui/toast';
+import { BottomNav, pickBottomNavHrefs } from '@/components/ui/bottom-nav';
 import { useBoutiqueTheme } from '@/components/boutique/use-boutique-theme';
 import { OfflineSupport, clearOfflineCopies, type OfflinePage } from '@/components/offline/offline-support';
 
@@ -65,6 +66,23 @@ const ICON_PROPS = {
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true as const,
+};
+
+/** Raccourcis de la barre du bas — voir `BottomNav`. La caisse d'abord. */
+const BOTTOM_NAV_PRIORITY = [
+  '/boutique/dashboard',
+  '/boutique/dashboard/caisse',
+  '/boutique/dashboard/produits',
+  '/boutique/dashboard/ventes',
+  '/boutique/dashboard/clients',
+];
+
+const BOTTOM_NAV_LABELS: Record<string, string> = {
+  '/boutique/dashboard': 'Accueil',
+  '/boutique/dashboard/caisse': 'Caisse',
+  '/boutique/dashboard/produits': 'Produits',
+  '/boutique/dashboard/ventes': 'Ventes',
+  '/boutique/dashboard/clients': 'Clients',
 };
 
 const NAV_ICONS: Record<string, React.ReactElement> = {
@@ -443,6 +461,21 @@ export function DashboardShell({
   // tableau de bord) et l'envelopper trois fois se serait désynchronisé au
   // premier ajout de branche. Le tableau de bord Restaurant a le sien, monté
   // dans son layout — qui, lui, n'a qu'une seule sortie.
+  const allItems = navSections.flatMap((section) => section.items);
+  const bottomNavItems = pickBottomNavHrefs(
+    BOTTOM_NAV_PRIORITY,
+    new Set(allItems.map((item) => item.href)),
+  ).map((href) => {
+    const item = allItems.find((candidate) => candidate.href === href)!;
+    return {
+      href,
+      label: BOTTOM_NAV_LABELS[href] ?? item.label,
+      icon: NAV_ICONS[href],
+      active: isActive(item),
+      badge: item.badge,
+    };
+  });
+
   return (
     <ToastProvider>
     {/* `text-ink` réinitialise explicitement la couleur de texte : le layout
@@ -450,7 +483,9 @@ export function DashboardShell({
         sombre pour son propre thème, hérité sinon par tout élément d'ici qui
         ne fixe pas sa couleur — ce qui rendait plusieurs textes du tableau de
         bord (clair, ink/surface) quasi invisibles sur leur fond clair. */}
-    <div className="min-h-screen bg-surface-sunken text-ink">
+    <div
+      className="min-h-screen bg-surface-sunken text-ink"
+    >
       {/* Aucun son en visite guidée : un visiteur anonyme n'a aucune raison
           d'être notifié de l'activité réelle de la boutique qu'il explore. */}
       {!isDemoTour && <NotificationWatcher endpoint="/api/boutique/notifications" />}
@@ -613,7 +648,7 @@ export function DashboardShell({
           </div>
         </aside>
 
-        <main id="contenu" className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8 print:p-0">
+        <main id="contenu" className="min-w-0 flex-1 p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 print:p-0">
           <div className="route-enter mx-auto max-w-5xl">
             <OfflineSupport
               scope="/boutique/dashboard"
@@ -628,6 +663,12 @@ export function DashboardShell({
           </div>
         </main>
       </div>
+
+      <BottomNav
+        items={bottomNavItems}
+        onMore={() => setMenuOpen(true)}
+        moreOpen={menuOpen}
+      />
     </div>
     </ToastProvider>
   );

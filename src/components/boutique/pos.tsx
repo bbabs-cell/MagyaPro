@@ -622,7 +622,9 @@ export function Pos({
         {filtered.length === 0 ? (
           <p className="text-sm text-ink-muted">Aucun produit ne correspond à cette recherche.</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          // Deux colonnes dès le téléphone : une fiche par ligne obligeait à
+          // défiler pour atteindre le quatrième produit.
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
             {filtered.map((product) => {
               const variant = selectedVariant(product);
               const chosen = selection[product.id] ?? {};
@@ -662,13 +664,13 @@ export function Pos({
                       expiry === 'ok' ? STOCK_RAIL[state] : EXPIRY_RAIL[expiry],
                   }}
                   className={cx(
-                    'card card-interactive state-rail flex flex-col items-start gap-1 p-4 pl-5 text-left',
+                    'card card-interactive state-rail flex min-w-0 flex-col items-start gap-1 p-3 pl-4 text-left sm:p-4 sm:pl-5',
                     'transition-shadow duration-200',
                     expiry === 'expired' && 'bg-state-bad-soft/50 opacity-70',
                     justAdded === product.id && 'ring-2 ring-brand',
                   )}
                 >
-                  <span className="font-medium text-ink">{product.name}</span>
+                  <span className="text-sm font-medium leading-snug text-ink sm:text-base">{product.name}</span>
 
                   {expiry !== 'ok' ? (
                     <span className="flex flex-wrap items-center gap-1.5">
@@ -733,7 +735,7 @@ export function Pos({
                               type="button"
                               onClick={() => addToCart(product, variant, unit)}
                               disabled={variant.stock < unit.factor}
-                              className={UNIT_BUTTON + ' min-w-[46%]'}
+                              className={UNIT_BUTTON + ' min-w-[4.5rem]'}
                               style={{ touchAction: 'manipulation' }}
                             >
                               {unit.isBase ? unit.label : `${unit.label} ×${unit.factor}`}
@@ -1066,7 +1068,7 @@ export function Pos({
           Masquée quand la feuille est ouverte : elle ferait doublon avec le
           bouton d'encaissement qui s'y trouve déjà. */}
       {!cartOpen ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[var(--bottom-nav,0px)] z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
           <div className="flex items-center gap-3 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="min-w-0 flex-1">
               <p className="text-xs text-ink-muted">

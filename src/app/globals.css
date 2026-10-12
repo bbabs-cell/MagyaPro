@@ -853,3 +853,21 @@
     print-color-adjust: exact;
   }
 }
+
+/* Barre de navigation du bas (`ui/bottom-nav.tsx`) : sa hauteur est publiée
+   sur toute la page dès qu'elle est présente, pour que ce qui est fixé en bas
+   d'écran — panier de la caisse, messages de confirmation — se place au-dessus
+   d'elle. Posée sur `body` et non sur le tableau de bord, parce que les
+   messages sont rendus hors de son arbre. Sans barre, la variable n'existe
+   pas et chacun retombe sur 0. */
+@media (max-width: 1023px) {
+  body:has([data-bottom-nav]) {
+    --bottom-nav: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media print {
+  body:has([data-bottom-nav]) {
+    --bottom-nav: 0px;
+  }
+}

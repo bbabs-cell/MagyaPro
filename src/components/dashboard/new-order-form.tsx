@@ -604,7 +604,7 @@ export function NewOrderForm({
           Masquée quand la feuille est ouverte : elle ferait doublon avec le
           bouton d'enregistrement qui s'y trouve déjà. */}
       {!sheetOpen && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
+        <div className="fixed inset-x-0 bottom-[var(--bottom-nav,0px)] z-30 border-t border-surface-border bg-surface-raised shadow-elev2 lg:hidden">
           <div className="flex items-center gap-3 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="min-w-0 flex-1">
               <p className="text-xs text-ink-muted">
