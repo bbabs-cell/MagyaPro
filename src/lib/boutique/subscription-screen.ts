@@ -100,6 +100,7 @@ export async function loadStoreSubscriptionScreen(storeId: string) {
           provider: pendingPayment.provider as 'wave_manual' | 'orange_money_manual',
           receivingNumber: receivingNumberFor(pendingPayment.provider),
           proofImageUrl: pendingPayment.proofImageUrl,
+          proofSubmittedAt: pendingPayment.proofSubmittedAt?.toISOString() ?? null,
         }
       : null,
     plans: plans.map((plan) => ({

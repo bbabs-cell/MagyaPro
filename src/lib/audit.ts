@@ -51,6 +51,7 @@ export const AUDIT_ACTIONS = {
   SUBSCRIPTION_PAYMENT_REQUESTED: 'subscription_payment.requested',
   SUBSCRIPTION_PAYMENT_APPROVED: 'subscription_payment.approved',
   SUBSCRIPTION_PAYMENT_REJECTED: 'subscription_payment.rejected',
+  SUBSCRIPTION_PAYMENT_CANCELLED: 'subscription_payment.cancelled',
 
   TEAM_MEMBER_ADDED: 'team.member_added',
   TEAM_MEMBER_UPDATED: 'team.member_updated',
