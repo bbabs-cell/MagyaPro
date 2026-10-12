@@ -17,6 +17,7 @@ import {
   StatCard,
 } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
+import { PushInvite } from '@/components/account/push-toggle';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
 import { formatPercent } from '@/lib/numbers';
 
@@ -130,6 +131,12 @@ export default async function DashboardPage() {
           </div>
         }
       />
+
+      {/* Ceux qui reçoivent les commandes sont ceux qui doivent être réveillés
+          par elles : invitation aux alertes push, une fois par appareil. */}
+      {(permissions.has('orders:view') || permissions.has('orders:update_status')) && (
+        <PushInvite scope="/dashboard" />
+      )}
 
       {/* Alertes réellement actionnables uniquement. */}
       <div className="mb-6 space-y-3">

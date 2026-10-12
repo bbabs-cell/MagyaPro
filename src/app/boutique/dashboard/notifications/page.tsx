@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireStore } from '@/lib/boutique/store-tenant';
 import { PageHeader } from '@/components/ui';
 import { NotificationsPanel } from '@/components/account/notifications-panel';
+import { PushToggle } from '@/components/account/push-toggle';
 
 export const metadata: Metadata = { title: 'Notifications' };
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ export default async function BoutiqueNotificationsPage() {
         title="Notifications"
         description="Commandes, stock faible ou en rupture, paiements reçus, abonnement."
       />
+      {!context.isDemoTour && <PushToggle scope="/boutique/dashboard" />}
       <NotificationsPanel
         endpoint="/api/boutique/notifications"
         notifications={notifications.map((n) => ({

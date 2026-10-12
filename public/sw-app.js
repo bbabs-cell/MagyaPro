@@ -272,6 +272,59 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// ------------------------------------------------- Notifications push
+//
+// Le serveur dépose ici un message chiffré (voir `src/lib/push.ts`), même
+// quand aucun onglet du tableau de bord n'est ouvert. On l'affiche ; au
+// toucher, on ramène au premier plan un onglet déjà ouvert sur la bonne page,
+// ou on en ouvre un.
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: 'MagyaPro', body: event.data ? event.data.text() : '' };
+  }
+  const title = data.title || 'MagyaPro';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      tag: data.tag || undefined,
+      // Une nouvelle commande qui remplace l'alerte précédente doit
+      // re-sonner : sans `renotify`, elle arriverait en silence.
+      renotify: Boolean(data.tag),
+      requireInteraction: Boolean(data.urgent),
+      data: { url: data.url || '/dashboard' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || '/dashboard', self.location.origin);
+  // Seules les pages de l'application elle-même : une adresse venue d'un
+  // message ne doit jamais faire ouvrir un autre site.
+  if (target.origin !== self.location.origin) return;
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of windows) {
+        if (new URL(client.url).pathname === target.pathname && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      const any = windows.find((client) => 'navigate' in client);
+      if (any) {
+        await any.navigate(target.href).catch(() => undefined);
+        return any.focus();
+      }
+      return self.clients.openWindow(target.href);
+    })(),
+  );
+});
+
 // ------------------------------------------------------- Page hors ligne
 
 function escapeHtml(value) {

@@ -1,14 +1,17 @@
+import { after } from 'next/server';
 import type { NotificationType, OrderStatus } from '@prisma/client';
 
 import { prisma } from '@/lib/db';
 import { formatMoney } from '@/lib/money';
 import { sendNewOrderEmail } from '@/lib/mail';
+import { pushNotification } from '@/lib/push';
 
 /**
  * Notifications.
  *
  * Un événement métier produit une notification persistée (visible dans le
- * dashboard) et, selon le type, un email. Les canaux SMS et WhatsApp
+ * dashboard), un push sur les téléphones des membres concernés (voir
+ * `lib/push.ts`) et, selon le type, un email. Les canaux SMS et WhatsApp
  * s'ajouteront en implémentant un `NotificationChannel` supplémentaire ici :
  * les appelants (`notifyNewOrder`, …) resteront inchangés.
  *
@@ -57,6 +60,25 @@ export async function createNotification(
     });
   } catch (error) {
     console.error('[notifications] Échec de création :', error);
+  }
+
+  // Puis sur les téléphones des membres concernés, même tableau de bord
+  // fermé (voir `lib/push.ts`). Hors du chemin de la réponse quand c'est
+  // possible : le client qui vient de commander n'a pas à attendre que les
+  // services de push aient répondu.
+  await runAfterResponse(() => pushNotification(input));
+}
+
+/**
+ * Exécute une tâche après l'envoi de la réponse HTTP (`after` de Next.js),
+ * ou tout de suite hors d'une requête — tâche planifiée, script, test — où
+ * `after` n'est pas disponible.
+ */
+async function runAfterResponse(task: () => Promise<void>): Promise<void> {
+  try {
+    after(task);
+  } catch {
+    await task();
   }
 }
 

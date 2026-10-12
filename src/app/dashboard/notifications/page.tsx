@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/ui';
 import { NotificationsPanel } from '@/components/account/notifications-panel';
+import { PushToggle } from '@/components/account/push-toggle';
 
 export const metadata: Metadata = { title: 'Notifications' };
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ export default async function RestaurantNotificationsPage() {
         title="Notifications"
         description="L'historique de tout ce qui s'est passé : réservations, preuves de paiement, changements de réglages, abonnement. Ce qui réclame une action est regroupé dans « À traiter »."
       />
+      <PushToggle scope="/dashboard" />
       <NotificationsPanel
         endpoint="/api/restaurant/notifications"
         notifications={notifications.map((n) => ({

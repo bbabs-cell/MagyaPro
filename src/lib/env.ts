@@ -88,6 +88,16 @@ export const env = {
   metaPixelId: process.env.META_PIXEL_ID,
   gaMeasurementId: process.env.GA_MEASUREMENT_ID,
 
+  /// Notifications push (voir `lib/push.ts`). Facultatives : sans elles, une
+  /// paire de clés est générée à la première utilisation et gardée en base.
+  /// Les fixer n'est utile que pour partager les mêmes clés entre plusieurs
+  /// bases (préproduction, production).
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+  /// Contact déclaré aux services de push (`mailto:` ou `https:`), exigé par
+  /// la norme. À défaut, une adresse de la plateforme.
+  vapidSubject: process.env.VAPID_SUBJECT,
+
   /// SMS transactionnels (confirmation/statut de commande, alerte
   /// d'abonnement) via Africa's Talking. Fonctionnalité désactivée si
   /// absent — comme Turnstile, un manque de clés ne bloque rien.
