@@ -118,7 +118,9 @@ export default async function BoutiqueCustomersPage({
             />
             Seulement ceux qui doivent
           </label>
-          <button type="submit" className={cx(buttonClass('primary', 'md'), 'shrink-0')}>
+          {/* Secondaire : « + Nouveau client » est l'action principale de la
+              page, et deux boutons dorés côte à côte ne disent plus lequel compte. */}
+          <button type="submit" className={cx(buttonClass('secondary', 'md'), 'shrink-0')}>
             Rechercher
           </button>
           {(search || debtorsOnly) && (
