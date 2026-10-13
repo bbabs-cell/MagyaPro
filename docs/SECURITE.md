@@ -293,13 +293,15 @@ L'adresse est désormais lue selon l'hébergeur, avec `CLIENT_IP_SOURCE` :
 Sur la production actuelle (Vercel), aucun réglage n'est à faire : la variable
 `VERCEL` suffit à choisir `x-real-ip`. Tests : `tests/client-ip.test.ts`.
 
-## À décider — non corrigé
+### 6. Contrôle d'`Origin` sur les écritures (faible) — corrigé
 
-**Pas de contrôle d'`Origin` sur les écritures (faible).** La protection
-CSRF repose sur `SameSite=Lax`. Les sous-domaines des vitrines sont « même
-site » que le domaine racine ; aucun commerçant ne peut y publier de HTML
-aujourd'hui, mais refuser un `Origin` étranger dans `route()` fermerait la
-porte pour de bon.
+La protection CSRF reposait sur le seul cookie `SameSite=Lax`. Or les sous-domaines des vitrines sont « même
+site » que le domaine racine pour le navigateur. `route()` refuse désormais (403) toute écriture (POST, PUT,
+PATCH, DELETE) dont l'en-tête `Origin` ne correspond pas à l'hôte de la requête, `Origin: null` compris. Les
+appels sans `Origin` (webhooks, tâches planifiées, appels entre serveurs) ne sont pas concernés. Aucune API
+n'est appelée depuis une autre origine. Tests : `tests/origin-check.test.ts`.
+
+## À décider — non corrigé
 
 **Faibles :**
 - un domaine personnalisé revendiqué sans vérification bloque son vrai

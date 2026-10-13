@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { PageHeader } from '@/components/ui';
 import { JournalPurgeButton } from '@/components/dashboard/journal-purge-button';
+import { auditActionLabel } from '@/lib/audit-labels';
 
 export const metadata: Metadata = { title: 'Journal' };
 export const dynamic = 'force-dynamic';
@@ -118,7 +119,10 @@ export default async function JournalPage({
                     minute: '2-digit',
                   })}
                 </td>
-                <td data-label="Action" className="py-2.5 pr-3 font-mono text-xs">{log.action}</td>
+                <td data-label="Action" className="py-2.5 pr-3">
+                  <span className="block">{auditActionLabel(log.action)}</span>
+                  <span className="block font-mono text-[11px] text-ink-faint">{log.action}</span>
+                </td>
                 <td data-label="Auteur" className="py-2.5 pr-3">{log.actorEmail ?? '—'}</td>
                 <td data-label="Détails" className="py-2.5 text-xs text-ink-muted">
                   {renderChanges(log.metadata) ?? '—'}
