@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
+import { downscaleImage } from '@/lib/client/downscale-image';
 
 /**
  * Vignette d'aperçu d'un template, avec envoi direct par le Super Admin.
@@ -31,7 +32,9 @@ export function TemplatePreviewUpload({
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      // Réduite sur l'appareil avant l'envoi, comme les photos des commerçants :
+      // un logo de 1,4 Mo était sinon servi tel quel sur chaque page.
+      formData.append('file', await downscaleImage(file, 'cover'));
       formData.append('templateKey', templateKey);
       await uploadFile('/api/admin/template-assets', formData);
       router.refresh();

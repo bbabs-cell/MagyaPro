@@ -11,6 +11,7 @@ import { TemplateSketch } from '@/components/site/template-sketch';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
 import { FEATURES, type Feature } from '@/lib/entitlements';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 /**
  * Landing page.
@@ -420,7 +421,8 @@ export default async function LandingPage() {
                     <div className="relative h-40 w-full">
                       {/* eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire */}
                       <img
-                        src={imageUrl}
+                        {...optimizedImageProps(imageUrl, 384)}
+                        loading="lazy"
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
@@ -559,7 +561,8 @@ export default async function LandingPage() {
                     {previewUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
                       <img
-                        src={previewUrl}
+                        {...optimizedImageProps(previewUrl, 384)}
+                        loading="lazy"
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

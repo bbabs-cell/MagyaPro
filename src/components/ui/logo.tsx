@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 /**
  * Logo MagyaPro.
@@ -44,7 +45,8 @@ export function Logo({
       {src && !failed && (
         // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
         <img
-          src={src}
+          // Affiché de 28 à 56 px : on ne télécharge plus le fichier d'origine.
+          {...optimizedImageProps(src, 64)}
           alt="MagyaPro"
           className={`${className} object-contain`}
           onError={() => setFailed(true)}

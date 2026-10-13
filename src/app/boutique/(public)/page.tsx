@@ -17,6 +17,7 @@ import { SECTOR_LABELS, SECTOR_UNITS, UNIT_CATALOGUE } from '@/lib/boutique/unit
 import { getAdditionalStorePercent } from '@/lib/boutique/store-pricing';
 import { STORE_FEATURES, type StoreFeature } from '@/lib/boutique/entitlements';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 export const metadata: Metadata = {
   title: 'MagyaPro Boutique : caisse et stock au carton comme à l’unité',
@@ -224,7 +225,7 @@ export default async function BoutiqueLandingPage() {
               <div className="flex items-center gap-3">
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
-                  <img src={logoUrl} alt="" className="h-10 w-10 object-contain" />
+                  <img {...optimizedImageProps(logoUrl, 48)} alt="" className="h-10 w-10 object-contain" />
                 ) : (
                   <span
                     aria-hidden="true"
@@ -409,7 +410,8 @@ export default async function BoutiqueLandingPage() {
                     <div className="relative h-40 w-full">
                       {/* eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire */}
                       <img
-                        src={imageUrl}
+                        {...optimizedImageProps(imageUrl, 384)}
+                        loading="lazy"
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
@@ -545,7 +547,8 @@ export default async function BoutiqueLandingPage() {
                     {imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- illustration de plateforme, hôte de stockage arbitraire
                       <img
-                        src={imageUrl}
+                        {...optimizedImageProps(imageUrl, 384)}
+                        loading="lazy"
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

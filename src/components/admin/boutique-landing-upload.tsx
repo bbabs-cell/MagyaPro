@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
+import { downscaleImage } from '@/lib/client/downscale-image';
 
 /**
  * Envoi du logo de la page d'accueil de MagyaPro Boutique (`/boutique`) —
@@ -22,7 +23,9 @@ export function BoutiqueLandingUpload({ imageUrl }: { imageUrl: string | null })
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      // Réduite sur l'appareil avant l'envoi, comme les photos des commerçants :
+      // un logo de 1,4 Mo était sinon servi tel quel sur chaque page.
+      formData.append('file', await downscaleImage(file, 'logo'));
       await uploadFile('/api/admin/boutique-landing-assets', formData);
       router.refresh();
     } catch (err) {
