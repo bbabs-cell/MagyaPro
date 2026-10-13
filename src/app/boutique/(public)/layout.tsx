@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { boutiqueLandingAssetUrl } from '@/lib/storage';
+import { optimizedImageProps } from '@/lib/optimized-image';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
 import { nonceFromHeaders } from '@/lib/security/csp';
@@ -26,7 +27,7 @@ export default async function BoutiquePublicLayout({ children }: { children: Rea
           <Link href="/boutique" className="flex items-center gap-2">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- image de plateforme, hôte de stockage arbitraire
-              <img src={logoUrl} alt="MagyaPro Boutique" className="h-8 w-8 object-contain" />
+              <img {...optimizedImageProps(logoUrl, 32)} alt="MagyaPro Boutique" className="h-8 w-8 object-contain" />
             ) : (
               <span
                 aria-hidden="true"

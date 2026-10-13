@@ -8,6 +8,7 @@ import { Button, Field, cx, inputClass } from '@/components/ui';
 import { DAY_NAMES } from '@/lib/site/hours';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 import { toMinor } from '@/lib/money';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 /**
  * Assistant de configuration.
@@ -595,7 +596,7 @@ export function OnboardingWizard({
                   {template.previewImageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
                     <img
-                      src={template.previewImageUrl}
+                      {...optimizedImageProps(template.previewImageUrl, 256)}
                       alt=""
                       className="mb-3 h-28 w-full rounded-lg object-cover"
                     />

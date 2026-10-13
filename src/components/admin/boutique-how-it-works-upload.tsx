@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ApiError, uploadFile } from '@/lib/client/api';
+import { downscaleImage } from '@/lib/client/downscale-image';
 
 /**
  * Envoi de l'illustration d'une étape « Comment ça fonctionne » de la page
@@ -30,7 +31,9 @@ export function BoutiqueHowItWorksUpload({
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      // Réduite sur l'appareil avant l'envoi, comme les photos des commerçants :
+      // un logo de 1,4 Mo était sinon servi tel quel sur chaque page.
+      formData.append('file', await downscaleImage(file, 'cover'));
       formData.append('step', String(step));
       await uploadFile('/api/admin/boutique-how-it-works-assets', formData);
       router.refresh();

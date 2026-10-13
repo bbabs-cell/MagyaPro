@@ -5,6 +5,7 @@ import { platformLogoUrl } from '@/lib/storage';
 import { env } from '@/lib/env';
 import { CookieConsent } from '@/components/site/cookie-consent';
 import { nonceFromHeaders } from '@/lib/security/csp';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 /**
  * Chrome minimal du hub (`/`) et des pages légales (`/mentions-legales`,
@@ -42,7 +43,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
               <span className="flex items-center gap-2">
                 {logoUrl && (
                   // eslint-disable-next-line @next/next/no-img-element -- hôte de stockage arbitraire
-                  <img src={logoUrl} alt="" className="h-6 w-6 object-contain" />
+                  <img {...optimizedImageProps(logoUrl, 32)} alt="" className="h-6 w-6 object-contain" />
                 )}
                 <p className="font-semibold">MagyaPro</p>
               </span>

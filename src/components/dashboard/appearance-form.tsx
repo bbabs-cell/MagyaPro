@@ -8,6 +8,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 import { TemplateSketch } from '@/components/site/template-sketch';
+import { optimizedImageProps } from '@/lib/optimized-image';
 
 const FONTS = [
   'Inter',
@@ -164,7 +165,7 @@ export function AppearanceForm({
               {template.previewImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- aperçu de template, hôte de stockage arbitraire
                 <img
-                  src={template.previewImageUrl}
+                  {...optimizedImageProps(template.previewImageUrl, 256)}
                   alt=""
                   className="mb-3 h-28 w-full rounded-lg object-cover"
                 />
