@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import type { MoneyByCurrency } from '@/lib/money';
+import { COUNTED_RESTAURANT, COUNTED_STORE } from '@/lib/counted-accounts';
 
 /**
  * Recette réelle de MagyaPro — l'argent effectivement encaissé.
@@ -80,7 +81,8 @@ type ApprovedPayment = { amount: number; currency: string; reviewedAt: Date | nu
 const APPROVED_SELECT = { amount: true, currency: true, reviewedAt: true } as const;
 
 /**
- * Les vitrines de démonstration sont exclues de tous les chiffres, comme dans
+ * Les vitrines de démonstration — et les comptes de test, voir
+ * `counted-accounts.ts` — sont exclues de tous les chiffres, comme dans
  * `analytics.ts`. Elles ne l'étaient pas ici, et cela se voyait : le jeu de
  * démonstration crée des abonnements actifs valables trente jours, si bien
  * qu'un mois après leur création la vue d'ensemble signalait des
@@ -88,8 +90,8 @@ const APPROVED_SELECT = { amount: true, currency: true, reviewedAt: true } as co
  * client. Une alerte qui demande d'agir sur des comptes fictifs est pire
  * qu'une alerte absente.
  */
-const NOT_DEMO_RESTAURANT = { restaurant: { isDemo: false } };
-const NOT_DEMO_STORE = { store: { isDemo: false } };
+const COUNTED_RESTAURANT_REL = { restaurant: COUNTED_RESTAURANT };
+const COUNTED_STORE_REL = { store: COUNTED_STORE };
 
 export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> {
   const now = new Date();
@@ -105,36 +107,40 @@ export async function getPlatformRevenue(months = 12): Promise<PlatformRevenue> 
   const [restaurantPayments, storePayments, restaurantTotals, storeTotals, pendingRestaurant, pendingStore, overdueRestaurant, overdueStore] =
     await Promise.all([
       prisma.subscriptionPayment.findMany({
-        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...NOT_DEMO_RESTAURANT },
+        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...COUNTED_RESTAURANT_REL },
         select: APPROVED_SELECT,
       }),
       prisma.storeSubscriptionPayment.findMany({
-        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...NOT_DEMO_STORE },
+        where: { status: 'APPROVED', reviewedAt: { gte: windowStart }, ...COUNTED_STORE_REL },
         select: APPROVED_SELECT,
       }),
       // Le cumul depuis toujours est agrégé par la base : il porte sur toutes
       // les lignes, y compris celles hors de la fenêtre de douze mois.
       prisma.subscriptionPayment.groupBy({
         by: ['currency'],
-        where: { status: 'APPROVED', ...NOT_DEMO_RESTAURANT },
+        where: { status: 'APPROVED', ...COUNTED_RESTAURANT_REL },
         _sum: { amount: true },
       }),
       prisma.storeSubscriptionPayment.groupBy({
         by: ['currency'],
-        where: { status: 'APPROVED', ...NOT_DEMO_STORE },
+        where: { status: 'APPROVED', ...COUNTED_STORE_REL },
         _sum: { amount: true },
       }),
+      // Paiements à valider : une file de travail, pas un chiffre. Un compte
+      // de test y reste — c'est en validant sa preuve qu'on essaie le
+      // parcours de bout en bout ; seule la démonstration en est exclue, comme
+      // dans les deux écrans d'abonnements que ce compteur annonce.
       prisma.subscriptionPayment.count({
-        where: { status: 'PENDING', ...NOT_DEMO_RESTAURANT },
+        where: { status: 'PENDING', restaurant: { isDemo: false } },
       }),
       prisma.storeSubscriptionPayment.count({
-        where: { status: 'PENDING', ...NOT_DEMO_STORE },
+        where: { status: 'PENDING', store: { isDemo: false } },
       }),
       prisma.subscription.count({
-        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...NOT_DEMO_RESTAURANT },
+        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...COUNTED_RESTAURANT_REL },
       }),
       prisma.storeSubscription.count({
-        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...NOT_DEMO_STORE },
+        where: { status: 'ACTIVE', currentPeriodEnd: { lt: now }, ...COUNTED_STORE_REL },
       }),
     ]);
 

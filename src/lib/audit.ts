@@ -28,6 +28,9 @@ export const AUDIT_ACTIONS = {
   RESTAURANT_PUBLISHED: 'restaurant.published',
   RESTAURANT_SUSPENDED: 'restaurant.suspended',
   RESTAURANT_REACTIVATED: 'restaurant.reactivated',
+  /** Compte marqué « test », ou rendu aux chiffres de la plateforme. */
+  RESTAURANT_TEST_MARKED: 'restaurant.test_marked',
+  RESTAURANT_TEST_UNMARKED: 'restaurant.test_unmarked',
   RESTAURANT_DELETED: 'restaurant.deleted',
 
   MENU_CATEGORY_CREATED: 'menu.category_created',
@@ -75,6 +78,8 @@ export const AUDIT_ACTIONS = {
   STORE_PUBLISHED: 'store.published',
   STORE_SUSPENDED: 'store.suspended',
   STORE_REACTIVATED: 'store.reactivated',
+  STORE_TEST_MARKED: 'store.test_marked',
+  STORE_TEST_UNMARKED: 'store.test_unmarked',
   STORE_DELETED: 'store.deleted',
   STORE_DEMO_SEEDED: 'store_demo.seeded',
   STORE_DEMO_CLEANED: 'store_demo.cleaned',

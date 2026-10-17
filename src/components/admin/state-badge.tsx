@@ -51,3 +51,20 @@ export function StatusPill({ status }: { status: string }) {
 
   return <AdminStateBadge label={labels[status] ?? status} tone={tones[status] ?? 'neutral'} />;
 }
+
+/**
+ * Étiquette d'un compte exclu des chiffres de la plateforme : démonstration ou
+ * test (voir `lib/counted-accounts.ts`). Neutre : ce n'est ni un succès ni un
+ * problème, seulement un compte qui ne compte pas.
+ */
+export function ExcludedTag({ isDemo, isTest }: { isDemo?: boolean; isTest?: boolean }) {
+  if (!isDemo && !isTest) return null;
+  return (
+    <span
+      title="Exclu de la recette et des statistiques"
+      className="ml-2 inline-block rounded-full border border-fg/15 px-1.5 py-px align-middle text-[11px] font-medium text-fg/65"
+    >
+      {isDemo ? 'démo' : 'test'}
+    </span>
+  );
+}

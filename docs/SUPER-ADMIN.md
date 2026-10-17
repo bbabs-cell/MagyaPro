@@ -122,6 +122,45 @@ l'exige le critère « intitulé dans le nom ».
 
 ---
 
+## Comptes de démonstration et comptes de test
+
+Les chiffres de la plateforme — recette, statistiques des deux produits, vue
+consolidée, compteurs d'abonnements, nombre d'utilisateurs, usage des
+templates — ne comptent que les vrais clients. Deux sortes de comptes en sont
+exclues :
+
+| compte | marqué par | exclu des chiffres | autre effet |
+|---|---|---|---|
+| démonstration | `isDemo`, posé par le jeu de démonstration | oui | public : vitrine de démo, visite libre, site non indexé |
+| test | `isTest`, posé depuis le Super Admin | oui | **aucun** : le compte fonctionne normalement |
+
+Pourquoi un second drapeau plutôt que marquer les comptes d'essai « démo » :
+`isDemo` rend le compte public, et n'importe qui pourrait alors le visiter.
+
+**Marquer un compte de test** : fiche du restaurant ou de la boutique →
+« Marquer comme compte de test ». Le bouton inverse le rend aux chiffres. Les
+deux sont consignés au journal. Dans les listes, ces comptes portent une
+étiquette « test » (ou « démo ») : on les voit toujours, on peut toujours les
+gérer — ils ne comptent simplement plus.
+
+**Utilisateurs** : un compte compte s'il n'est ni de démonstration, ni de
+l'équipe MagyaPro (Super Admin), ni rattaché uniquement à des commerces
+exclus. Un inscrit qui n'a encore créé aucun commerce compte : c'est un vrai
+visiteur.
+
+**Une exception voulue** : la file des paiements d'abonnement à valider garde
+les comptes de test. C'est une liste de travail, pas un chiffre — et valider
+la preuve d'un compte de test est justement la façon d'essayer le parcours de
+bout en bout.
+
+Un seul endroit définit qui compte : `lib/counted-accounts.ts`. Un test
+(`tests/platform-figures.test.ts`) vérifie que chaque lecture de la recette
+passe par lui, et `tests/test-accounts.test.ts` le prouve sur une vraie base.
+
+**Migration** : `20261017120000_comptes_de_test` ajoute une colonne `isTest`
+(fausse par défaut) aux restaurants et aux boutiques. Elle doit être appliquée
+**avant** le déploiement du code qui la lit.
+
 ## Couleurs et thèmes
 
 ### Une couleur, un sujet
