@@ -5,7 +5,7 @@ import type { RestaurantStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
-import { StatusPill } from '@/components/admin/state-badge';
+import { ExcludedTag, StatusPill } from '@/components/admin/state-badge';
 import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Restaurants' };
@@ -53,6 +53,7 @@ export default async function AdminRestaurantsPage({
         currency: true,
         createdAt: true,
         isDemo: true,
+        isTest: true,
         subscription: { select: { status: true, plan: { select: { name: true } } } },
         _count: { select: { orders: true, products: true, members: true } },
       },
@@ -143,9 +144,9 @@ export default async function AdminRestaurantsPage({
                     >
                       {restaurant.name}
                     </Link>
+                    <ExcludedTag isDemo={restaurant.isDemo} isTest={restaurant.isTest} />
                     <span className="block text-xs text-fg/60">
                       {restaurant.slug}
-                      {restaurant.isDemo && ' · démo'}
                       {' · '}
                       {restaurant._count.products} plat
                       {restaurant._count.products > 1 ? 's' : ''}

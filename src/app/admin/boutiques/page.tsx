@@ -5,7 +5,7 @@ import type { StoreStatus } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
-import { StatusPill } from '@/components/admin/state-badge';
+import { ExcludedTag, StatusPill } from '@/components/admin/state-badge';
 import { BoutiqueDemoPanel } from '@/components/admin/boutique-demo-panel';
 import { SECTOR_LABELS as BUSINESS_TYPE_LABELS } from '@/lib/boutique/unit-catalogue';
 import { DomainHeading } from '@/components/admin/domain';
@@ -55,6 +55,8 @@ export default async function AdminBoutiquesPage({
         businessType: true,
         currency: true,
         createdAt: true,
+        isDemo: true,
+        isTest: true,
         _count: { select: { sales: true, products: true, members: true } },
       },
     }),
@@ -142,6 +144,7 @@ export default async function AdminBoutiquesPage({
                     >
                       {store.name}
                     </Link>
+                    <ExcludedTag isDemo={store.isDemo} isTest={store.isTest} />
                     <span className="block text-xs text-fg/60">
                       {store.slug}
                       {' · '}

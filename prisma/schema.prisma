@@ -183,6 +183,11 @@ model Restaurant {
   description String?
   status      RestaurantStatus @default(DRAFT)
   isDemo      Boolean          @default(false)
+  /// Compte de test : exclu des chiffres de la plateforme (recette, statistiques,
+  /// abonnements, utilisateurs) et de rien d'autre. Distinct de `isDemo`, qui
+  /// rend le compte public (vitrine de démonstration, visite libre) : marquer un
+  /// vrai compte d'essai interne comme démo l'exposerait à tout le monde.
+  isTest      Boolean          @default(false)
 
   // Identité visuelle
   logoUrl        String?
@@ -1450,6 +1455,11 @@ model Store {
   businessType StoreBusinessType @default(OTHER)
   status       StoreStatus       @default(DRAFT)
   isDemo       Boolean           @default(false)
+  /// Compte de test : exclu des chiffres de la plateforme (recette, statistiques,
+  /// abonnements, utilisateurs) et de rien d'autre. Distinct de `isDemo`, qui
+  /// rend le compte public (vitrine de démonstration, visite libre) : marquer un
+  /// vrai compte d'essai interne comme démo l'exposerait à tout le monde.
+  isTest       Boolean           @default(false)
 
   logoUrl        String?
   coverUrl       String?

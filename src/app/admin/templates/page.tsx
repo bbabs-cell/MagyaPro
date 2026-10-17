@@ -6,6 +6,7 @@ import { templatePreviewUrl } from '@/lib/storage';
 import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
 import { TemplatePreviewUpload } from '@/components/admin/template-preview-upload';
 import { DomainHeading } from '@/components/admin/domain';
+import { COUNTED_RESTAURANT } from '@/lib/counted-accounts';
 
 export const metadata: Metadata = { title: 'Templates' };
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,8 @@ export default async function AdminTemplatesPage() {
 
   const [templates, usage] = await Promise.all([
     prisma.template.findMany({ orderBy: { position: 'asc' } }),
-    prisma.restaurant.groupBy({ by: ['templateKey'], _count: true }),
+    // Vrais clients seulement : démos et comptes de test exclus.
+    prisma.restaurant.groupBy({ by: ['templateKey'], where: COUNTED_RESTAURANT, _count: true }),
   ]);
 
   const usageByKey = new Map(usage.map((row) => [row.templateKey, row._count]));

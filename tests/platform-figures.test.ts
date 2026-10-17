@@ -47,7 +47,7 @@ describe('Chiffres du Super Admin — devises', () => {
   });
 });
 
-describe('Chiffres du Super Admin — vitrines de démonstration', () => {
+describe('Chiffres du Super Admin — démonstrations et comptes de test', () => {
   /**
    * Le jeu de démonstration crée des abonnements actifs valables trente
    * jours. Sans filtre, un mois plus tard la vue d'ensemble réclamait une
@@ -73,16 +73,23 @@ describe('Chiffres du Super Admin — vitrines de démonstration', () => {
     expect(calls.length).toBe((body.match(/prisma\./g) ?? []).length);
     expect(calls.length).toBeGreaterThanOrEqual(8);
 
+    // Les comptes de test sont exclus avec les démonstrations
+    // (`COUNTED_*_REL`), sauf dans la file des paiements à valider : un
+    // compte de test doit pouvoir y faire valider sa preuve. Celle-ci garde
+    // donc le seul filtre de démonstration, écrit en toutes lettres.
     const unfiltered = calls.filter(
-      (call) => !call.includes('NOT_DEMO_RESTAURANT') && !call.includes('NOT_DEMO_STORE'),
+      (call) =>
+        !call.includes('COUNTED_RESTAURANT_REL') &&
+        !call.includes('COUNTED_STORE_REL') &&
+        !/(restaurant|store): \{ isDemo: false \}/.test(call),
     );
     expect(unfiltered.map((call) => call.slice(0, 60))).toEqual([]);
   });
 
   it('exclut les démonstrations des statistiques des deux produits', () => {
     for (const [file, marker] of [
-      [join('src', 'lib', 'analytics.ts'), 'NOT_DEMO_RESTAURANT'],
-      [join('src', 'lib', 'boutique', 'platform-analytics.ts'), 'NOT_DEMO_STORE'],
+      [join('src', 'lib', 'analytics.ts'), 'COUNTED_RESTAURANT'],
+      [join('src', 'lib', 'boutique', 'platform-analytics.ts'), 'COUNTED_STORE'],
     ] as const) {
       const source = readFileSync(file, 'utf8');
       expect(source).toContain(marker);

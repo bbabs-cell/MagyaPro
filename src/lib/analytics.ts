@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { sumByCurrency, type MoneyByCurrency } from '@/lib/money';
+import { COUNTED_RESTAURANT, COUNTED_USER } from '@/lib/counted-accounts';
 
 /**
  * Statistiques.
@@ -56,13 +57,10 @@ export function previousRange(from: Date, to: Date): { from: Date; to: Date } {
 /** Les commandes annulées ne comptent ni en revenu ni en volume. */
 const COUNTED_ORDERS = { status: { not: 'CANCELLED' as const } };
 
-/**
- * Exclut les restaurants de démonstration des statistiques plateforme : ce
- * sont des vitrines créées pour l'onboarding, pas une activité réelle — les
- * compter fausserait le chiffre d'affaires et les volumes vus par le Super
- * Admin.
- */
-const NOT_DEMO_RESTAURANT = { isDemo: false };
+// Statistiques plateforme : les restaurants de démonstration et de test en sont
+// exclus (`COUNTED_RESTAURANT`, voir `counted-accounts.ts`) — ce ne sont pas
+// des clients, et les compter fausserait le chiffre d'affaires et les volumes
+// vus par le Super Admin.
 
 export type DashboardMetrics = {
   revenue: number;
@@ -317,26 +315,26 @@ export async function getPlatformMetrics() {
     subscriptions,
     newRestaurants,
   ] = await Promise.all([
-    prisma.restaurant.count({ where: NOT_DEMO_RESTAURANT }),
-    prisma.restaurant.count({ where: { status: 'ACTIVE', ...NOT_DEMO_RESTAURANT } }),
-    prisma.restaurant.count({ where: { status: 'SUSPENDED', ...NOT_DEMO_RESTAURANT } }),
-    prisma.user.count(),
-    prisma.order.count({ where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT } }),
+    prisma.restaurant.count({ where: COUNTED_RESTAURANT }),
+    prisma.restaurant.count({ where: { status: 'ACTIVE', ...COUNTED_RESTAURANT } }),
+    prisma.restaurant.count({ where: { status: 'SUSPENDED', ...COUNTED_RESTAURANT } }),
+    prisma.user.count({ where: COUNTED_USER }),
+    prisma.order.count({ where: { ...COUNTED_ORDERS, restaurant: COUNTED_RESTAURANT } }),
     // Groupé par devise plutôt qu'agrégé en un seul total : additionner des
     // francs CFA de l'Ouest et du Centre donne un nombre qui ne veut rien
     // dire, et rien à l'écran ne le signalait.
     prisma.order.groupBy({
       by: ['currency'],
-      where: { ...COUNTED_ORDERS, restaurant: NOT_DEMO_RESTAURANT },
+      where: { ...COUNTED_ORDERS, restaurant: COUNTED_RESTAURANT },
       _sum: { total: true },
     }),
     prisma.subscription.groupBy({
       by: ['status'],
-      where: { restaurant: NOT_DEMO_RESTAURANT },
+      where: { restaurant: COUNTED_RESTAURANT },
       _count: true,
     }),
     prisma.restaurant.count({
-      where: { createdAt: { gte: thirtyDaysAgo }, ...NOT_DEMO_RESTAURANT },
+      where: { createdAt: { gte: thirtyDaysAgo }, ...COUNTED_RESTAURANT },
     }),
   ]);
 
@@ -397,31 +395,31 @@ export async function getPlatformAnalytics(months = 6): Promise<PlatformAnalytic
   const [activeSubscriptions, restaurants, orders, activeAtPeriodStart, cancelledLast30] =
     await Promise.all([
       prisma.subscription.findMany({
-        where: { status: 'ACTIVE', restaurant: NOT_DEMO_RESTAURANT },
+        where: { status: 'ACTIVE', restaurant: COUNTED_RESTAURANT },
         select: {
           plan: { select: { id: true, name: true, price: true, currency: true, interval: true } },
         },
       }),
       prisma.restaurant.findMany({
-        where: { createdAt: { gte: monthsAgo }, ...NOT_DEMO_RESTAURANT },
+        where: { createdAt: { gte: monthsAgo }, ...COUNTED_RESTAURANT },
         select: { createdAt: true },
       }),
       prisma.order.findMany({
-        where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo }, restaurant: NOT_DEMO_RESTAURANT },
+        where: { ...COUNTED_ORDERS, placedAt: { gte: monthsAgo }, restaurant: COUNTED_RESTAURANT },
         select: { placedAt: true, total: true, currency: true },
       }),
       prisma.subscription.count({
         where: {
           createdAt: { lt: thirtyDaysAgo },
           status: { not: 'CANCELLED' },
-          restaurant: NOT_DEMO_RESTAURANT,
+          restaurant: COUNTED_RESTAURANT,
         },
       }),
       prisma.subscription.count({
         where: {
           status: 'CANCELLED',
           cancelledAt: { gte: thirtyDaysAgo },
-          restaurant: NOT_DEMO_RESTAURANT,
+          restaurant: COUNTED_RESTAURANT,
         },
       }),
     ]);

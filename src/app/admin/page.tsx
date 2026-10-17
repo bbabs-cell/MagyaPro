@@ -22,7 +22,7 @@ import {
 } from '@/lib/money';
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
-import { StatusPill } from '@/components/admin/state-badge';
+import { ExcludedTag, StatusPill } from '@/components/admin/state-badge';
 import { formatPercent } from '@/lib/numbers';
 import { CountUp } from '@/components/admin/count-up';
 import { DOMAIN_CHIP, DomainHeading, type AdminDomain } from '@/components/admin/domain';
@@ -144,6 +144,7 @@ export default async function AdminDashboardPage() {
         status: true,
         createdAt: true,
         isDemo: true,
+        isTest: true,
         _count: { select: { orders: true } },
       },
     }),
@@ -157,6 +158,7 @@ export default async function AdminDashboardPage() {
         status: true,
         createdAt: true,
         isDemo: true,
+        isTest: true,
         _count: { select: { sales: true } },
       },
     }),
@@ -549,9 +551,7 @@ export default async function AdminDashboardPage() {
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {restaurant.name}
-                      {restaurant.isDemo && (
-                        <span className="ml-2 text-xs text-fg/60">démo</span>
-                      )}
+                      <ExcludedTag isDemo={restaurant.isDemo} isTest={restaurant.isTest} />
                     </span>
                     <span className="block truncate text-xs text-fg/60">
                       {restaurant.slug} · {restaurant._count.orders} commande
@@ -655,7 +655,7 @@ export default async function AdminDashboardPage() {
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {store.name}
-                      {store.isDemo && <span className="ml-2 text-xs text-fg/60">démo</span>}
+                      <ExcludedTag isDemo={store.isDemo} isTest={store.isTest} />
                     </span>
                     <span className="block truncate text-xs text-fg/60">
                       {store.slug} · {store._count.sales} vente{store._count.sales > 1 ? 's' : ''}

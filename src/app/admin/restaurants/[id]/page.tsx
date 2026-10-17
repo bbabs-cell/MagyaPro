@@ -14,6 +14,7 @@ import { listRestaurantPayments } from '@/lib/platform-revenue';
 import { Metric } from '@/components/admin/charts';
 import { ROLE_LABELS } from '@/lib/rbac';
 import { DOMAIN_DOT } from '@/components/admin/domain';
+import { TestAccountToggle } from '@/components/admin/test-account-toggle';
 
 export const metadata: Metadata = { title: 'Fiche restaurant' };
 export const dynamic = 'force-dynamic';
@@ -124,6 +125,15 @@ export default async function AdminRestaurantDetailPage({
         />
         <Metric label="Plats" value={String(restaurant._count.products)} />
         <Metric label="Clients" value={String(restaurant._count.customers)} />
+      </section>
+
+      <section aria-label="Prise en compte dans les chiffres" className="mt-6">
+        <TestAccountToggle
+          kind="restaurant"
+          id={restaurant.id}
+          isTest={restaurant.isTest}
+          isDemo={restaurant.isDemo}
+        />
       </section>
 
       {restaurant.isDemo && (

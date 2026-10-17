@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { sumByCurrency, type MoneyByCurrency } from '@/lib/money';
+import { COUNTED_STORE } from '@/lib/counted-accounts';
 
 /**
  * Analytics plateforme pour MagyaPro Boutique — équivalent de
@@ -7,11 +8,10 @@ import { sumByCurrency, type MoneyByCurrency } from '@/lib/money';
  * tables Boutique (`Store`, `Sale`, `StoreSubscription`) : les deux produits
  * n'ont pas le même modèle de données, donc pas de fonction partagée.
  *
- * Les boutiques de démonstration (`isDemo: true`) sont exclues : ce sont des
- * vitrines, pas une activité réelle.
+ * Les boutiques de démonstration et de test sont exclues (`COUNTED_STORE`,
+ * voir `counted-accounts.ts`) : ce ne sont pas des clients.
  */
 
-const NOT_DEMO_STORE = { isDemo: false };
 const COUNTED_SALES = { status: { not: 'CANCELLED' as const } };
 
 function monthlyEquivalent(price: number, interval: 'MONTH' | 'YEAR'): number {
@@ -52,24 +52,24 @@ export async function getPlatformStoreMetrics(): Promise<PlatformStoreMetrics> {
 
   const [stores, activeStores, suspendedStores, sales, revenue, subscriptions, newStores] =
     await Promise.all([
-      prisma.store.count({ where: NOT_DEMO_STORE }),
-      prisma.store.count({ where: { status: 'ACTIVE', ...NOT_DEMO_STORE } }),
-      prisma.store.count({ where: { status: 'SUSPENDED', ...NOT_DEMO_STORE } }),
-      prisma.sale.count({ where: { ...COUNTED_SALES, store: NOT_DEMO_STORE } }),
+      prisma.store.count({ where: COUNTED_STORE }),
+      prisma.store.count({ where: { status: 'ACTIVE', ...COUNTED_STORE } }),
+      prisma.store.count({ where: { status: 'SUSPENDED', ...COUNTED_STORE } }),
+      prisma.sale.count({ where: { ...COUNTED_SALES, store: COUNTED_STORE } }),
       // `Sale` ne porte pas de devise : elle est celle de sa boutique. On
       // remonte donc la boutique plutôt que d'additionner à l'aveugle des
       // montants de monnaies différentes.
       prisma.sale.groupBy({
         by: ['storeId'],
-        where: { ...COUNTED_SALES, store: NOT_DEMO_STORE },
+        where: { ...COUNTED_SALES, store: COUNTED_STORE },
         _sum: { total: true },
       }),
       prisma.storeSubscription.groupBy({
         by: ['status'],
-        where: { store: NOT_DEMO_STORE },
+        where: { store: COUNTED_STORE },
         _count: true,
       }),
-      prisma.store.count({ where: { createdAt: { gte: thirtyDaysAgo }, ...NOT_DEMO_STORE } }),
+      prisma.store.count({ where: { createdAt: { gte: thirtyDaysAgo }, ...COUNTED_STORE } }),
     ]);
 
   const currencyByStore = await storeCurrencies(revenue.map((row) => row.storeId));
@@ -112,24 +112,24 @@ export async function getPlatformStoreAnalytics(months = 6): Promise<PlatformSto
   const [activeSubscriptions, stores, sales, activeAtPeriodStart, cancelledLast30] =
     await Promise.all([
       prisma.storeSubscription.findMany({
-        where: { status: 'ACTIVE', store: NOT_DEMO_STORE },
+        where: { status: 'ACTIVE', store: COUNTED_STORE },
         select: {
           plan: { select: { id: true, name: true, price: true, currency: true, interval: true } },
         },
       }),
       prisma.store.findMany({
-        where: { createdAt: { gte: monthsAgo }, ...NOT_DEMO_STORE },
+        where: { createdAt: { gte: monthsAgo }, ...COUNTED_STORE },
         select: { createdAt: true },
       }),
       prisma.sale.findMany({
-        where: { ...COUNTED_SALES, createdAt: { gte: monthsAgo }, store: NOT_DEMO_STORE },
+        where: { ...COUNTED_SALES, createdAt: { gte: monthsAgo }, store: COUNTED_STORE },
         select: { createdAt: true, total: true, storeId: true },
       }),
       prisma.storeSubscription.count({
-        where: { createdAt: { lt: thirtyDaysAgo }, status: { not: 'CANCELLED' }, store: NOT_DEMO_STORE },
+        where: { createdAt: { lt: thirtyDaysAgo }, status: { not: 'CANCELLED' }, store: COUNTED_STORE },
       }),
       prisma.storeSubscription.count({
-        where: { status: 'CANCELLED', cancelledAt: { gte: thirtyDaysAgo }, store: NOT_DEMO_STORE },
+        where: { status: 'CANCELLED', cancelledAt: { gte: thirtyDaysAgo }, store: COUNTED_STORE },
       }),
     ]);
 

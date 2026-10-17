@@ -50,6 +50,8 @@ const VERBS: Record<string, string> = {
   two_factor_disabled: 'double authentification désactivée',
   suspended: 'suspension',
   reactivated: 'réactivation',
+  test_marked: 'marqué compte de test',
+  test_unmarked: 'rendu aux chiffres',
   created: 'création',
   updated: 'modification',
   published: 'publication',

@@ -14,6 +14,7 @@ import { listStorePayments } from '@/lib/platform-revenue';
 import { getStoreBillingPosition } from '@/lib/boutique/store-pricing';
 import { SALE_STATUS_LABELS } from '@/lib/boutique/labels';
 import { DOMAIN_DOT } from '@/components/admin/domain';
+import { TestAccountToggle } from '@/components/admin/test-account-toggle';
 
 export const metadata: Metadata = { title: 'Fiche boutique' };
 export const dynamic = 'force-dynamic';
@@ -105,6 +106,10 @@ export default async function AdminBoutiqueDetailPage({
 
       {/* La fiche ne disait rien de l'abonnement : savoir si cette boutique
           payait demandait de retourner sur la liste des abonnements. */}
+      <section aria-label="Prise en compte dans les chiffres" className="mt-6">
+        <TestAccountToggle kind="boutique" id={store.id} isTest={store.isTest} isDemo={store.isDemo} />
+      </section>
+
       <section aria-labelledby="abonnement" className="mt-8 lg:max-w-xl">
         <h2 id="abonnement" className="text-sm font-medium">
           Abonnement
