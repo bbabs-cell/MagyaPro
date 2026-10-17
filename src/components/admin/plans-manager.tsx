@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import type { PlanLimits } from '@/lib/entitlements';
+import { DOMAIN_CHIP } from '@/components/admin/domain';
 
 type Plan = {
   id: string;
@@ -379,7 +380,12 @@ export function PlansManager({
               <p className="flex flex-wrap items-center gap-2 font-medium">
                 {plan.name}
                 <span className="font-mono text-xs text-fg/60">{plan.key}</span>
-                <span className="rounded-full bg-fg/10 px-2 py-0.5 text-xs text-fg/60">
+                {/* Couleur du produit auquel le plan appartient. */}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    DOMAIN_CHIP[plan.product === 'STORE' ? 'boutique' : 'resto']
+                  }`}
+                >
                   {plan.product === 'STORE' ? 'Boutique' : 'Restaurant'}
                 </span>
                 {!plan.isActive && (

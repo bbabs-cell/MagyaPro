@@ -115,19 +115,34 @@ for (const path of paths) {
         }
       }
 
+      // Lignes réellement occupées par le texte de chaque nœud texte du
+      // bouton — et non sa hauteur, qui compte aussi une icône empilée au-dessus
+      // du libellé (barre de navigation du bas) et la donnerait pour écrasée.
+      const textLines = (el) => {
+        let worst = 0;
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          if (!node.textContent.trim()) continue;
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+          worst = Math.max(worst, tops.size);
+        }
+        return worst;
+      };
+
       for (const el of document.querySelectorAll('button, a[class*="rounded"], [role="button"]')) {
-        if (!visible(el)) continue;
-        const s = getComputedStyle(el);
-        const lh = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.4;
-        const pad = parseFloat(s.paddingTop) + parseFloat(s.paddingBottom);
         const r = el.getBoundingClientRect();
-        const lines = (r.height - pad) / lh;
+        // 1 px : texte réservé aux lecteurs d'écran (lien d'évitement…), voulu.
+        if (!visible(el) || r.width <= 2 || r.height <= 2) continue;
         const text = (el.innerText || '').trim();
-        // Plus de deux lignes pour un libellé court, ou un bouton plus étroit
-        // que son plus long mot : le texte se casse.
+        if (!text) continue;
+        const lines = textLines(el);
+        // Un libellé court sur plus de deux lignes, ou un mot plus large que le
+        // bouton : le texte se casse.
         const longestWord = Math.max(0, ...text.split(/\s+/).map((w) => w.length));
-        if (text && ((lines > 2.2 && text.length < 40) || (longestWord > 3 && r.width < 28))) {
-          out.push(`bouton écrasé (${Math.round(r.width)}×${Math.round(r.height)}px, ~${lines.toFixed(1)} lignes) : ${describe(el)}`);
+        if ((lines > 2 && text.length < 40) || (longestWord > 3 && r.width < 28)) {
+          out.push(`bouton écrasé (${Math.round(r.width)}×${Math.round(r.height)}px, ${lines} lignes) : ${describe(el)}`);
         }
       }
       return out;
