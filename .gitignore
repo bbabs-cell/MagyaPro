@@ -36,3 +36,6 @@ publicite/*
 
 # Copié au build depuis node_modules (scripts/copier-zxing.mjs).
 public/vendor/
+
+# Fichiers privés du pilote local (preuves de paiement)
+.data/

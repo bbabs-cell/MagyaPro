@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { resolveTxt } from 'node:dns/promises';
 
 import { env, rootHostname } from '@/lib/env';
@@ -28,6 +29,29 @@ export type DomainVerification = {
   /** Message destiné au restaurateur, expliquant l'état constaté. */
   detail: string;
 };
+
+/**
+ * Valeur TXT attendue pour qu'un restaurant prouve qu'il possède un domaine.
+ *
+ * Elle était tirée au hasard à chaque ajout, et un domaine en attente
+ * bloquait l'adresse pour tous les autres restaurants : il suffisait de
+ * revendiquer le domaine d'un autre — sans pouvoir le vérifier — pour
+ * empêcher son vrai propriétaire de l'ajouter.
+ *
+ * Elle est désormais **dérivée** du restaurant et du domaine (HMAC avec le
+ * secret du serveur) : toujours la même pour le même couple, impossible à
+ * calculer pour un tiers. Une revendication en attente peut alors être
+ * reprise par un autre restaurant (voir `/api/domaines`) sans rien coûter au
+ * vrai propriétaire : il ajoute de nouveau son domaine, retrouve la même
+ * valeur, et l'enregistrement qu'il avait déjà créé le vérifie aussitôt. Seul
+ * un domaine vérifié reste attaché à son restaurant.
+ */
+export function domainVerificationToken(restaurantId: string, hostname: string): string {
+  const digest = createHmac('sha256', env.sessionSecret)
+    .update(`domain-verification:${restaurantId}:${hostname}`)
+    .digest('base64url');
+  return `magyapro-verify-${digest.slice(0, 32)}`;
+}
 
 /** Nom de l'enregistrement TXT que le restaurateur doit créer. */
 export function verificationRecordName(hostname: string): string {

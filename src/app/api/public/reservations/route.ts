@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
 import { reservationSchema } from '@/lib/validation';
 import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
-import { generateReservationCode } from '@/lib/reservations';
+import { createReservationAccess, generateReservationCode } from '@/lib/reservations';
 import { notifyNewReservation } from '@/lib/notifications';
 import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
@@ -38,6 +38,7 @@ export const POST = route(async (request) => {
 
   // La collision de code à 6 chiffres est rare mais pas impossible ; quelques
   // essais suffisent, la contrainte d'unicité en base est le vrai garde-fou.
+  const access = createReservationAccess();
   let reservation = null;
   for (let attempt = 0; attempt < 5 && !reservation; attempt++) {
     try {
@@ -50,6 +51,7 @@ export const POST = route(async (request) => {
           reservedFor: input.reservedFor,
           notes: input.notes ?? null,
           confirmationCode: generateReservationCode(),
+          accessTokenHash: access.hash,
         },
       });
     } catch (err) {
@@ -69,6 +71,8 @@ export const POST = route(async (request) => {
     {
       reservation: {
         id: reservation!.id,
+        /** Clé du lien de suivi — rendue une seule fois, jamais stockée en clair. */
+        trackingKey: access.key,
         confirmationCode: reservation!.confirmationCode,
         status: reservation!.status,
         reservedFor: reservation!.reservedFor,

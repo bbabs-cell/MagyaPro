@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
+import { reservationAccessWhere } from '@/lib/reservations';
 import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { ReservationStatusTracker } from '@/components/site/reservation-status-tracker';
 
@@ -15,8 +16,8 @@ export const metadata: Metadata = {
 
 /**
  * Suivi public d'une réservation — accessible sans compte, comme le suivi de
- * commande. Voir `/api/public/reservations/[reservationId]` pour le modèle
- * de sécurité (identifiant non énumérable).
+ * commande. Le segment d'URL porte la clé aléatoire du lien de suivi ; voir
+ * `reservationAccessWhere` et `/api/public/reservations/[reservationId]`.
  */
 export default async function ReservationTrackingPage({ params }: Props) {
   const { host, reservationId } = await params;
@@ -24,7 +25,7 @@ export default async function ReservationTrackingPage({ params }: Props) {
   if (!restaurant) notFound();
 
   const reservation = await prisma.reservation.findFirst({
-    where: { id: reservationId, restaurantId: restaurant.id },
+    where: { ...reservationAccessWhere(reservationId), restaurantId: restaurant.id },
     select: {
       id: true,
       status: true,
@@ -40,7 +41,9 @@ export default async function ReservationTrackingPage({ params }: Props) {
   return (
     <div className="container-page max-w-lg py-10 sm:py-16">
       <ReservationStatusTracker
-        reservationId={reservation.id}
+        // La clé du lien, pas l'identifiant : le suivi en direct interroge
+        // l'API avec elle.
+        reservationId={reservationId}
         restaurantName={restaurant.name}
         initial={{
           status: reservation.status,
