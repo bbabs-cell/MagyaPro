@@ -17,6 +17,7 @@ import {
   verifyTwoFactorLogin,
 } from '@/lib/auth/service';
 import { RATE_LIMITS, hit, resetAll } from '@/lib/rate-limit';
+import { generate } from 'otplib';
 
 describe('Mots de passe', () => {
   it('produit un hash différent pour un même mot de passe', async () => {
@@ -378,5 +379,42 @@ describe('Double authentification', () => {
     await expect(
       verifyTwoFactorLogin({ pendingToken: freshToken, code: '000000' }),
     ).rejects.toThrow(/trop de tentatives/i);
+  });
+
+  describe('codes TOTP', () => {
+    const secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    const newUser = async () =>
+      prisma.user.create({
+        data: {
+          name: 'Deux Facteurs',
+          email: `2fa-code-${Date.now()}-${Math.random()}@example.test`,
+          passwordHash: await hashPassword('MonMotDePasse!1'),
+          totpSecret: secret,
+          totpEnabled: true,
+        },
+      });
+
+    it("accepte le code de la fenêtre précédente : l'horloge d'un téléphone peut retarder", async () => {
+      // Le défaut corrigé : `epochTolerance: 1` valait une seconde, pas une
+      // fenêtre. Un code tapé juste après le changement était refusé.
+      await resetAll();
+      const user = await newUser();
+      const code = await generate({ secret, epoch: Math.floor(Date.now() / 1000) - 30 });
+      const pendingToken = await issueVerificationToken(user.id, 'TWO_FACTOR_LOGIN', 5, 'minutes');
+      await expect(verifyTwoFactorLogin({ pendingToken, code })).resolves.toMatchObject({ id: user.id });
+    });
+
+    it('refuse un code déjà utilisé, même depuis une autre connexion', async () => {
+      await resetAll();
+      const user = await newUser();
+      const code = await generate({ secret });
+      const first = await issueVerificationToken(user.id, 'TWO_FACTOR_LOGIN', 5, 'minutes');
+      await verifyTwoFactorLogin({ pendingToken: first, code });
+
+      // Celui qui a intercepté le code et connaît le mot de passe ouvre sa
+      // propre connexion : le même code ne doit plus rien ouvrir.
+      const second = await issueVerificationToken(user.id, 'TWO_FACTOR_LOGIN', 5, 'minutes');
+      await expect(verifyTwoFactorLogin({ pendingToken: second, code })).rejects.toThrow(/code invalide/i);
+    });
   });
 });

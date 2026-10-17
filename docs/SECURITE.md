@@ -301,6 +301,23 @@ PATCH, DELETE) dont l'en-tête `Origin` ne correspond pas à l'hôte de la requ�
 appels sans `Origin` (webhooks, tâches planifiées, appels entre serveurs) ne sont pas concernés. Aucune API
 n'est appelée depuis une autre origine. Tests : `tests/origin-check.test.ts`.
 
+### 7. Secret cron et codes TOTP (faibles) — corrigé
+
+- **Secret cron** comparé à temps constant (`timingSafeEqual` sur les
+  condensés SHA-256 des deux valeurs) : la longueur et le premier caractère
+  différent ne se lisent plus dans le temps de réponse.
+- **Code TOTP à usage unique** : la fenêtre du dernier code accepté est
+  retenue (table `rate_limit_hits`, clé `totp-step:<compte>:<fenêtre>`, pas
+  de migration) et toute fenêtre égale ou antérieure est refusée. Un code
+  intercepté n'ouvre plus une seconde connexion.
+- **Trouvé en chemin — tolérance d'horloge** : `epochTolerance` est en
+  secondes dans otplib 13. La valeur `1` ne tolérait qu'une seconde, pas une
+  fenêtre : un code tapé juste après le changement de fenêtre, ou depuis un
+  téléphone qui retarde, était refusé. Rétablie à 30 s.
+
+Deux tests le prouvent dans `tests/auth.test.ts` ; ils échouent tous deux
+avec l'ancien code.
+
 ## À décider — non corrigé
 
 **Faibles :**
@@ -308,9 +325,7 @@ n'est appelée depuis une autre origine. Tests : `tests/origin-check.test.ts`.
   propriétaire ;
 - les preuves de paiement sont publiques derrière une URL imprévisible ;
 - suivi et annulation de réservation reposent sur un `cuid()` v1, qui n'est
-  pas un aléa cryptographique ;
-- le secret cron n'est pas comparé à temps constant, et un code TOTP reste
-  rejouable pendant sa fenêtre.
+  pas un aléa cryptographique.
 
 **Dépendances restantes :** `nodemailer` (corrigé seulement en 10.x, majeure
 à tester avec un envoi réel), `postcss` interne à Next et `deepmerge-ts`

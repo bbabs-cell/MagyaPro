@@ -14,6 +14,7 @@ import {
   generateTotpSecret,
   normalizeBackupCode,
   verifyTotpCode,
+  checkTotpCode,
 } from '@/lib/auth/totp';
 import { generateQrDataUrl } from '@/lib/qrcode';
 import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/mail';
@@ -335,7 +336,9 @@ export async function verifyTwoFactorLogin(input: {
   await hit(accountKey, RATE_LIMITS.twoFactor);
 
   let usedBackupCode: string | null = null;
-  let valid = user.totpSecret ? await verifyTotpCode(user.totpSecret, code) : false;
+  const lastStep = await lastUsedTotpStep(user.id);
+  const timeStep = user.totpSecret ? await checkTotpCode(user.totpSecret, code, lastStep) : null;
+  let valid = timeStep !== null;
   if (!valid) {
     const normalized = normalizeBackupCode(code);
     const hashedBackup = hashToken(normalized);
@@ -355,6 +358,8 @@ export async function verifyTwoFactorLogin(input: {
     });
     throw new UnauthorizedError('Code invalide.');
   }
+
+  if (timeStep !== null) await rememberUsedTotpStep(user.id, timeStep);
 
   await prisma.$transaction([
     prisma.verificationToken.update({ where: { id: record.id }, data: { consumedAt: new Date() } }),
@@ -537,4 +542,34 @@ export async function verifyEmail(token: string): Promise<void> {
     actorUserId: record.userId,
     actorEmail: record.user.email,
   });
+}
+
+/**
+ * Codes TOTP à usage unique.
+ *
+ * Un code reste valable trente secondes (plus la tolérance d'horloge) : sans
+ * mémoire, celui qui l'intercepte — par-dessus l'épaule, par une page
+ * d'hameçonnage qui relaie la saisie — pouvait l'utiliser à son tour pendant
+ * ce temps. La fenêtre du dernier code accepté est donc retenue, et
+ * `checkTotpCode` refuse toute fenêtre égale ou antérieure.
+ *
+ * Pas de colonne nouvelle : la table des tentatives (`rate_limit_hits`) sert
+ * déjà à retenir des événements récents par clé, et sa purge quotidienne
+ * convient — un code d'hier n'est de toute façon plus valide. La fenêtre est
+ * portée par la clé, `totp-step:<compte>:<fenêtre>`.
+ */
+const TOTP_STEP_PREFIX = 'totp-step:';
+
+async function lastUsedTotpStep(userId: string): Promise<number | undefined> {
+  const last = await prisma.rateLimitHit.findFirst({
+    where: { key: { startsWith: `${TOTP_STEP_PREFIX}${userId}:` } },
+    orderBy: { createdAt: 'desc' },
+    select: { key: true },
+  });
+  const step = last ? Number(last.key.slice(last.key.lastIndexOf(':') + 1)) : Number.NaN;
+  return Number.isFinite(step) ? step : undefined;
+}
+
+async function rememberUsedTotpStep(userId: string, timeStep: number): Promise<void> {
+  await prisma.rateLimitHit.create({ data: { key: `${TOTP_STEP_PREFIX}${userId}:${timeStep}` } });
 }
