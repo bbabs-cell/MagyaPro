@@ -129,7 +129,15 @@ export async function uploadImage(params: {
   // Preuves de paiement : espace privé, servi après contrôle d'accès — voir
   // `storage/private.ts`.
   if (PRIVATE_FOLDERS.has(folder) && privateStorageAvailable()) {
-    return putPrivate(key, buffer, detected);
+    try {
+      return await putPrivate(key, buffer, detected);
+    } catch (error) {
+      // Bucket privé injoignable (clé d'accès sans droit sur lui, bucket
+      // supprimé…) : on ne fait pas échouer l'envoi d'une preuve de paiement
+      // pour autant — le client a déjà payé. Elle part dans l'espace public,
+      // comme avant, et l'erreur est journalisée pour être corrigée.
+      console.error('[storage] Stockage privé indisponible, preuve rangée en public :', error);
+    }
   }
   return storage().put(key, buffer, detected);
 }
