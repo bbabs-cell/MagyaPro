@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
+
 import { ok, route } from '@/lib/api';
 import { UnauthorizedError } from '@/lib/errors';
 import { env } from '@/lib/env';
@@ -27,13 +29,28 @@ import { purgeExpiredData } from '@/lib/retention';
  * automatiquement par Vercel, GET) — les deux sont acceptés pour que la
  * route fonctionne sans changement selon la plateforme de déploiement.
  */
+/**
+ * Comparaison à temps constant. `===` s'arrête au premier caractère
+ * différent : en mesurant le temps de réponse, on pourrait en théorie
+ * retrouver le secret caractère par caractère. Les deux valeurs sont d'abord
+ * condensées, pour comparer des tampons de même longueur quelle que soit la
+ * saisie — `timingSafeEqual` refuse sinon, et la longueur elle-même ne doit
+ * rien révéler.
+ */
+function sameSecret(given: string | null, expected: string): boolean {
+  if (!given) return false;
+  const digest = (value: string) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(given), digest(expected));
+}
+
 async function runSubscriptionLifecycle(request: Request) {
   const cronSecretHeader = request.headers.get('x-cron-secret');
   const bearer = request.headers.get('authorization');
   const bearerSecret = bearer?.startsWith('Bearer ') ? bearer.slice(7) : null;
 
   const authorized = Boolean(
-    env.cronSecret && (cronSecretHeader === env.cronSecret || bearerSecret === env.cronSecret),
+    env.cronSecret &&
+      (sameSecret(cronSecretHeader, env.cronSecret) || sameSecret(bearerSecret, env.cronSecret)),
   );
   if (!authorized) {
     throw new UnauthorizedError('Secret cron invalide.');
