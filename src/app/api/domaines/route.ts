@@ -2,10 +2,9 @@ import { ok, parseOrThrow, readJson, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { domainSchema } from '@/lib/validation';
-import { ConflictError, ValidationError } from '@/lib/errors';
+import { ValidationError } from '@/lib/errors';
 import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
-import { generateToken } from '@/lib/auth/tokens';
-import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
+import { claimCustomDomain } from '@/lib/domain-claims';
 import { rootHostname } from '@/lib/env';
 
 export const GET = route(async () => {
@@ -34,38 +33,11 @@ export const POST = route(async (request) => {
     );
   }
 
-  // `hostname` est unique au niveau de la plateforme : deux restaurants ne
-  // peuvent pas revendiquer la même adresse.
-  const taken = await prisma.domain.findUnique({
-    where: { hostname },
-    select: { restaurantId: true },
-  });
-  if (taken) {
-    throw new ConflictError(
-      taken.restaurantId === context.restaurant.id
-        ? 'Ce domaine est déjà enregistré sur votre restaurant.'
-        : 'Ce domaine est déjà utilisé.',
-    );
-  }
-
-  const domain = await prisma.domain.create({
-    data: {
-      restaurantId: context.restaurant.id,
-      hostname,
-      type: 'CUSTOM',
-      status: 'PENDING',
-      verificationToken: `magyapro-verify-${generateToken(16)}`,
-    },
-  });
-
-  await recordAudit({
-    action: AUDIT_ACTIONS.DOMAIN_ADDED,
-    actorUserId: context.user.id,
-    actorEmail: context.user.email,
+  // Un domaine en attente ne bloque plus personne — voir `claimCustomDomain`.
+  const domain = await claimCustomDomain({
     restaurantId: context.restaurant.id,
-    targetType: 'domain',
-    targetId: domain.id,
-    metadata: { hostname },
+    hostname,
+    actor: { id: context.user.id, email: context.user.email },
   });
 
   return ok({ domain }, 201);

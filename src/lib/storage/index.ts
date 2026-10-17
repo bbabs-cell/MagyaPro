@@ -3,6 +3,7 @@ import { ValidationError } from '@/lib/errors';
 import { localStorageDriver } from '@/lib/storage/local';
 import { s3StorageDriver } from '@/lib/storage/s3';
 import type { StorageDriver, StoredFile } from '@/lib/storage/types';
+import { PRIVATE_FOLDERS, privateStorageAvailable, putPrivate } from '@/lib/storage/private';
 
 export type { StorageDriver, StoredFile };
 
@@ -125,6 +126,11 @@ export async function uploadImage(params: {
   }
 
   const key = `${restaurantId}/${folder}/${crypto.randomUUID()}.${EXTENSIONS[detected]}`;
+  // Preuves de paiement : espace privé, servi après contrôle d'accès — voir
+  // `storage/private.ts`.
+  if (PRIVATE_FOLDERS.has(folder) && privateStorageAvailable()) {
+    return putPrivate(key, buffer, detected);
+  }
   return storage().put(key, buffer, detected);
 }
 

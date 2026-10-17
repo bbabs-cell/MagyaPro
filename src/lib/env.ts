@@ -117,6 +117,10 @@ export const env = {
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,
   s3Bucket: process.env.S3_BUCKET,
+  /// Bucket **privé** (sans accès public) des preuves de paiement — voir
+  /// `lib/storage/private.ts`. Optionnel : tant qu'il n'est pas renseigné, les
+  /// preuves restent dans le bucket public, comme avant.
+  s3PrivateBucket: process.env.S3_PRIVATE_BUCKET,
   s3AccessKeyId: process.env.S3_ACCESS_KEY_ID,
   s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
   /// URL publique de base servant les fichiers (CDN ou endpoint S3 direct).

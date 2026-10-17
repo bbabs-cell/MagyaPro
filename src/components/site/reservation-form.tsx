@@ -8,7 +8,7 @@ import { Field, inputClass } from '@/components/ui';
 import { useI18n } from '@/components/site/i18n-provider';
 
 type ReservationResult = {
-  reservation: { id: string; confirmationCode: string; reservedFor: string };
+  reservation: { id: string; trackingKey: string; confirmationCode: string; reservedFor: string };
 };
 
 /** Valeur par défaut du champ date/heure : demain, 19h00. */
@@ -92,7 +92,7 @@ export function ReservationForm({
         </p>
         <p className="mt-1 text-xs text-emerald-800">{dict.reservation.keepCode}</p>
         <Link
-          href={`/r/${host}/reservation/${confirmation.id}`}
+          href={`/r/${host}/reservation/${confirmation.trackingKey}`}
           className="mt-4 inline-flex h-10 items-center rounded-xl border border-emerald-300 px-4 text-sm font-medium text-emerald-900 hover:bg-emerald-100"
         >
           Suivre ma réservation

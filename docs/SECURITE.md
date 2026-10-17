@@ -318,14 +318,36 @@ n'est appelée depuis une autre origine. Tests : `tests/origin-check.test.ts`.
 Deux tests le prouvent dans `tests/auth.test.ts` ; ils échouent tous deux
 avec l'ancien code.
 
+### 8. Domaines, preuves de paiement, suivi de réservation (faibles) — corrigé
+
+- **Domaine personnalisé revendiqué sans vérification.** Un domaine en attente
+  bloquait l'adresse pour tous : revendiquer le domaine d'un autre suffisait à
+  l'empêcher de l'ajouter. La valeur TXT attendue est désormais dérivée du
+  couple restaurant/domaine (HMAC avec `SESSION_SECRET`) et une revendication
+  en attente est reprise par le restaurant qui la demande
+  (`lib/domain-claims.ts`). Le vrai propriétaire retrouve la même valeur et son
+  enregistrement DNS le vérifie aussitôt ; seul un domaine vérifié reste
+  attaché. Le restaurant dépossédé garde une trace au journal.
+- **Preuves de paiement publiques.** Elles vont dans un bucket sans accès
+  public (`S3_PRIVATE_BUCKET`) et ne sont servies que par
+  `/api/fichiers-prives/…`, à l'équipe MagyaPro et aux membres du commerce
+  destinataire ; toute autre demande reçoit « introuvable ». Tant que la
+  variable n'est pas renseignée, l'envoi continue de fonctionner comme avant.
+  Les preuves déjà envoyées restent à leur ancienne adresse.
+- **Lien de suivi de réservation.** Il portait l'identifiant (`cuid()` v1,
+  horodatage et compteur) et permettait d'annuler sans compte. Il porte
+  désormais 32 octets aléatoires dont seule l'empreinte est stockée ; les
+  réservations antérieures restent joignables par leur identifiant.
+
+Tests : `tests/private-data.test.ts`.
+
 ## À décider — non corrigé
 
-**Faibles :**
-- un domaine personnalisé revendiqué sans vérification bloque son vrai
-  propriétaire ;
-- les preuves de paiement sont publiques derrière une URL imprévisible ;
-- suivi et annulation de réservation reposent sur un `cuid()` v1, qui n'est
-  pas un aléa cryptographique.
+- **Suivi de commande** : même schéma que l'ancien suivi de réservation — le
+  lien porte l'identifiant de la commande (`cuid()` v1). Il ne permet pas
+  d'annuler, mais il montre le code de livraison et la position du livreur.
+  Même correctif possible (clé aléatoire), à faire avec précaution : ce lien
+  circule par WhatsApp et SMS.
 
 **Dépendances restantes :** `nodemailer` (corrigé seulement en 10.x, majeure
 à tester avec un envoi réel), `postcss` interne à Next et `deepmerge-ts`

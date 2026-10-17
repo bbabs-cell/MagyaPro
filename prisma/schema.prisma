@@ -832,6 +832,11 @@ model Reservation {
   status           ReservationStatus @default(PENDING)
   /// Code communiqué au client, à présenter sur place.
   confirmationCode String            @unique
+  /// Empreinte (SHA-256) de la clé du lien de suivi envoyé au client. La clé
+  /// elle-même — 32 octets aléatoires — n'est jamais stockée : seul celui qui a
+  /// reçu le lien peut suivre ou annuler la réservation. `null` pour les
+  /// réservations antérieures, dont le lien porte encore l'identifiant.
+  accessTokenHash  String?           @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
