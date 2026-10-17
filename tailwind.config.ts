@@ -91,6 +91,26 @@ const config: Config = {
         // Bleu nuit de la marque Magyapro (héros/CTA du site marketing) —
         // fixe, pas piloté par tenant : réservé à l'admin et au dashboard.
         navy: '#0b1730',
+        // Super Admin : encre et fond qui suivent son thème (voir
+        // `admin/theme-root.tsx`). `text-fg/60`, `border-fg/10`, `bg-fg/5` se
+        // lisent pareil dans les deux thèmes — blanc sur bleu nuit, encre sur
+        // ivoire — là où `text-white/60` exigeait une surcharge par classe en
+        // mode clair, et laissait illisible toute classe oubliée.
+        fg: themed('--fg', '#ffffff'),
+        canvas: themed('--canvas', '#0b1730'),
+        // Couleurs de domaine du Super Admin : chacune désigne un sujet, et un
+        // seul. Restaurant et Boutique reprennent leur identité ; les
+        // abonnements (plans, paiements, recette de MagyaPro) sont violets ;
+        // les comptes utilisateurs bleus ; la communication (annonces,
+        // notifications, emails) rose. Le vert, l'ambre et le rouge restent
+        // aux états. Ce qui n'appartient à aucun domaine reste neutre.
+        domain: {
+          resto: themed('--domain-resto', '#ff7a4d'),
+          boutique: themed('--domain-boutique', '#e8c766'),
+          abo: themed('--domain-abo', '#a78bfa'),
+          users: themed('--domain-users', '#38bdf8'),
+          comm: themed('--domain-comm', '#f472b6'),
+        },
         // `ink`/`surface` : jamais de blanc pur, un ivoire doux plus reposant
         // pour les yeux.
         //
@@ -195,6 +215,12 @@ const config: Config = {
         },
         shimmer: { from: { backgroundPosition: '-200% 0' }, to: { backgroundPosition: '200% 0' } },
         'grow-up': { from: { transform: 'scaleY(0)' }, to: { transform: 'scaleY(1)' } },
+        'grow-x': { from: { transform: 'scaleX(0)' }, to: { transform: 'scaleX(1)' } },
+        // Lueur de fond du Super Admin : dérive lente, jamais un clignotement.
+        drift: {
+          '0%, 100%': { transform: 'translate3d(0, 0, 0) scale(1)' },
+          '50%': { transform: 'translate3d(-6%, 4%, 0) scale(1.08)' },
+        },
         'nav-progress': {
           '0%': { transform: 'scaleX(0)' },
           '60%': { transform: 'scaleX(0.75)' },
@@ -211,6 +237,8 @@ const config: Config = {
         pop: 'pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards',
         shimmer: 'shimmer 1.6s linear infinite',
         'grow-up': 'grow-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'grow-x': 'grow-x 0.9s cubic-bezier(0.22, 1, 0.36, 1) both',
+        drift: 'drift 18s ease-in-out infinite',
         // Long et décélérant : la barre avance tant que le serveur travaille,
         // sans jamais prétendre être arrivée.
         'nav-progress': 'nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) both',

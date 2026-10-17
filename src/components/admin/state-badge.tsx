@@ -10,18 +10,20 @@ import type { StateTone } from '@/lib/subscription-labels';
  * et mélange le rendu avec les exports propres au routage (`metadata`,
  * `dynamic`). Elles sont donc ici, où un composant partagé doit être.
  *
- * Le fond du Super Admin est sombre, là où le reste de l'application est clair.
- * Ces pastilles ne peuvent donc pas être celles de `components/ui` : ce sont
- * les mêmes tons, transposés.
+ * Le Super Admin a son propre thème (sombre ou clair, voir `theme-root.tsx`) :
+ * ces pastilles lisent ses jetons — `state-*` pour les états, `fg` pour le
+ * neutre — et restent lisibles dans les deux.
  */
 
 const TONE_STYLES: Record<StateTone, string> = {
-  success: 'bg-emerald-500/15 text-emerald-300',
-  warning: 'bg-amber-500/15 text-amber-200',
-  danger: 'bg-red-500/15 text-red-300',
-  info: 'bg-sky-500/15 text-sky-300',
-  brand: 'bg-white/15 text-white',
-  neutral: 'bg-white/10 text-white/60',
+  success: 'bg-emerald-500/15 text-state-ok',
+  warning: 'bg-amber-500/15 text-state-warn',
+  danger: 'bg-red-500/15 text-state-bad',
+  // `info` ne sert ici qu'à l'essai gratuit : un état d'abonnement, donc la
+  // couleur des abonnements plutôt qu'un bleu qui désigne les utilisateurs.
+  info: 'bg-domain-abo/15 text-domain-abo',
+  brand: 'bg-fg/15 text-fg',
+  neutral: 'bg-fg/10 text-fg/60',
 };
 
 export function AdminStateBadge({ label, tone }: { label: string; tone: StateTone }) {

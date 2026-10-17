@@ -13,6 +13,7 @@ import { SubscriptionPanel } from '@/components/admin/subscription-panel';
 import { listStorePayments } from '@/lib/platform-revenue';
 import { getStoreBillingPosition } from '@/lib/boutique/store-pricing';
 import { SALE_STATUS_LABELS } from '@/lib/boutique/labels';
+import { DOMAIN_DOT } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Fiche boutique' };
 export const dynamic = 'force-dynamic';
@@ -66,37 +67,38 @@ export default async function AdminBoutiqueDetailPage({
         <div>
           <Link
             href="/admin/boutiques"
-            className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+            className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
           >
             ← Boutiques
           </Link>
           <h1 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
+            <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOMAIN_DOT.boutique}`} />
             {store.name}
             <StatusPill status={store.status} />
           </h1>
-          <p className="mt-1 font-mono text-sm text-white/50">{store.slug}</p>
+          <p className="mt-1 font-mono text-sm text-fg/60">{store.slug}</p>
         </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-white/40">Type</p>
+        <div className="rounded-2xl border border-fg/10 bg-fg/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-fg/60">Type</p>
           <p className="mt-1 text-lg font-semibold">
             {BUSINESS_TYPE_LABELS[store.businessType] ?? store.businessType}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-white/40">Volume total</p>
+        <div className="rounded-2xl border border-fg/10 bg-fg/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-fg/60">Volume total</p>
           <p className="mt-1 text-lg font-semibold">
             {formatMoney(revenue._sum.total ?? 0, store.currency)}
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-white/40">Ventes</p>
+        <div className="rounded-2xl border border-fg/10 bg-fg/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-fg/60">Ventes</p>
           <p className="mt-1 text-lg font-semibold">{store._count.sales}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-wide text-white/40">Produits</p>
+        <div className="rounded-2xl border border-fg/10 bg-fg/5 p-4">
+          <p className="text-xs uppercase tracking-wide text-fg/60">Produits</p>
           <p className="mt-1 text-lg font-semibold">{store._count.products}</p>
         </div>
       </div>
@@ -125,7 +127,7 @@ export default async function AdminBoutiqueDetailPage({
             />
           </div>
         ) : (
-          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+          <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">
             Aucun abonnement rattaché — la boutique ne peut pas être utilisée
             tant qu&apos;un plan n&apos;a pas été réglé.
           </p>
@@ -136,7 +138,7 @@ export default async function AdminBoutiqueDetailPage({
         <h2 id="actions" className="text-sm font-medium">
           Actions d&apos;administration
         </h2>
-        <div className="mt-3 rounded-2xl border border-white/10 p-4">
+        <div className="mt-3 rounded-2xl border border-fg/10 p-4">
           <BoutiqueAdminActions
             store={{
               id: store.id,
@@ -151,32 +153,32 @@ export default async function AdminBoutiqueDetailPage({
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <section>
           <h2 className="text-lg font-medium">Équipe</h2>
-          <ul className="mt-3 divide-y divide-white/10">
+          <ul className="mt-3 divide-y divide-fg/10">
             {store.members.map((member) => (
               <li key={member.id} className="py-3">
                 <p className="font-medium">
                   {member.user.name}{' '}
-                  <span className="font-normal text-white/40">
+                  <span className="font-normal text-fg/60">
                     · {STORE_ROLE_LABELS[member.role]}
                   </span>
                 </p>
-                <p className="text-sm text-white/50">{member.user.email}</p>
+                <p className="text-sm text-fg/60">{member.user.email}</p>
               </li>
             ))}
             {store.members.length === 0 && (
-              <li className="py-3 text-sm text-white/50">Aucun membre.</li>
+              <li className="py-3 text-sm text-fg/60">Aucun membre.</li>
             )}
           </ul>
         </section>
 
         <section>
           <h2 className="text-lg font-medium">Ventes récentes</h2>
-          <ul className="mt-3 divide-y divide-white/10">
+          <ul className="mt-3 divide-y divide-fg/10">
             {recentSales.map((sale) => (
               <li key={sale.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="font-medium">n°{sale.number}</p>
-                  <p className="text-sm text-white/50">
+                  <p className="text-sm text-fg/60">
                     {sale.createdAt.toLocaleDateString('fr-FR')}
                   </p>
                 </div>
@@ -188,13 +190,13 @@ export default async function AdminBoutiqueDetailPage({
                     className={
                       sale.status === 'COMPLETED'
                         ? 'font-medium'
-                        : 'font-medium text-white/40 line-through'
+                        : 'font-medium text-fg/60 line-through'
                     }
                   >
                     {formatMoney(sale.total, store.currency)}
                   </span>
                   {sale.status !== 'COMPLETED' && (
-                    <span className="block text-xs text-white/50">
+                    <span className="block text-xs text-fg/60">
                       {SALE_STATUS_LABELS[sale.status]}
                     </span>
                   )}
@@ -202,7 +204,7 @@ export default async function AdminBoutiqueDetailPage({
               </li>
             ))}
             {recentSales.length === 0 && (
-              <li className="py-3 text-sm text-white/50">Aucune vente.</li>
+              <li className="py-3 text-sm text-fg/60">Aucune vente.</li>
             )}
           </ul>
         </section>

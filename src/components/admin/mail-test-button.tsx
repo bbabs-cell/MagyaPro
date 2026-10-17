@@ -38,14 +38,14 @@ export function MailTestButton() {
         type="button"
         onClick={send}
         disabled={pending}
-        className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-60"
+        className="rounded-lg border border-fg/20 px-3 py-1.5 text-xs font-medium text-fg transition-colors hover:bg-fg/10 disabled:opacity-60"
       >
         {pending ? 'Envoi…' : 'Envoyer un test'}
       </button>
       {result ? (
         <p
           role="status"
-          className={`mt-2 max-w-xs text-xs ${result.sent ? 'text-emerald-300' : 'text-red-300'}`}
+          className={`mt-2 max-w-xs text-xs ${result.sent ? 'text-state-ok' : 'text-state-bad'}`}
         >
           <span aria-hidden="true">{result.sent ? '✓' : '✕'}</span> {result.message}
         </p>

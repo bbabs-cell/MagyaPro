@@ -39,11 +39,11 @@ export function SubscriptionPanel({
   const total = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
   return (
-    <div className="rounded-2xl border border-white/10 p-4 text-sm">
+    <div className="rounded-2xl border border-fg/10 p-4 text-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-medium">{plan.name}</p>
-          <p className="mt-0.5 text-white/50">
+          <p className="mt-0.5 text-fg/60">
             {formatMoney(plan.price, plan.currency)} / {plan.interval === 'MONTH' ? 'mois' : 'an'}
           </p>
         </div>
@@ -51,24 +51,24 @@ export function SubscriptionPanel({
       </div>
 
       <p
-        className={`mt-3 border-t border-white/10 pt-3 ${
-          days < 0 ? 'text-red-300' : days <= RENEWAL_SOON_DAYS ? 'text-amber-200' : 'text-white/60'
+        className={`mt-3 border-t border-fg/10 pt-3 ${
+          days < 0 ? 'text-state-bad' : days <= RENEWAL_SOON_DAYS ? 'text-state-warn' : 'text-fg/60'
         }`}
       >
         Période jusqu&apos;au {currentPeriodEnd.toLocaleDateString('fr-FR')} — {deadlineLabel(days)}
       </p>
 
       {billingNote && (
-        <p className="mt-2 rounded-md bg-amber-400/10 px-2 py-1 text-xs text-amber-200">
+        <p className="mt-2 rounded-md bg-amber-400/10 px-2 py-1 text-xs text-state-warn">
           {billingNote}
         </p>
       )}
 
-      <div className="mt-4 border-t border-white/10 pt-3">
-        <p className="flex flex-wrap items-baseline justify-between gap-2 text-xs uppercase tracking-wide text-white/40">
+      <div className="mt-4 border-t border-fg/10 pt-3">
+        <p className="flex flex-wrap items-baseline justify-between gap-2 text-xs uppercase tracking-wide text-fg/60">
           Règlements validés
           {payments.length > 0 && (
-            <span className="normal-case tracking-normal text-white/60">
+            <span className="normal-case tracking-normal text-fg/60">
               {formatMoney(total, payments[0]!.currency)} sur {payments.length} règlement
               {payments.length > 1 ? 's' : ''}
             </span>
@@ -79,16 +79,16 @@ export function SubscriptionPanel({
           // Un client peut être actif sans avoir jamais réglé : essai en cours,
           // ou abonnement ouvert à la main depuis cette page. Le dire est plus
           // utile qu'une liste vide.
-          <p className="mt-2 text-white/50">
+          <p className="mt-2 text-fg/60">
             Aucun règlement validé — essai en cours, ou abonnement ouvert manuellement.
           </p>
         ) : (
           <ul className="mt-2 space-y-1.5">
             {payments.map((payment) => (
               <li key={payment.id} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5">
-                <span className="text-white/70">
+                <span className="text-fg/70">
                   {payment.paidAt.toLocaleDateString('fr-FR')}
-                  <span className="ml-2 text-xs text-white/40">
+                  <span className="ml-2 text-xs text-fg/60">
                     {payment.planName} · {paymentMethodLabel(payment.provider)}
                   </span>
                 </span>

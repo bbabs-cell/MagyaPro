@@ -81,3 +81,17 @@ sur de la génération d'images payante, et les autres (`minimalist-ui`,
 `industrial-brutalist-ui`, `high-end-visual-design`…) défendent des directions
 esthétiques contradictoires entre elles. Elles restent installables à la demande,
 une par une, avec l'option `--skill`.
+
+## methode-magyapro
+
+- Écrit pour ce dépôt : il condense ce qui a été appris en construisant
+  MagyaPro — design system à jetons, mobile d'abord, vitesse sur réseau
+  faible, architecture des routes et services, sécurité multi-tenant, tests et
+  livraison par PR — avec le pourquoi de chaque règle.
+- Conçu pour être **copié tel quel dans d'autres dépôts du propriétaire**
+  (Atelier Flow en premier) : copier le dossier
+  `.claude/skills/methode-magyapro/` dans le `.claude/skills/` du dépôt cible.
+- `assets/` : gabarits prêts à adapter (`themed()` Tailwind 3 et
+  équivalent Tailwind 4, jetons CSS, tableaux en fiches, `route()` et erreurs
+  typées, service d'écriture, images optimisées). `scripts/audit-debordement.mjs` :
+  audit Playwright à 375 px (débordements et boutons écrasés).

@@ -93,14 +93,14 @@ export function BoutiqueAdminActions({
   }
 
   const inputStyle =
-    'w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40';
+    'w-full rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45';
   const buttonStyle =
     'rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50';
 
   return (
     <div className="space-y-3">
       {error && (
-        <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+        <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}
@@ -110,7 +110,7 @@ export function BoutiqueAdminActions({
           <button
             type="button"
             onClick={() => setMode('support')}
-            className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+            className={`${buttonStyle} bg-fg text-canvas hover:bg-fg/90`}
           >
             Accès support
           </button>
@@ -120,7 +120,7 @@ export function BoutiqueAdminActions({
               type="button"
               disabled={pending}
               onClick={() => changeStatus('ACTIVE')}
-              className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+              className={`${buttonStyle} bg-fg text-canvas hover:bg-fg/90`}
             >
               Réactiver
             </button>
@@ -128,7 +128,7 @@ export function BoutiqueAdminActions({
             <button
               type="button"
               onClick={() => setMode('suspend')}
-              className={`${buttonStyle} border border-white/20 hover:bg-white/10`}
+              className={`${buttonStyle} border border-fg/20 hover:bg-fg/10`}
             >
               Suspendre
             </button>
@@ -137,7 +137,7 @@ export function BoutiqueAdminActions({
           <button
             type="button"
             onClick={() => setMode('delete')}
-            className={`${buttonStyle} border border-red-500/40 text-red-300 hover:bg-red-500/10`}
+            className={`${buttonStyle} border border-red-500/40 text-state-bad hover:bg-red-500/10`}
           >
             Supprimer
           </button>
@@ -148,7 +148,7 @@ export function BoutiqueAdminActions({
         <div className="space-y-3">
           <label htmlFor="support-reason" className="block text-sm">
             Motif de l&apos;accès
-            <span className="mt-1 block text-xs text-white/50">
+            <span className="mt-1 block text-xs text-fg/60">
               Consigné au journal avec votre identité et la durée de la session.
               Le commerçant voit un bandeau pendant toute la durée de l&apos;accès.
             </span>
@@ -165,11 +165,11 @@ export function BoutiqueAdminActions({
               type="button"
               disabled={pending || reason.trim().length < 10}
               onClick={startSupport}
-              className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+              className={`${buttonStyle} bg-fg text-canvas hover:bg-fg/90`}
             >
               {pending ? 'Ouverture…' : "Ouvrir l'accès support"}
             </button>
-            <button type="button" onClick={reset} className={`${buttonStyle} text-white/60`}>
+            <button type="button" onClick={reset} className={`${buttonStyle} text-fg/60`}>
               Annuler
             </button>
           </div>
@@ -180,7 +180,7 @@ export function BoutiqueAdminActions({
         <div className="space-y-3">
           <label htmlFor="suspend-reason" className="block text-sm">
             Motif de la suspension
-            <span className="mt-1 block text-xs text-white/50">
+            <span className="mt-1 block text-xs text-fg/60">
               Le site public passe hors ligne et les modifications sont bloquées.
               Aucune donnée n&apos;est supprimée.
             </span>
@@ -201,7 +201,7 @@ export function BoutiqueAdminActions({
             >
               {pending ? 'Suspension…' : 'Suspendre la boutique'}
             </button>
-            <button type="button" onClick={reset} className={`${buttonStyle} text-white/60`}>
+            <button type="button" onClick={reset} className={`${buttonStyle} text-fg/60`}>
               Annuler
             </button>
           </div>
@@ -210,15 +210,15 @@ export function BoutiqueAdminActions({
 
       {mode === 'delete' && (
         <div className="space-y-3 rounded-xl border border-red-500/40 p-4">
-          <p className="text-sm font-medium text-red-200">Suppression définitive</p>
-          <p className="text-sm text-white/70">
+          <p className="text-sm font-medium text-state-bad">Suppression définitive</p>
+          <p className="text-sm text-fg/70">
             Cette action supprime la boutique, son catalogue, ses{' '}
             {store.salesCount} vente
             {store.salesCount > 1 ? 's' : ''}, ses clients et son historique.
             Elle est irréversible et ne peut pas être annulée.
           </p>
           {store.status !== 'SUSPENDED' && (
-            <p className="rounded-lg bg-amber-500/15 px-3 py-2 text-sm text-amber-200">
+            <p className="rounded-lg bg-amber-500/15 px-3 py-2 text-sm text-state-warn">
               La boutique doit être suspendue avant de pouvoir être supprimée.
             </p>
           )}
@@ -243,7 +243,7 @@ export function BoutiqueAdminActions({
             >
               {pending ? 'Suppression…' : 'Supprimer définitivement'}
             </button>
-            <button type="button" onClick={reset} className={`${buttonStyle} text-white/60`}>
+            <button type="button" onClick={reset} className={`${buttonStyle} text-fg/60`}>
               Annuler
             </button>
           </div>

@@ -84,7 +84,7 @@ export default async function AdminConsolidatedPage() {
     <>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Vue consolidée</h1>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-fg/60">
           Restaurant et Boutique sur les mêmes axes, sur {MONTHS} mois. Les
           restaurants et boutiques de démonstration sont exclus partout.
         </p>
@@ -94,7 +94,7 @@ export default async function AdminConsolidatedPage() {
         <h2 id="recette" className="text-sm font-medium">
           Recette encaissée
         </h2>
-        <p className="mt-1 text-xs text-white/40">
+        <p className="mt-1 text-xs text-fg/60">
           Paiements d&apos;abonnement dont vous avez validé la preuve. C&apos;est
           de l&apos;argent constaté reçu, pas une prévision.
         </p>
@@ -116,8 +116,8 @@ export default async function AdminConsolidatedPage() {
           />
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 p-4">
-          <BarChart
+        <div className="mt-4 rounded-2xl border border-fg/10 p-4">
+          <BarChart domain="abo"
             data={revenue.byMonth.slice(-MONTHS).map((point) => {
               const amount = amountIn(point.byCurrency, currency);
               return {
@@ -138,7 +138,7 @@ export default async function AdminConsolidatedPage() {
         <h2 id="mrr" className="text-sm font-medium">
           Revenu récurrent projeté
         </h2>
-        <p className="mt-1 text-xs text-white/40">
+        <p className="mt-1 text-xs text-fg/60">
           Prix des plans multiplié par le nombre d&apos;abonnements actifs — ce
           que rapporterait un mois où tout le monde paie à l&apos;heure. À
           comparer à la recette réelle ci-dessus : l&apos;écart, ce sont les
@@ -177,7 +177,7 @@ export default async function AdminConsolidatedPage() {
           <h2 id="inscriptions" className="text-sm font-medium">
             Nouveaux comptes par mois
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
             <GroupedBarChart
               data={signups}
               format={(value) => String(value)}
@@ -191,7 +191,7 @@ export default async function AdminConsolidatedPage() {
           <h2 id="volumes" className="text-sm font-medium">
             Volume traité par mois
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
             <GroupedBarChart
               data={volumes}
               format={(value) => formatMoney(value, volumeCurrency)}
@@ -199,7 +199,7 @@ export default async function AdminConsolidatedPage() {
               secondLabel="Ventes"
             />
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-fg/60">
             L&apos;argent qui passe dans les caisses de vos clients, pas le
             vôtre. En {volumeCurrency}.
             {hasSeveralCurrencies(volumeTotals) && (
@@ -222,21 +222,21 @@ export default async function AdminConsolidatedPage() {
           Abonnements actifs par plan, tous produits
         </h2>
         {allPlans.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+          <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">
             Aucun abonnement actif actuellement.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {allPlans.map((plan) => (
               <li
                 key={plan.planId}
                 className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3.5 text-sm"
               >
                 <span className="font-medium">{plan.planName}</span>
-                <span className="text-white/60">
+                <span className="text-fg/60">
                   {plan.count} abonné{plan.count > 1 ? 's' : ''}
                 </span>
-                <span className="text-white/40">{formatMoney(plan.mrr, plan.currency)}/mois</span>
+                <span className="text-fg/60">{formatMoney(plan.mrr, plan.currency)}/mois</span>
               </li>
             ))}
           </ul>
@@ -244,7 +244,7 @@ export default async function AdminConsolidatedPage() {
         {/* Les deux produits ont des plans qui portent le même nom — « Premium »
             existe des deux côtés à des tarifs différents. Sans le tarif affiché
             à côté, deux lignes identiques seraient indiscernables. */}
-        <p className="mt-2 text-xs text-white/40">
+        <p className="mt-2 text-xs text-fg/60">
           Les deux produits ont des plans homonymes ; le montant mensuel les
           distingue.
         </p>

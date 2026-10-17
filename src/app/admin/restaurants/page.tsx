@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { formatMoney } from '@/lib/money';
 import { StatusPill } from '@/components/admin/state-badge';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Restaurants' };
 export const dynamic = 'force-dynamic';
@@ -75,8 +76,10 @@ export default async function AdminRestaurantsPage({
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Restaurants</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <DomainHeading as="h1" domain="resto" className="text-2xl font-semibold tracking-tight">
+        Restaurants
+      </DomainHeading>
+      <p className="mt-1 text-sm text-fg/60">
         {total} restaurant{total > 1 ? 's' : ''} sur la plateforme.
       </p>
 
@@ -89,7 +92,7 @@ export default async function AdminRestaurantsPage({
           name="q"
           defaultValue={query}
           placeholder="Nom, adresse ou email"
-          className="min-w-52 flex-1 rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40"
+          className="min-w-52 flex-1 rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45"
         />
         <label htmlFor="statut" className="sr-only">
           Filtrer par statut
@@ -98,23 +101,23 @@ export default async function AdminRestaurantsPage({
           id="statut"
           name="statut"
           defaultValue={status ?? ''}
-          className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-sm text-white"
+          className="rounded-xl border border-fg/20 bg-fg/5 px-3 py-2.5 text-sm text-fg"
         >
-          <option value="" className="text-ink">Tous les statuts</option>
-          <option value="ACTIVE" className="text-ink">En ligne</option>
-          <option value="DRAFT" className="text-ink">Brouillon</option>
-          <option value="SUSPENDED" className="text-ink">Suspendu</option>
+          <option value="" className="bg-canvas text-fg">Tous les statuts</option>
+          <option value="ACTIVE" className="bg-canvas text-fg">En ligne</option>
+          <option value="DRAFT" className="bg-canvas text-fg">Brouillon</option>
+          <option value="SUSPENDED" className="bg-canvas text-fg">Suspendu</option>
         </select>
         <button
           type="submit"
-          className="h-11 rounded-xl bg-white px-4 text-sm font-medium text-ink hover:bg-white/90"
+          className="h-11 rounded-xl bg-fg px-4 text-sm font-medium text-canvas hover:bg-fg/90"
         >
           Filtrer
         </button>
       </form>
 
       {restaurants.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-dashed border-white/20 p-10 text-center text-sm text-white/60">
+        <p className="mt-8 rounded-2xl border border-dashed border-fg/20 p-10 text-center text-sm text-fg/60">
           Aucun restaurant ne correspond à ces critères.
         </p>
       ) : (
@@ -122,7 +125,7 @@ export default async function AdminRestaurantsPage({
           <table className="table-stack table-stack-titled w-full border-collapse text-sm">
             <caption className="sr-only">Restaurants de la plateforme</caption>
             <thead>
-              <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">
+              <tr className="border-b border-fg/10 text-left text-xs uppercase tracking-wide text-fg/60">
                 <th scope="col" className="py-2 pr-3 font-medium">Restaurant</th>
                 <th scope="col" className="py-2 pr-3 font-medium">Abonnement</th>
                 <th scope="col" className="py-2 pr-3 text-right font-medium">Commandes</th>
@@ -132,7 +135,7 @@ export default async function AdminRestaurantsPage({
             </thead>
             <tbody>
               {restaurants.map((restaurant) => (
-                <tr key={restaurant.id} className="border-b border-white/10">
+                <tr key={restaurant.id} className="border-b border-fg/10">
                   <td data-label="Restaurant" className="py-3 pr-3">
                     <Link
                       href={`/admin/restaurants/${restaurant.id}`}
@@ -140,7 +143,7 @@ export default async function AdminRestaurantsPage({
                     >
                       {restaurant.name}
                     </Link>
-                    <span className="block text-xs text-white/40">
+                    <span className="block text-xs text-fg/60">
                       {restaurant.slug}
                       {restaurant.isDemo && ' · démo'}
                       {' · '}
@@ -151,7 +154,7 @@ export default async function AdminRestaurantsPage({
                       {restaurant._count.members > 1 ? 's' : ''}
                     </span>
                   </td>
-                  <td data-label="Abonnement" className="py-3 pr-3 text-white/70">
+                  <td data-label="Abonnement" className="py-3 pr-3 text-fg/70">
                     {restaurant.subscription
                       ? `${restaurant.subscription.plan.name} · ${restaurant.subscription.status}`
                       : 'Aucun'}
@@ -177,14 +180,14 @@ export default async function AdminRestaurantsPage({
 
       {total > pageSize && (
         <nav aria-label="Pagination" className="mt-6 flex items-center justify-between text-sm">
-          <span className="text-white/60">
+          <span className="text-fg/60">
             Page {page} sur {Math.ceil(total / pageSize)}
           </span>
           <div className="flex gap-2">
             {page > 1 && (
               <Link
                 href={`/admin/restaurants?q=${encodeURIComponent(query)}&statut=${status ?? ''}&page=${page - 1}`}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Précédent
               </Link>
@@ -192,7 +195,7 @@ export default async function AdminRestaurantsPage({
             {page * pageSize < total && (
               <Link
                 href={`/admin/restaurants?q=${encodeURIComponent(query)}&statut=${status ?? ''}&page=${page + 1}`}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Suivant
               </Link>

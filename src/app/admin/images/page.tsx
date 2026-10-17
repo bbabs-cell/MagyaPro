@@ -41,16 +41,16 @@ export default async function AdminImagesPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Images</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <p className="mt-1 text-sm text-fg/60">
         Les images de marque affichées sur le site public — logo et illustrations.
       </p>
 
       <section
         aria-label="Marque"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+        className="mt-6 rounded-xl border border-fg/10 bg-fg/5 p-4"
       >
         <h2 className="text-sm font-medium">Logo MagyaPro</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-fg/60">
           Utilisé partout où la marque apparaît (accueil, connexion, tableau de bord, administration).
         </p>
         <div className="mt-3">
@@ -60,10 +60,10 @@ export default async function AdminImagesPage() {
 
       <section
         aria-label="Images « Comment ça fonctionne » (Restaurant)"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+        className="mt-6 rounded-xl border border-fg/10 bg-fg/5 p-4"
       >
         <h2 className="text-sm font-medium">Images « Comment ça fonctionne » — Restaurant</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-fg/60">
           Illustrent les 4 étapes sur <code>/restaurant</code>, avec un dégradé vertical automatique.
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -75,10 +75,10 @@ export default async function AdminImagesPage() {
 
       <section
         aria-label="Page d'accueil MagyaPro Boutique"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+        className="mt-6 rounded-xl border border-fg/10 bg-fg/5 p-4"
       >
         <h2 className="text-sm font-medium">Page d&apos;accueil MagyaPro Boutique</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-fg/60">
           Logo affiché sur <code>/boutique</code> — distinct du logo MagyaPro général et du logo
           propre à chaque boutique (réglé par son propriétaire).
         </p>
@@ -89,10 +89,10 @@ export default async function AdminImagesPage() {
 
       <section
         aria-label="Images « Comment ça fonctionne » (Boutique)"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+        className="mt-6 rounded-xl border border-fg/10 bg-fg/5 p-4"
       >
         <h2 className="text-sm font-medium">Images « Comment ça fonctionne » — Boutique</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-fg/60">
           Illustrent les 4 étapes sur <code>/boutique</code>, à la place du dégradé par défaut.
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,10 +109,10 @@ export default async function AdminImagesPage() {
 
       <section
         aria-label="Images par secteur (Boutique)"
-        className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4"
+        className="mt-6 rounded-xl border border-fg/10 bg-fg/5 p-4"
       >
         <h2 className="text-sm font-medium">Secteurs d&apos;activité — Boutique</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-fg/60">
           Une image par secteur, affichée sur <code>/boutique</code> pour illustrer les commerces
           que la plateforme sert.
         </p>

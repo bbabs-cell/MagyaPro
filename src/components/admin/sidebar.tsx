@@ -9,6 +9,7 @@ import { Logo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { DOMAIN_DOT, DOMAIN_TEXT, type AdminDomain } from '@/components/admin/domain';
 
 const ICON_PROPS = {
   width: 18,
@@ -269,6 +270,43 @@ const SECTIONS: Array<{ title: string; items: Array<{ href: string; label?: stri
 const LINK_BY_HREF = new Map(LINKS.map((link) => [link.href, link]));
 
 /**
+ * Domaine de chaque écran — la couleur de son icône. Une couleur = un sujet
+ * (voir `tailwind.config.ts`) : tout ce qui touche aux abonnements est violet,
+ * qu'il soit rangé sous Restaurant, sous Boutique ou dans les plans ; un écran
+ * qui n'appartient à aucun domaine (vue d'ensemble, journal, réglages,
+ * images) reste neutre.
+ */
+const LINK_DOMAIN: Record<string, AdminDomain> = {
+  '/admin/restaurants': 'resto',
+  '/admin/analytics': 'resto',
+  '/admin/templates': 'resto',
+  '/admin/boutiques': 'boutique',
+  '/admin/analytics-boutique': 'boutique',
+  '/admin/abonnements': 'abo',
+  '/admin/boutique-abonnements': 'abo',
+  '/admin/plans': 'abo',
+  '/admin/utilisateurs': 'users',
+  '/admin/annonces': 'comm',
+  '/admin/notifications': 'comm',
+};
+
+
+/** Repère de l'entrée active : un trait de la couleur de son domaine. */
+const DOMAIN_RAIL: Record<AdminDomain, string> = {
+  resto: 'before:bg-domain-resto',
+  boutique: 'before:bg-domain-boutique',
+  abo: 'before:bg-domain-abo',
+  users: 'before:bg-domain-users',
+  comm: 'before:bg-domain-comm',
+};
+
+/** Intertitres des deux univers : la pastille de leur produit. */
+const SECTION_DOT: Record<string, string | undefined> = {
+  Restaurant: DOMAIN_DOT.resto,
+  Boutique: DOMAIN_DOT.boutique,
+};
+
+/**
  * Barre du bas, sur téléphone — comme les tableaux de bord Restaurant et
  * Boutique. Les quatre écrans ouverts le plus souvent : l'accueil, les deux
  * files de paiements à valider, et les notifications qui les annoncent.
@@ -310,7 +348,10 @@ export function AdminSidebar({
               ajouterait un clic avant chaque navigation. L'espacement est
               serré à dessein — quinze entrées et quatre intertitres doivent
               tenir dans la hauteur d'un écran d'ordinateur portable. */}
-          <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-white/35">
+          <p className="flex items-center gap-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-fg/60">
+            {SECTION_DOT[section.title] && (
+              <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${SECTION_DOT[section.title]}`} />
+            )}
             {section.title}
           </p>
           <div className="space-y-0.5">
@@ -325,6 +366,7 @@ export function AdminSidebar({
               // distinguer. Le nom accessible reprend donc l'univers, en
               // gardant le texte visible tel quel.
               const visible = item.label ?? link.label;
+              const domain = LINK_DOMAIN[link.href];
               return (
                 <Link
                   key={link.href}
@@ -333,16 +375,30 @@ export function AdminSidebar({
                   aria-label={item.label ? `${section.title} — ${item.label}` : undefined}
                   aria-current={active ? 'page' : undefined}
                   className={cx(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
+                    // L'entrée active est neutre — fond et encre du thème. Un
+                    // fond braise, comme avant, aurait dit « Restaurant » sur
+                    // la page des boutiques. Son domaine reste lisible par le
+                    // trait à gauche et la couleur de l'icône.
+                    'group relative flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
+                    "before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:transition-transform before:duration-200 before:content-['']",
                     active
-                      ? 'bg-gradient-to-r from-[#d9461c] to-[#c93f1a] text-white shadow-sm'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white',
+                      ? cx('bg-fg/10 font-medium text-fg before:scale-y-100', domain ? DOMAIN_RAIL[domain] : 'before:bg-fg')
+                      : 'text-fg/65 before:scale-y-0 hover:bg-fg/5 hover:text-fg',
                   )}
                 >
-                  <span className="shrink-0">{link.icon}</span>
+                  <span
+                    className={cx(
+                      'shrink-0 transition-transform duration-200 group-hover:scale-110',
+                      domain ? DOMAIN_TEXT[domain] : active ? 'text-fg' : 'text-fg/60',
+                    )}
+                  >
+                    {link.icon}
+                  </span>
                   <span className="min-w-0 flex-1 truncate">{visible}</span>
                   {link.href === '/admin/notifications' && unreadNotifications > 0 && (
-                    <span className="shrink-0 rounded-full bg-[#c93f1a] px-1.5 py-0.5 text-xs font-semibold text-white">
+                    // Rouge : quelque chose attend une action (même règle que
+                    // la pastille de la barre du bas).
+                    <span className="shrink-0 animate-pop rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white">
                       {unreadNotifications}
                     </span>
                   )}
@@ -369,30 +425,20 @@ export function AdminSidebar({
 
   return (
     <>
-      {/* Couleur de texte propre à la barre : `--ink` reste sombre ailleurs,
-          pour les boutons blancs de l'administration. */}
-      <div
-        style={
-          (theme === 'dark'
-            ? { '--ink': '#ffffff', '--ink-muted': 'rgba(255, 255, 255, 0.6)' }
-            : { '--ink': '#1c1712', '--ink-muted': '#6a6153' }) as React.CSSProperties
-        }
-      >
-        <BottomNav
-          items={bottomItems}
-          moreOpen={menuOpen}
-          onMore={() => setMenuOpen((open) => !open)}
-          label="Navigation rapide de l'administration"
-        />
-      </div>
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-black/20 backdrop-blur lg:hidden">
+      <BottomNav
+        items={bottomItems}
+        moreOpen={menuOpen}
+        onMore={() => setMenuOpen((open) => !open)}
+        label="Navigation rapide de l'administration"
+      />
+      <header className="sticky top-0 z-30 border-b border-fg/10 bg-canvas/80 backdrop-blur lg:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-controls="admin-menu-mobile"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/15"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-fg/15"
           >
             <span className="sr-only">{menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}</span>
             <span aria-hidden="true">{menuOpen ? '✕' : '☰'}</span>
@@ -404,7 +450,7 @@ export function AdminSidebar({
           <ThemeToggle
             theme={theme}
             onToggle={onToggleTheme}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-fg/15 text-fg/60 transition-colors hover:text-fg"
           />
         </div>
         {/* Hauteur bornée puis défilement : le menu s'ouvre dans un en-tête
@@ -413,13 +459,13 @@ export function AdminSidebar({
         {menuOpen && (
           <div
             id="admin-menu-mobile"
-            className="max-h-[calc(100dvh-3.5rem-var(--bottom-nav,0px))] overflow-y-auto overscroll-contain border-t border-white/10 p-4"
+            className="max-h-[calc(100dvh-3.5rem-var(--bottom-nav,0px))] overflow-y-auto overscroll-contain border-t border-fg/10 p-4"
           >
             {navigation}
-            <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
+            <div className="mt-4 space-y-1 border-t border-fg/10 pt-4">
               <Link
                 href="/dashboard"
-                className="block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                className="block rounded-lg px-3 py-2 text-sm text-fg/60 hover:bg-fg/5 hover:text-fg"
               >
                 Mon restaurant
               </Link>
@@ -436,7 +482,7 @@ export function AdminSidebar({
           pas la place aux quinze entrées. Le cadre intérieur tranchait alors
           les intertitres en pleine hauteur de lettre, sans rien indiquer de ce
           qui restait au-dessus ou en dessous. */}
-      <aside className="relative hidden w-64 shrink-0 bg-black/20 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+      <aside className="relative hidden w-64 shrink-0 border-r border-fg/10 bg-fg/[0.025] lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
         <div className="flex min-h-full flex-col p-4">
           <div className="shrink-0 px-2 py-2">
             <div className="flex items-center justify-between gap-2">
@@ -446,18 +492,18 @@ export function AdminSidebar({
               <ThemeToggle
                 theme={theme}
                 onToggle={onToggleTheme}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/60 transition-colors hover:text-white"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-fg/15 text-fg/60 transition-colors hover:text-fg"
               />
             </div>
-            <p className="mt-4 truncate text-xs text-white/40">{userEmail}</p>
+            <p className="mt-4 truncate text-xs text-fg/60">{userEmail}</p>
           </div>
 
           <div className="mt-5 flex-1">{navigation}</div>
 
-          <div className="mt-5 shrink-0 space-y-1 border-t border-white/10 pt-4">
+          <div className="mt-5 shrink-0 space-y-1 border-t border-fg/10 pt-4">
             <Link
               href="/dashboard"
-              className="block rounded-lg px-3 py-2 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+              className="block rounded-lg px-3 py-2 text-sm text-fg/60 hover:bg-fg/5 hover:text-fg"
             >
               Mon restaurant
             </Link>

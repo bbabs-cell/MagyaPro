@@ -186,123 +186,35 @@
   }
 }
 
-/* Mode clair de l'administration (voir `admin/theme-root.tsx`).
-   L'administration n'utilise pas les variables `ink`/`surface` : ses classes
-   sont des utilitaires Tailwind fixes pensés pour un fond sombre. On les
-   surcharge ici pour chaque classe réellement utilisée sous
-   `src/app/admin` et `src/components/admin`, via un sélecteur d'attribut
-   (spécificité (0,2,0)) qui l'emporte sur la classe Tailwind seule
-   (spécificité (0,1,0)) sans avoir besoin de `!important`. */
-[data-admin-theme='light'] {
-  color-scheme: light;
+/* Le Super Admin n'a plus de surcharges de mode clair ici : ses couleurs
+   passent toutes par les jetons `fg`, `canvas`, `domain-*` et `state-*`,
+   posés sur sa racine par `admin/theme-root.tsx` pour chacun des deux thèmes.
+
+   Entrée en cascade (`.stagger`) : chaque enfant arrive 50 ms après le
+   précédent. `backwards`, jamais `both` : une transformation laissée en place
+   capturerait les éléments `fixed` descendants (voir `.route-enter`). */
+.stagger > * {
+  animation: stagger-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
-/* `bg-navy` et `text-white` (racine) : ces deux classes sont posées sur le
-   MÊME élément que `data-admin-theme` (voir `admin/theme-root.tsx`), donc le
-   sélecteur descendant seul ne les atteint pas — il faut aussi la forme
-   composée sans combinateur. */
-[data-admin-theme='light'] .bg-navy,
-[data-admin-theme='light'].bg-navy {
-  /* Même ivoire que le thème clair du reste du produit (voir
-     `chrome.tsx`/`shell.tsx`) — jamais de gris neutre ni de blanc pur. */
-  background-color: #faf8f4;
+/* Déclarée ici : les images clés de Tailwind ne sont émises qu'avec la
+   classe `animate-*` correspondante, qu'une règle CSS ne déclenche pas. */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-[data-admin-theme='light'].text-white {
-  color: #12151a;
-}
-[data-admin-theme='light'] .bg-black\/20 {
-  background-color: rgba(255, 255, 255, 0.75);
-}
-[data-admin-theme='light'] .bg-white\/\[0\.03\] {
-  background-color: rgba(18, 21, 26, 0.03);
-}
-[data-admin-theme='light'] .bg-white\/5 {
-  background-color: rgba(18, 21, 26, 0.04);
-}
-[data-admin-theme='light'] .bg-white\/10 {
-  background-color: rgba(18, 21, 26, 0.06);
-}
-[data-admin-theme='light'] .bg-white\/15 {
-  background-color: rgba(18, 21, 26, 0.08);
-}
-[data-admin-theme='light'] .bg-white\/80 {
-  background-color: rgba(18, 21, 26, 0.7);
-}
-/* `bg-white` reste blanc en mode clair — ces boutons portent toujours un
-   texte `text-ink` (fixe, jamais inversé) : les faire passer au foncé
-   rendrait ce texte illisible sur son propre fond. Un léger contour les
-   distingue du fond de page, lui aussi clair. */
-[data-admin-theme='light'] .bg-white {
-  /* Légèrement teinté plutôt que blanc pur, par cohérence avec le reste du
-     thème clair — la différence avec le fond ivoire environnant reste le
-     contour, pas un blanc franc. */
-  background-color: #fdfbf7;
-  box-shadow: inset 0 0 0 1px rgba(18, 21, 26, 0.12);
-}
-[data-admin-theme='light'] .hover\:bg-white\/5:hover {
-  background-color: rgba(18, 21, 26, 0.05);
-}
-[data-admin-theme='light'] .hover\:bg-white\/10:hover {
-  background-color: rgba(18, 21, 26, 0.08);
-}
-[data-admin-theme='light'] .hover\:bg-white\/90:hover {
-  background-color: #f1ede4;
-}
-[data-admin-theme='light'] .border-white\/10 {
-  border-color: rgba(18, 21, 26, 0.1);
-}
-[data-admin-theme='light'] .border-white\/15 {
-  border-color: rgba(18, 21, 26, 0.12);
-}
-[data-admin-theme='light'] .border-white\/20 {
-  border-color: rgba(18, 21, 26, 0.15);
-}
-[data-admin-theme='light'] .hover\:border-white\/20:hover {
-  border-color: rgba(18, 21, 26, 0.25);
-}
-[data-admin-theme='light'] .focus\:border-white\/30:focus {
-  border-color: rgba(18, 21, 26, 0.35);
-}
-[data-admin-theme='light'] .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
-  border-color: rgba(18, 21, 26, 0.1);
-}
-[data-admin-theme='light'] .text-white {
-  color: #12151a;
-}
-[data-admin-theme='light'] .text-white\/30 {
-  color: rgba(18, 21, 26, 0.4);
-}
-[data-admin-theme='light'] .text-white\/40 {
-  color: rgba(18, 21, 26, 0.45);
-}
-[data-admin-theme='light'] .text-white\/50 {
-  color: rgba(18, 21, 26, 0.5);
-}
-[data-admin-theme='light'] .text-white\/60 {
-  color: rgba(18, 21, 26, 0.55);
-}
-[data-admin-theme='light'] .text-white\/70 {
-  color: rgba(18, 21, 26, 0.6);
-}
-[data-admin-theme='light'] .text-white\/80 {
-  color: rgba(18, 21, 26, 0.7);
-}
-[data-admin-theme='light'] .hover\:text-white:hover {
-  color: #12151a;
-}
-[data-admin-theme='light'] .placeholder\:text-white\/30::placeholder {
-  color: rgba(18, 21, 26, 0.35);
-}
-[data-admin-theme='light'] .placeholder\:text-white\/40::placeholder {
-  color: rgba(18, 21, 26, 0.4);
-}
-[data-admin-theme='light'] .from-white {
-  --tw-gradient-from: #12151a var(--tw-gradient-from-position);
-  --tw-gradient-to: rgb(18 21 26 / 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
-}
-[data-admin-theme='light'] .accent-white {
-  accent-color: #12151a;
-}
+.stagger > :nth-child(2) { animation-delay: 50ms; }
+.stagger > :nth-child(3) { animation-delay: 100ms; }
+.stagger > :nth-child(4) { animation-delay: 150ms; }
+.stagger > :nth-child(5) { animation-delay: 200ms; }
+.stagger > :nth-child(6) { animation-delay: 250ms; }
+.stagger > :nth-child(7) { animation-delay: 300ms; }
+.stagger > :nth-child(n + 8) { animation-delay: 350ms; }
 
 /* ------------------------------------------------------------------
    Thèmes du tableau de bord Boutique.

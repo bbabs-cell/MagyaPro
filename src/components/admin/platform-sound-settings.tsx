@@ -48,15 +48,15 @@ export function PlatformSoundSettings({ soundUrl }: { soundUrl: string | null })
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 p-5">
+    <section className="rounded-2xl border border-fg/10 p-5">
       <h2 className="text-sm font-medium">Son de notification</h2>
-      <p className="mt-1 text-sm text-white/50">
+      <p className="mt-1 text-sm text-fg/60">
         Joué dans cet espace à l&apos;arrivée d&apos;un paiement à valider. Sans fichier, un bip
         est généré par le navigateur. MP3, WAV ou OGG, 1 Mo maximum.
       </p>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="mt-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}
@@ -81,7 +81,7 @@ export function PlatformSoundSettings({ soundUrl }: { soundUrl: string | null })
         />
         <label
           htmlFor="platform-sound"
-          className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-white/20 px-3 text-sm text-white/70 hover:bg-white/10"
+          className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-fg/20 px-3 text-sm text-fg/70 hover:bg-fg/10"
         >
           {busy ? 'Envoi…' : soundUrl ? 'Remplacer' : 'Choisir un son'}
         </label>
@@ -90,7 +90,7 @@ export function PlatformSoundSettings({ soundUrl }: { soundUrl: string | null })
             type="button"
             onClick={remove}
             disabled={busy}
-            className="h-9 rounded-lg px-3 text-sm text-white/50 hover:text-white disabled:opacity-50"
+            className="h-9 rounded-lg px-3 text-sm text-fg/60 hover:text-fg disabled:opacity-50"
           >
             Retirer
           </button>

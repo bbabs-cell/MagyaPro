@@ -56,7 +56,7 @@ export function TemplatePreviewUpload({
           className="mb-3 h-32 w-full rounded-lg object-cover"
         />
       ) : (
-        <span aria-hidden="true" className="mb-3 flex h-32 items-center justify-center rounded-lg bg-white/5 text-xs text-white/30">
+        <span aria-hidden="true" className="mb-3 flex h-32 items-center justify-center rounded-lg bg-fg/5 text-xs text-fg/50">
           Aucun aperçu
         </span>
       )}
@@ -74,11 +74,11 @@ export function TemplatePreviewUpload({
       />
       <label
         htmlFor={`template-preview-${templateKey}`}
-        className="inline-flex cursor-pointer items-center rounded-lg border border-white/15 px-2.5 py-1 text-xs text-white/70 hover:bg-white/5"
+        className="inline-flex cursor-pointer items-center rounded-lg border border-fg/15 px-2.5 py-1 text-xs text-fg/70 hover:bg-fg/5"
       >
         {uploading ? 'Envoi…' : previewUrl ? "Remplacer l'aperçu" : 'Ajouter un aperçu'}
       </label>
-      {error && <p role="alert" className="mt-1.5 text-xs text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-1.5 text-xs text-state-bad">{error}</p>}
     </div>
   );
 }

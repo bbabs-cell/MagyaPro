@@ -17,7 +17,7 @@ export function AdminLogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+      className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
     >
       Se déconnecter
     </button>

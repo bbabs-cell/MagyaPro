@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import type { PlanLimits } from '@/lib/entitlements';
+import { DOMAIN_CHIP } from '@/components/admin/domain';
 
 type Plan = {
   id: string;
@@ -46,7 +47,7 @@ const STORE_LIMIT_FIELDS: Array<{ key: keyof PlanLimits; label: string }> = [
 ];
 
 const inputStyle =
-  'w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40';
+  'w-full rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45';
 const buttonStyle = 'rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-50';
 
 export function PlansManager({
@@ -150,14 +151,14 @@ export function PlansManager({
     const plan = editing === 'new' ? null : editing;
 
     return (
-      <div className="rounded-2xl border border-white/10 p-5">
+      <div className="rounded-2xl border border-fg/10 p-5">
         <h2 className="text-lg font-medium">
           {plan ? `Modifier « ${plan.name} »` : 'Nouveau plan'}
         </h2>
 
         <form onSubmit={save} className="mt-5 space-y-4" noValidate>
           {error && (
-            <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+            <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
               {error}
             </p>
           )}
@@ -176,8 +177,8 @@ export function PlansManager({
               }}
               className={`${inputStyle} mt-1`}
             >
-              <option value="RESTAURANT" className="text-ink">Restaurant</option>
-              <option value="STORE" className="text-ink">Boutique</option>
+              <option value="RESTAURANT" className="bg-canvas text-fg">Restaurant</option>
+              <option value="STORE" className="bg-canvas text-fg">Boutique</option>
             </select>
           </label>
 
@@ -192,7 +193,7 @@ export function PlansManager({
                 className={`${inputStyle} mt-1`}
               />
               {fieldErrors.key && (
-                <span className="mt-1 block text-xs text-red-300">{fieldErrors.key}</span>
+                <span className="mt-1 block text-xs text-state-bad">{fieldErrors.key}</span>
               )}
             </label>
 
@@ -248,8 +249,8 @@ export function PlansManager({
                 defaultValue={plan?.interval ?? 'MONTH'}
                 className={`${inputStyle} mt-1`}
               >
-                <option value="MONTH" className="text-ink">Mensuelle</option>
-                <option value="YEAR" className="text-ink">Annuelle</option>
+                <option value="MONTH" className="bg-canvas text-fg">Mensuelle</option>
+                <option value="YEAR" className="bg-canvas text-fg">Annuelle</option>
               </select>
             </label>
 
@@ -268,7 +269,7 @@ export function PlansManager({
 
           <fieldset>
             <legend className="text-sm font-medium">Limites</legend>
-            <p className="mt-1 text-xs text-white/50">
+            <p className="mt-1 text-xs text-fg/60">
               Vide = aucune limite appliquée. −1 = illimité affiché explicitement.
             </p>
             <div className="mt-2 grid gap-4 sm:grid-cols-4">
@@ -302,7 +303,7 @@ export function PlansManager({
                           : current.filter((value) => value !== feature.value),
                       )
                     }
-                    className="h-4 w-4 accent-white"
+                    className="h-4 w-4 accent-fg"
                   />
                   {feature.label}
                 </label>
@@ -316,7 +317,7 @@ export function PlansManager({
                 type="checkbox"
                 name="isActive"
                 defaultChecked={plan?.isActive ?? true}
-                className="h-4 w-4 accent-white"
+                className="h-4 w-4 accent-fg"
               />
               Plan proposé à la vente
             </label>
@@ -337,14 +338,14 @@ export function PlansManager({
             <button
               type="submit"
               disabled={pending}
-              className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+              className={`${buttonStyle} bg-fg text-canvas hover:bg-fg/90`}
             >
               {pending ? 'Enregistrement…' : 'Enregistrer'}
             </button>
             <button
               type="button"
               onClick={() => setEditing(null)}
-              className={`${buttonStyle} text-white/60`}
+              className={`${buttonStyle} text-fg/60`}
             >
               Annuler
             </button>
@@ -357,7 +358,7 @@ export function PlansManager({
   return (
     <>
       {error && (
-        <p role="alert" className="mb-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+        <p role="alert" className="mb-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}
@@ -366,36 +367,41 @@ export function PlansManager({
         <button
           type="button"
           onClick={() => open('new')}
-          className={`${buttonStyle} bg-white text-ink hover:bg-white/90`}
+          className={`${buttonStyle} bg-fg text-canvas hover:bg-fg/90`}
         >
           Nouveau plan
         </button>
       </div>
 
-      <ul className="divide-y divide-white/10 rounded-2xl border border-white/10">
+      <ul className="divide-y divide-fg/10 rounded-2xl border border-fg/10">
         {plans.map((plan) => (
           <li key={plan.id} className="flex flex-wrap items-center gap-3 p-4">
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-2 font-medium">
                 {plan.name}
-                <span className="font-mono text-xs text-white/40">{plan.key}</span>
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                <span className="font-mono text-xs text-fg/60">{plan.key}</span>
+                {/* Couleur du produit auquel le plan appartient. */}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    DOMAIN_CHIP[plan.product === 'STORE' ? 'boutique' : 'resto']
+                  }`}
+                >
                   {plan.product === 'STORE' ? 'Boutique' : 'Restaurant'}
                 </span>
                 {!plan.isActive && (
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                  <span className="rounded-full bg-fg/10 px-2 py-0.5 text-xs text-fg/60">
                     Inactif
                   </span>
                 )}
               </p>
-              <p className="mt-0.5 text-sm text-white/60">
+              <p className="mt-0.5 text-sm text-fg/60">
                 {formatMoney(plan.price, plan.currency)} /{' '}
                 {plan.interval === 'MONTH' ? 'mois' : 'an'} · {plan.trialDays} j
                 d&apos;essai · {plan.subscriptionsCount} abonné
                 {plan.subscriptionsCount > 1 ? 's' : ''}
               </p>
               {plan.foreignSubscriptionsCount > 0 && (
-                <p className="mt-1 inline-block rounded-md bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200">
+                <p className="mt-1 inline-block rounded-md bg-amber-400/10 px-2 py-0.5 text-xs text-state-warn">
                   Dont {plan.foreignSubscriptionsCount}{' '}
                   {plan.product === 'STORE' ? 'restaurant' : 'boutique'}
                   {plan.foreignSubscriptionsCount > 1 ? 's' : ''} : facturé sur la mauvaise grille
@@ -407,7 +413,7 @@ export function PlansManager({
               <button
                 type="button"
                 onClick={() => open(plan)}
-                className="rounded-lg border border-white/20 px-3 py-1.5 text-sm hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 text-sm hover:bg-fg/10"
               >
                 Modifier
               </button>
@@ -415,7 +421,7 @@ export function PlansManager({
                 type="button"
                 disabled={pending}
                 onClick={() => remove(plan)}
-                className="rounded-lg px-3 py-1.5 text-sm text-white/60 hover:text-red-300 disabled:opacity-50"
+                className="rounded-lg px-3 py-1.5 text-sm text-fg/60 hover:text-state-bad disabled:opacity-50"
               >
                 Supprimer
               </button>

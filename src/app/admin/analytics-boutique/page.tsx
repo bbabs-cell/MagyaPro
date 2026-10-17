@@ -11,6 +11,7 @@ import {
 } from '@/lib/money';
 import { BarChart, Metric } from '@/components/admin/charts';
 import { formatPercent } from '@/lib/numbers';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Analytics Boutique' };
 export const dynamic = 'force-dynamic';
@@ -34,8 +35,10 @@ export default async function AdminStoreAnalyticsPage() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics Boutique</h1>
-        <p className="mt-1 text-sm text-white/60">
+        <DomainHeading as="h1" domain="boutique" className="text-2xl font-semibold tracking-tight">
+          Analytics Boutique
+        </DomainHeading>
+        <p className="mt-1 text-sm text-fg/60">
           Équivalent de « Analytics » pour MagyaPro Boutique — chiffres calculés à partir des
           ventes et abonnements Boutique réels, boutiques de démonstration exclues.
         </p>
@@ -63,8 +66,8 @@ export default async function AdminStoreAnalyticsPage() {
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="signups">
           <h2 id="signups" className="text-sm font-medium">Nouvelles boutiques par mois</h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
-            <BarChart
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
+            <BarChart domain="boutique"
               data={analytics.signupsByMonth.map((m) => ({ label: m.month, value: m.count, display: String(m.count) }))}
               max={maxSignups}
             />
@@ -73,8 +76,8 @@ export default async function AdminStoreAnalyticsPage() {
 
         <section aria-labelledby="gmv">
           <h2 id="gmv" className="text-sm font-medium">Volume de ventes traité par mois</h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
-            <BarChart
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
+            <BarChart domain="boutique"
               data={gmvSeries.map((m) => ({
                 label: m.label,
                 value: m.amount,
@@ -83,7 +86,7 @@ export default async function AdminStoreAnalyticsPage() {
               max={maxGmv}
             />
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-fg/60">
             Volume brut en {volumeCurrency} — à ne pas confondre avec le revenu
             d&apos;abonnement de MagyaPro.
             {hasSeveralCurrencies(volumeTotals) && (
@@ -104,14 +107,14 @@ export default async function AdminStoreAnalyticsPage() {
       <section aria-labelledby="by-plan" className="mt-8">
         <h2 id="by-plan" className="text-sm font-medium">Abonnements Boutique actifs par plan</h2>
         {analytics.byPlan.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">Aucun abonnement actif actuellement.</p>
+          <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">Aucun abonnement actif actuellement.</p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {analytics.byPlan.map((plan) => (
               <li key={plan.planId} className="flex items-center justify-between gap-4 p-3.5 text-sm">
                 <span className="font-medium">{plan.planName}</span>
-                <span className="text-white/60">{plan.count} abonné{plan.count > 1 ? 's' : ''}</span>
-                <span className="text-white/40">{formatMoney(plan.mrr, plan.currency)}/mois</span>
+                <span className="text-fg/60">{plan.count} abonné{plan.count > 1 ? 's' : ''}</span>
+                <span className="text-fg/60">{formatMoney(plan.mrr, plan.currency)}/mois</span>
               </li>
             ))}
           </ul>

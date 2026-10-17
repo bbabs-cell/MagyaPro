@@ -122,6 +122,64 @@ l'exige le critère « intitulé dans le nom ».
 
 ---
 
+## Couleurs et thèmes
+
+### Une couleur, un sujet
+
+Le Super Admin était presque monochrome : une seule teinte, la braise, posée
+sur l'entrée de menu active — donc sur « Boutiques » comme sur
+« Abonnements », alors qu'elle est la couleur de Restaurant. Chaque couleur
+désigne désormais un sujet, et un seul :
+
+| couleur | sujet | où on la voit |
+|---|---|---|
+| braise | MagyaPro Restaurant | comptes, statistiques, templates, cartes Restaurant |
+| or | MagyaPro Boutique | comptes, statistiques, cartes Boutique |
+| violet | abonnements | les deux files d'abonnements, plans, recette MagyaPro, essais |
+| bleu | utilisateurs | écran et carte Utilisateurs |
+| rose | communication | annonces, notifications, état des emails |
+| vert, ambre, rouge | **états** seulement | pastilles, alertes, jauges, variation du mois |
+
+Tout le reste — vue d'ensemble, journal, réglages, images, boutons
+principaux, entrée de menu active — est **neutre**, à l'encre du thème. Une
+couleur posée sans sujet affaiblirait toutes les autres. Le domaine se lit sur
+l'icône, une pastille devant les titres, le trait de l'entrée active et les
+barres des graphiques ; jamais sur un chiffre, qui reste à l'encre pleine.
+
+Les tables sont dans `components/admin/domain.tsx`, les valeurs dans
+`components/admin/theme-root.tsx` (une par thème : plus vives sur le bleu
+nuit, plus profondes sur l'ivoire pour tenir 4,5:1 en texte).
+
+### Le mode clair, réparé
+
+Il reposait sur une quarantaine de surcharges dans `globals.css` — « telle
+classe blanche devient noire en clair » — pour plus de neuf cents classes de
+couleur. Toute classe oubliée restait blanche sur ivoire, et les rouges, ambres
+et verts pastel, pensés pour le fond sombre, devenaient illisibles.
+
+Toutes les couleurs passent maintenant par des jetons posés sur la racine :
+`fg` (l'encre) et `canvas` (le fond) s'inversent avec le thème, `text-fg/60` se
+lit pareil des deux côtés ; les états passent par `state-*`. Les surcharges
+sont supprimées. L'encre secondaire ne descend pas sous 60 % d'opacité : 4,5:1
+sur l'ivoire, 7:1 sur le bleu nuit.
+
+### Le mouvement
+
+L'administration est un outil interne, consulté pour prendre le pouls de la
+plateforme ; on y accepte un peu plus de vie que dans les tableaux de bord des
+commerçants. Chaque animation sert une lecture :
+
+- chaque écran arrive en fondu montant (0,4 s), les cartes en cascade ;
+- les compteurs montent jusqu'à leur valeur, les barres poussent depuis l'axe
+  dans l'ordre des mois, les jauges d'abonnements s'étirent ;
+- le point « Données à jour » bat : les chiffres viennent d'être lus ;
+- le fond (trame et deux lueurs à l'encre du thème) dérive lentement, sans
+  aucune couleur de domaine.
+
+Uniquement `transform` et `opacity` ; tout est coupé pour qui a demandé moins
+d'animations dans son système. Les chiffres sont rendus par le serveur : sans
+JavaScript, ils sont justes dès le premier affichage.
+
 ## Audit de sécurité de la phase
 
 **Aucun contrôle d'accès n'est touché.** Le garde du layout et les
