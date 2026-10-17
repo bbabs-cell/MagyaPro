@@ -81,11 +81,11 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+    <div className="mt-6 rounded-2xl border border-fg/10 bg-fg/5 p-4 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-medium text-white">Données de démonstration</h2>
-          <p className="mt-0.5 text-white/60">
+          <h2 className="font-medium text-fg">Données de démonstration</h2>
+          <p className="mt-0.5 text-fg/60">
             {demoCount > 0
               ? `${demoCount} boutique(s) de démonstration actuellement en ligne.`
               : 'Aucune boutique de démonstration en ligne.'}
@@ -96,7 +96,7 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
             type="button"
             onClick={seed}
             disabled={pending !== null}
-            className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-white/90 disabled:opacity-60"
+            className="rounded-lg bg-fg px-3 py-1.5 text-xs font-medium text-canvas hover:bg-fg/90 disabled:opacity-60"
           >
             {pending === 'seed' ? 'Création…' : 'Créer les manquantes'}
           </button>
@@ -105,7 +105,7 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
               type="button"
               onClick={reset}
               disabled={pending !== null}
-              className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-60"
+              className="rounded-lg border border-fg/20 px-3 py-1.5 text-xs font-medium text-fg hover:bg-fg/10 disabled:opacity-60"
             >
               {pending === 'reset' ? 'Réinitialisation…' : 'Réinitialiser'}
             </button>
@@ -115,15 +115,15 @@ export function BoutiqueDemoPanel({ demoCount }: { demoCount: number }) {
               type="button"
               onClick={clean}
               disabled={pending !== null}
-              className="rounded-lg border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-60"
+              className="rounded-lg border border-fg/20 px-3 py-1.5 text-xs font-medium text-fg hover:bg-fg/10 disabled:opacity-60"
             >
               {pending === 'clean' ? 'Suppression…' : 'Retirer'}
             </button>
           )}
         </div>
       </div>
-      {message && <p className="mt-2 text-emerald-400">{message}</p>}
-      {error && <p className="mt-2 text-red-400">{error}</p>}
+      {message && <p className="mt-2 text-state-ok">{message}</p>}
+      {error && <p className="mt-2 text-state-bad">{error}</p>}
     </div>
   );
 }

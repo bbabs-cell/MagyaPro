@@ -97,18 +97,18 @@ export function SubscriptionManager({
   }
 
   const inputStyle =
-    'w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white';
+    'w-full rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg';
   const labelStyle = 'block text-sm';
 
   return (
     <div className="space-y-4">
       {error && (
-        <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+        <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}
       {saved && !changed && (
-        <p role="status" className="rounded-xl bg-emerald-500/15 px-4 py-3 text-sm text-emerald-200">
+        <p role="status" className="rounded-xl bg-emerald-500/15 px-4 py-3 text-sm text-state-ok">
           Abonnement mis à jour.
         </p>
       )}
@@ -158,14 +158,14 @@ export function SubscriptionManager({
           <button
             type="button"
             onClick={() => extendDays(7)}
-            className="shrink-0 rounded-xl border border-white/20 px-3 py-2 text-xs hover:bg-white/10"
+            className="shrink-0 rounded-xl border border-fg/20 px-3 py-2 text-xs hover:bg-fg/10"
           >
             +7 jours
           </button>
           <button
             type="button"
             onClick={() => extendDays(30)}
-            className="shrink-0 rounded-xl border border-white/20 px-3 py-2 text-xs hover:bg-white/10"
+            className="shrink-0 rounded-xl border border-fg/20 px-3 py-2 text-xs hover:bg-fg/10"
           >
             +30 jours
           </button>
@@ -174,7 +174,7 @@ export function SubscriptionManager({
 
       <label className={labelStyle} htmlFor="trialEndsAt">
         Fin d&apos;essai
-        <span className="mt-1 block text-xs text-white/50">
+        <span className="mt-1 block text-xs text-fg/60">
           Videz le champ pour retirer l&apos;essai en cours.
         </span>
         <input
@@ -201,7 +201,7 @@ export function SubscriptionManager({
         type="button"
         disabled={pending || !changed}
         onClick={save}
-        className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-white/90 disabled:opacity-50"
+        className="rounded-xl bg-fg px-4 py-2 text-sm font-medium text-canvas hover:bg-fg/90 disabled:opacity-50"
       >
         {pending ? 'Enregistrement…' : 'Enregistrer les changements'}
       </button>

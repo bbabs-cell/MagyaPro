@@ -10,6 +10,8 @@ import { getPlatformRevenue } from '@/lib/platform-revenue';
 import {
   SUBSCRIPTION_STATUSES,
   SUBSCRIPTION_STATUS_LABELS,
+  SUBSCRIPTION_STATUS_TONES,
+  type StateTone,
 } from '@/lib/subscription-labels';
 import {
   amountIn,
@@ -22,6 +24,8 @@ import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
 import { StatusPill } from '@/components/admin/state-badge';
 import { formatPercent } from '@/lib/numbers';
+import { CountUp } from '@/components/admin/count-up';
+import { DOMAIN_CHIP, DomainHeading, type AdminDomain } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -205,10 +209,25 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
-      <p className="mt-1 text-sm text-white/60">
-        État de la plateforme — MagyaPro Restaurant et MagyaPro Boutique.
-      </p>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Vue d&apos;ensemble</h1>
+          <p className="mt-1 text-sm text-fg/60">
+            État de la plateforme — MagyaPro Restaurant et MagyaPro Boutique.
+          </p>
+        </div>
+        {/* Le point vert dit un fait : ces chiffres viennent d'être lus en
+            base, à l'heure indiquée. Son halo bat doucement, comme un signe
+            de vie — coupé pour qui demande moins d'animations. */}
+        <p className="flex items-center gap-2 rounded-full border border-fg/10 bg-fg/5 px-3 py-1 text-xs text-fg/70">
+          <span aria-hidden="true" className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-state-ok opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-state-ok" />
+          </span>
+          Données à jour ·{' '}
+          {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Dakar' })}
+        </p>
+      </div>
 
       {/* --- État de l'envoi d'emails ------------------------------------
           Le pilote par défaut est « console » : il écrit l'email dans les
@@ -220,22 +239,35 @@ export default async function AdminDashboardPage() {
       <section
         aria-label="Envoi des emails"
         className={`mt-6 rounded-2xl border p-4 ${
-          mail.delivers ? 'border-white/10 bg-white/5' : 'border-red-500/40 bg-red-500/10'
+          mail.delivers ? 'border-fg/10 bg-fg/5' : 'border-red-500/40 bg-red-500/10'
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="flex items-center gap-2 text-sm font-medium text-white">
-              <span aria-hidden="true">{mail.delivers ? '✓' : '✕'}</span>
+            <h2 className="flex items-center gap-2 text-sm font-medium text-fg">
+              {/* Icône rose : les emails sont de la communication. Le ✓ / ✕
+                  qui suit, lui, dit l'état. */}
+              <span
+                aria-hidden="true"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-domain-comm/15 text-domain-comm"
+              >
+                <svg {...ICON_PROPS}>
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m3 7 9 6 9-6" />
+                </svg>
+              </span>
+              <span aria-hidden="true" className={mail.delivers ? 'text-state-ok' : 'text-state-bad'}>
+                {mail.delivers ? '✓' : '✕'}
+              </span>
               Envoi des emails — pilote{' '}
-              <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
+              <code className="rounded bg-canvas/60 px-1.5 py-0.5 font-mono text-xs">
                 {mail.driver}
               </code>
             </h2>
-            <p className={`mt-1.5 text-sm ${mail.delivers ? 'text-white/60' : 'text-red-200'}`}>
+            <p className={`mt-1.5 text-sm ${mail.delivers ? 'text-fg/60' : 'text-state-bad'}`}>
               {mail.message}
             </p>
-            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg/60">
               {mail.settings.map((setting) => (
                 <li key={setting.key}>
                   <span aria-hidden="true">{setting.present ? '✓' : '✕'}</span>{' '}
@@ -260,25 +292,25 @@ export default async function AdminDashboardPage() {
           aria-labelledby="domaines-a-activer"
           className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4"
         >
-          <h2 id="domaines-a-activer" className="text-sm font-medium text-white">
+          <h2 id="domaines-a-activer" className="text-sm font-medium text-fg">
             {pendingDomains.length} domaine{pendingDomains.length > 1 ? 's' : ''} vérifié
             {pendingDomains.length > 1 ? 's' : ''}, à déclarer chez l&apos;hébergeur
           </h2>
-          <p className="mt-1 text-sm text-amber-100/80">
+          <p className="mt-1 text-sm text-state-warn/80">
             Le propriétaire a prouvé qu&apos;il possède l&apos;adresse et a créé ses
             enregistrements DNS. Tant qu&apos;elle n&apos;est pas ajoutée au projet chez
             l&apos;hébergeur, elle ne sert à rien et le certificat de sécurité n&apos;est pas
             émis.
           </p>
-          <ul className="mt-3 divide-y divide-white/10 rounded-xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-xl border border-fg/10">
             {pendingDomains.map((domain) => (
               <li
                 key={domain.id}
                 className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 text-sm"
               >
                 <span className="font-mono">{domain.hostname}</span>
-                <span className="text-white/60">{domain.restaurant.name}</span>
-                <span className="text-white/40">
+                <span className="text-fg/60">{domain.restaurant.name}</span>
+                <span className="text-fg/60">
                   vérifié le{' '}
                   {domain.verifiedAt?.toLocaleDateString('fr-FR', {
                     day: '2-digit',
@@ -300,45 +332,57 @@ export default async function AdminDashboardPage() {
           monde paie. Ici : les paiements d'abonnement réellement validés. */}
       <section
         aria-labelledby="recette"
-        className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+        // Violet : la recette de MagyaPro, ce sont les abonnements payés.
+        className="relative mt-6 overflow-hidden rounded-2xl border border-domain-abo/25 bg-domain-abo/[0.06] p-5"
       >
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-domain-abo/70" />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 id="recette" className="text-sm font-medium text-white/70">
+            <DomainHeading id="recette" domain="abo" className="text-sm font-medium text-fg/75">
               Recette MagyaPro — ce mois-ci
-            </h2>
-            <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-white">
+            </DomainHeading>
+            <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums text-fg">
               {formatMoney(thisMonth, currency)}
             </p>
             {/* La comparaison porte sur la même portion de mois. Le total
                 complet du mois précédent est donné à côté, sans être comparé :
                 onze jours ne se comparent pas à trente-et-un. */}
-            <p className="mt-1 text-xs text-white/50">
+            {monthChange !== null && (
+              <p
+                className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
+                  monthChange >= 0 ? 'bg-emerald-500/15 text-state-ok' : 'bg-red-500/15 text-state-bad'
+                }`}
+              >
+                <span aria-hidden="true">{monthChange >= 0 ? '↗' : '↘'}</span>
+                {formatPercent(monthChange, { signed: true })}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-fg/60">
               {monthChange === null
                 ? `Pas de comparaison possible : rien d’encaissé au ${revenue.comparisonDayOfMonth} du mois dernier.`
                 : `${formatPercent(monthChange, { signed: true })} par rapport au mois dernier à la même date (${formatMoney(lastMonth, currency)} au ${revenue.comparisonDayOfMonth}).`}
             </p>
-            <p className="mt-0.5 text-xs text-white/40">
+            <p className="mt-0.5 text-xs text-fg/60">
               Mois dernier en entier : {formatMoney(amountIn(revenue.previousMonthFull, currency), currency)}.
             </p>
           </div>
 
           <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
             <div>
-              <dt className="text-xs uppercase tracking-wide text-white/40">Restaurant</dt>
-              <dd className="mt-0.5 font-medium tabular-nums text-white">
+              <dt className="text-xs uppercase tracking-wide text-fg/60">Restaurant</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-fg">
                 {formatMoney(amountIn(revenue.currentMonthByProduct.restaurant, currency), currency)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wide text-white/40">Boutique</dt>
-              <dd className="mt-0.5 font-medium tabular-nums text-white">
+              <dt className="text-xs uppercase tracking-wide text-fg/60">Boutique</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-fg">
                 {formatMoney(amountIn(revenue.currentMonthByProduct.store, currency), currency)}
               </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-wide text-white/40">Depuis le début</dt>
-              <dd className="mt-0.5 font-medium tabular-nums text-white">
+              <dt className="text-xs uppercase tracking-wide text-fg/60">Depuis le début</dt>
+              <dd className="mt-0.5 font-medium tabular-nums text-fg">
                 {formatMoney(amountIn(revenue.allTime, currency), currency)}
               </dd>
             </div>
@@ -362,14 +406,17 @@ export default async function AdminDashboardPage() {
               >
                 <div className="flex h-16 w-full items-end">
                   <div
-                    className={`w-full rounded-t ${amount > 0 ? 'bg-emerald-500/70' : 'bg-white/10'}`}
-                    style={{ height: `${Math.max(2, Math.round((amount / peak) * 100))}%` }}
+                    className={`w-full origin-bottom animate-grow-up rounded-t ${amount > 0 ? 'bg-domain-abo/75' : 'bg-fg/10'}`}
+                    style={{
+                      height: `${Math.max(2, Math.round((amount / peak) * 100))}%`,
+                      animationDelay: `${index * 45}ms`,
+                    }}
                   />
                 </div>
                 {/* Sur téléphone, un mois sur trois : douze libellés dans
                     trois cents pixels ne laissaient que « no… dé… ja… ». */}
                 <span
-                  className={`w-full whitespace-nowrap text-center text-[11px] text-white/40 ${
+                  className={`w-full whitespace-nowrap text-center text-[11px] text-fg/60 ${
                     index % 3 === 2 ? '' : 'max-sm:invisible'
                   } sm:truncate`}
                 >
@@ -390,11 +437,11 @@ export default async function AdminDashboardPage() {
         </p>
 
         {(revenue.pendingCount > 0 || revenue.overdueCount > 0) && (
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4 text-sm">
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-fg/10 pt-4 text-sm">
             {revenue.pendingCount > 0 && (
               <Link
                 href="/admin/abonnements"
-                className="rounded-lg bg-amber-500/15 px-3 py-1.5 text-amber-200 hover:bg-amber-500/25"
+                className="rounded-lg bg-amber-500/15 px-3 py-1.5 text-state-warn hover:bg-amber-500/25"
               >
                 {revenue.pendingCount} paiement{revenue.pendingCount > 1 ? 's' : ''} à valider
               </Link>
@@ -402,7 +449,7 @@ export default async function AdminDashboardPage() {
             {revenue.overdueCount > 0 && (
               <Link
                 href="/admin/abonnements?statut=ACTIVE"
-                className="rounded-lg bg-red-500/15 px-3 py-1.5 text-red-200 hover:bg-red-500/25"
+                className="rounded-lg bg-red-500/15 px-3 py-1.5 text-state-bad hover:bg-red-500/25"
               >
                 {revenue.overdueCount} abonnement{revenue.overdueCount > 1 ? 's' : ''} actif
                 {revenue.overdueCount > 1 ? 's' : ''} dont la période est dépassée
@@ -415,57 +462,64 @@ export default async function AdminDashboardPage() {
       {/* Séparateur franc entre les deux produits : les deux grilles se
           ressemblent trait pour trait, et rien n'indiquait où l'une finissait
           et l'autre commençait. */}
-      <div className="mt-10 border-t border-white/10 pt-6">
-        <h2 className="text-lg font-semibold tracking-tight">MagyaPro Restaurant</h2>
-        <p className="mt-1 text-sm text-white/60">
+      <div className="mt-10 border-t border-fg/10 pt-6">
+        <DomainHeading domain="resto" className="text-lg font-semibold tracking-tight">
+          MagyaPro Restaurant
+        </DomainHeading>
+        <p className="mt-1 text-sm text-fg/60">
           État de la plateforme, tous restaurants confondus.
         </p>
       </div>
 
       <section
         aria-label="Indicateurs de la plateforme"
-        className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+        className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
-        <AdminStat label="Restaurants" value={String(metrics.restaurants)} icon={STAT_ICONS.restaurants} />
+        <AdminStat domain="resto" label="Restaurants" value={metrics.restaurants} icon={STAT_ICONS.restaurants} />
         <AdminStat
+          domain="resto"
           label="Actifs"
-          value={String(metrics.activeRestaurants)}
+          value={metrics.activeRestaurants}
           icon={STAT_ICONS.active}
           hint={`${metrics.suspendedRestaurants} suspendu${metrics.suspendedRestaurants > 1 ? 's' : ''}`}
           // Ambre seulement s'il y a vraiment quelque chose à regarder.
           tone={metrics.suspendedRestaurants > 0 ? 'warning' : undefined}
         />
-        <AdminStat label="Utilisateurs" value={String(metrics.users)} icon={STAT_ICONS.users} />
+        <AdminStat domain="users" label="Utilisateurs" value={metrics.users} icon={STAT_ICONS.users} />
         <AdminStat
+          domain="resto"
           label="Nouveaux (30 j)"
-          value={String(metrics.newRestaurants)}
+          value={metrics.newRestaurants}
           icon={STAT_ICONS.new}
           hint="Restaurants créés"
         />
-        <AdminStat label="Commandes" value={String(metrics.orders)} icon={STAT_ICONS.orders} />
+        <AdminStat domain="resto" label="Commandes" value={metrics.orders} icon={STAT_ICONS.orders} />
         <AdminStat
+          domain="resto"
           label="Volume traité"
           value={volumeValue(metrics.grossVolumeByCurrency)}
           icon={STAT_ICONS.volume}
           hint={volumeHint(metrics.grossVolumeByCurrency, 'Toutes commandes, hors annulées')}
         />
         <AdminStat
+          domain="abo"
           label="Abonnements actifs"
           icon={STAT_ICONS.active_subs}
-          value={String(
+          value={
             (metrics.subscriptionsByStatus.ACTIVE ?? 0) +
-              (metrics.subscriptionsByStatus.TRIALING ?? 0),
-          )}
+              (metrics.subscriptionsByStatus.TRIALING ?? 0)
+          }
         />
         <AdminStat
+          domain="abo"
           label="Abonnements expirés"
           icon={STAT_ICONS.expired_subs}
-          value={String(expiredRestaurantSubs)}
+          value={expiredRestaurantSubs}
           tone={expiredRestaurantSubs > 0 ? 'danger' : undefined}
         />
       </section>
 
-      <p className="mt-3 text-xs text-white/40">
+      <p className="mt-3 text-xs text-fg/60">
         Le volume traité correspond au montant des commandes passées chez les
         restaurants ; il ne s&apos;agit pas du revenu de MagyaPro, qui provient des
         abonnements.
@@ -474,32 +528,32 @@ export default async function AdminDashboardPage() {
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="derniers-restaurants">
           <div className="flex items-center justify-between">
-            <h2 id="derniers-restaurants" className="text-sm font-medium">
+            <DomainHeading id="derniers-restaurants" domain="resto">
               Derniers restaurants
-            </h2>
+            </DomainHeading>
             <Link
               href="/admin/restaurants"
-              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+              className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
             >
               Tout voir
             </Link>
           </div>
 
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {recentRestaurants.map((restaurant) => (
               <li key={restaurant.id}>
                 <Link
                   href={`/admin/restaurants/${restaurant.id}`}
-                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-white/5"
+                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-fg/5"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {restaurant.name}
                       {restaurant.isDemo && (
-                        <span className="ml-2 text-xs text-white/40">démo</span>
+                        <span className="ml-2 text-xs text-fg/60">démo</span>
                       )}
                     </span>
-                    <span className="block truncate text-xs text-white/50">
+                    <span className="block truncate text-xs text-fg/60">
                       {restaurant.slug} · {restaurant._count.orders} commande
                       {restaurant._count.orders > 1 ? 's' : ''}
                     </span>
@@ -512,66 +566,64 @@ export default async function AdminDashboardPage() {
         </section>
 
         <section aria-labelledby="abonnements">
-          <h2 id="abonnements" className="text-sm font-medium">
+          <DomainHeading id="abonnements" domain="abo">
             Répartition des abonnements
-          </h2>
-          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
-            {SUBSCRIPTION_STATUSES.map((key) => (
-              <li key={key} className="flex justify-between text-sm">
-                <span className="text-white/60">{SUBSCRIPTION_STATUS_LABELS[key]}</span>
-                <span className="font-medium">
-                  {metrics.subscriptionsByStatus[key] ?? 0}
-                </span>
-              </li>
-            ))}
-          </ul>
+          </DomainHeading>
+          <SubscriptionBreakdown counts={metrics.subscriptionsByStatus} />
         </section>
       </div>
 
-      <div className="mt-10 border-t border-white/10 pt-6">
-        <h2 className="text-lg font-semibold tracking-tight">MagyaPro Boutique</h2>
-        <p className="mt-1 text-sm text-white/60">
+      <div className="mt-10 border-t border-fg/10 pt-6">
+        <DomainHeading domain="boutique" className="text-lg font-semibold tracking-tight">
+          MagyaPro Boutique
+        </DomainHeading>
+        <p className="mt-1 text-sm text-fg/60">
           État de la plateforme, toutes boutiques confondues.
         </p>
       </div>
 
       <section
         aria-label="Indicateurs Boutique de la plateforme"
-        className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+        className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
       >
-        <AdminStat label="Boutiques" value={String(storeMetrics.stores)} icon={STAT_ICONS.restaurants} />
+        <AdminStat domain="boutique" label="Boutiques" value={storeMetrics.stores} icon={STAT_ICONS.restaurants} />
         <AdminStat
+          domain="boutique"
           label="Actives"
-          value={String(storeMetrics.activeStores)}
+          value={storeMetrics.activeStores}
           icon={STAT_ICONS.active}
           hint={`${storeMetrics.suspendedStores} suspendue${storeMetrics.suspendedStores > 1 ? 's' : ''}`}
           tone={storeMetrics.suspendedStores > 0 ? 'warning' : undefined}
         />
         <AdminStat
+          domain="boutique"
           label="Nouvelles (30 j)"
-          value={String(storeMetrics.newStores)}
+          value={storeMetrics.newStores}
           icon={STAT_ICONS.new}
           hint="Boutiques créées"
         />
-        <AdminStat label="Ventes" value={String(storeMetrics.sales)} icon={STAT_ICONS.orders} />
+        <AdminStat domain="boutique" label="Ventes" value={storeMetrics.sales} icon={STAT_ICONS.orders} />
         <AdminStat
+          domain="boutique"
           label="Volume traité"
           value={volumeValue(storeMetrics.grossVolumeByCurrency)}
           icon={STAT_ICONS.volume}
           hint={volumeHint(storeMetrics.grossVolumeByCurrency, 'Toutes ventes, hors annulées')}
         />
         <AdminStat
+          domain="abo"
           label="Abonnements actifs"
           icon={STAT_ICONS.active_subs}
-          value={String(
+          value={
             (storeMetrics.subscriptionsByStatus.ACTIVE ?? 0) +
-              (storeMetrics.subscriptionsByStatus.TRIALING ?? 0),
-          )}
+              (storeMetrics.subscriptionsByStatus.TRIALING ?? 0)
+          }
         />
         <AdminStat
+          domain="abo"
           label="Abonnements expirés"
           icon={STAT_ICONS.expired_subs}
-          value={String(expiredStoreSubs)}
+          value={expiredStoreSubs}
           tone={expiredStoreSubs > 0 ? 'danger' : undefined}
         />
       </section>
@@ -579,33 +631,33 @@ export default async function AdminDashboardPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="dernieres-boutiques">
           <div className="flex items-center justify-between">
-            <h2 id="dernieres-boutiques" className="text-sm font-medium">
+            <DomainHeading id="dernieres-boutiques" domain="boutique">
               Dernières boutiques
-            </h2>
+            </DomainHeading>
             <Link
               href="/admin/boutiques"
-              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+              className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
             >
               Tout voir
             </Link>
           </div>
 
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {recentStores.length === 0 && (
-              <li className="p-3.5 text-sm text-white/50">Aucune boutique pour le moment.</li>
+              <li className="p-3.5 text-sm text-fg/60">Aucune boutique pour le moment.</li>
             )}
             {recentStores.map((store) => (
               <li key={store.id}>
                 <Link
                   href={`/admin/boutiques/${store.id}`}
-                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-white/5"
+                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-fg/5"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {store.name}
-                      {store.isDemo && <span className="ml-2 text-xs text-white/40">démo</span>}
+                      {store.isDemo && <span className="ml-2 text-xs text-fg/60">démo</span>}
                     </span>
-                    <span className="block truncate text-xs text-white/50">
+                    <span className="block truncate text-xs text-fg/60">
                       {store.slug} · {store._count.sales} vente{store._count.sales > 1 ? 's' : ''}
                     </span>
                   </span>
@@ -617,17 +669,10 @@ export default async function AdminDashboardPage() {
         </section>
 
         <section aria-labelledby="abonnements-boutique">
-          <h2 id="abonnements-boutique" className="text-sm font-medium">
+          <DomainHeading id="abonnements-boutique" domain="abo">
             Répartition des abonnements Boutique
-          </h2>
-          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4">
-            {SUBSCRIPTION_STATUSES.map((key) => (
-              <li key={key} className="flex justify-between text-sm">
-                <span className="text-white/60">{SUBSCRIPTION_STATUS_LABELS[key]}</span>
-                <span className="font-medium">{storeMetrics.subscriptionsByStatus[key] ?? 0}</span>
-              </li>
-            ))}
-          </ul>
+          </DomainHeading>
+          <SubscriptionBreakdown counts={storeMetrics.subscriptionsByStatus} />
         </section>
       </div>
 
@@ -635,26 +680,26 @@ export default async function AdminDashboardPage() {
       {/* Le journal couvre les deux produits : il vit désormais à part,
           sur toute la largeur, au lieu d'être imbriqué dans la colonne
           des abonnements Restaurant où rien ne le rattachait. */}
-      <section aria-label="Activité récente" className="mt-10 border-t border-white/10 pt-6">
+      <section aria-label="Activité récente" className="mt-10 border-t border-fg/10 pt-6">
         <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">Activité récente</h2>
             <Link
               href="/admin/journal"
-              className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+              className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
             >
               Journal complet
             </Link>
           </div>
-          <ul className="mt-3 space-y-2 rounded-2xl border border-white/10 p-4 text-sm">
+          <ul className="mt-3 space-y-2 rounded-2xl border border-fg/10 p-4 text-sm">
             {recentLogs.map((log) => (
               <li key={log.id} className="flex justify-between gap-3">
                 <span className="min-w-0">
-                  <span className="block truncate text-white/85">{auditActionLabel(log.action)}</span>
+                  <span className="block truncate text-fg/85">{auditActionLabel(log.action)}</span>
                   {log.actorEmail && (
-                    <span className="block truncate text-xs text-white/45">{log.actorEmail}</span>
+                    <span className="block truncate text-xs text-fg/60">{log.actorEmail}</span>
                   )}
                 </span>
-                <span className="shrink-0 text-xs text-white/40">
+                <span className="shrink-0 text-xs text-fg/60">
                   {log.createdAt.toLocaleString('fr-FR', {
                     day: '2-digit',
                     month: '2-digit',
@@ -681,15 +726,24 @@ const STAT_ACCENT: Record<'success' | 'warning' | 'danger', string> = {
   danger: 'bg-red-500',
 };
 
+/*
+ * Domaine d'une carte — la couleur de son icône (voir `admin/domain.tsx`).
+ * Elle dit de quoi parle le chiffre, jamais s'il est bon ou mauvais : c'est
+ * le rôle du trait d'alerte ci-dessus.
+ */
+type StatDomain = Exclude<AdminDomain, 'comm'>;
+
 function AdminStat({
   label,
   value,
   hint,
   icon,
   tone,
+  domain,
 }: {
   label: string;
-  value: string;
+  /** Un nombre est compté jusqu'à sa valeur ; un montant formaté est affiché tel quel. */
+  value: number | string;
   hint?: string;
   icon?: React.ReactElement;
   /**
@@ -698,27 +752,76 @@ function AdminStat({
    * n'a pas de couleur.
    */
   tone?: 'success' | 'warning' | 'danger';
+  domain: StatDomain;
 }) {
   return (
-    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition-colors hover:border-white/20 sm:p-4">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-fg/10 bg-fg/[0.03] p-3.5 transition duration-200 hover:-translate-y-0.5 hover:border-fg/20 hover:bg-fg/[0.05] sm:p-4">
       {tone ? (
         <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1 ${STAT_ACCENT[tone]}`} />
       ) : null}
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-[11px] uppercase tracking-wide text-white/50 sm:text-xs">{label}</p>
+        <p className="min-w-0 text-[11px] uppercase tracking-wide text-fg/60 sm:text-xs">{label}</p>
         {icon && (
           // Masquée sur téléphone : en deux colonnes, l'icône prenait la
           // place de l'intitulé, coupé en plein mot.
-          <span className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/60 sm:flex">
+          <span
+            className={`hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:flex ${DOMAIN_CHIP[domain]}`}
+          >
             {icon}
           </span>
         )}
       </div>
-      {/* Chiffre en blanc plein : le dégradé précédent était décoratif et
-          rendait les grands nombres moins lisibles sur fond sombre. */}
-      <p className="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums text-white sm:text-2xl">{value}</p>
-      {hint && <p className="mt-1 text-xs text-white/40">{hint}</p>}
+      {/* Chiffre dans l'encre pleine du thème : la couleur est sur l'icône,
+          jamais sur le nombre, qui doit rester lisible d'abord. */}
+      <p className="mt-2 break-words text-xl font-semibold tracking-tight tabular-nums text-fg sm:text-2xl">
+        {typeof value === 'number' ? <CountUp value={value} /> : value}
+      </p>
+      {hint && <p className="mt-1 text-xs text-fg/60">{hint}</p>}
     </div>
   );
 }
 
+
+/**
+ * Couleur de la jauge d'un statut d'abonnement : celle de son état — même
+ * table que les pastilles (`SUBSCRIPTION_STATUS_TONES`). L'essai est violet,
+ * couleur des abonnements : ce n'est ni un succès ni un problème, seulement un
+ * abonnement qui n'est pas encore payant.
+ */
+const TONE_BAR: Record<StateTone, string> = {
+  success: 'bg-emerald-500/80',
+  warning: 'bg-amber-500/80',
+  danger: 'bg-red-500/80',
+  info: 'bg-domain-abo/80',
+  brand: 'bg-fg/50',
+  neutral: 'bg-fg/30',
+};
+
+/** Répartition des abonnements par statut, chaque ligne avec sa part du total. */
+function SubscriptionBreakdown({ counts }: { counts: Partial<Record<string, number>> }) {
+  const total = Math.max(
+    1,
+    SUBSCRIPTION_STATUSES.reduce((sum, key) => sum + (counts[key] ?? 0), 0),
+  );
+  return (
+    <ul className="stagger mt-3 space-y-3 rounded-2xl border border-fg/10 p-4">
+      {SUBSCRIPTION_STATUSES.map((key) => {
+        const count = counts[key] ?? 0;
+        return (
+          <li key={key} className="text-sm">
+            <div className="flex justify-between">
+              <span className="text-fg/65">{SUBSCRIPTION_STATUS_LABELS[key]}</span>
+              <span className="font-medium tabular-nums">{count}</span>
+            </div>
+            <div aria-hidden="true" className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-fg/[0.07]">
+              <div
+                className={`h-full origin-left animate-grow-x rounded-full ${TONE_BAR[SUBSCRIPTION_STATUS_TONES[key]]}`}
+                style={{ width: `${count > 0 ? Math.max(3, (count / total) * 100) : 0}%` }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

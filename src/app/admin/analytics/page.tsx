@@ -11,6 +11,7 @@ import {
 } from '@/lib/money';
 import { BarChart, Metric } from '@/components/admin/charts';
 import { formatPercent } from '@/lib/numbers';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Analytics' };
 export const dynamic = 'force-dynamic';
@@ -35,8 +36,10 @@ export default async function AdminAnalyticsPage() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics plateforme</h1>
-        <p className="mt-1 text-sm text-white/60">
+        <DomainHeading as="h1" domain="resto" className="text-2xl font-semibold tracking-tight">
+          Analytics plateforme
+        </DomainHeading>
+        <p className="mt-1 text-sm text-fg/60">
           Chiffres calculés à partir des données réelles. Aucun historique de
           MRR n&apos;étant conservé mois par mois, seule sa valeur actuelle est
           affichée.
@@ -71,8 +74,8 @@ export default async function AdminAnalyticsPage() {
           <h2 id="signups" className="text-sm font-medium">
             Inscriptions par mois
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
-            <BarChart
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
+            <BarChart domain="resto"
               data={analytics.signupsByMonth.map((m) => ({
                 label: m.month,
                 value: m.count,
@@ -87,8 +90,8 @@ export default async function AdminAnalyticsPage() {
           <h2 id="gmv" className="text-sm font-medium">
             Volume de commandes traité par mois
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
-            <BarChart
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
+            <BarChart domain="resto"
               data={gmvSeries.map((m) => ({
                 label: m.label,
                 value: m.amount,
@@ -97,7 +100,7 @@ export default async function AdminAnalyticsPage() {
               max={maxGmv}
             />
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-fg/60">
             Volume brut en {volumeCurrency} — à ne pas confondre avec le revenu
             d&apos;abonnement de MagyaPro.
             {hasSeveralCurrencies(volumeTotals) && (
@@ -120,18 +123,18 @@ export default async function AdminAnalyticsPage() {
           Abonnements actifs par plan
         </h2>
         {analytics.byPlan.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+          <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">
             Aucun abonnement actif actuellement.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {analytics.byPlan.map((plan) => (
               <li key={plan.planId} className="flex items-center justify-between gap-4 p-3.5 text-sm">
                 <span className="font-medium">{plan.planName}</span>
-                <span className="text-white/60">
+                <span className="text-fg/60">
                   {plan.count} abonné{plan.count > 1 ? 's' : ''}
                 </span>
-                <span className="text-white/40">{formatMoney(plan.mrr, plan.currency)}/mois</span>
+                <span className="text-fg/60">{formatMoney(plan.mrr, plan.currency)}/mois</span>
               </li>
             ))}
           </ul>

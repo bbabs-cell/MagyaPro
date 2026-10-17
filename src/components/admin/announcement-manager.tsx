@@ -31,9 +31,9 @@ const AUDIENCE_LABELS: Record<Audience, string> = {
 };
 
 const SEVERITY_STYLES: Record<Severity, string> = {
-  INFO: 'bg-blue-500/15 text-blue-200',
-  WARNING: 'bg-amber-500/15 text-amber-200',
-  CRITICAL: 'bg-red-500/15 text-red-200',
+  INFO: 'bg-domain-comm/15 text-domain-comm',
+  WARNING: 'bg-amber-500/15 text-state-warn',
+  CRITICAL: 'bg-red-500/15 text-state-bad',
 };
 
 function isActive(announcement: Announcement): boolean {
@@ -104,13 +104,13 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
   }
 
   const inputStyle =
-    'w-full rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40';
+    'w-full rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45';
 
   return (
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-      <form onSubmit={submit} className="space-y-3 rounded-2xl border border-white/10 p-4">
+      <form onSubmit={submit} className="space-y-3 rounded-2xl border border-fg/10 p-4">
         {error && (
-          <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+          <p role="alert" className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
             {error}
           </p>
         )}
@@ -174,7 +174,7 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
 
         <label className="block text-sm" htmlFor="ann-expires">
           Expire le (facultatif)
-          <span className="mt-1 block text-xs text-white/50">
+          <span className="mt-1 block text-xs text-fg/60">
             Videz pour un message affiché jusqu&apos;à suppression manuelle.
           </span>
           <input
@@ -189,15 +189,15 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-ink hover:bg-white/90 disabled:opacity-50"
+          className="rounded-xl bg-fg px-4 py-2 text-sm font-medium text-canvas hover:bg-fg/90 disabled:opacity-50"
         >
           {pending ? 'Publication…' : "Publier l'annonce"}
         </button>
       </form>
 
-      <ul className="divide-y divide-white/10 rounded-2xl border border-white/10">
+      <ul className="divide-y divide-fg/10 rounded-2xl border border-fg/10">
         {announcements.length === 0 && (
-          <li className="p-4 text-sm text-white/60">Aucune annonce publiée.</li>
+          <li className="p-4 text-sm text-fg/60">Aucune annonce publiée.</li>
         )}
         {announcements.map((announcement) => {
           const active = isActive(announcement);
@@ -211,18 +211,18 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
                     >
                       {SEVERITY_LABELS[announcement.severity]}
                     </span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                    <span className="rounded-full bg-fg/10 px-2 py-0.5 text-xs text-fg/60">
                       {AUDIENCE_LABELS[announcement.audience]}
                     </span>
                     {!active && (
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/50">
+                      <span className="rounded-full bg-fg/10 px-2 py-0.5 text-xs text-fg/60">
                         Terminée
                       </span>
                     )}
                   </div>
                   <p className="mt-1.5 font-medium">{announcement.title}</p>
-                  <p className="mt-0.5 text-sm text-white/70">{announcement.body}</p>
-                  <p className="mt-1.5 text-xs text-white/40">
+                  <p className="mt-0.5 text-sm text-fg/70">{announcement.body}</p>
+                  <p className="mt-1.5 text-xs text-fg/60">
                     Publiée le {new Date(announcement.publishedAt).toLocaleString('fr-FR')}
                     {announcement.expiresAt &&
                       ` · expire le ${new Date(announcement.expiresAt).toLocaleString('fr-FR')}`}
@@ -234,7 +234,7 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
                       type="button"
                       disabled={pending}
                       onClick={() => endNow(announcement.id)}
-                      className="rounded-lg border border-white/20 px-3 py-1.5 text-xs hover:bg-white/10"
+                      className="rounded-lg border border-fg/20 px-3 py-1.5 text-xs hover:bg-fg/10"
                     >
                       Arrêter maintenant
                     </button>
@@ -243,7 +243,7 @@ export function AnnouncementManager({ initial }: { initial: Announcement[] }) {
                     type="button"
                     disabled={pending}
                     onClick={() => remove(announcement.id)}
-                    className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10"
+                    className="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-state-bad hover:bg-red-500/10"
                   >
                     Supprimer
                   </button>

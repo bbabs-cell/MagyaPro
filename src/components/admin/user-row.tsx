@@ -56,32 +56,32 @@ export function UserRow({
   }
 
   return (
-    <tr className="border-b border-white/10">
+    <tr className="border-b border-fg/10">
       <td data-label="Utilisateur" className="py-3 pr-3">
         <span className="block font-medium">
           {user.name}
           {user.platformRole === 'SUPER_ADMIN' && (
-            <span className="ml-2 rounded-full bg-white/15 px-2 py-0.5 text-xs">
+            <span className="ml-2 rounded-full bg-fg/15 px-2 py-0.5 text-xs">
               Super Admin
             </span>
           )}
         </span>
-        <span className="block break-all text-xs text-white/40">
+        <span className="block break-all text-xs text-fg/60">
           {user.email}
           {!user.emailVerified && ' · non vérifié'}
         </span>
         {error && (
-          <span role="alert" className="mt-1 block text-xs text-red-300">
+          <span role="alert" className="mt-1 block text-xs text-state-bad">
             {error}
           </span>
         )}
       </td>
 
-      <td data-label="Restaurants" className="py-3 pr-3 text-white/70">
+      <td data-label="Restaurants" className="py-3 pr-3 text-fg/70">
         {user.restaurants.length === 0 ? '—' : user.restaurants.join(', ')}
       </td>
 
-      <td data-label="Dernière connexion" className="py-3 pr-3 text-white/60">
+      <td data-label="Dernière connexion" className="py-3 pr-3 text-fg/60">
         {user.lastLoginAt
           ? new Date(user.lastLoginAt).toLocaleDateString('fr-FR')
           : 'Jamais'}
@@ -92,8 +92,8 @@ export function UserRow({
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-medium ${
               user.status === 'ACTIVE'
-                ? 'bg-emerald-500/15 text-emerald-300'
-                : 'bg-red-500/15 text-red-300'
+                ? 'bg-emerald-500/15 text-state-ok'
+                : 'bg-red-500/15 text-state-bad'
             }`}
           >
             {user.status === 'ACTIVE' ? 'Actif' : 'Suspendu'}
@@ -104,7 +104,7 @@ export function UserRow({
               type="button"
               disabled={pending}
               onClick={toggleStatus}
-              className="rounded-lg border border-white/20 px-2.5 py-1 text-xs hover:bg-white/10 disabled:opacity-50"
+              className="rounded-lg border border-fg/20 px-2.5 py-1 text-xs hover:bg-fg/10 disabled:opacity-50"
             >
               {user.status === 'ACTIVE' ? 'Suspendre' : 'Réactiver'}
             </button>

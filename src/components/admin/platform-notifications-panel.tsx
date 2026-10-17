@@ -50,7 +50,7 @@ export function PlatformNotificationsPanel({
 
   if (notifications.length === 0) {
     return (
-      <p className="mt-8 rounded-2xl border border-dashed border-white/20 p-10 text-center text-sm text-white/60">
+      <p className="mt-8 rounded-2xl border border-dashed border-fg/20 p-10 text-center text-sm text-fg/60">
         Aucune notification. Les paiements d’abonnement à valider apparaîtront ici.
       </p>
     );
@@ -59,7 +59,7 @@ export function PlatformNotificationsPanel({
   return (
     <div className="mt-6">
       {error && (
-        <p role="alert" className="mb-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="mb-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-state-bad">
           {error}
         </p>
       )}
@@ -69,29 +69,29 @@ export function PlatformNotificationsPanel({
           type="button"
           onClick={() => markRead()}
           disabled={busy}
-          className="mb-4 rounded-lg border border-white/20 px-3 py-1.5 text-sm text-white/70 hover:bg-white/10 disabled:opacity-50"
+          className="mb-4 rounded-lg border border-fg/20 px-3 py-1.5 text-sm text-fg/70 hover:bg-fg/10 disabled:opacity-50"
         >
           Tout marquer comme lu ({unread})
         </button>
       )}
 
-      <ul className="divide-y divide-white/10">
+      <ul className="divide-y divide-fg/10">
         {notifications.map((notification) => (
           <li key={notification.id} className="flex items-start gap-3 py-4">
             <span
               aria-hidden="true"
               className={
                 notification.readAt
-                  ? 'mt-2 h-2 w-2 shrink-0 rounded-full bg-white/15'
+                  ? 'mt-2 h-2 w-2 shrink-0 rounded-full bg-fg/15'
                   : 'mt-2 h-2 w-2 shrink-0 rounded-full bg-amber-400'
               }
             />
             <div className="min-w-0 flex-1">
-              <p className={notification.readAt ? 'text-sm text-white/60' : 'text-sm font-medium'}>
+              <p className={notification.readAt ? 'text-sm text-fg/60' : 'text-sm font-medium'}>
                 {notification.title}
               </p>
-              <p className="mt-0.5 text-sm text-white/50">{notification.body}</p>
-              <p className="mt-1 text-xs text-white/35">
+              <p className="mt-0.5 text-sm text-fg/60">{notification.body}</p>
+              <p className="mt-1 text-xs text-fg/60">
                 {new Date(notification.createdAt).toLocaleString('fr-FR')}
               </p>
             </div>
@@ -99,7 +99,7 @@ export function PlatformNotificationsPanel({
               {notification.href && (
                 <Link
                   href={notification.href}
-                  className="text-xs text-amber-300 underline underline-offset-2"
+                  className="text-xs text-state-warn underline underline-offset-2"
                 >
                   Ouvrir
                 </Link>
@@ -109,7 +109,7 @@ export function PlatformNotificationsPanel({
                   type="button"
                   onClick={() => markRead(notification.id)}
                   disabled={busy}
-                  className="text-xs text-white/50 hover:text-white disabled:opacity-50"
+                  className="text-xs text-fg/60 hover:text-fg disabled:opacity-50"
                 >
                   Marquer lu
                 </button>

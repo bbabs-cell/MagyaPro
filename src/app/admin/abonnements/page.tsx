@@ -24,6 +24,7 @@ import {
   listRestaurantSubscriptions,
 } from '@/lib/admin/subscriptions-list';
 import { RenewalFilters } from '@/components/admin/renewal-filters';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Abonnements' };
 export const dynamic = 'force-dynamic';
@@ -98,8 +99,10 @@ export default async function AdminSubscriptionsPage({
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Abonnements</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <DomainHeading as="h1" domain="abo" className="text-2xl font-semibold tracking-tight">
+        Abonnements
+      </DomainHeading>
+      <p className="mt-1 text-sm text-fg/60">
         {list.total} abonnement{list.total > 1 ? 's' : ''} pour ce filtre
         {list.pageCount > 1 ? ` · page ${list.page} sur ${list.pageCount}` : ''}.
       </p>
@@ -111,7 +114,7 @@ export default async function AdminSubscriptionsPage({
 
       {pendingPayments.length > 0 && (
         <section aria-label="Paiements en attente" className="mt-6">
-          <h2 className="text-sm font-medium text-white/80">
+          <h2 className="text-sm font-medium text-fg/80">
             {pendingPayments.length} paiement{pendingPayments.length > 1 ? 's' : ''} en attente de validation
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -146,7 +149,7 @@ export default async function AdminSubscriptionsPage({
       />
 
       {list.rows.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-dashed border-white/20 p-10 text-center text-sm text-white/60">
+        <p className="mt-8 rounded-2xl border border-dashed border-fg/20 p-10 text-center text-sm text-fg/60">
           Aucun abonnement pour ce filtre.
         </p>
       ) : (
@@ -154,7 +157,7 @@ export default async function AdminSubscriptionsPage({
           <table className="table-stack table-stack-titled w-full border-collapse text-sm">
             <caption className="sr-only">Abonnements des restaurants</caption>
             <thead>
-              <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">
+              <tr className="border-b border-fg/10 text-left text-xs uppercase tracking-wide text-fg/60">
                 <th scope="col" className="py-2 pr-3 font-medium">Restaurant</th>
                 <th scope="col" className="py-2 pr-3 font-medium">Plan</th>
                 <th scope="col" className="py-2 pr-3 font-medium">Statut</th>
@@ -167,7 +170,7 @@ export default async function AdminSubscriptionsPage({
                 const days = daysUntil(subscription.currentPeriodEnd, now);
 
                 return (
-                  <tr key={subscription.id} className="border-b border-white/10">
+                  <tr key={subscription.id} className="border-b border-fg/10">
                     <td data-label="Restaurant" className="py-3 pr-3">
                       <Link
                         href={`/admin/restaurants/${subscription.tenant.id}`}
@@ -175,13 +178,13 @@ export default async function AdminSubscriptionsPage({
                       >
                         {subscription.tenant.name}
                       </Link>
-                      <span className="block text-xs text-white/40">
+                      <span className="block text-xs text-fg/60">
                         {subscription.tenant.slug}
                       </span>
                     </td>
                     <td data-label="Plan" className="py-3 pr-3">
                       {subscription.plan.name}
-                      <span className="block text-xs text-white/40">
+                      <span className="block text-xs text-fg/60">
                         {formatMoney(subscription.plan.price, subscription.plan.currency)} /{' '}
                         {subscription.plan.interval === 'MONTH' ? 'mois' : 'an'}
                       </span>
@@ -199,7 +202,7 @@ export default async function AdminSubscriptionsPage({
                           pour savoir s'il fallait relancer. */}
                       <span
                         className={
-                          days < 0 ? 'text-red-300' : days <= RENEWAL_SOON_DAYS ? 'text-amber-200' : 'text-white/70'
+                          days < 0 ? 'text-state-bad' : days <= RENEWAL_SOON_DAYS ? 'text-state-warn' : 'text-fg/70'
                         }
                       >
                         {subscription.currentPeriodEnd.toLocaleDateString('fr-FR')}
@@ -222,14 +225,14 @@ export default async function AdminSubscriptionsPage({
 
       {list.pageCount > 1 && (
         <nav aria-label="Pagination" className="mt-6 flex items-center justify-between text-sm">
-          <span className="text-white/60">
+          <span className="text-fg/60">
             Page {list.page} sur {list.pageCount} · {SUBSCRIPTIONS_PAGE_SIZE} par page
           </span>
           <div className="flex gap-2">
             {list.page > 1 && (
               <Link
                 href={hrefWith({ page: String(list.page - 1) })}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Précédent
               </Link>
@@ -237,7 +240,7 @@ export default async function AdminSubscriptionsPage({
             {list.page < list.pageCount && (
               <Link
                 href={hrefWith({ page: String(list.page + 1) })}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Suivant
               </Link>
@@ -246,7 +249,7 @@ export default async function AdminSubscriptionsPage({
         </nav>
       )}
 
-      <p className="mt-4 text-xs text-white/40">
+      <p className="mt-4 text-xs text-fg/60">
         La colonne « Encaissé » agrège les paiements de commandes marqués payés
         chez le restaurant, pas le règlement de l&apos;abonnement (voir les
         paiements en attente ci-dessus).

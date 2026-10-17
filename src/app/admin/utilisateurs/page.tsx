@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { UserRow } from '@/components/admin/user-row';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Utilisateurs' };
 export const dynamic = 'force-dynamic';
@@ -53,8 +54,10 @@ export default async function AdminUsersPage({
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Utilisateurs</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <DomainHeading as="h1" domain="users" className="text-2xl font-semibold tracking-tight">
+        Utilisateurs
+      </DomainHeading>
+      <p className="mt-1 text-sm text-fg/60">
         {total} compte{total > 1 ? 's' : ''} sur la plateforme.
       </p>
 
@@ -70,11 +73,11 @@ export default async function AdminUsersPage({
           // `min-w-0` : sans lui, la largeur plancher du champ est celle de
           // son texte indicatif, et le bouton « Rechercher » sortait de
           // l'écran de 15 px à 320 px de large.
-          className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40"
+          className="min-w-0 flex-1 rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45"
         />
         <button
           type="submit"
-          className="h-11 rounded-xl bg-white px-4 text-sm font-medium text-ink hover:bg-white/90"
+          className="h-11 rounded-xl bg-fg px-4 text-sm font-medium text-canvas hover:bg-fg/90"
         >
           Rechercher
         </button>
@@ -84,7 +87,7 @@ export default async function AdminUsersPage({
         <table className="table-stack table-stack-titled w-full border-collapse text-sm">
           <caption className="sr-only">Comptes utilisateurs</caption>
           <thead>
-            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wide text-white/40">
+            <tr className="border-b border-fg/10 text-left text-xs uppercase tracking-wide text-fg/60">
               <th scope="col" className="py-2 pr-3 font-medium">Utilisateur</th>
               <th scope="col" className="py-2 pr-3 font-medium">Restaurants</th>
               <th scope="col" className="py-2 pr-3 font-medium">Dernière connexion</th>
@@ -116,14 +119,14 @@ export default async function AdminUsersPage({
 
       {total > pageSize && (
         <nav aria-label="Pagination" className="mt-6 flex items-center justify-between text-sm">
-          <span className="text-white/60">
+          <span className="text-fg/60">
             Page {page} sur {Math.ceil(total / pageSize)}
           </span>
           <div className="flex gap-2">
             {page > 1 && (
               <a
                 href={`/admin/utilisateurs?q=${encodeURIComponent(query)}&page=${page - 1}`}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Précédent
               </a>
@@ -131,7 +134,7 @@ export default async function AdminUsersPage({
             {page * pageSize < total && (
               <a
                 href={`/admin/utilisateurs?q=${encodeURIComponent(query)}&page=${page + 1}`}
-                className="rounded-lg border border-white/20 px-3 py-1.5 hover:bg-white/10"
+                className="rounded-lg border border-fg/20 px-3 py-1.5 hover:bg-fg/10"
               >
                 Suivant
               </a>

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { prisma } from '@/lib/db';
 import { requireSuperAdmin } from '@/lib/auth/session';
 import { AnnouncementManager } from '@/components/admin/announcement-manager';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Annonces' };
 export const dynamic = 'force-dynamic';
@@ -18,8 +19,10 @@ export default async function AdminAnnouncementsPage() {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Annonces plateforme</h1>
-        <p className="mt-1 text-sm text-white/60">
+        <DomainHeading as="h1" domain="comm" className="text-2xl font-semibold tracking-tight">
+          Annonces plateforme
+        </DomainHeading>
+        <p className="mt-1 text-sm text-fg/60">
           Visibles dans le dashboard des restaurants et/ou des boutiques
           concernés (voir « Destinataires ») tant qu&apos;elles ne sont pas
           expirées.

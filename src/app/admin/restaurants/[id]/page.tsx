@@ -13,6 +13,7 @@ import { SubscriptionPanel } from '@/components/admin/subscription-panel';
 import { listRestaurantPayments } from '@/lib/platform-revenue';
 import { Metric } from '@/components/admin/charts';
 import { ROLE_LABELS } from '@/lib/rbac';
+import { DOMAIN_DOT } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Fiche restaurant' };
 export const dynamic = 'force-dynamic';
@@ -90,22 +91,23 @@ export default async function AdminRestaurantDetailPage({
         <div>
           <Link
             href="/admin/restaurants"
-            className="text-sm text-white/60 underline underline-offset-4 hover:text-white"
+            className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
           >
             ← Restaurants
           </Link>
           <h1 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
+            <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOMAIN_DOT.resto}`} />
             {restaurant.name}
             <StatusPill status={restaurant.status} />
           </h1>
-          <p className="mt-1 font-mono text-sm text-white/50">{restaurant.slug}</p>
+          <p className="mt-1 font-mono text-sm text-fg/60">{restaurant.slug}</p>
         </div>
 
         <Link
           href={`/r/${restaurant.slug}`}
           target="_blank"
           rel="noopener"
-          className="rounded-xl border border-white/20 px-4 py-2 text-sm hover:bg-white/10"
+          className="rounded-xl border border-fg/20 px-4 py-2 text-sm hover:bg-fg/10"
         >
           Voir le site public
         </Link>
@@ -129,7 +131,7 @@ export default async function AdminRestaurantDetailPage({
           <h2 id="demo-edit" className="text-sm font-medium">
             Modifier cette vitrine de démonstration
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="mt-3 rounded-2xl border border-fg/10 bg-fg/5 p-4">
             <DemoRestaurantEditor
               restaurantId={restaurant.id}
               name={restaurant.name}
@@ -151,7 +153,7 @@ export default async function AdminRestaurantDetailPage({
           <h2 id="actions" className="text-sm font-medium">
             Actions d&apos;administration
           </h2>
-          <div className="mt-3 rounded-2xl border border-white/10 p-4">
+          <div className="mt-3 rounded-2xl border border-fg/10 p-4">
             <RestaurantAdminActions
               restaurant={{
                 id: restaurant.id,
@@ -184,7 +186,7 @@ export default async function AdminRestaurantDetailPage({
                 }
                 now={now}
               />
-              <div className="rounded-2xl border border-white/10 p-4">
+              <div className="rounded-2xl border border-fg/10 p-4">
                 <SubscriptionManager
                   restaurantId={restaurant.id}
                   plans={plans}
@@ -198,39 +200,39 @@ export default async function AdminRestaurantDetailPage({
               </div>
             </div>
           ) : (
-            <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+            <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">
               Aucun abonnement rattaché.
             </p>
           )}
 
           <h2 className="mt-6 text-sm font-medium">Équipe</h2>
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {restaurant.members.map((member) => (
               <li key={member.id} className="flex justify-between gap-3 p-3.5 text-sm">
                 <span className="min-w-0">
                   <span className="block truncate">{member.user.name}</span>
-                  <span className="block truncate text-xs text-white/40">
+                  <span className="block truncate text-xs text-fg/60">
                     {member.user.email}
                   </span>
                 </span>
                 {/* Le code brut du rôle était affiché — « STAFF » au lieu de
                     son libellé, alors que la table existe dans `rbac.ts`. */}
-                <span className="shrink-0 text-xs text-white/50">
+                <span className="shrink-0 text-xs text-fg/60">
                   {ROLE_LABELS[member.role] ?? member.role}
                 </span>
               </li>
             ))}
             {restaurant.members.length === 0 && (
-              <li className="p-3.5 text-sm text-white/50">Aucun membre.</li>
+              <li className="p-3.5 text-sm text-fg/60">Aucun membre.</li>
             )}
           </ul>
 
           <h2 className="mt-6 text-sm font-medium">Domaines</h2>
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {restaurant.domains.map((domain) => (
               <li key={domain.id} className="flex justify-between gap-3 p-3.5 text-sm">
                 <span className="min-w-0 truncate font-mono">{domain.hostname}</span>
-                <span className="shrink-0 text-xs text-white/50">
+                <span className="shrink-0 text-xs text-fg/60">
                   {DOMAIN_TYPE_LABELS[domain.type] ?? domain.type} ·{' '}
                   {DOMAIN_STATUS_LABELS[domain.status] ?? domain.status}
                 </span>
@@ -238,7 +240,7 @@ export default async function AdminRestaurantDetailPage({
             ))}
             {restaurant.domains.length === 0 && (
               // Une liste vide encadrée laissait croire à un chargement raté.
-              <li className="p-3.5 text-sm text-white/50">Aucun domaine rattaché.</li>
+              <li className="p-3.5 text-sm text-fg/60">Aucun domaine rattaché.</li>
             )}
           </ul>
         </section>
@@ -249,23 +251,23 @@ export default async function AdminRestaurantDetailPage({
           Historique des accès support
         </h2>
         {supportHistory.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-white/10 p-4 text-sm text-white/60">
+          <p className="mt-3 rounded-2xl border border-fg/10 p-4 text-sm text-fg/60">
             Aucun accès support n&apos;a été ouvert sur cet espace.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/10 rounded-2xl border border-white/10">
+          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
             {supportHistory.map((access) => (
               <li key={access.id} className="p-3.5 text-sm">
                 <p className="flex flex-wrap justify-between gap-2">
                   <span className="font-medium">{access.admin.email}</span>
-                  <span className="text-xs text-white/40">
+                  <span className="text-xs text-fg/60">
                     {access.startedAt.toLocaleString('fr-FR')}
                     {access.endedAt
                       ? ` → ${access.endedAt.toLocaleTimeString('fr-FR')}`
                       : ' · en cours'}
                   </span>
                 </p>
-                <p className="mt-1 text-white/60">{access.reason}</p>
+                <p className="mt-1 text-fg/60">{access.reason}</p>
               </li>
             ))}
           </ul>

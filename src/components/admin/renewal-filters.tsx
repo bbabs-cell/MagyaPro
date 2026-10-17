@@ -20,7 +20,7 @@ import { SUBSCRIPTION_STATUSES, SUBSCRIPTION_STATUS_LABELS } from '@/lib/subscri
  */
 
 const INPUT_CLASS =
-  'min-w-52 flex-1 rounded-xl border border-white/20 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40';
+  'min-w-52 flex-1 rounded-xl border border-fg/20 bg-fg/5 px-3.5 py-2.5 text-sm text-fg placeholder:text-fg/45';
 
 export function RenewalFilters({
   basePath,
@@ -39,10 +39,10 @@ export function RenewalFilters({
   tenantLabel: string;
 }) {
   const chipClass = (active: boolean, tone: 'danger' | 'warning') => {
-    if (active) return tone === 'danger' ? 'bg-red-500/30 text-red-100' : 'bg-amber-500/30 text-amber-100';
+    if (active) return tone === 'danger' ? 'bg-red-500/30 text-state-bad' : 'bg-amber-500/30 text-state-warn';
     return tone === 'danger'
-      ? 'bg-red-500/15 text-red-200 hover:bg-red-500/25'
-      : 'bg-amber-500/15 text-amber-200 hover:bg-amber-500/25';
+      ? 'bg-red-500/15 text-state-bad hover:bg-red-500/25'
+      : 'bg-amber-500/15 text-state-warn hover:bg-amber-500/25';
   };
 
   return (
@@ -83,13 +83,13 @@ export function RenewalFilters({
           id="statut"
           name="statut"
           defaultValue={status === 'ALL' ? '' : status}
-          className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-sm text-white"
+          className="rounded-xl border border-fg/20 bg-fg/5 px-3 py-2.5 text-sm text-fg"
         >
-          <option value="" className="text-ink">
+          <option value="" className="bg-canvas text-fg">
             Tous les statuts
           </option>
           {SUBSCRIPTION_STATUSES.map((key) => (
-            <option key={key} value={key} className="text-ink">
+            <option key={key} value={key} className="bg-canvas text-fg">
               {SUBSCRIPTION_STATUS_LABELS[key]}
             </option>
           ))}
@@ -99,14 +99,14 @@ export function RenewalFilters({
         {deadline && <input type="hidden" name="echeance" value={deadline} />}
         <button
           type="submit"
-          className="h-11 rounded-xl bg-white px-4 text-sm font-medium text-ink hover:bg-white/90"
+          className="h-11 rounded-xl bg-fg px-4 text-sm font-medium text-canvas hover:bg-fg/90"
         >
           Filtrer
         </button>
         {(search || deadline || status !== 'ALL') && (
           <Link
             href={basePath}
-            className="flex h-11 items-center rounded-xl px-3 text-sm text-white/60 hover:text-white"
+            className="flex h-11 items-center rounded-xl px-3 text-sm text-fg/60 hover:text-fg"
           >
             Tout afficher
           </Link>

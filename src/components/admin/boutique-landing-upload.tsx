@@ -43,12 +43,12 @@ export function BoutiqueLandingUpload({ imageUrl }: { imageUrl: string | null })
         <img
           src={`${imageUrl}?t=${Date.now()}`}
           alt=""
-          className="h-16 w-16 rounded-xl border border-white/15 bg-white/5 object-contain p-1.5"
+          className="h-16 w-16 rounded-xl border border-fg/15 bg-fg/5 object-contain p-1.5"
         />
       ) : (
         <span
           aria-hidden="true"
-          className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-white/20 text-xs text-white/40"
+          className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-fg/20 text-xs text-fg/60"
         >
           Aucun logo
         </span>
@@ -68,11 +68,11 @@ export function BoutiqueLandingUpload({ imageUrl }: { imageUrl: string | null })
         />
         <label
           htmlFor="boutique-landing-logo"
-          className="inline-flex cursor-pointer items-center rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:bg-white/5"
+          className="inline-flex cursor-pointer items-center rounded-lg border border-fg/15 px-3 py-1.5 text-xs text-fg/70 hover:bg-fg/5"
         >
           {uploading ? 'Envoi…' : imageUrl ? 'Remplacer le logo' : 'Envoyer le logo'}
         </label>
-        {error && <p role="alert" className="mt-1.5 text-xs text-red-400">{error}</p>}
+        {error && <p role="alert" className="mt-1.5 text-xs text-state-bad">{error}</p>}
       </div>
     </div>
   );

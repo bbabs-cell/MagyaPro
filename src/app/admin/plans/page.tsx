@@ -7,6 +7,7 @@ import { cx } from '@/components/ui';
 import { FEATURES, FEATURE_LABELS, type Feature, type PlanLimits } from '@/lib/entitlements';
 import { STORE_FEATURES, STORE_FEATURE_LABELS, type StoreFeature } from '@/lib/boutique/entitlements';
 import { PlansManager } from '@/components/admin/plans-manager';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Plans' };
 export const dynamic = 'force-dynamic';
@@ -34,8 +35,10 @@ export default async function AdminPlansPage({
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Plans</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <DomainHeading as="h1" domain="abo" className="text-2xl font-semibold tracking-tight">
+        Plans
+      </DomainHeading>
+      <p className="mt-1 text-sm text-fg/60">
         Les tarifs et les limites vivent en base : une modification est
         immédiatement visible sur la landing page et dans les dashboards.
         Chaque plan appartient à un seul produit — Restaurant ou Boutique —
@@ -49,7 +52,7 @@ export default async function AdminPlansPage({
             href={t.key === 'ALL' ? '/admin/plans' : `/admin/plans?produit=${t.key}`}
             className={cx(
               'rounded-lg px-3 py-1.5 text-sm',
-              tab === t.key ? 'bg-white text-ink' : 'border border-white/20 text-white/70 hover:bg-white/10',
+              tab === t.key ? 'bg-fg text-canvas' : 'border border-fg/20 text-fg/70 hover:bg-fg/10',
             )}
           >
             {t.label}

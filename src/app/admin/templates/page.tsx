@@ -5,6 +5,7 @@ import { requireSuperAdmin } from '@/lib/auth/session';
 import { templatePreviewUrl } from '@/lib/storage';
 import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
 import { TemplatePreviewUpload } from '@/components/admin/template-preview-upload';
+import { DomainHeading } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Templates' };
 export const dynamic = 'force-dynamic';
@@ -27,14 +28,16 @@ export default async function AdminTemplatesPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Templates</h1>
-      <p className="mt-1 text-sm text-white/60">
+      <DomainHeading as="h1" domain="resto" className="text-2xl font-semibold tracking-tight">
+        Templates
+      </DomainHeading>
+      <p className="mt-1 text-sm text-fg/60">
         Les templates disponibles pour les sites publics. Leur rendu est défini
         dans le code ; cette table contrôle leur disponibilité.
       </p>
 
       {orphans.length > 0 && (
-        <p role="alert" className="mt-6 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-200">
+        <p role="alert" className="mt-6 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-state-warn">
           {orphans.length} template{orphans.length > 1 ? 's' : ''} en base
           n&apos;{orphans.length > 1 ? 'ont' : 'a'} pas de rendu correspondant
           dans le code ({orphans.map((template) => template.key).join(', ')}).
@@ -47,7 +50,7 @@ export default async function AdminTemplatesPage() {
           const count = usageByKey.get(template.key) ?? 0;
 
           return (
-            <div key={template.id} className="rounded-2xl border border-white/10 p-4">
+            <div key={template.id} className="rounded-2xl border border-fg/10 p-4">
               <TemplatePreviewUpload
                 templateKey={template.key}
                 previewUrl={templatePreviewUrl(template.key)}
@@ -55,19 +58,19 @@ export default async function AdminTemplatesPage() {
               <h2 className="flex flex-wrap items-center gap-2 font-medium">
                 {template.name}
                 {PREMIUM_TEMPLATE_KEYS.has(template.key) && (
-                  <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
+                  <span className="rounded-full bg-fg/15 px-2 py-0.5 text-xs">
                     Premium
                   </span>
                 )}
                 {!template.isActive && (
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/60">
+                  <span className="rounded-full bg-fg/10 px-2 py-0.5 text-xs text-fg/60">
                     Inactif
                   </span>
                 )}
               </h2>
-              <p className="mt-1 font-mono text-xs text-white/40">{template.key}</p>
+              <p className="mt-1 font-mono text-xs text-fg/60">{template.key}</p>
               {template.description && (
-                <p className="mt-2 text-sm text-white/60">{template.description}</p>
+                <p className="mt-2 text-sm text-fg/60">{template.description}</p>
               )}
               <p className="mt-3 text-sm">
                 {count} restaurant{count > 1 ? 's' : ''} l&apos;utilise
