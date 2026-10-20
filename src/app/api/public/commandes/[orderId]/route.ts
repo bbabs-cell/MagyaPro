@@ -1,6 +1,7 @@
 import { ok, route } from '@/lib/api';
 import { prisma } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
+import { orderAccessWhere } from '@/lib/orders/access';
 
 type Params = { params: Promise<{ orderId: string }> };
 
@@ -8,8 +9,8 @@ type Params = { params: Promise<{ orderId: string }> };
  * Statut d'une commande, pour le suivi en temps réel côté client.
  *
  * Route publique, non authentifiée : le client n'a pas de compte. Sa seule
- * protection est l'identifiant de commande lui-même — un cuid de 25
- * caractères, non énumérable. Aucune autre information n'y donne accès (pas
+ * protection est la clé du lien de suivi — 32 octets aléatoires, voir
+ * `orderAccessWhere` (le segment garde son nom historique `orderId`). Aucune autre information n'y donne accès (pas
  * de recherche par numéro ni par téléphone), et la réponse ne contient que ce
  * qu'un client voit déjà sur sa page de confirmation : rien qui identifierait
  * un autre client ni qui révélerait la marge ou les notes internes du
@@ -18,8 +19,8 @@ type Params = { params: Promise<{ orderId: string }> };
 export const GET = route(async (_request, { params }: Params) => {
   const { orderId } = await params;
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
+  const order = await prisma.order.findFirst({
+    where: orderAccessWhere(orderId),
     select: {
       id: true,
       number: true,

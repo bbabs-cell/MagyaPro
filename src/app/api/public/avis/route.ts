@@ -8,6 +8,7 @@ import { reviewSchema } from '@/lib/validation';
 import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
 import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
+import { orderAccessWhere } from '@/lib/orders/access';
 
 const schema = reviewSchema.extend({ restaurantId: z.string().min(1) });
 
@@ -35,9 +36,12 @@ export const POST = route(async (request) => {
   const entitlements = await getEntitlements(restaurant.id);
   requireFeature(entitlements, FEATURES.REVIEWS);
 
+  // `orderId` porte la clé du lien de suivi (voir `orderAccessWhere`) :
+  // l'identifiant seul ne permet plus de rattacher un avis à une commande.
+  let orderId: string | null = null;
   if (input.orderId) {
     const order = await prisma.order.findFirst({
-      where: { id: input.orderId, restaurantId: restaurant.id },
+      where: { ...orderAccessWhere(input.orderId), restaurantId: restaurant.id },
       select: { id: true, status: true, review: { select: { id: true } } },
     });
     if (!order) throw new NotFoundError('Commande introuvable.');
@@ -49,12 +53,13 @@ export const POST = route(async (request) => {
     if (order.review) {
       throw new ConflictError('Un avis a déjà été laissé pour cette commande.');
     }
+    orderId = order.id;
   }
 
   const review = await prisma.review.create({
     data: {
       restaurantId: restaurant.id,
-      orderId: input.orderId ?? null,
+      orderId,
       customerName: input.customerName,
       rating: input.rating,
       comment: input.comment ?? null,

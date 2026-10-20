@@ -15,6 +15,7 @@ import {
 } from '@/lib/orders/delivery-collection';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { ORDER_STATUS_LABELS, canTransition } from '@/lib/orders/status';
+import { createOrderAccess } from '@/lib/orders/access';
 import { generateSixDigitCode } from '@/lib/codes';
 import { grantLoyaltyRewards } from '@/lib/loyalty';
 import { formatMoney } from '@/lib/money';
@@ -52,6 +53,12 @@ export type CreateOrderInput = {
   paymentProvider: string;
   tableId?: string | null;
   ip?: string | null;
+  /**
+   * Empreinte de la clé du lien de suivi (`createOrderAccess`), quand
+   * l'appelant remet ce lien au client. Sinon une clé est tirée et aussitôt
+   * oubliée : aucune commande récente n'est joignable par son identifiant.
+   */
+  accessTokenHash?: string;
 };
 
 /**
@@ -140,6 +147,7 @@ export async function createOrder(input: CreateOrderInput) {
         fulfillmentType: input.fulfillmentType,
         paymentProvider: input.paymentProvider,
         tableId: input.tableId ?? null,
+        accessTokenHash: input.accessTokenHash ?? createOrderAccess().hash,
         customerName: input.customerName,
         customerPhone,
         customerEmail: input.customerEmail ?? null,

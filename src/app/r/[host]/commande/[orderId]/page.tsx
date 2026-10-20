@@ -9,6 +9,7 @@ import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { OrderStatusTracker } from '@/components/site/order-status-tracker';
 import { PaymentProofUpload } from '@/components/site/payment-proof-upload';
 import { getServerDictionary } from '@/lib/i18n/server';
+import { orderAccessWhere } from '@/lib/orders/access';
 
 const MANUAL_MOBILE_MONEY_PROVIDERS = ['orange_money_manual', 'wave_manual'];
 
@@ -32,8 +33,10 @@ export default async function OrderConfirmationPage({ params }: Props) {
   const restaurant = await resolvePublicRestaurant(host);
   if (!restaurant) notFound();
 
+  // `orderId` porte la clé du lien de suivi (voir `orderAccessWhere`) : c'est
+  // elle, jamais l'identifiant, qui est transmise aux composants et aux liens.
   const order = await prisma.order.findFirst({
-    where: { id: orderId, restaurantId: restaurant.id },
+    where: { ...orderAccessWhere(orderId), restaurantId: restaurant.id },
     select: {
       id: true,
       number: true,
@@ -83,7 +86,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
   const prepTime = restaurant.settings?.prepTimeMinutes ?? 30;
   const entitlements = await getEntitlements(restaurant.id);
   const reviewUrl = hasFeature(entitlements, FEATURES.REVIEWS)
-    ? `/r/${host}/commande/${order.id}/avis`
+    ? `/r/${host}/commande/${orderId}/avis`
     : undefined;
 
   // Récompenses de fidélité que cette commande précise vient de faire
@@ -135,7 +138,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
       {isManualMobileMoney && receivingNumber && (
         <PaymentProofUpload
-          orderId={order.id}
+          orderId={orderId}
           provider={payment.provider}
           amount={order.total}
           currency={order.currency}
@@ -147,7 +150,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
 
       <div className="mt-8">
         <OrderStatusTracker
-          orderId={order.id}
+          orderId={orderId}
           reviewUrl={reviewUrl}
           initial={{
             status: order.status,

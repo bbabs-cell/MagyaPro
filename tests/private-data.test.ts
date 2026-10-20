@@ -4,12 +4,15 @@ import { prisma, createTestRestaurant, createTestStore, resetDatabase } from './
 import { claimCustomDomain } from '@/lib/domain-claims';
 import { domainVerificationToken } from '@/lib/domains';
 import { createReservationAccess, reservationAccessWhere } from '@/lib/reservations';
+import { createOrderAccess, orderAccessWhere } from '@/lib/orders/access';
+import { createOrder } from '@/lib/orders/service';
 import { uploadImage } from '@/lib/storage';
 import { canReadPrivateFile, getPrivate, privateKeyOwner } from '@/lib/storage/private';
 
 /**
- * Trois accès qui ne doivent appartenir qu'à leur ayant droit : un domaine
- * personnalisé, une preuve de paiement, le lien de suivi d'une réservation.
+ * Accès qui ne doivent appartenir qu'à leur ayant droit : un domaine
+ * personnalisé, une preuve de paiement, le lien de suivi d'une réservation et
+ * celui d'une commande.
  */
 
 // PNG minimal valide (1×1) : la signature binaire est contrôlée à l'envoi.
@@ -127,6 +130,37 @@ describe('Données privées', () => {
       expect(await prisma.reservation.findFirst({ where: reservationAccessWhere(legacy.id) })).toMatchObject({
         id: legacy.id,
       });
+    });
+  });
+
+  describe('lien de suivi de commande', () => {
+    const order = (accessTokenHash?: string) =>
+      createOrder({
+        restaurantId: a.restaurant.id,
+        items: [{ productId: a.product.id, quantity: 1 }],
+        fulfillmentType: 'PICKUP',
+        customerName: 'Moussa',
+        paymentProvider: 'cash_on_delivery',
+        accessTokenHash,
+      });
+
+    it("une commande passée en ligne n'est joignable que par la clé de son lien", async () => {
+      const access = createOrderAccess();
+      const created = await order(access.hash);
+      expect(await prisma.order.findFirst({ where: orderAccessWhere(access.key) })).toMatchObject({ id: created.id });
+      expect(await prisma.order.findFirst({ where: orderAccessWhere(created.id) })).toBeNull();
+    });
+
+    it("une commande saisie au comptoir, sans lien remis, n'est joignable par personne", async () => {
+      const created = await order();
+      expect(created.accessTokenHash).toBeTruthy();
+      expect(await prisma.order.findFirst({ where: orderAccessWhere(created.id) })).toBeNull();
+    });
+
+    it('une commande antérieure reste joignable par son identifiant', async () => {
+      const created = await order();
+      await prisma.order.update({ where: { id: created.id }, data: { accessTokenHash: null } });
+      expect(await prisma.order.findFirst({ where: orderAccessWhere(created.id) })).toMatchObject({ id: created.id });
     });
   });
 });
