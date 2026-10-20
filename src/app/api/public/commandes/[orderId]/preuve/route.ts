@@ -7,6 +7,7 @@ import { uploadImage } from '@/lib/storage';
 import { notifyPaymentProofSubmitted } from '@/lib/notifications';
 import { clientIp } from '@/lib/auth/session';
 import { RATE_LIMITS, hit } from '@/lib/rate-limit';
+import { orderAccessWhere } from '@/lib/orders/access';
 
 const MANUAL_MOBILE_MONEY_PROVIDERS = ['orange_money_manual', 'wave_manual'];
 
@@ -26,9 +27,13 @@ export const POST = route(async (request, { params }: Params) => {
   await hit(`payment-proof:ip:${ip}`, RATE_LIMITS.upload);
   await hit(`payment-proof:order:${orderId}`, RATE_LIMITS.upload);
 
+  // La clé du lien désigne la commande ; jamais son identifiant seul.
+  const order = await prisma.order.findFirst({ where: orderAccessWhere(orderId), select: { id: true } });
+  if (!order) throw new NotFoundError('Aucun paiement en attente de preuve pour cette commande.');
+
   const payment = await prisma.payment.findFirst({
     where: {
-      orderId,
+      orderId: order.id,
       provider: { in: MANUAL_MOBILE_MONEY_PROVIDERS },
       status: { in: ['PENDING', 'PROCESSING'] },
     },

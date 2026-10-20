@@ -13,6 +13,7 @@ import { RATE_LIMITS, hit } from '@/lib/rate-limit';
 import { trackEvent } from '@/lib/analytics';
 import { env } from '@/lib/env';
 import { FEATURES, getEntitlements, requireFeature } from '@/lib/entitlements';
+import { createOrderAccess } from '@/lib/orders/access';
 
 const schema = checkoutSchema.extend({ restaurantId: z.string().min(1) });
 
@@ -73,7 +74,10 @@ export const POST = route(async (request) => {
     });
   }
 
+  // Clé du lien de suivi remis au client — voir `lib/orders/access.ts`.
+  const access = createOrderAccess();
   const order = await createOrder({
+    accessTokenHash: access.hash,
     restaurantId: restaurant.id,
     items: input.items,
     fulfillmentType: input.fulfillmentType,
@@ -95,7 +99,7 @@ export const POST = route(async (request) => {
     orderId: order.id,
     restaurantId: restaurant.id,
     providerId: input.paymentProvider,
-    returnUrl: `${env.appUrl}/r/${restaurant.slug}/commande/${order.id}`,
+    returnUrl: `${env.appUrl}/r/${restaurant.slug}/commande/${access.key}`,
   });
 
   // Attendu explicitement : une promesse « fire-and-forget » non suivie par
@@ -121,7 +125,7 @@ export const POST = route(async (request) => {
         redirectUrl: payment.redirectUrl ?? null,
         instructions: payment.instructions ?? null,
       },
-      confirmationUrl: `/r/${restaurant.slug}/commande/${order.id}`,
+      confirmationUrl: `/r/${restaurant.slug}/commande/${access.key}`,
     },
     201,
   );

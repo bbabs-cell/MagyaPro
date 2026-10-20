@@ -6,6 +6,7 @@ import { resolvePublicRestaurant } from '@/lib/site/resolve';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { ReviewForm } from '@/components/site/review-form';
 import { getServerDictionary } from '@/lib/i18n/server';
+import { orderAccessWhere } from '@/lib/orders/access';
 
 type Props = { params: Promise<{ host: string; orderId: string }> };
 
@@ -23,7 +24,7 @@ export default async function OrderReviewPage({ params }: Props) {
   if (!hasFeature(entitlements, FEATURES.REVIEWS)) notFound();
 
   const order = await prisma.order.findFirst({
-    where: { id: orderId, restaurantId: restaurant.id },
+    where: { ...orderAccessWhere(orderId), restaurantId: restaurant.id },
     select: { id: true, status: true, review: { select: { id: true } } },
   });
   if (!order) notFound();
@@ -47,7 +48,7 @@ export default async function OrderReviewPage({ params }: Props) {
             {dict.review.alreadySubmitted}
           </p>
         ) : (
-          <ReviewForm restaurantId={restaurant.id} orderId={order.id} />
+          <ReviewForm restaurantId={restaurant.id} orderId={orderId} />
         )}
       </div>
     </div>

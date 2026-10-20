@@ -341,13 +341,18 @@ avec l'ancien code.
 
 Tests : `tests/private-data.test.ts`.
 
-## À décider — non corrigé
+### 9. Lien de suivi de commande (faible) — corrigé
 
-- **Suivi de commande** : même schéma que l'ancien suivi de réservation — le
-  lien porte l'identifiant de la commande (`cuid()` v1). Il ne permet pas
-  d'annuler, mais il montre le code de livraison et la position du livreur.
-  Même correctif possible (clé aléatoire), à faire avec précaution : ce lien
-  circule par WhatsApp et SMS.
+Même schéma que l'ancien suivi de réservation : le lien portait l'identifiant
+de la commande (`cuid()` v1) et montrait le code de remise et la position du
+livreur, permettait d'envoyer une preuve de paiement et de laisser un avis. Il
+porte désormais 32 octets aléatoires dont seule l'empreinte est stockée
+(`lib/orders/access.ts`). Toute nouvelle commande en reçoit une — celles
+saisies au comptoir aussi, sans lien remis à personne. Les commandes
+antérieures restent joignables par leur identifiant : leurs liens circulent
+déjà par WhatsApp et SMS. Tests : `tests/private-data.test.ts`.
+
+## À décider — non corrigé
 
 **Dépendances restantes :** `nodemailer` (corrigé seulement en 10.x, majeure
 à tester avec un envoi réel), `postcss` interne à Next et `deepmerge-ts`
