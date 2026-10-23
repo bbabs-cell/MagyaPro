@@ -6,6 +6,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { NEUTRAL_ACTION } from '@/components/ui/tones';
 import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { creditReminderMessage, whatsAppLinkFor } from '@/lib/whatsapp';
 
@@ -146,7 +147,7 @@ export function CustomersManager({
                         </>
                       )}
                       {canManage && (
-                        <Button size="sm" variant="ghost" onClick={() => setEditingCustomer(customer)}>
+                        <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setEditingCustomer(customer)}>
                           Modifier
                         </Button>
                       )}

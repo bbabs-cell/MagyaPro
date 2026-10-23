@@ -12,7 +12,7 @@ import {
   type AssignableRole,
 } from '@/lib/rbac';
 import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
-import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/ui/tones';
 
 type Member = {
   id: string;

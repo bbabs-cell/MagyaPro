@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/ui/tones';
 
 type StoreRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'CASHIER' | 'SALESPERSON' | 'STOCK_MANAGER' | 'ACCOUNTANT';
 type AssignableRole = Exclude<StoreRole, 'OWNER'>;
@@ -293,10 +294,10 @@ export function StoreTeamManager({
 
               {canManage && member.role !== 'OWNER' && (
                 <div className="flex shrink-0 gap-1.5">
-                  <Button size="sm" variant="secondary" onClick={() => startEditing(member)}>
+                  <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => startEditing(member)}>
                     Modifier
                   </Button>
-                  <Button size="sm" variant="ghost" disabled={pending} onClick={() => remove(member)}>
+                  <Button size="sm" variant="soft" className={DESTRUCTIVE_ACTION} disabled={pending} onClick={() => remove(member)}>
                     Retirer
                   </Button>
                 </div>

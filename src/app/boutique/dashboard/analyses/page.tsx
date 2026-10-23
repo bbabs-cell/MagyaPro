@@ -240,7 +240,7 @@ export default async function StoreInsightsPage() {
                 était le seul à imposer un défilement horizontal pour lire un
                 chiffre sur téléphone.
               */}
-              <table className="table-stack mt-4 w-full text-sm">
+              <table className="table-stack table-stack-titled mt-4 w-full text-sm">
                 <caption className="sr-only">
                   Produits en stock sans vente récente, du capital immobilisé le plus élevé au plus
                   faible
@@ -342,7 +342,7 @@ function MarginTable({ rows, currency }: { rows: MarginRow[]; currency: string }
   const scale = Math.max(...rows.map((row) => Math.abs(row.marginRate)), 1);
 
   return (
-    <table className="table-stack mt-4 w-full text-sm">
+    <table className="table-stack table-stack-titled mt-4 w-full text-sm">
       <caption className="sr-only">Marge réalisée par produit sur la période</caption>
       <thead>
         <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">

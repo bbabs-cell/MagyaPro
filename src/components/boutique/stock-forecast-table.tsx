@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { Badge, Card, cx, inputClass } from '@/components/ui';
+import { TONE_CLASSES, railStyle } from '@/components/ui/tones';
 import { formatCompositeStock, type UnitOption } from '@/lib/boutique/units';
 import {
   STOCK_LEVEL_ICONS,
@@ -87,10 +88,12 @@ export function StockForecastTable({
             onClick={() => setFilter(filter === level ? 'all' : level)}
             className={cx(
               'card card-interactive p-4 text-left',
-              filter === level && 'ring-2 ring-ink',
+              filter === level && 'ring-2 ring-brand-strong',
             )}
           >
+            {/* Pastille de la couleur du liseré des lignes concernées. */}
             <span className="flex items-center gap-2 text-sm text-ink-muted">
+              <span aria-hidden="true" className={cx('h-2 w-2 shrink-0 rounded-full', TONE_CLASSES[LEVEL_TONE[level]].dot)} />
               <span aria-hidden="true">{STOCK_LEVEL_ICONS[level]}</span>
               {STOCK_LEVEL_LABELS[level]}
             </span>
@@ -113,7 +116,7 @@ export function StockForecastTable({
         <p className="text-sm text-ink-muted">Aucun produit ne correspond à cette sélection.</p>
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="table-stack w-full text-sm">
+          <table className="table-stack table-stack-titled w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3 font-medium">Produit</th>
@@ -126,7 +129,11 @@ export function StockForecastTable({
             </thead>
             <tbody>
               {visible.map((row) => (
-                <tr key={row.productId} className="border-b border-surface-border last:border-0">
+                <tr
+                  key={row.productId}
+                  className="border-b border-surface-border last:border-0"
+                  style={railStyle(LEVEL_TONE[row.level])}
+                >
                   <td data-label="Produit" className="px-4 py-3 font-medium">
                     {row.name}
                   </td>

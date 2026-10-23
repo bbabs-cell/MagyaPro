@@ -6,6 +6,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, TONE_CLASSES, railStyle } from '@/components/ui/tones';
 import { PURCHASE_STATUS_LABELS, PURCHASE_STATUS_TONES } from '@/lib/boutique/labels';
 import {
   PURCHASE_PAYMENT_LABELS,
@@ -243,7 +244,11 @@ export function PurchasesManager({
                 const anyReceived = order.items.some((item) => item.quantityReceived > 0);
                 const late = isLate(order, today);
                 return (
-                  <tr key={order.id} className="border-b border-surface-border last:border-0">
+                  <tr
+                    key={order.id}
+                    className="border-b border-surface-border last:border-0"
+                    style={railStyle(PURCHASE_STATUS_TONES[order.status])}
+                  >
                     <td data-label="Commande" className="px-4 py-3 font-medium">
                       {order.reference}
                       {order.expectedAt && (
@@ -297,8 +302,11 @@ export function PurchasesManager({
                                   tournaient auparavant ensemble, et rien ne
                                   disait laquelle des deux actions était
                                   partie. */}
+                              {/* Mène à « commandée » : bleu, en route. */}
                               <Button
                                 size="sm"
+                                variant="soft"
+                                className={TONE_CLASSES[PURCHASE_STATUS_TONES.ORDERED].soft}
                                 loading={mutation.isPending(`${order.id}:confirm`)}
                                 disabled={mutation.pending}
                                 onClick={() => confirmOrder(order.id)}
@@ -307,7 +315,8 @@ export function PurchasesManager({
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="soft"
+                                className={DESTRUCTIVE_ACTION}
                                 loading={mutation.isPending(`${order.id}:cancel`)}
                                 disabled={mutation.pending}
                                 onClick={() => cancelOrder(order.id)}
@@ -316,20 +325,27 @@ export function PurchasesManager({
                               </Button>
                             </>
                           )}
+                          {(order.status === 'ORDERED' || order.status === 'PARTIALLY_RECEIVED') && (
+                            <Button
+                              size="sm"
+                              variant="soft"
+                              className={TONE_CLASSES[PURCHASE_STATUS_TONES.RECEIVED].soft}
+                              onClick={() => setReceivingId(order.id)}
+                            >
+                              Réceptionner
+                            </Button>
+                          )}
+                          {/* Annuler en dernier, en rouge discret. */}
                           {order.status === 'ORDERED' && !anyReceived && (
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="soft"
+                              className={DESTRUCTIVE_ACTION}
                               loading={mutation.isPending(`${order.id}:cancel`)}
                               disabled={mutation.pending}
                               onClick={() => cancelOrder(order.id)}
                             >
                               Annuler
-                            </Button>
-                          )}
-                          {(order.status === 'ORDERED' || order.status === 'PARTIALLY_RECEIVED') && (
-                            <Button size="sm" variant="secondary" onClick={() => setReceivingId(order.id)}>
-                              Réceptionner
                             </Button>
                           )}
                         </div>

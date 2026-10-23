@@ -1,13 +1,13 @@
 import type { OrderStatus } from '@prisma/client';
 
-import type { Tone } from '@/components/dashboard/tones';
+import type { Tone } from '@/components/ui/tones';
 
-export { TONE_CLASSES } from '@/components/dashboard/tones';
+export { TONE_CLASSES } from '@/components/ui/tones';
 
 /**
  * Teintes des statuts de commande.
  *
- * Même grille que tout le tableau de bord : voir `tones.ts`.
+ * Même grille que tout le tableau de bord : voir `components/ui/tones.ts`.
  */
 export const ORDER_STATUS_TONES: Record<OrderStatus, Tone> = {
   NEW: 'brand',

@@ -55,9 +55,13 @@ export const PURCHASE_STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
   CANCELLED: 'Annulée',
 };
 
+/**
+ * Même grille que tout le tableau de bord (`components/ui/tones.ts`) :
+ * commandée = en route (bleu), partiellement reçue = à surveiller (ambre).
+ */
 export const PURCHASE_STATUS_TONES: Record<PurchaseOrderStatus, StateTone> = {
   DRAFT: 'neutral',
-  ORDERED: 'warning',
+  ORDERED: 'info',
   PARTIALLY_RECEIVED: 'warning',
   RECEIVED: 'success',
   CANCELLED: 'danger',

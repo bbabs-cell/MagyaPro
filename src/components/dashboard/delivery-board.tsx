@@ -11,7 +11,7 @@ import {
 } from '@/lib/orders/delivery-collection';
 import { AlertMessage, Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
-import { NEUTRAL_ACTION, TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
+import { NEUTRAL_ACTION, TONE_CLASSES, railStyle } from '@/components/ui/tones';
 
 type DeliveryOrder = {
   id: string;

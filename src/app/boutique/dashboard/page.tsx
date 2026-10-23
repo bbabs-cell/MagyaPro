@@ -11,6 +11,8 @@ import {
 } from '@/lib/boutique/analytics';
 import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
 import { Badge, Card, EmptyState, LinkButton, PageHeader, StatCard, cx } from '@/components/ui';
+import { railStyle } from '@/components/ui/tones';
+import { SALE_STATUS_TONES } from '@/lib/boutique/labels';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { formatPercent } from '@/lib/numbers';
 
@@ -328,14 +330,18 @@ export default async function BoutiqueDashboardPage() {
           ) : (
             <ul className="mt-4 divide-y divide-surface-border">
               {recentSales.map((sale) => (
-                <li key={sale.id} className="flex items-center justify-between gap-3 px-1 py-3">
+                // Liseré à la couleur du statut, comme l'écran Ventes. Il
+                // remplace une pastille dorée à l'initiale du client, la même
+                // pour toutes les ventes : une couleur qui ne disait rien.
+                <li
+                  key={sale.id}
+                  className="flex items-center justify-between gap-3 py-3 pl-3 pr-1"
+                  style={railStyle(SALE_STATUS_TONES[sale.status])}
+                >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-strong text-xs font-bold text-brand-ink">
-                      {(sale.customer?.name ?? 'V').charAt(0).toUpperCase()}
-                    </span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">
-                        n°{sale.number} · {sale.customer?.name ?? 'Client de passage'}
+                        Vente n°{sale.number} · {sale.customer?.name ?? 'Client de passage'}
                       </p>
                       <p className="mt-0.5 text-xs text-ink-faint">
                         {sale.createdAt.toLocaleString('fr-FR', {

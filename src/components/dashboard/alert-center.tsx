@@ -11,7 +11,7 @@ import {
   NEUTRAL_ACTION,
   TONE_CLASSES,
   railStyle,
-} from '@/components/dashboard/tones';
+} from '@/components/ui/tones';
 
 /**
  * Tout ce qui figure ici attend un geste : chaque ligne porte le liseré braise

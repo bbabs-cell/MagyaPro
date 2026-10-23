@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card, cx, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION } from '@/components/ui/tones';
 
 type PaymentMethod = { id: string; method: string; label: string; isEnabled: boolean };
 
@@ -102,7 +103,7 @@ export function PaymentMethodsManager({
                 <Button size="sm" variant="secondary" disabled={pending} onClick={() => toggle(method)}>
                   {method.isEnabled ? 'Désactiver' : 'Activer'}
                 </Button>
-                <Button size="sm" variant="ghost" disabled={pending} onClick={() => remove(method)}>
+                <Button size="sm" variant="soft" className={DESTRUCTIVE_ACTION} disabled={pending} onClick={() => remove(method)}>
                   Retirer
                 </Button>
               </div>

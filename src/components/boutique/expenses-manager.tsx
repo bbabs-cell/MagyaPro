@@ -6,6 +6,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/ui/tones';
 
 const CATEGORY_LABELS: Record<string, string> = {
   RENT: 'Loyer',
@@ -101,7 +102,7 @@ export function ExpensesManager({
         />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="table-stack w-full text-sm">
+          <table className="table-stack table-stack-titled w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3 font-medium">Dépense</th>
@@ -128,14 +129,14 @@ export function ExpensesManager({
                     {formatMoney(expense.amount, currency)}
                   </td>
                   {canManage && (
-                    <td className="px-4 py-3 text-right">
+                    <td data-label="Actions" className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1.5">
-                        <Button size="sm" variant="secondary" onClick={() => setEditing(expense)}>
+                        <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setEditing(expense)}>
                           Modifier
                         </Button>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="soft" className={DESTRUCTIVE_ACTION}
                           loading={mutation.isPending(expense.id)}
                           disabled={mutation.pending}
                           onClick={() => remove(expense)}

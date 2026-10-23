@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 import { Button, Card, EmptyState, inputClass } from '@/components/ui';
-import { DESTRUCTIVE_ACTION } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION } from '@/components/ui/tones';
 
 type Image = { id: string; imageUrl: string; caption: string | null };
 

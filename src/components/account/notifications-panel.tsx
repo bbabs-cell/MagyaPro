@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card } from '@/components/ui';
-import { railStyle } from '@/components/dashboard/tones';
+import { railStyle } from '@/components/ui/tones';
 
 type NotificationItem = {
   id: string;

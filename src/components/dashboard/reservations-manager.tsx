@@ -10,7 +10,7 @@ import {
   RESERVATION_STATUS_TONES,
   TONE_CLASSES,
   railStyle,
-} from '@/components/dashboard/tones';
+} from '@/components/ui/tones';
 
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 

@@ -8,7 +8,7 @@ import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { AlertMessage, Button, Field, inputClass } from '@/components/ui';
 import { ORDER_ACTION_LABELS, ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
-import { DESTRUCTIVE_ACTION, TONE_CLASSES } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION, TONE_CLASSES } from '@/components/ui/tones';
 
 /**
  * Avancement du statut et encaissement, depuis la fiche commande.
