@@ -68,3 +68,53 @@ export function DomainHeading({
     </Tag>
   );
 }
+
+const PANEL: Record<'resto' | 'boutique', { frame: string; bar: string }> = {
+  resto: { frame: 'border-domain-resto/40 bg-domain-resto/[0.06]', bar: 'bg-domain-resto' },
+  boutique: { frame: 'border-domain-boutique/40 bg-domain-boutique/[0.06]', bar: 'bg-domain-boutique' },
+};
+
+/**
+ * Panneau d'un produit sur la vue d'ensemble : Restaurant en braise, Boutique
+ * en or. Les deux parties ont les mêmes grilles, trait pour trait ; un simple
+ * filet entre elles ne disait pas assez où l'une finissait et l'autre
+ * commençait. Le cadre teinté et la barre de couleur le disent d'un coup
+ * d'œil, même en faisant défiler vite.
+ */
+export function DomainPanel({
+  domain,
+  title,
+  description,
+  icon,
+  children,
+}: {
+  domain: 'resto' | 'boutique';
+  title: string;
+  description: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      aria-label={title}
+      className={`relative mt-10 overflow-hidden rounded-3xl border p-4 pt-6 sm:p-6 sm:pt-7 ${PANEL[domain].frame}`}
+    >
+      <span aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 ${PANEL[domain].bar}`} />
+      <div className="flex items-center gap-3">
+        {icon && (
+          <span
+            aria-hidden="true"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${DOMAIN_CHIP[domain]}`}
+          >
+            {icon}
+          </span>
+        )}
+        <div className="min-w-0">
+          <h2 className={`text-lg font-semibold tracking-tight ${DOMAIN_TEXT[domain]}`}>{title}</h2>
+          <p className="text-sm text-fg/60">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
