@@ -26,19 +26,21 @@ type Tone = (typeof ORDER_STATUS_TONES)[OrderStatus];
 /**
  * Classes de chaque ton, écrites en entier pour que Tailwind les retrouve.
  *
- * - `rail` : le liseré gauche d'une commande — son étape se lit d'un coup
- *   d'œil en faisant défiler la liste ;
+ * - `rail` : la **couleur CSS** du liseré gauche d'une commande — son étape se
+ *   lit d'un coup d'œil en faisant défiler la liste. Une valeur et non une
+ *   classe : posée en style, elle l'emporte sur la bordure de la fiche
+ *   mobile (`.table-stack tbody tr`), plus spécifique qu'un utilitaire ;
  * - `dot` : la pastille du filtre correspondant ;
  * - `soft` : un bouton qui **mène** à cet état (« Confirmer » est bleu comme
  *   une commande confirmée), ou un badge.
  */
 export const TONE_CLASSES: Record<Tone, { rail: string; dot: string; soft: string }> = {
-  brand: { rail: 'border-l-brand', dot: 'bg-brand', soft: 'bg-brand-soft text-brand-text' },
-  info: { rail: 'border-l-sky-500', dot: 'bg-sky-500', soft: 'bg-sky-50 text-sky-700' },
-  warning: { rail: 'border-l-state-warn', dot: 'bg-state-warn', soft: 'bg-state-warn-soft text-state-warn' },
-  success: { rail: 'border-l-state-ok', dot: 'bg-state-ok', soft: 'bg-state-ok-soft text-state-ok' },
-  danger: { rail: 'border-l-state-bad', dot: 'bg-state-bad', soft: 'bg-state-bad-soft text-state-bad' },
-  neutral: { rail: 'border-l-surface-border', dot: 'bg-ink-faint', soft: 'bg-surface-sunken text-ink-muted' },
+  brand: { rail: 'var(--brand, #ff5e2e)', dot: 'bg-brand', soft: 'bg-brand-soft text-brand-text' },
+  info: { rail: '#0ea5e9', dot: 'bg-sky-500', soft: 'bg-sky-50 text-sky-700' },
+  warning: { rail: 'var(--state-warn, #b45309)', dot: 'bg-state-warn', soft: 'bg-state-warn-soft text-state-warn' },
+  success: { rail: 'var(--state-ok, #047857)', dot: 'bg-state-ok', soft: 'bg-state-ok-soft text-state-ok' },
+  danger: { rail: 'var(--state-bad, #b91c1c)', dot: 'bg-state-bad', soft: 'bg-state-bad-soft text-state-bad' },
+  neutral: { rail: 'var(--surface-border, #ddd3c1)', dot: 'bg-ink-faint', soft: 'bg-surface-sunken text-ink-muted' },
 };
 
 /**

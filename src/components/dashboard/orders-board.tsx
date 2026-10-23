@@ -194,9 +194,14 @@ export function OrdersBoard({
                   // on voit où en est chaque commande sans lire un mot. Le
                   // libellé reste dans le badge — la couleur seule ne porte
                   // jamais l'information.
-                  className={`border-b border-l-4 border-surface-border align-middle transition-opacity max-md:bg-surface ${
-                    TONE_CLASSES[ORDER_STATUS_TONES[order.status]].rail
-                  } ${isSettling ? 'opacity-60' : ''}`}
+                  className={`border-b border-surface-border align-middle transition-opacity max-md:bg-surface ${
+                    isSettling ? 'opacity-60' : ''
+                  }`}
+                  style={{
+                    borderLeftWidth: 4,
+                    borderLeftStyle: 'solid',
+                    borderLeftColor: TONE_CLASSES[ORDER_STATUS_TONES[order.status]].rail,
+                  }}
                 >
                   <td data-label="Commande" className="py-3 pr-3">
                     <Link
