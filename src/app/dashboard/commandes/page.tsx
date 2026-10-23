@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { OrdersBoard } from '@/components/dashboard/orders-board';
+import { ORDER_STATUS_TONES, TONE_CLASSES } from '@/components/dashboard/order-status';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { EmptyState, LinkButton, PageHeader } from '@/components/ui';
 
@@ -150,10 +151,22 @@ export default async function OrdersPage({
                 key={value}
                 href={`/dashboard/commandes?statut=${value}`}
                 aria-current={active ? 'true' : undefined}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                className={`inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   active ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
                 }`}
               >
+                {/* Pastille de la couleur de l'étape — la même que le liseré
+                    des commandes : on fait le lien entre le filtre et la
+                    liste sans lire. « En cours » et « Toutes » n'en ont pas,
+                    ce ne sont pas des étapes. */}
+                {value !== 'ACTIVE' && value !== 'ALL' && (
+                  <span
+                    aria-hidden="true"
+                    className={`me-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      active ? 'bg-brand-ink' : TONE_CLASSES[ORDER_STATUS_TONES[value as OrderStatus]].dot
+                    }`}
+                  />
+                )}
                 {label}
                 {/* Le compte est toujours affiché, zéro compris. Il n'apparaissait
                     qu'au-delà de zéro : on ne pouvait donc pas distinguer un

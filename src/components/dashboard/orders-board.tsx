@@ -10,7 +10,12 @@ import { formatMoney } from '@/lib/money';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { PAYMENT_STATUS_LABELS } from '@/lib/payments/status';
 import { deliveryPaymentLabel } from '@/lib/orders/delivery-collection';
-import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import {
+  ORDER_ACTION_LABELS,
+  ORDER_STATUS_TONES,
+  PAYMENT_STATUS_TONES,
+  TONE_CLASSES,
+} from '@/components/dashboard/order-status';
 import { AlertMessage, Badge, Button } from '@/components/ui';
 
 /**
@@ -135,7 +140,10 @@ export function OrdersBoard({
       <AlertMessage message={mutation.error} className="mb-4" />
 
       <div className="overflow-x-auto">
-        <table className="table-stack w-full border-collapse text-sm">
+        {/* `table-stack-titled` : sur téléphone, le numéro de commande devient
+            le titre de la fiche au lieu d'être coincé à droite de son
+            intitulé — « n°35 » s'y cassait en « n°3 » puis « 5 ». */}
+        <table className="table-stack table-stack-titled w-full border-collapse text-sm">
           <caption className="sr-only">Liste des commandes</caption>
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -150,7 +158,8 @@ export function OrdersBoard({
             </tr>
           </thead>
 
-          <tbody>
+          {/* Les commandes arrivent l'une après l'autre (`.stagger`). */}
+          <tbody className="stagger">
             {shownOrders.map((order) => {
               const nextStatuses = ORDER_TRANSITIONS[order.status].filter(
                 (status) => status !== 'CANCELLED' || canCancel,
@@ -181,16 +190,20 @@ export function OrdersBoard({
                 <tr
                   key={order.id}
                   aria-busy={isSettling || undefined}
-                  className={`border-b border-surface-border align-middle transition-opacity ${
-                    isSettling ? 'opacity-60' : ''
-                  }`}
+                  // Liseré gauche à la couleur de l'étape : en faisant défiler,
+                  // on voit où en est chaque commande sans lire un mot. Le
+                  // libellé reste dans le badge — la couleur seule ne porte
+                  // jamais l'information.
+                  className={`border-b border-l-4 border-surface-border align-middle transition-opacity max-md:bg-surface ${
+                    TONE_CLASSES[ORDER_STATUS_TONES[order.status]].rail
+                  } ${isSettling ? 'opacity-60' : ''}`}
                 >
                   <td data-label="Commande" className="py-3 pr-3">
                     <Link
                       href={`/dashboard/commandes/${order.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
+                      className="whitespace-nowrap text-base font-semibold underline-offset-4 hover:underline md:text-sm md:font-medium"
                     >
-                      n°{order.number}
+                      Commande n°{order.number}
                     </Link>
                     <span className="block text-xs text-ink-faint">
                       {new Date(order.placedAt).toLocaleString('fr-FR', {
@@ -237,28 +250,42 @@ export function OrdersBoard({
                         le restaurateur veut savoir si l'argent est chez le
                         client, chez son livreur, ou dans sa caisse. Les autres
                         modes gardent le libellé générique, qui leur suffit. */}
-                    <span className="text-ink-muted">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                        TONE_CLASSES[PAYMENT_STATUS_TONES[order.paymentStatus] ?? 'neutral'].soft
+                      }`}
+                    >
                       {order.fulfillmentType === 'DELIVERY'
                         ? deliveryPaymentLabel(order.paymentStatus)
                         : PAYMENT_STATUS_LABELS[order.paymentStatus]}
                     </span>
                   </td>
 
-                  <td data-label="Total" className="py-3 pr-3 text-right font-medium">
+                  <td data-label="Total" className="py-3 pr-3 text-right text-base font-semibold tabular-nums md:text-sm">
                     {formatMoney(order.total, currency)}
                   </td>
 
-                  <td data-label="" className="py-3">
+                  {/* « Actions » : sur téléphone, la cellule prend toute la
+                      largeur de la fiche (voir `.table-stack` dans
+                      globals.css) — les boutons n'y étaient plus coincés à
+                      droite d'un intitulé vide. */}
+                  <td data-label="Actions" className="py-3">
                     {canUpdate && (canMarkPaid || nextStatuses.length > 0) ? (
-                      <div className="flex flex-wrap justify-end gap-1.5">
+                      <div className="flex flex-wrap justify-end gap-1.5 max-md:justify-start">
                         {/* Encaisser ne dépend plus du mode de retrait : une
                             commande emportée se règle au comptoir, et n'a
                             jamais de livreur pour rapporter l'argent. */}
+                        {/* Chaque bouton a la couleur de l'état auquel il
+                            mène : « Confirmer » est bleu comme une commande
+                            confirmée, « Marquer payé » vert comme un paiement
+                            encaissé. Aucun n'est en braise pleine — c'est la
+                            couleur du seul bouton principal de l'écran. */}
                         {canMarkPaid && (
                           <Button
                             type="button"
                             size="sm"
-                            variant={order.status === 'DELIVERED' ? 'primary' : 'secondary'}
+                            variant="soft"
+                            className={TONE_CLASSES.success.soft}
                             loading={mutation.isPending(`${order.id}:paiement`)}
                             disabled={isLocked}
                             onClick={() => markPaid(order)}
@@ -266,21 +293,37 @@ export function OrdersBoard({
                             Marquer payé
                           </Button>
                         )}
-                        {nextStatuses.map((status) => (
+                        {nextStatuses
+                          .filter((status) => status !== 'CANCELLED')
+                          .map((status) => (
+                            <Button
+                              key={status}
+                              type="button"
+                              size="sm"
+                              variant="soft"
+                              className={TONE_CLASSES[ORDER_STATUS_TONES[status]].soft}
+                              loading={mutation.isPending(`${order.id}:${status}`)}
+                              disabled={isLocked}
+                              onClick={() => changeStatus(order, status)}
+                            >
+                              {ORDER_ACTION_LABELS[status]}
+                            </Button>
+                          ))}
+                        {/* Annuler en dernier, discret, en rouge : un geste
+                            définitif ne doit pas se confondre avec les autres. */}
+                        {nextStatuses.includes('CANCELLED') && (
                           <Button
-                            key={status}
                             type="button"
                             size="sm"
-                            variant={status === 'CANCELLED' ? 'ghost' : 'secondary'}
-                            loading={mutation.isPending(`${order.id}:${status}`)}
+                            variant="soft"
+                            className="text-state-bad hover:bg-state-bad-soft"
+                            loading={mutation.isPending(`${order.id}:CANCELLED`)}
                             disabled={isLocked}
-                            onClick={() => changeStatus(order, status)}
+                            onClick={() => changeStatus(order, 'CANCELLED')}
                           >
-                            {status === 'CANCELLED'
-                              ? 'Annuler'
-                              : ORDER_STATUS_LABELS[status]}
+                            Annuler
                           </Button>
-                        ))}
+                        )}
                       </div>
                     ) : (
                       <span className="block text-right text-xs text-ink-faint">
