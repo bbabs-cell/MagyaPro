@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AdminLogoutButton } from '@/components/admin/logout-button';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { DOMAIN_DOT, DOMAIN_TEXT, type AdminDomain } from '@/components/admin/domain';
+import { SIDEBAR_STYLE } from '@/components/admin/tokens';
 
 const ICON_PROPS = {
   width: 18,
@@ -460,6 +461,8 @@ export function AdminSidebar({
           <div
             id="admin-menu-mobile"
             className="max-h-[calc(100dvh-3.5rem-var(--bottom-nav,0px))] overflow-y-auto overscroll-contain border-t border-fg/10 p-4"
+            // Même bleu que le menu latéral sur ordinateur.
+            style={SIDEBAR_STYLE as CSSProperties}
           >
             {navigation}
             <div className="mt-4 space-y-1 border-t border-fg/10 pt-4">
@@ -482,7 +485,11 @@ export function AdminSidebar({
           pas la place aux quinze entrées. Le cadre intérieur tranchait alors
           les intertitres en pleine hauteur de lettre, sans rien indiquer de ce
           qui restait au-dessus ou en dessous. */}
-      <aside className="relative hidden w-64 shrink-0 border-r border-fg/10 bg-fg/[0.025] lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
+      {/* Fond bleu nuit dans les deux thèmes (voir `SIDEBAR_STYLE`). */}
+      <aside
+        className="relative hidden w-64 shrink-0 border-r border-fg/10 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto"
+        style={SIDEBAR_STYLE as CSSProperties}
+      >
         <div className="flex min-h-full flex-col p-4">
           <div className="shrink-0 px-2 py-2">
             <div className="flex items-center justify-between gap-2">
