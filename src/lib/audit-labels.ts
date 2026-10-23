@@ -93,6 +93,11 @@ const VERBS: Record<string, string> = {
   closed: 'fermeture',
 };
 
+/** Libellé d'un groupe d'actions (`order` → « Commande »), pour les filtres. */
+export function auditSubjectLabel(subject: string): string {
+  return SUBJECTS[subject] ?? subject;
+}
+
 export function auditActionLabel(action: string): string {
   const dot = action.indexOf('.');
   if (dot < 0) return action;

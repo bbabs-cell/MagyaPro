@@ -7,6 +7,8 @@ import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { describeOptions, readOptions } from '@/lib/orders/option-snapshot';
 import type { KitchenOrder } from '@/lib/kitchen';
 import { AlertMessage, Card, cx } from '@/components/ui';
+import { ORDER_ACTION_LABELS, ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
 import { formatWait } from '@/lib/orders/wait';
 
 /**
@@ -114,7 +116,15 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
           return (
             <div key={column.status}>
               <h2 className="mb-2 flex items-center justify-between text-sm font-medium">
-                {column.title}
+                {/* Pastille de la couleur de l'étape, la même que le liseré
+                    des fiches et que les filtres de l'écran Commandes. */}
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className={cx('h-2 w-2 rounded-full', TONE_CLASSES[ORDER_STATUS_TONES[column.status]].dot)}
+                  />
+                  {column.title}
+                </span>
                 <span
                   key={columnOrders.length}
                   className="animate-pop rounded-full bg-surface-sunken px-2 py-0.5 text-xs text-ink-muted"
@@ -139,7 +149,11 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                     // de « À préparer » à « En préparation » est insérée dans
                     // la suivante, et s'y pose — on suit la commande des yeux,
                     // de loin, sans relire les numéros.
-                    <Card key={order.id} className="animate-scale-in p-3.5">
+                    <Card
+                      key={order.id}
+                      className="animate-scale-in p-3.5"
+                      style={railStyle(ORDER_STATUS_TONES[order.status])}
+                    >
                       <div className="flex items-baseline justify-between gap-2">
                         {/* Le numéro est lu de loin, souvent en criant « la
                             douze est prête » à travers la cuisine. Il mérite
@@ -150,9 +164,9 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                         <span
                           className={cx(
                             'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-                            late
-                              ? 'bg-state-warn-soft text-state-warn'
-                              : 'bg-surface-sunken text-ink-muted',
+                            // Rouge comme le retard d'une réservation : même
+                            // sens, même couleur sur tout le tableau de bord.
+                            TONE_CLASSES[late ? 'danger' : 'neutral'].soft,
                           )}
                         >
                           {formatWait(waited)}
@@ -210,9 +224,15 @@ export function KitchenBoard({ initialOrders }: { initialOrders: KitchenOrder[] 
                           disabled={mutation.pending}
                           aria-busy={mutation.isPending(order.id) || undefined}
                           onClick={() => advance(order, column.next!)}
-                          className="mt-3 h-11 w-full rounded-lg bg-ink text-sm font-medium text-white transition-transform hover:bg-ink/90 active:scale-[0.98] disabled:opacity-50"
+                          // Teinte de l'étape suivante, comme les boutons des
+                          // commandes : « Lancer la préparation » est ambre,
+                          // « Marquer prête » bleu.
+                          className={cx(
+                            'mt-3 h-11 w-full rounded-lg text-sm font-semibold transition-transform hover:brightness-95 active:scale-[0.98] disabled:opacity-50',
+                            TONE_CLASSES[ORDER_STATUS_TONES[column.next]].soft,
+                          )}
                         >
-                          {column.status === 'CONFIRMED' ? 'Démarrer' : 'Marquer prête'}
+                          {ORDER_ACTION_LABELS[column.next]}
                         </button>
                       )}
                     </Card>

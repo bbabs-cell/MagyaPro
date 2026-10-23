@@ -6,6 +6,7 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMinor } from '@/lib/money';
 import { AlertMessage, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION } from '@/components/dashboard/tones';
 
 type Expense = {
   id: string;
@@ -134,7 +135,7 @@ export function ExpensesManager({
               title="Aucune dépense enregistrée"
               description="Enregistrez vos dépenses pour connaître votre résultat net, pas seulement votre chiffre d'affaires."
               action={
-                <Button size="sm" onClick={() => setCreating(true)}>
+                <Button variant="secondary" size="sm" onClick={() => setCreating(true)}>
                   Ajouter une dépense
                 </Button>
               }
@@ -159,7 +160,7 @@ export function ExpensesManager({
                   <span className="font-medium">{formatMoney(expense.amount, currency)}</span>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="soft" className={DESTRUCTIVE_ACTION}
                     loading={mutation.isPending(expense.id)}
                     disabled={mutation.pending}
                     onClick={() => remove(expense)}

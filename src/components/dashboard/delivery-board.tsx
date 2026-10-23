@@ -10,6 +10,8 @@ import {
   type CollectionOutcome,
 } from '@/lib/orders/delivery-collection';
 import { AlertMessage, Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { NEUTRAL_ACTION, TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
 
 type DeliveryOrder = {
   id: string;
@@ -265,10 +267,11 @@ export function DeliveryBoard({
         ) : (
           <div className="space-y-3">
             {mine.map((order) => (
-              <Card key={order.id} className="p-4">
+              // Bleu « en livraison », comme sur l'écran Commandes.
+              <Card key={order.id} className="p-4" style={railStyle(ORDER_STATUS_TONES.OUT_FOR_DELIVERY)}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium">n°{order.number}</p>
+                    <p className="font-medium">Commande n°{order.number}</p>
                     <p className="mt-1 text-sm text-ink-muted">{order.customerName}</p>
                     {order.deliveryAddress && (
                       <p className="mt-0.5 text-sm text-ink-muted">{order.deliveryAddress}</p>
@@ -281,7 +284,7 @@ export function DeliveryBoard({
                   <div className="shrink-0 text-end">
                     {order.amountDue > 0 ? (
                       <>
-                        <p className="text-xs text-ink-faint">À encaisser</p>
+                        <p className="text-xs font-medium text-state-warn">À encaisser</p>
                         <p className="text-xl font-semibold text-ink">
                           {formatMoney(order.amountDue, order.currency)}
                         </p>
@@ -296,7 +299,7 @@ export function DeliveryBoard({
                   {order.customerPhone && (
                     <a
                       href={`tel:${order.customerPhone}`}
-                      className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
+                      className={cx('rounded-lg px-2.5 py-1.5 text-xs font-medium hover:brightness-95', NEUTRAL_ACTION)}
                     >
                       Appeler
                     </a>
@@ -305,7 +308,7 @@ export function DeliveryBoard({
                     href={mapsUrl(order)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
+                    className={cx('rounded-lg px-2.5 py-1.5 text-xs font-medium hover:brightness-95', NEUTRAL_ACTION)}
                   >
                     Itinéraire
                   </a>
@@ -338,6 +341,8 @@ export function DeliveryBoard({
                   </div>
                   <Button
                     size="sm"
+                    variant="soft"
+                    className={TONE_CLASSES[ORDER_STATUS_TONES.DELIVERED].soft}
                     loading={mutation.isPending(order.id)}
                     disabled={mutation.pending || (codeInputs[order.id] ?? '').length !== 6}
                     onClick={() => confirm(order)}
@@ -360,17 +365,21 @@ export function DeliveryBoard({
         ) : (
           <div className="space-y-3">
             {pool.map((order) => (
-              <Card key={order.id} className="p-4">
+              // Braise « à traiter » : une course qui attend un livreur.
+              <Card key={order.id} className="p-4" style={railStyle('brand')}>
                 <p className="font-medium">
-                  n°{order.number} · {formatMoney(order.total, order.currency)}
+                  Commande n°{order.number} · {formatMoney(order.total, order.currency)}
                 </p>
                 <p className="mt-1 text-sm text-ink-muted">{order.customerName}</p>
                 {order.deliveryAddress && (
                   <p className="mt-0.5 text-sm text-ink-muted">{order.deliveryAddress}</p>
                 )}
+                {/* Mène à « en livraison » : bleu, et non braise pleine
+                    répétée sur chaque fiche. */}
                 <Button
                   size="sm"
-                  className="mt-3"
+                  variant="soft"
+                  className={cx('mt-3', TONE_CLASSES[ORDER_STATUS_TONES.OUT_FOR_DELIVERY].soft)}
                   loading={mutation.isPending(order.id)}
                   disabled={mutation.pending}
                   onClick={() => claim(order)}

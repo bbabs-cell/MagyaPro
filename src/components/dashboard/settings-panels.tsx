@@ -6,7 +6,7 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { toMajor, toMinor } from '@/lib/money';
 import { DAY_NAMES } from '@/lib/site/hours';
-import { AlertMessage, Badge, Button, Card, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, Field, chipClass, cx, inputClass } from '@/components/ui';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 import { SoundUploadField } from '@/components/account/sound-upload';
@@ -233,7 +233,7 @@ export function SettingsPanels({
 
   return (
     <div>
-      <nav aria-label="Sections des réglages" className="mb-5 flex gap-2 overflow-x-auto pb-1">
+      <nav aria-label="Sections des réglages" className="mb-5 flex flex-wrap gap-2">
         {TABS.map((item) => (
           <button
             key={item.key}
@@ -244,10 +244,7 @@ export function SettingsPanels({
               mutation.clearError();
             }}
             aria-current={tab === item.key ? 'true' : undefined}
-            className={cx(
-              'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
-              tab === item.key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink',
-            )}
+            className={chipClass(tab === item.key)}
           >
             {item.label}
           </button>

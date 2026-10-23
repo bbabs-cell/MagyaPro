@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, chipClass } from '@/components/ui';
 import { JournalPurgeButton } from '@/components/dashboard/journal-purge-button';
-import { auditActionLabel } from '@/lib/audit-labels';
+import { auditActionLabel, auditSubjectLabel } from '@/lib/audit-labels';
 
 export const metadata: Metadata = { title: 'Journal' };
 export const dynamic = 'force-dynamic';
@@ -72,13 +72,11 @@ export default async function JournalPage({
         }
       />
 
-      <nav aria-label="Filtrer par type d'action" className="mb-6 flex gap-2 overflow-x-auto pb-1">
+      <nav aria-label="Filtrer par type d'action" className="mb-6 flex flex-wrap gap-2">
         <Link
           href="/dashboard/journal"
           aria-current={actionFilter === '' ? 'true' : undefined}
-          className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-            actionFilter === '' ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-          }`}
+          className={chipClass(actionFilter === '')}
         >
           Tout
         </Link>
@@ -87,22 +85,21 @@ export default async function JournalPage({
             key={prefix}
             href={`/dashboard/journal?action=${prefix}`}
             aria-current={actionFilter === prefix ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-              actionFilter === prefix ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-            }`}
+            className={chipClass(actionFilter === prefix)}
           >
-            {prefix}
+            {/* « Commande », pas `order` : le code brut reste dans l'export. */}
+            {auditSubjectLabel(prefix)}
           </Link>
         ))}
       </nav>
 
       <div className="card overflow-x-auto p-4 sm:p-5">
-        <table className="table-stack w-full border-collapse text-sm">
+        <table className="table-stack table-stack-titled w-full border-collapse text-sm">
           <caption className="sr-only">Entrées du journal</caption>
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
-              <th scope="col" className="py-2 pr-3 font-medium">Date</th>
               <th scope="col" className="py-2 pr-3 font-medium">Action</th>
+              <th scope="col" className="py-2 pr-3 font-medium">Date</th>
               <th scope="col" className="py-2 pr-3 font-medium">Auteur</th>
               <th scope="col" className="py-2 font-medium">Détails</th>
             </tr>
@@ -110,6 +107,12 @@ export default async function JournalPage({
           <tbody>
             {logs.map((log) => (
               <tr key={log.id} className="border-b border-surface-border align-top">
+                <td data-label="Action" className="py-2.5 pr-3">
+                  <span className="block font-medium">{auditActionLabel(log.action)}</span>
+                  {/* Le code brut, recherché par l'équipe technique : sur ordinateur
+                      seulement — sur téléphone il se cassait au milieu. */}
+                  <span className="block font-mono text-[11px] text-ink-faint max-md:hidden">{log.action}</span>
+                </td>
                 <td data-label="Date" className="py-2.5 pr-3 whitespace-nowrap text-ink-muted">
                   {log.createdAt.toLocaleString('fr-FR', {
                     day: '2-digit',
@@ -118,10 +121,6 @@ export default async function JournalPage({
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
-                </td>
-                <td data-label="Action" className="py-2.5 pr-3">
-                  <span className="block">{auditActionLabel(log.action)}</span>
-                  <span className="block font-mono text-[11px] text-ink-faint">{log.action}</span>
                 </td>
                 <td data-label="Auteur" className="py-2.5 pr-3">{log.actorEmail ?? '—'}</td>
                 <td data-label="Détails" className="py-2.5 text-xs text-ink-muted">

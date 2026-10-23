@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
 
 type Zone = {
   id: string;
@@ -226,7 +227,7 @@ export function DeliverySettings({
                 title="Aucune zone configurée"
                 description="Sans zone, la livraison est proposée sans frais. Créez vos zones pour facturer selon la distance."
                 action={
-                  <Button size="sm" onClick={() => setEditing('new')}>
+                  <Button variant="secondary" size="sm" onClick={() => setEditing('new')}>
                     Créer une zone
                   </Button>
                 }
@@ -253,12 +254,12 @@ export function DeliverySettings({
                   </div>
 
                   <div className="flex shrink-0 gap-1.5">
-                    <Button size="sm" variant="secondary" onClick={() => setEditing(zone)}>
+                    <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setEditing(zone)}>
                       Modifier
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="soft" className={DESTRUCTIVE_ACTION}
                       disabled={pendingId === zone.id}
                       onClick={() => remove(zone)}
                     >

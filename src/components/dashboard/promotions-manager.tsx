@@ -6,6 +6,7 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
 
 type Promotion = {
   id: string;
@@ -269,7 +270,7 @@ export function PromotionsManager({
               description="Créez un code pour offrir une remise à vos clients, avec une durée et une limite d'utilisation."
               action={
                 canManage ? (
-                  <Button size="sm" onClick={() => openEditor('new')}>
+                  <Button variant="secondary" size="sm" onClick={() => openEditor('new')}>
                     Créer un code
                   </Button>
                 ) : undefined
@@ -312,14 +313,14 @@ export function PromotionsManager({
                     <div className="flex shrink-0 gap-1.5">
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant="soft" className={NEUTRAL_ACTION}
                         onClick={() => openEditor(promotion)}
                       >
                         Modifier
                       </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="soft" className={DESTRUCTIVE_ACTION}
                         loading={mutation.isPending(promotion.id)}
                         disabled={mutation.pending}
                         onClick={() => remove(promotion)}
