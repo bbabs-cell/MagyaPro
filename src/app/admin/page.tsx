@@ -22,10 +22,10 @@ import {
 } from '@/lib/money';
 import { mailStatus } from '@/lib/mail/status';
 import { MailTestButton } from '@/components/admin/mail-test-button';
-import { ExcludedTag, StatusPill } from '@/components/admin/state-badge';
+import { RecentAccounts } from '@/components/admin/recent-accounts';
 import { formatPercent } from '@/lib/numbers';
 import { CountUp } from '@/components/admin/count-up';
-import { DOMAIN_CHIP, DomainHeading, type AdminDomain } from '@/components/admin/domain';
+import { DOMAIN_CHIP, DomainHeading, DomainPanel, type AdminDomain } from '@/components/admin/domain';
 
 export const metadata: Metadata = { title: 'Administration' };
 export const dynamic = 'force-dynamic';
@@ -461,221 +461,188 @@ export default async function AdminDashboardPage() {
         )}
       </section>
 
-      {/* Séparateur franc entre les deux produits : les deux grilles se
-          ressemblent trait pour trait, et rien n'indiquait où l'une finissait
-          et l'autre commençait. */}
-      <div className="mt-10 border-t border-fg/10 pt-6">
-        <DomainHeading domain="resto" className="text-lg font-semibold tracking-tight">
-          MagyaPro Restaurant
-        </DomainHeading>
-        <p className="mt-1 text-sm text-fg/60">
-          État de la plateforme, tous restaurants confondus.
-        </p>
-      </div>
-
-      <section
-        aria-label="Indicateurs de la plateforme"
-        className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+      {/* Chaque produit dans son panneau, à sa couleur : braise pour
+          Restaurant, or pour Boutique (voir `DomainPanel`). */}
+      <DomainPanel
+        domain="resto"
+        title="MagyaPro Restaurant"
+        description="État de la plateforme, tous restaurants confondus."
+        icon={STAT_ICONS.restaurants}
       >
-        <AdminStat domain="resto" label="Restaurants" value={metrics.restaurants} icon={STAT_ICONS.restaurants} />
-        <AdminStat
-          domain="resto"
-          label="Actifs"
-          value={metrics.activeRestaurants}
-          icon={STAT_ICONS.active}
-          hint={`${metrics.suspendedRestaurants} suspendu${metrics.suspendedRestaurants > 1 ? 's' : ''}`}
-          // Ambre seulement s'il y a vraiment quelque chose à regarder.
-          tone={metrics.suspendedRestaurants > 0 ? 'warning' : undefined}
-        />
-        <AdminStat domain="users" label="Utilisateurs" value={metrics.users} icon={STAT_ICONS.users} />
-        <AdminStat
-          domain="resto"
-          label="Nouveaux (30 j)"
-          value={metrics.newRestaurants}
-          icon={STAT_ICONS.new}
-          hint="Restaurants créés"
-        />
-        <AdminStat domain="resto" label="Commandes" value={metrics.orders} icon={STAT_ICONS.orders} />
-        <AdminStat
-          domain="resto"
-          label="Volume traité"
-          value={volumeValue(metrics.grossVolumeByCurrency)}
-          icon={STAT_ICONS.volume}
-          hint={volumeHint(metrics.grossVolumeByCurrency, 'Toutes commandes, hors annulées')}
-        />
-        <AdminStat
-          domain="abo"
-          label="Abonnements actifs"
-          icon={STAT_ICONS.active_subs}
-          value={
-            (metrics.subscriptionsByStatus.ACTIVE ?? 0) +
-              (metrics.subscriptionsByStatus.TRIALING ?? 0)
-          }
-        />
-        <AdminStat
-          domain="abo"
-          label="Abonnements expirés"
-          icon={STAT_ICONS.expired_subs}
-          value={expiredRestaurantSubs}
-          tone={expiredRestaurantSubs > 0 ? 'danger' : undefined}
-        />
-      </section>
 
-      <p className="mt-3 text-xs text-fg/60">
-        Le volume traité correspond au montant des commandes passées chez les
-        restaurants ; il ne s&apos;agit pas du revenu de MagyaPro, qui provient des
-        abonnements.
-      </p>
-
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="derniers-restaurants">
-          <div className="flex items-center justify-between">
-            <DomainHeading id="derniers-restaurants" domain="resto">
-              Derniers restaurants
-            </DomainHeading>
-            <Link
-              href="/admin/restaurants"
-              className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
-            >
-              Tout voir
-            </Link>
-          </div>
-
-          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
-            {recentRestaurants.map((restaurant) => (
-              <li key={restaurant.id}>
-                <Link
-                  href={`/admin/restaurants/${restaurant.id}`}
-                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-fg/5"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">
-                      {restaurant.name}
-                      <ExcludedTag isDemo={restaurant.isDemo} isTest={restaurant.isTest} />
-                    </span>
-                    <span className="block truncate text-xs text-fg/60">
-                      {restaurant.slug} · {restaurant._count.orders} commande
-                      {restaurant._count.orders > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                  <StatusPill status={restaurant.status} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section
+          aria-label="Indicateurs de la plateforme"
+          className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+        >
+          <AdminStat domain="resto" label="Restaurants" value={metrics.restaurants} icon={STAT_ICONS.restaurants} />
+          <AdminStat
+            domain="resto"
+            label="Actifs"
+            value={metrics.activeRestaurants}
+            icon={STAT_ICONS.active}
+            hint={`${metrics.suspendedRestaurants} suspendu${metrics.suspendedRestaurants > 1 ? 's' : ''}`}
+            // Ambre seulement s'il y a vraiment quelque chose à regarder.
+            tone={metrics.suspendedRestaurants > 0 ? 'warning' : undefined}
+          />
+          <AdminStat domain="users" label="Utilisateurs" value={metrics.users} icon={STAT_ICONS.users} />
+          <AdminStat
+            domain="resto"
+            label="Nouveaux (30 j)"
+            value={metrics.newRestaurants}
+            icon={STAT_ICONS.new}
+            hint="Restaurants créés"
+          />
+          <AdminStat domain="resto" label="Commandes" value={metrics.orders} icon={STAT_ICONS.orders} />
+          <AdminStat
+            domain="resto"
+            label="Volume traité"
+            value={volumeValue(metrics.grossVolumeByCurrency)}
+            icon={STAT_ICONS.volume}
+            hint={volumeHint(metrics.grossVolumeByCurrency, 'Toutes commandes, hors annulées')}
+          />
+          <AdminStat
+            domain="abo"
+            label="Abonnements actifs"
+            icon={STAT_ICONS.active_subs}
+            value={
+              (metrics.subscriptionsByStatus.ACTIVE ?? 0) +
+                (metrics.subscriptionsByStatus.TRIALING ?? 0)
+            }
+          />
+          <AdminStat
+            domain="abo"
+            label="Abonnements expirés"
+            icon={STAT_ICONS.expired_subs}
+            value={expiredRestaurantSubs}
+            tone={expiredRestaurantSubs > 0 ? 'danger' : undefined}
+          />
         </section>
 
-        <section aria-labelledby="abonnements">
-          <DomainHeading id="abonnements" domain="abo">
-            Répartition des abonnements
-          </DomainHeading>
-          <SubscriptionBreakdown counts={metrics.subscriptionsByStatus} />
-        </section>
-      </div>
-
-      <div className="mt-10 border-t border-fg/10 pt-6">
-        <DomainHeading domain="boutique" className="text-lg font-semibold tracking-tight">
-          MagyaPro Boutique
-        </DomainHeading>
-        <p className="mt-1 text-sm text-fg/60">
-          État de la plateforme, toutes boutiques confondues.
+        <p className="mt-3 text-xs text-fg/60">
+          Le volume traité correspond au montant des commandes passées chez les
+          restaurants ; il ne s&apos;agit pas du revenu de MagyaPro, qui provient des
+          abonnements.
         </p>
-      </div>
 
-      <section
-        aria-label="Indicateurs Boutique de la plateforme"
-        className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
-      >
-        <AdminStat domain="boutique" label="Boutiques" value={storeMetrics.stores} icon={STAT_ICONS.restaurants} />
-        <AdminStat
-          domain="boutique"
-          label="Actives"
-          value={storeMetrics.activeStores}
-          icon={STAT_ICONS.active}
-          hint={`${storeMetrics.suspendedStores} suspendue${storeMetrics.suspendedStores > 1 ? 's' : ''}`}
-          tone={storeMetrics.suspendedStores > 0 ? 'warning' : undefined}
-        />
-        <AdminStat
-          domain="boutique"
-          label="Nouvelles (30 j)"
-          value={storeMetrics.newStores}
-          icon={STAT_ICONS.new}
-          hint="Boutiques créées"
-        />
-        <AdminStat domain="boutique" label="Ventes" value={storeMetrics.sales} icon={STAT_ICONS.orders} />
-        <AdminStat
-          domain="boutique"
-          label="Volume traité"
-          value={volumeValue(storeMetrics.grossVolumeByCurrency)}
-          icon={STAT_ICONS.volume}
-          hint={volumeHint(storeMetrics.grossVolumeByCurrency, 'Toutes ventes, hors annulées')}
-        />
-        <AdminStat
-          domain="abo"
-          label="Abonnements actifs"
-          icon={STAT_ICONS.active_subs}
-          value={
-            (storeMetrics.subscriptionsByStatus.ACTIVE ?? 0) +
-              (storeMetrics.subscriptionsByStatus.TRIALING ?? 0)
-          }
-        />
-        <AdminStat
-          domain="abo"
-          label="Abonnements expirés"
-          icon={STAT_ICONS.expired_subs}
-          value={expiredStoreSubs}
-          tone={expiredStoreSubs > 0 ? 'danger' : undefined}
-        />
-      </section>
+        <div className="mt-10 grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
+          <section aria-labelledby="derniers-restaurants">
+            <div className="flex items-center justify-between">
+              <DomainHeading id="derniers-restaurants" domain="resto">
+                Derniers restaurants
+              </DomainHeading>
+              <Link
+                href="/admin/restaurants"
+                className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
+              >
+                Tout voir
+              </Link>
+            </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <section aria-labelledby="dernieres-boutiques">
-          <div className="flex items-center justify-between">
-            <DomainHeading id="dernieres-boutiques" domain="boutique">
-              Dernières boutiques
+            <RecentAccounts
+              domain="resto"
+              hrefBase="/admin/restaurants"
+              activityLabel={['commande', 'commandes']}
+              emptyLabel="Aucun restaurant pour le moment."
+              accounts={recentRestaurants.map(({ _count, ...restaurant }) => ({
+                ...restaurant,
+                activity: _count.orders,
+              }))}
+            />
+          </section>
+
+          <section aria-labelledby="abonnements">
+            <DomainHeading id="abonnements" domain="abo">
+              Répartition des abonnements
             </DomainHeading>
-            <Link
-              href="/admin/boutiques"
-              className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
-            >
-              Tout voir
-            </Link>
-          </div>
+            <SubscriptionBreakdown counts={metrics.subscriptionsByStatus} />
+          </section>
+        </div>
+      </DomainPanel>
 
-          <ul className="mt-3 divide-y divide-fg/10 rounded-2xl border border-fg/10">
-            {recentStores.length === 0 && (
-              <li className="p-3.5 text-sm text-fg/60">Aucune boutique pour le moment.</li>
-            )}
-            {recentStores.map((store) => (
-              <li key={store.id}>
-                <Link
-                  href={`/admin/boutiques/${store.id}`}
-                  className="flex items-center justify-between gap-3 p-3.5 hover:bg-fg/5"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">
-                      {store.name}
-                      <ExcludedTag isDemo={store.isDemo} isTest={store.isTest} />
-                    </span>
-                    <span className="block truncate text-xs text-fg/60">
-                      {store.slug} · {store._count.sales} vente{store._count.sales > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                  <StatusPill status={store.status} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+      <DomainPanel
+        domain="boutique"
+        title="MagyaPro Boutique"
+        description="État de la plateforme, toutes boutiques confondues."
+        icon={STAT_ICONS.orders}
+      >
+
+        <section
+          aria-label="Indicateurs Boutique de la plateforme"
+          className="stagger mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+        >
+          <AdminStat domain="boutique" label="Boutiques" value={storeMetrics.stores} icon={STAT_ICONS.restaurants} />
+          <AdminStat
+            domain="boutique"
+            label="Actives"
+            value={storeMetrics.activeStores}
+            icon={STAT_ICONS.active}
+            hint={`${storeMetrics.suspendedStores} suspendue${storeMetrics.suspendedStores > 1 ? 's' : ''}`}
+            tone={storeMetrics.suspendedStores > 0 ? 'warning' : undefined}
+          />
+          <AdminStat
+            domain="boutique"
+            label="Nouvelles (30 j)"
+            value={storeMetrics.newStores}
+            icon={STAT_ICONS.new}
+            hint="Boutiques créées"
+          />
+          <AdminStat domain="boutique" label="Ventes" value={storeMetrics.sales} icon={STAT_ICONS.orders} />
+          <AdminStat
+            domain="boutique"
+            label="Volume traité"
+            value={volumeValue(storeMetrics.grossVolumeByCurrency)}
+            icon={STAT_ICONS.volume}
+            hint={volumeHint(storeMetrics.grossVolumeByCurrency, 'Toutes ventes, hors annulées')}
+          />
+          <AdminStat
+            domain="abo"
+            label="Abonnements actifs"
+            icon={STAT_ICONS.active_subs}
+            value={
+              (storeMetrics.subscriptionsByStatus.ACTIVE ?? 0) +
+                (storeMetrics.subscriptionsByStatus.TRIALING ?? 0)
+            }
+          />
+          <AdminStat
+            domain="abo"
+            label="Abonnements expirés"
+            icon={STAT_ICONS.expired_subs}
+            value={expiredStoreSubs}
+            tone={expiredStoreSubs > 0 ? 'danger' : undefined}
+          />
         </section>
 
-        <section aria-labelledby="abonnements-boutique">
-          <DomainHeading id="abonnements-boutique" domain="abo">
-            Répartition des abonnements Boutique
-          </DomainHeading>
-          <SubscriptionBreakdown counts={storeMetrics.subscriptionsByStatus} />
-        </section>
-      </div>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
+          <section aria-labelledby="dernieres-boutiques">
+            <div className="flex items-center justify-between">
+              <DomainHeading id="dernieres-boutiques" domain="boutique">
+                Dernières boutiques
+              </DomainHeading>
+              <Link
+                href="/admin/boutiques"
+                className="text-sm text-fg/60 underline underline-offset-4 hover:text-fg"
+              >
+                Tout voir
+              </Link>
+            </div>
 
+            <RecentAccounts
+              domain="boutique"
+              hrefBase="/admin/boutiques"
+              activityLabel={['vente', 'ventes']}
+              emptyLabel="Aucune boutique pour le moment."
+              accounts={recentStores.map(({ _count, ...store }) => ({ ...store, activity: _count.sales }))}
+            />
+          </section>
+
+          <section aria-labelledby="abonnements-boutique">
+            <DomainHeading id="abonnements-boutique" domain="abo">
+              Répartition des abonnements Boutique
+            </DomainHeading>
+            <SubscriptionBreakdown counts={storeMetrics.subscriptionsByStatus} />
+          </section>
+        </div>
+      </DomainPanel>
 
       {/* Le journal couvre les deux produits : il vit désormais à part,
           sur toute la largeur, au lieu d'être imbriqué dans la colonne
