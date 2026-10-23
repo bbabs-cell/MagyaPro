@@ -19,7 +19,7 @@ export function cx(...values: Array<string | false | null | undefined>): string 
 
 // --- Boutons ---------------------------------------------------------------
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BUTTON_BASE =
@@ -34,6 +34,10 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
     'border border-surface-border bg-surface text-ink hover:bg-surface-sunken',
   ghost: 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
   danger: 'bg-red-600 text-white hover:bg-red-700',
+  // Fond teinté fourni par l'appelant (`className`) : la couleur dit à quel
+  // état mène l'action — voir les commandes. Jamais la braise pleine, réservée
+  // au bouton principal.
+  soft: 'hover:brightness-95',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, string> = {
