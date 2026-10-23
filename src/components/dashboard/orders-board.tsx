@@ -203,7 +203,7 @@ export function OrdersBoard({
                     borderLeftColor: TONE_CLASSES[ORDER_STATUS_TONES[order.status]].rail,
                   }}
                 >
-                  <td data-label="Commande" className="py-3 pr-3">
+                  <td data-label="Commande" className="py-3 pr-3 md:pl-3">
                     <Link
                       href={`/dashboard/commandes/${order.id}`}
                       className="whitespace-nowrap text-base font-semibold underline-offset-4 hover:underline md:text-sm md:font-medium"
@@ -257,7 +257,13 @@ export function OrdersBoard({
                         modes gardent le libellé générique, qui leur suffit. */}
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                        TONE_CLASSES[PAYMENT_STATUS_TONES[order.paymentStatus] ?? 'neutral'].soft
+                        // Une commande annulée n'a rien à encaisser : son « non
+                        // payée » ne doit pas réclamer l'attention en ambre.
+                        TONE_CLASSES[
+                          order.status === 'CANCELLED'
+                            ? 'neutral'
+                            : (PAYMENT_STATUS_TONES[order.paymentStatus] ?? 'neutral')
+                        ].soft
                       }`}
                     >
                       {order.fulfillmentType === 'DELIVERY'
