@@ -5,7 +5,7 @@ import { useOptimistic, useState, type FormEvent } from 'react';
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
-import { NEUTRAL_ACTION, TABLE_STATUS_TONES, railStyle } from '@/components/dashboard/tones';
+import { NEUTRAL_ACTION, TABLE_STATUS_TONES, railStyle } from '@/components/ui/tones';
 
 type TableStatus = 'FREE' | 'OCCUPIED' | 'NEEDS_CLEANING';
 

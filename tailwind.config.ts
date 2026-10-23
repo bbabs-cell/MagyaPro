@@ -162,6 +162,11 @@ const config: Config = {
           'warn-soft': themed('--state-warn-soft', '#fffbeb'),
           bad: themed('--state-bad', '#b91c1c'),
           'bad-soft': themed('--state-bad-soft', '#fef2f2'),
+          // « En route » (commande confirmée, achat commandé). Valeurs par
+          // défaut = sky-700 / sky-50, l'ancien bleu codé en dur ; le thème
+          // sombre de Boutique les redéfinit.
+          info: themed('--state-info', '#0369a1'),
+          'info-soft': themed('--state-info-soft', '#f0f9ff'),
         },
       },
       boxShadow: {

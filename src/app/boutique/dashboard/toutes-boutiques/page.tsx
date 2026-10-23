@@ -7,7 +7,8 @@ import { getStoreHomeAlerts } from '@/lib/boutique/home-alerts';
 import { getStoreDashboardMetrics } from '@/lib/boutique/analytics';
 import { STORE_ROLE_LABELS } from '@/lib/boutique/rbac';
 import { formatMoney, hasSeveralCurrencies, primaryCurrency, sumByCurrency } from '@/lib/money';
-import { Badge, Card, PageHeader } from '@/components/ui';
+import { Badge, Card, PageHeader, buttonClass } from '@/components/ui';
+import { NEUTRAL_ACTION, railStyle } from '@/components/ui/tones';
 
 export const metadata: Metadata = { title: 'Toutes les boutiques' };
 export const dynamic = 'force-dynamic';
@@ -103,7 +104,15 @@ export default async function ToutesLesBoutiquesPage() {
       <ul className="mt-6 space-y-3">
         {rows.map((row) => (
           <li key={row.store.id}>
-            <Card className="p-4 sm:p-5">
+            {/* Liseré de l'état du stock : rouge s'il y a une rupture, ambre
+                un stock bas, vert sinon — les mêmes couleurs que les
+                produits. */}
+            <Card
+              className="p-4 sm:p-5"
+              style={railStyle(
+                row.alerts.outOfStock > 0 ? 'danger' : row.alerts.lowStock > 0 ? 'warning' : 'success',
+              )}
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium text-ink">
@@ -131,7 +140,7 @@ export default async function ToutesLesBoutiquesPage() {
                 <form action={switchAndOpen.bind(null, row.store.id)}>
                   <button
                     type="submit"
-                    className="rounded-lg border border-surface-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-sunken"
+                    className={buttonClass('soft', 'sm', NEUTRAL_ACTION)}
                   >
                     Ouvrir
                   </button>

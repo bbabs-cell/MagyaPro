@@ -19,7 +19,7 @@ import {
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { PushInvite } from '@/components/account/push-toggle';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
-import { railStyle } from '@/components/dashboard/tones';
+import { railStyle } from '@/components/ui/tones';
 import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Vue d\'ensemble' };

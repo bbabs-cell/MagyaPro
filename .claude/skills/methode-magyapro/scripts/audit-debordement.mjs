@@ -99,6 +99,10 @@ for (const path of paths) {
       for (const el of document.body.querySelectorAll('*')) {
         if (!visible(el) || inScroller(el)) continue;
         const r = el.getBoundingClientRect();
+        // Entièrement hors champ : un tiroir fermé (menu latéral rangé à
+        // gauche, panneau à droite), pas un débordement. Seul ce qui est
+        // coupé par le bord de l'écran gêne la lecture.
+        if (r.right <= 0 || r.left >= vw) continue;
         if (r.right > vw + 1 || r.left < -1) {
           // Ne signaler que l'élément le plus haut qui déborde.
           let p = el.parentElement;

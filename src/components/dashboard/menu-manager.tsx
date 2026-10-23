@@ -15,7 +15,7 @@ import {
   cx,
   inputClass,
 } from '@/components/ui';
-import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION, TONE_CLASSES } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION, TONE_CLASSES } from '@/components/ui/tones';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 
 /**

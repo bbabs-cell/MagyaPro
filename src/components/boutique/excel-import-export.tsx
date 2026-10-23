@@ -76,7 +76,9 @@ export function ExcelImportExport({ canImport }: { canImport: boolean }) {
               required
               className="min-w-0 flex-1 text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-sm"
             />
-            <Button type="submit" size="sm" loading={pending} className="shrink-0">
+            {/* Secondaire : « Nouveau produit », juste en dessous, est le bouton
+                principal de l'écran. */}
+            <Button type="submit" size="sm" variant="secondary" loading={pending} className="shrink-0">
               Importer
             </Button>
           </form>

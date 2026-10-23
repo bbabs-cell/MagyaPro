@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { ApiError, uploadFile } from '@/lib/client/api';
 import { downscaleImage } from '@/lib/client/downscale-image';
 import { Button } from '@/components/ui';
+import { DESTRUCTIVE_ACTION } from '@/components/ui/tones';
 
 /**
  * Champ de téléversement d'image pour une boutique — équivalent de
@@ -104,7 +105,7 @@ export function ImageUploadField({
           {value && (
             <Button
               type="button"
-              variant="ghost"
+              variant="soft" className={DESTRUCTIVE_ACTION}
               size="sm"
               disabled={uploading}
               onClick={() => void onChange(null)}

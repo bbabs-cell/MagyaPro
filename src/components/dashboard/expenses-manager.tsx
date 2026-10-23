@@ -6,7 +6,7 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMinor } from '@/lib/money';
 import { AlertMessage, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
-import { DESTRUCTIVE_ACTION } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION } from '@/components/ui/tones';
 
 type Expense = {
   id: string;

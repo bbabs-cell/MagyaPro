@@ -20,7 +20,8 @@ import {
   type ExpiryState,
 } from '@/lib/boutique/expiry';
 import { SECTOR_VARIANT_AXES, attributeSuggestionsFor } from '@/lib/boutique/unit-catalogue';
-import { AlertMessage, Badge, Button, Card, EmptyState, Field, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, Field, chipClass, cx, inputClass } from '@/components/ui';
+import { NEUTRAL_ACTION, TONE_CLASSES, type Tone } from '@/components/ui/tones';
 
 /**
  * Catalogue MagyaPro Boutique — première version : un produit = une seule
@@ -138,6 +139,13 @@ const FILTER_LABELS: Record<ListFilter, string> = {
   low: 'Stock faible',
   out: 'Rupture',
   expiring: 'Péremption',
+};
+
+/** Ton de chaque filtre — le même que le liseré des produits qu'il retient. */
+const FILTER_TONES: Partial<Record<ListFilter, Tone>> = {
+  low: 'warning',
+  out: 'danger',
+  expiring: 'warning',
 };
 
 const UNIT_LABELS: Record<string, string> = {
@@ -458,19 +466,27 @@ export function ProductManager({
                     aria-pressed={active}
                     onClick={() => setFilter(key)}
                     style={{ touchAction: 'manipulation' }}
-                    className={cx(
-                      'rounded-full border px-3.5 py-2 text-xs font-medium transition-colors',
-                      active
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-surface-border text-ink hover:bg-surface-sunken',
+                    className={chipClass(
+                      active,
                       // Un filtre vide reste cliquable mais s'annonce comme
                       // vide : plus honnête que de le masquer, ce qui ferait
                       // douter de son existence.
-                      !active && counts[key] === 0 && 'opacity-50',
+                      !active && counts[key] === 0 ? 'opacity-50' : undefined,
                     )}
                   >
+                    {/* Pastille de la couleur du liseré des produits
+                        concernés : ambre stock faible, rouge rupture. */}
+                    {FILTER_TONES[key] && (
+                      <span
+                        aria-hidden="true"
+                        className={cx(
+                          'me-1.5 h-2 w-2 shrink-0 rounded-full',
+                          active ? 'bg-brand-ink' : TONE_CLASSES[FILTER_TONES[key]!].dot,
+                        )}
+                      />
+                    )}
                     {FILTER_LABELS[key]}
-                    <span className={cx('ml-1.5 tabular-nums', active ? 'text-white/70' : 'text-ink-faint')}>
+                    <span className={cx('ms-1.5 tabular-nums', active ? 'opacity-80' : 'text-ink-faint')}>
                       {counts[key]}
                     </span>
                   </button>
@@ -502,7 +518,7 @@ export function ProductManager({
             />
           ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="table-stack w-full text-sm">
+          <table className="table-stack table-stack-titled w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3 font-medium">Produit</th>
@@ -622,13 +638,16 @@ export function ProductManager({
                       </Badge>
                     </td>
                     {canManage && (
-                      <td className="px-4 py-3 text-right">
+                      <td data-label="Actions" className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => setWithdrawing(product)}>
-                            Retirer
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditingProduct(product)}>
+                          {/* « Retirer » sort du stock (casse, perte,
+                              consommation) : un geste courant, pas une
+                              suppression — neutre comme « Modifier ». */}
+                          <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setEditingProduct(product)}>
                             Modifier
+                          </Button>
+                          <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setWithdrawing(product)}>
+                            Retirer du stock
                           </Button>
                         </div>
                       </td>

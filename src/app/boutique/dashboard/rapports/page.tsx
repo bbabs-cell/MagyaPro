@@ -21,7 +21,7 @@ import {
   getSuppliersReport,
   getTaxReport,
 } from '@/lib/boutique/reports';
-import { Badge, Card, PageHeader, StatCard } from '@/components/ui';
+import { Badge, Card, PageHeader, StatCard, buttonClass, chipClass } from '@/components/ui';
 import { PrintButton } from '@/components/dashboard/print-button';
 
 export const metadata: Metadata = { title: 'Rapports à imprimer' };
@@ -99,7 +99,7 @@ export default async function BoutiqueRapportsPage({
       <PageHeader
         title="Rapports à imprimer"
         description="Filtrez par période — imprimables ou exportables en PDF."
-        action={<PrintButton />}
+        action={<PrintButton className={buttonClass('secondary', 'md', 'print:hidden')} />}
       />
 
       <nav aria-label="Type de rapport" className="mb-4 flex flex-wrap gap-2 print:hidden">
@@ -108,9 +108,7 @@ export default async function BoutiqueRapportsPage({
             key={tab.value}
             href={`/boutique/dashboard/rapports?type=${tab.value}&${dateQuery}`}
             aria-current={type === tab.value ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-              type === tab.value ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-            }`}
+            className={chipClass(type === tab.value)}
           >
             {tab.label}
           </a>
@@ -144,7 +142,9 @@ export default async function BoutiqueRapportsPage({
               <PaiementSelect defaultValue={params.paiement} />
             </>
           )}
-          <button type="submit" className="rounded-lg bg-ink px-4 py-1.5 text-sm font-medium text-white">
+          {/* Le seul bouton doré de l'écran, comme « Filtrer » des Ventes et
+              des Mouvements. Il était noir, une couleur d'action de plus. */}
+          <button type="submit" className={buttonClass('primary', 'sm')}>
             Filtrer
           </button>
         </form>
@@ -271,7 +271,7 @@ async function VentesReport({
       </section>
 
       <Card className="overflow-x-auto p-0">
-        <table className="table-stack w-full text-sm">
+        <table className="table-stack table-stack-titled w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
               <th className="px-4 py-3 font-medium">Vente</th>
@@ -292,7 +292,7 @@ async function VentesReport({
               sales.map((sale) => (
                 <tr key={sale.id} className="border-b border-surface-border last:border-0">
                   <td data-label="Vente" className="px-4 py-3">
-                    <p className="font-medium">n°{sale.number}</p>
+                    <p className="whitespace-nowrap font-medium">Vente n°{sale.number}</p>
                     <p className="text-xs text-ink-faint">
                       {sale.createdAt.toLocaleString('fr-FR', {
                         day: '2-digit',
@@ -355,7 +355,7 @@ async function AchatsReport({
         <StatCard label="Montant total" value={formatMoney(total, currency)} />
       </section>
       <Card className="overflow-x-auto p-0">
-        <table className="table-stack w-full text-sm">
+        <table className="table-stack table-stack-titled w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
               <th className="px-4 py-3 font-medium">Référence</th>
@@ -374,9 +374,9 @@ async function AchatsReport({
             ) : (
               rows.map((order) => (
                 <tr key={order.id} className="border-b border-surface-border last:border-0">
-                  <td className="px-4 py-3 font-medium">{order.reference}</td>
-                  <td className="px-4 py-3 text-ink-muted">{order.supplierName}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Référence" className="px-4 py-3 font-medium">{order.reference}</td>
+                  <td data-label="Fournisseur" className="px-4 py-3 text-ink-muted">{order.supplierName}</td>
+                  <td data-label="Statut" className="px-4 py-3">
                     {/* Même ton que sur l'écran Achats. Cette page peignait
                         toute commande non reçue en gris : une commande annulée
                         y ressemblait à un brouillon. */}
@@ -384,7 +384,7 @@ async function AchatsReport({
                       {purchaseStatusLabel(order.status)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">{formatMoney(order.total, currency)}</td>
+                  <td data-label="Montant" className="px-4 py-3 text-right font-medium">{formatMoney(order.total, currency)}</td>
                 </tr>
               ))
             )}
@@ -415,7 +415,7 @@ async function StockReport({
         <StatCard label="Valeur actuelle du stock (au coût)" value={formatMoney(stockValue, currency)} />
       </section>
       <Card className="overflow-x-auto p-0">
-        <table className="table-stack w-full text-sm">
+        <table className="table-stack table-stack-titled w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
               <th className="px-4 py-3 font-medium">Date</th>
@@ -436,17 +436,17 @@ async function StockReport({
             ) : (
               rows.map((m) => (
                 <tr key={m.id} className="border-b border-surface-border last:border-0">
-                  <td className="px-4 py-3 text-xs text-ink-faint">
+                  <td data-label="Date" className="px-4 py-3 text-xs text-ink-faint">
                     {m.createdAt.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </td>
-                  <td className="px-4 py-3">{m.productName}</td>
-                  <td className="px-4 py-3 text-ink-muted">{MOVEMENT_TYPE_LABELS[m.type] ?? m.type}</td>
-                  <td className={`px-4 py-3 text-right font-medium ${m.quantityChange >= 0 ? 'text-state-ok' : 'text-state-bad'}`}>
+                  <td data-label="Produit" className="px-4 py-3">{m.productName}</td>
+                  <td data-label="Type" className="px-4 py-3 text-ink-muted">{MOVEMENT_TYPE_LABELS[m.type] ?? m.type}</td>
+                  <td data-label="Variation" className={`px-4 py-3 text-right font-medium ${m.quantityChange >= 0 ? 'text-state-ok' : 'text-state-bad'}`}>
                     {m.quantityChange >= 0 ? '+' : ''}
                     {formatQty(m.quantityChange)}
                   </td>
-                  <td className="px-4 py-3 text-right">{formatQty(m.quantityAfter)}</td>
-                  <td className="px-4 py-3 text-ink-faint">{m.reason ?? '—'}</td>
+                  <td data-label="Stock après" className="px-4 py-3 text-right">{formatQty(m.quantityAfter)}</td>
+                  <td data-label="Motif" className="px-4 py-3 text-ink-faint">{m.reason ?? '—'}</td>
                 </tr>
               ))
             )}
@@ -467,7 +467,7 @@ async function ClientsReport({ storeId, currency }: { storeId: string; currency:
 
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="table-stack w-full text-sm">
+      <table className="table-stack table-stack-titled w-full text-sm">
         <thead>
           <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
             <th className="px-4 py-3 font-medium">Client</th>
@@ -487,16 +487,16 @@ async function ClientsReport({ storeId, currency }: { storeId: string; currency:
           ) : (
             customers.map((customer) => (
               <tr key={customer.id} className="border-b border-surface-border last:border-0">
-                <td className="px-4 py-3">
+                <td data-label="Client" className="px-4 py-3">
                   <p className="font-medium">{customer.name}</p>
                   <p className="text-xs text-ink-faint">{customer.phone}</p>
                 </td>
-                <td className="px-4 py-3 text-right">{customer.salesCount}</td>
-                <td className="px-4 py-3 text-right font-medium">{formatMoney(customer.totalSpent, currency)}</td>
-                <td className={`px-4 py-3 text-right ${customer.creditBalance > 0 ? 'text-state-warn' : ''}`}>
+                <td data-label="Ventes" className="px-4 py-3 text-right">{customer.salesCount}</td>
+                <td data-label="Total dépensé" className="px-4 py-3 text-right font-medium">{formatMoney(customer.totalSpent, currency)}</td>
+                <td data-label="Solde crédit" className={`px-4 py-3 text-right ${customer.creditBalance > 0 ? 'text-state-warn' : ''}`}>
                   {formatMoney(customer.creditBalance, currency)}
                 </td>
-                <td className="px-4 py-3 text-ink-muted">
+                <td data-label="Dernière vente" className="px-4 py-3 text-ink-muted">
                   {customer.lastSaleAt
                     ? customer.lastSaleAt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
                     : '—'}
@@ -515,7 +515,7 @@ async function FournisseursReport({ storeId, currency }: { storeId: string; curr
 
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="table-stack w-full text-sm">
+      <table className="table-stack table-stack-titled w-full text-sm">
         <thead>
           <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
             <th className="px-4 py-3 font-medium">Fournisseur</th>
@@ -534,13 +534,13 @@ async function FournisseursReport({ storeId, currency }: { storeId: string; curr
           ) : (
             suppliers.map((supplier) => (
               <tr key={supplier.id} className="border-b border-surface-border last:border-0">
-                <td className="px-4 py-3">
+                <td data-label="Fournisseur" className="px-4 py-3">
                   <p className="font-medium">{supplier.name}</p>
                   {supplier.phone && <p className="text-xs text-ink-faint">{supplier.phone}</p>}
                 </td>
-                <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPurchased, currency)}</td>
-                <td className="px-4 py-3 text-right">{formatMoney(supplier.totalPaid, currency)}</td>
-                <td className={`px-4 py-3 text-right font-medium ${supplier.outstanding > 0 ? 'text-state-warn' : ''}`}>
+                <td data-label="Total acheté" className="px-4 py-3 text-right">{formatMoney(supplier.totalPurchased, currency)}</td>
+                <td data-label="Total payé" className="px-4 py-3 text-right">{formatMoney(supplier.totalPaid, currency)}</td>
+                <td data-label="Reste à régler" className={`px-4 py-3 text-right font-medium ${supplier.outstanding > 0 ? 'text-state-warn' : ''}`}>
                   {formatMoney(supplier.outstanding, currency)}
                 </td>
               </tr>
@@ -587,7 +587,7 @@ async function DepensesReport({
       )}
 
       <Card className="overflow-x-auto p-0">
-        <table className="table-stack w-full text-sm">
+        <table className="table-stack table-stack-titled w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
               <th className="px-4 py-3 font-medium">Date</th>
@@ -606,14 +606,14 @@ async function DepensesReport({
             ) : (
               rows.map((expense) => (
                 <tr key={expense.id} className="border-b border-surface-border last:border-0">
-                  <td className="px-4 py-3 text-ink-muted">
+                  <td data-label="Date" className="px-4 py-3 text-ink-muted">
                     {expense.incurredAt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </td>
-                  <td className="px-4 py-3">{expense.label}</td>
-                  <td className="px-4 py-3 text-ink-muted">
+                  <td data-label="Libellé" className="px-4 py-3">{expense.label}</td>
+                  <td data-label="Catégorie" className="px-4 py-3 text-ink-muted">
                     {EXPENSE_CATEGORY_LABELS[expense.category] ?? expense.category}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium">{formatMoney(expense.amount, currency)}</td>
+                  <td data-label="Montant" className="px-4 py-3 text-right font-medium">{formatMoney(expense.amount, currency)}</td>
                 </tr>
               ))
             )}
@@ -644,7 +644,7 @@ async function TaxesReport({
         <StatCard label="TVA collectée" value={formatMoney(totalTax, currency)} />
       </section>
       <Card className="overflow-x-auto p-0">
-        <table className="table-stack w-full text-sm">
+        <table className="table-stack table-stack-titled w-full text-sm">
           <thead>
             <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
               <th className="px-4 py-3 font-medium">Vente</th>
@@ -662,14 +662,14 @@ async function TaxesReport({
             ) : (
               rows.map((sale) => (
                 <tr key={sale.id} className="border-b border-surface-border last:border-0">
-                  <td className="px-4 py-3">
-                    <p className="font-medium">n°{sale.number}</p>
+                  <td data-label="Vente" className="px-4 py-3">
+                    <p className="whitespace-nowrap font-medium">Vente n°{sale.number}</p>
                     <p className="text-xs text-ink-faint">
                       {sale.createdAt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-right">{formatMoney(sale.subtotal, currency)}</td>
-                  <td className="px-4 py-3 text-right font-medium">{formatMoney(sale.taxAmount, currency)}</td>
+                  <td data-label="Sous-total" className="px-4 py-3 text-right">{formatMoney(sale.subtotal, currency)}</td>
+                  <td data-label="TVA" className="px-4 py-3 text-right font-medium">{formatMoney(sale.taxAmount, currency)}</td>
                 </tr>
               ))
             )}
@@ -695,7 +695,7 @@ async function EmployesReport({
 
   return (
     <Card className="overflow-x-auto p-0">
-      <table className="table-stack w-full text-sm">
+      <table className="table-stack table-stack-titled w-full text-sm">
         <thead>
           <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
             <th className="px-4 py-3 font-medium">Employé</th>
@@ -713,9 +713,9 @@ async function EmployesReport({
           ) : (
             employees.map((employee) => (
               <tr key={employee.userId} className="border-b border-surface-border last:border-0">
-                <td className="px-4 py-3">{employee.name}</td>
-                <td className="px-4 py-3 text-right">{employee.salesCount}</td>
-                <td className="px-4 py-3 text-right font-medium">{formatMoney(employee.revenue, currency)}</td>
+                <td data-label="Employé" className="px-4 py-3">{employee.name}</td>
+                <td data-label="Ventes" className="px-4 py-3 text-right">{employee.salesCount}</td>
+                <td data-label="Chiffre d'affaires" className="px-4 py-3 text-right font-medium">{formatMoney(employee.revenue, currency)}</td>
               </tr>
             ))
           )}

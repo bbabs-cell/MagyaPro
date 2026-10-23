@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney } from '@/lib/money';
 import { Badge, Button, Card, Field, LinkButton, cx, inputClass } from '@/components/ui';
+import { NEUTRAL_ACTION, TONE_CLASSES, railStyle } from '@/components/ui/tones';
 import {
   SALE_STATUS_LABELS,
   SALE_STATUS_TONES,
@@ -228,9 +229,16 @@ export function SalesManager({
               sale.status !== 'CANCELLED' &&
               sale.items.some((item) => remainingFor(sale, item) > 0);
             return (
-              <tr key={sale.id} className="border-b border-surface-border last:border-0">
+              // Liseré à la couleur du statut, comme les commandes du
+              // restaurant : une vente remboursée ou annulée se repère en
+              // faisant défiler, sans lire.
+              <tr
+                key={sale.id}
+                className="border-b border-surface-border last:border-0"
+                style={railStyle(SALE_STATUS_TONES[sale.status])}
+              >
                 <td data-label="Vente" className="px-4 py-3">
-                  <p className="font-medium">n°{sale.number}</p>
+                  <p className="whitespace-nowrap font-medium">Vente n°{sale.number}</p>
                   <p className="text-xs text-ink-faint">
                     {new Date(sale.createdAt).toLocaleString('fr-FR', {
                       day: '2-digit',
@@ -261,7 +269,8 @@ export function SalesManager({
                     <LinkButton
                       href={`/boutique/recu/${sale.id}`}
                       size="sm"
-                      variant="secondary"
+                      variant="soft"
+                      className={NEUTRAL_ACTION}
                       target="_blank"
                     >
                       Facture
@@ -273,7 +282,13 @@ export function SalesManager({
                       </WhatsAppButton>
                     )}
                     {canReturn && (
-                      <Button size="sm" variant="secondary" onClick={() => startReturn(sale)}>
+                      // Mène à « remboursée » : ambre, comme ce statut.
+                      <Button
+                        size="sm"
+                        variant="soft"
+                        className={TONE_CLASSES[SALE_STATUS_TONES.REFUNDED].soft}
+                        onClick={() => startReturn(sale)}
+                      >
                         Retourner
                       </Button>
                     )}
@@ -319,12 +334,12 @@ function ReprintButton({ saleId }: { saleId: string }) {
   return (
     <Button
       size="sm"
-      variant="secondary"
+      variant="soft"
       onClick={reprint}
       loading={state === 'busy'}
       title={message ?? 'Imprimer le ticket de caisse'}
       aria-label={message ? `Ticket : ${message}` : 'Imprimer le ticket de caisse'}
-      className={cx(state === 'error' && 'border-state-bad text-state-bad')}
+      className={state === 'error' ? TONE_CLASSES.danger.soft : NEUTRAL_ACTION}
     >
       {state === 'done' ? 'Imprimé' : state === 'error' ? 'Réessayer' : 'Ticket'}
     </Button>

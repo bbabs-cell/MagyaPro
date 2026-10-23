@@ -8,7 +8,7 @@ import { describeOptions, readOptions } from '@/lib/orders/option-snapshot';
 import type { KitchenOrder } from '@/lib/kitchen';
 import { AlertMessage, Card, cx } from '@/components/ui';
 import { ORDER_ACTION_LABELS, ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
-import { TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
+import { TONE_CLASSES, railStyle } from '@/components/ui/tones';
 import { formatWait } from '@/lib/orders/wait';
 
 /**

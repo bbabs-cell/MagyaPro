@@ -6,6 +6,7 @@ import { ApiError, api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/ui/tones';
 
 type Promotion = {
   id: string;
@@ -88,7 +89,7 @@ export function PromotionsManager({
         />
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="table-stack w-full text-sm">
+          <table className="table-stack table-stack-titled w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3 font-medium">Code</th>
@@ -128,14 +129,14 @@ export function PromotionsManager({
                     </Badge>
                   </td>
                   {canManage && (
-                    <td className="px-4 py-3 text-right">
+                    <td data-label="Actions" className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1.5">
-                        <Button size="sm" variant="secondary" onClick={() => setEditing(promo)}>
+                        <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => setEditing(promo)}>
                           Modifier
                         </Button>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="soft" className={DESTRUCTIVE_ACTION}
                           loading={mutation.isPending(promo.id)}
                           disabled={mutation.pending}
                           onClick={() => remove(promo)}

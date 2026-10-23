@@ -14,7 +14,7 @@ import {
   type CountParts,
 } from '@/lib/boutique/stock-count';
 import { BarcodeScannerButton, type ScanResult } from '@/components/boutique/barcode-scanner';
-import { AlertMessage, Badge, Button, Card, LinkButton, cx, inputClass } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, LinkButton, chipClass, cx, inputClass } from '@/components/ui';
 
 export type CountItem = {
   variantId: string;
@@ -468,8 +468,10 @@ export function StockCount({
         </div>
       </Card>
 
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-2 pb-1" role="tablist" aria-label="Rayons">
+      {/* Les rayons passent à la ligne : en défilement, le troisième était
+          coupé au bord de l'écran sans rien qui signale une suite. */}
+      <div>
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Rayons">
           {[{ key: ALL, name: 'Tous les rayons', total: items.length, done: summary.counted }, ...shelves].map(
             (entry) => {
               const active = shelf === entry.key;
@@ -481,12 +483,7 @@ export function StockCount({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setShelf(entry.key)}
-                  className={cx(
-                    'flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-colors',
-                    active
-                      ? 'border-brand-strong bg-brand-strong text-brand-ink'
-                      : 'border-surface-border bg-surface text-ink hover:border-ink-faint',
-                  )}
+                  className={chipClass(active, 'gap-2')}
                 >
                   <span className="whitespace-nowrap">{entry.name}</span>
                   <span

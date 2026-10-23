@@ -328,7 +328,7 @@ const BADGE_TONES: Record<BadgeTone, string> = {
   success: 'bg-state-ok-soft text-state-ok',
   warning: 'bg-state-warn-soft text-state-warn',
   danger: 'bg-state-bad-soft text-state-bad',
-  info: 'bg-sky-50 text-sky-700',
+  info: 'bg-state-info-soft text-state-info',
   brand: 'bg-brand-soft text-brand-text',
 };
 

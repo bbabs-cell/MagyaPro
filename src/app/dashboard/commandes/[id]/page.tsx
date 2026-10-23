@@ -11,7 +11,7 @@ import { getProvider } from '@/lib/payments/registry';
 import { readOptions } from '@/lib/orders/option-snapshot';
 import { env } from '@/lib/env';
 import { ORDER_STATUS_TONES, PAYMENT_STATUS_TONES } from '@/components/dashboard/order-status';
-import { TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
+import { TONE_CLASSES, railStyle } from '@/components/ui/tones';
 import { OrderActions } from '@/components/dashboard/order-actions';
 import { WhatsAppNotifyButton } from '@/components/dashboard/whatsapp-notify-button';
 import { PaymentVerifyButtons } from '@/components/dashboard/payment-verify-buttons';

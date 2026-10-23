@@ -2,8 +2,9 @@ import type { CSSProperties } from 'react';
 import type { ReservationStatus, ReviewStatus, TableStatus } from '@prisma/client';
 
 /**
- * Couleurs d'état du tableau de bord Restaurant — une seule grille de lecture
- * pour tous les écrans.
+ * Couleurs d'état des tableaux de bord Restaurant et Boutique — une seule
+ * grille de lecture pour tous les écrans. En Boutique, la « braise » est la
+ * couleur de marque dorée : `brand` suit le thème.
  *
  * | ton       | sens                                   | exemples                                  |
  * |-----------|----------------------------------------|-------------------------------------------|
@@ -33,7 +34,7 @@ export type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'bran
  */
 export const TONE_CLASSES: Record<Tone, { rail: string; dot: string; soft: string }> = {
   brand: { rail: 'var(--brand, #ff5e2e)', dot: 'bg-brand', soft: 'bg-brand-soft text-brand-text' },
-  info: { rail: '#0ea5e9', dot: 'bg-sky-500', soft: 'bg-sky-50 text-sky-700' },
+  info: { rail: 'var(--state-info-rail, #0ea5e9)', dot: 'bg-sky-500', soft: 'bg-state-info-soft text-state-info' },
   warning: { rail: 'var(--state-warn, #b45309)', dot: 'bg-state-warn', soft: 'bg-state-warn-soft text-state-warn' },
   success: { rail: 'var(--state-ok, #047857)', dot: 'bg-state-ok', soft: 'bg-state-ok-soft text-state-ok' },
   danger: { rail: 'var(--state-bad, #b91c1c)', dot: 'bg-state-bad', soft: 'bg-state-bad-soft text-state-bad' },

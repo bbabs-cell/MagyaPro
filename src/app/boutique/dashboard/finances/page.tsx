@@ -12,7 +12,7 @@ import {
   getStoreReturnsTotal,
   getStoreStockLosses,
 } from '@/lib/boutique/finances';
-import { Card, PageHeader, StatCard } from '@/components/ui';
+import { Card, PageHeader, StatCard, chipClass } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Bénéfices' };
 export const dynamic = 'force-dynamic';
@@ -68,9 +68,7 @@ export default async function BoutiqueFinancesPage({
             key={key}
             href={`/boutique/dashboard/finances?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
-              period === key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-            }`}
+            className={chipClass(period === key)}
           >
             {PERIODS[key].label}
           </a>

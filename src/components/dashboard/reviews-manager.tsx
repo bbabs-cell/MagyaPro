@@ -10,7 +10,7 @@ import {
   REVIEW_STATUS_TONES,
   TONE_CLASSES,
   railStyle,
-} from '@/components/dashboard/tones';
+} from '@/components/ui/tones';
 import { formatDecimal } from '@/lib/numbers';
 
 type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';

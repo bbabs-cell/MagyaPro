@@ -136,7 +136,7 @@ export default async function StoreMovementsPage({
               minimale de 46 rem et donc un défilement latéral de six colonnes
               sur téléphone — l'appareil de la plupart des commerçants. */}
           <Card className="mt-3 overflow-x-auto p-0">
-            <table className="table-stack w-full text-sm">
+            <table className="table-stack table-stack-titled w-full text-sm">
               <caption className="sr-only">
                 Mouvements de stock, du plus récent au plus ancien
               </caption>

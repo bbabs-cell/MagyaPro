@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError, api } from '@/lib/client/api';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
-import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/ui/tones';
 
 type Zone = {
   id: string;
