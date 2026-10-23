@@ -6,6 +6,18 @@ import { formatMoney } from '@/lib/money';
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { AlertMessage, Button, Card, EmptyState, LinkButton } from '@/components/ui';
+import {
+  DESTRUCTIVE_ACTION,
+  NEUTRAL_ACTION,
+  TONE_CLASSES,
+  railStyle,
+} from '@/components/dashboard/tones';
+
+/**
+ * Tout ce qui figure ici attend un geste : chaque ligne porte le liseré braise
+ * « à traiter », le même que celui d'une commande nouvelle.
+ */
+const TO_HANDLE = railStyle('brand');
 
 type OrderAlert = { id: string; number: number; total: number; currency: string; placedAt: string };
 type TableCallAlert = { id: string; title: string; body: string; createdAt: string };
@@ -88,7 +100,7 @@ export function AlertCenter({
           <h2 className="text-sm font-medium">Preuves de paiement à vérifier</h2>
           <ul className="mt-3 space-y-4">
             {visiblePaymentProofs.map((payment) => (
-              <li key={payment.id} className="flex flex-wrap items-center gap-3">
+              <li key={payment.id} className="flex flex-wrap items-center gap-3 pl-3" style={TO_HANDLE}>
                 <a href={payment.proofImageUrl} target="_blank" rel="noopener noreferrer">
                   {/* eslint-disable-next-line @next/next/no-img-element -- capture d'écran déposée par le client */}
                   <img
@@ -99,7 +111,7 @@ export function AlertCenter({
                 </a>
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="font-medium">
-                    {payment.orderNumber ? `n°${payment.orderNumber}` : 'Commande'} ·{' '}
+                    {payment.orderNumber ? `Commande n°${payment.orderNumber}` : 'Commande'} ·{' '}
                     {formatMoney(payment.amount, payment.currency)}
                   </p>
                   <p className="text-ink-muted">{PROVIDER_LABELS[payment.provider] ?? payment.provider}</p>
@@ -107,6 +119,8 @@ export function AlertCenter({
                 <div className="flex shrink-0 gap-1.5">
                   <Button
                     size="sm"
+                    variant="soft"
+                    className={TONE_CLASSES.success.soft}
                     loading={mutation.isPending(`${payment.id}:PAID`)}
                     disabled={mutation.pending}
                     onClick={() => verifyPayment(payment, 'PAID')}
@@ -115,7 +129,8 @@ export function AlertCenter({
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="soft"
+                    className={DESTRUCTIVE_ACTION}
                     loading={mutation.isPending(`${payment.id}:FAILED`)}
                     disabled={mutation.pending}
                     onClick={() => verifyPayment(payment, 'FAILED')}
@@ -134,11 +149,12 @@ export function AlertCenter({
           <h2 className="text-sm font-medium">Commandes à confirmer</h2>
           <ul className="mt-3 divide-y divide-surface-border">
             {orders.map((order) => (
-              <li key={order.id} className="flex items-center justify-between gap-3 py-2.5">
+              <li key={order.id} className="flex items-center justify-between gap-3 py-2.5 pl-3" style={TO_HANDLE}>
                 <span className="text-sm">
-                  n°{order.number} · {formatMoney(order.total, order.currency)}
+                  <span className="font-medium">Commande n°{order.number}</span> ·{' '}
+                  {formatMoney(order.total, order.currency)}
                 </span>
-                <LinkButton href={`/dashboard/commandes/${order.id}`} size="sm" variant="secondary">
+                <LinkButton href={`/dashboard/commandes/${order.id}`} size="sm" variant="soft" className={NEUTRAL_ACTION}>
                   Ouvrir
                 </LinkButton>
               </li>
@@ -152,16 +168,17 @@ export function AlertCenter({
           <h2 className="text-sm font-medium">Appels de salle</h2>
           <ul className="mt-3 divide-y divide-surface-border">
             {visibleTableCalls.map((call) => (
-              <li key={call.id} className="flex items-center justify-between gap-3 py-2.5">
+              <li key={call.id} className="flex items-center justify-between gap-3 py-2.5 pl-3" style={TO_HANDLE}>
                 <span className="text-sm">{call.body}</span>
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="soft"
+                  className={TONE_CLASSES.success.soft}
                   loading={mutation.isPending(call.id)}
                   disabled={mutation.pending}
                   onClick={() => handleTableCall(call.id)}
                 >
-                  Traité
+                  Marquer traité
                 </Button>
               </li>
             ))}
@@ -174,7 +191,7 @@ export function AlertCenter({
           <h2 className="text-sm font-medium">Réservations à valider</h2>
           <ul className="mt-3 divide-y divide-surface-border">
             {reservations.map((reservation) => (
-              <li key={reservation.id} className="flex items-center justify-between gap-3 py-2.5">
+              <li key={reservation.id} className="flex items-center justify-between gap-3 py-2.5 pl-3" style={TO_HANDLE}>
                 <span className="text-sm">
                   {reservation.customerName} · {reservation.partySize} pers. ·{' '}
                   {new Date(reservation.reservedFor).toLocaleString('fr-FR', {
@@ -184,7 +201,7 @@ export function AlertCenter({
                     minute: '2-digit',
                   })}
                 </span>
-                <LinkButton href="/dashboard/reservations" size="sm" variant="secondary">
+                <LinkButton href="/dashboard/reservations" size="sm" variant="soft" className={NEUTRAL_ACTION}>
                   Ouvrir
                 </LinkButton>
               </li>

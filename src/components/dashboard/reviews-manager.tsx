@@ -4,7 +4,13 @@ import { useMemo, useState } from 'react';
 
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
-import { AlertMessage, Badge, Button, Card, EmptyState, cx } from '@/components/ui';
+import { AlertMessage, Badge, Button, Card, EmptyState, chipClass } from '@/components/ui';
+import {
+  DESTRUCTIVE_ACTION,
+  REVIEW_STATUS_TONES,
+  TONE_CLASSES,
+  railStyle,
+} from '@/components/dashboard/tones';
 import { formatDecimal } from '@/lib/numbers';
 
 type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -25,12 +31,6 @@ const FILTERS: Array<{ key: ReviewStatus | 'ALL'; label: string }> = [
   { key: 'REJECTED', label: 'Rejetés' },
   { key: 'ALL', label: 'Tous' },
 ];
-
-const STATUS_TONE: Record<ReviewStatus, 'warning' | 'success' | 'danger'> = {
-  PENDING: 'warning',
-  APPROVED: 'success',
-  REJECTED: 'danger',
-};
 
 const STATUS_LABEL: Record<ReviewStatus, string> = {
   PENDING: 'En attente',
@@ -99,18 +99,14 @@ export function ReviewsManager({
 
       <AlertMessage message={mutation.error} className="mb-4" />
 
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((item) => (
           <button
             key={item.key}
             type="button"
             onClick={() => setFilter(item.key)}
-            className={cx(
-              'shrink-0 rounded-full border px-3.5 py-1.5 text-sm',
-              filter === item.key
-                ? 'border-brand bg-brand-strong text-brand-ink'
-                : 'border-surface-border text-ink-muted hover:bg-surface-sunken',
-            )}
+            aria-pressed={filter === item.key}
+            className={chipClass(filter === item.key)}
           >
             {item.label}
             {item.key === 'PENDING' &&
@@ -129,11 +125,11 @@ export function ReviewsManager({
         ) : (
           <ul className="divide-y divide-surface-border">
             {visible.map((review) => (
-              <li key={review.id} className="py-4">
+              <li key={review.id} className="py-4 pl-3" style={railStyle(REVIEW_STATUS_TONES[review.status])}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{review.customerName}</span>
                   <Stars rating={review.rating} />
-                  <Badge tone={STATUS_TONE[review.status]}>
+                  <Badge tone={REVIEW_STATUS_TONES[review.status]}>
                     {STATUS_LABEL[review.status]}
                   </Badge>
                   {review.orderNumber && (
@@ -157,6 +153,8 @@ export function ReviewsManager({
                   <div className="mt-3 flex gap-2">
                     <Button
                       size="sm"
+                      variant="soft"
+                      className={TONE_CLASSES[REVIEW_STATUS_TONES.APPROVED].soft}
                       loading={mutation.isPending(`${review.id}:APPROVED`)}
                       disabled={mutation.pending}
                       onClick={() => moderate(review, 'APPROVED')}
@@ -165,7 +163,8 @@ export function ReviewsManager({
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="soft"
+                      className={DESTRUCTIVE_ACTION}
                       loading={mutation.isPending(`${review.id}:REJECTED`)}
                       disabled={mutation.pending}
                       onClick={() => moderate(review, 'REJECTED')}

@@ -19,6 +19,7 @@ import {
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { PushInvite } from '@/components/account/push-toggle';
 import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { railStyle } from '@/components/dashboard/tones';
 import { formatPercent } from '@/lib/numbers';
 
 export const metadata: Metadata = { title: 'Vue d\'ensemble' };
@@ -174,8 +175,11 @@ export default async function DashboardPage() {
         )}
 
         {metrics.pendingOrders > 0 && (
-          <Card className="flex flex-col gap-3 border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-sky-900">
+          // Braise : des commandes à traiter, la couleur d'une commande
+          // nouvelle partout ailleurs. Le bleu disait « information », alors
+          // que c'est le seul appel à agir de l'écran.
+          <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-brand-text">
               <span className="font-medium">
                 {metrics.pendingOrders} commande{metrics.pendingOrders > 1 ? 's' : ''}
               </span>{' '}
@@ -368,15 +372,17 @@ export default async function DashboardPage() {
                 <li key={order.id}>
                   <Link
                     href={`/dashboard/commandes/${order.id}`}
-                    className="flex items-center justify-between gap-3 rounded-xl px-1 py-3 hover:bg-surface-sunken"
+                    // Liseré à la couleur de l'étape, comme sur l'écran
+                    // Commandes. Il remplace une pastille orange à
+                    // l'initiale du client, la même pour tous : une couleur
+                    // qui ne disait rien.
+                    className="flex items-center justify-between gap-3 py-3 pl-3 pr-1 hover:bg-surface-sunken"
+                    style={railStyle(ORDER_STATUS_TONES[order.status])}
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-[#ff9a4d] text-xs font-bold text-white">
-                        {order.customerName.charAt(0).toUpperCase()}
-                      </span>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">
-                          n°{order.number} · {order.customerName}
+                          Commande n°{order.number} · {order.customerName}
                         </p>
                         <p className="mt-0.5 text-xs text-ink-faint">
                           {order.placedAt.toLocaleString('fr-FR', {

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 
 import { AnimatedValue } from './animated-value';
@@ -52,6 +52,20 @@ export function buttonClass(
   extra?: string,
 ): string {
   return cx(BUTTON_BASE, BUTTON_VARIANTS[variant], BUTTON_SIZES[size], extra);
+}
+
+/**
+ * Pastille de filtre, de période ou d'onglet — la même sur tous les écrans.
+ * Les rangées passent à la ligne (`flex flex-wrap gap-2`) plutôt que de
+ * défiler : une pastille coupée au bord droit ne signale pas qu'il en existe
+ * une suite.
+ */
+export function chipClass(active: boolean, extra?: string): string {
+  return cx(
+    'inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm transition-colors',
+    active ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink',
+    extra,
+  );
 }
 
 export function Button({
@@ -167,9 +181,12 @@ export function Field({
 export function Card({
   className,
   hover = false,
+  style,
   children,
 }: {
   className?: string;
+  /** Liseré d'état (`railStyle`, voir `dashboard/tones.ts`). */
+  style?: CSSProperties;
   /** Légère élévation au survol — réservé aux cartes cliquables (liens, cartes de sélection). */
   hover?: boolean;
   children: ReactNode;
@@ -181,6 +198,7 @@ export function Card({
         hover && 'hover-glow-sm hover:-translate-y-0.5',
         className,
       )}
+      style={style}
     >
       {children}
     </div>

@@ -15,6 +15,7 @@ import {
   cx,
   inputClass,
 } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION, TONE_CLASSES } from '@/components/dashboard/tones';
 import { ImageUploadField } from '@/components/dashboard/image-upload';
 
 /**
@@ -257,7 +258,7 @@ export function MenuManager({
                     <button
                       type="button"
                       onClick={() => setCategoryForm(category)}
-                      className="flex h-6 w-6 items-center justify-center rounded text-xs text-ink-faint hover:text-ink"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs text-ink-faint hover:bg-surface-sunken hover:text-ink"
                     >
                       <span aria-hidden="true">✎</span>
                       <span className="sr-only">Modifier {category.name}</span>
@@ -267,7 +268,7 @@ export function MenuManager({
                       disabled={mutation.pending}
                       aria-busy={mutation.isPending(category.id) || undefined}
                       onClick={() => deleteCategory(category)}
-                      className="flex h-6 w-6 items-center justify-center rounded text-xs text-ink-faint hover:text-red-600 disabled:opacity-50"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs text-ink-faint hover:bg-state-bad-soft hover:text-state-bad disabled:opacity-50"
                     >
                       <span aria-hidden="true">✕</span>
                       <span className="sr-only">Supprimer {category.name}</span>
@@ -305,7 +306,7 @@ export function MenuManager({
               description="Les plats se rangent dans des catégories. Créez-en une pour ajouter votre premier plat."
               action={
                 canManage ? (
-                  <Button size="sm" onClick={() => setCategoryForm('new')}>
+                  <Button variant="secondary" size="sm" onClick={() => setCategoryForm('new')}>
                     Créer une catégorie
                   </Button>
                 ) : undefined
@@ -319,7 +320,7 @@ export function MenuManager({
               description="Ajoutez vos plats avec leur photo, leur prix et leurs options."
               action={
                 canManage ? (
-                  <Button size="sm" onClick={() => setProductForm('new')}>
+                  <Button variant="secondary" size="sm" onClick={() => setProductForm('new')}>
                     Ajouter un plat
                   </Button>
                 ) : undefined
@@ -353,7 +354,7 @@ export function MenuManager({
                   <p className="flex flex-wrap items-center gap-2 font-medium">
                     {product.name}
                     {product.badge !== 'NONE' && (
-                      <Badge tone={product.badge === 'SOLD_OUT' ? 'danger' : 'brand'}>
+                      <Badge tone={product.badge === 'SOLD_OUT' ? 'warning' : 'brand'}>
                         {BADGES.find((badge) => badge.value === product.badge)?.label}
                       </Badge>
                     )}
@@ -370,9 +371,14 @@ export function MenuManager({
 
                 {canManage && (
                   <div className="flex flex-wrap gap-1.5">
+                    {/* Mène à « épuisé » (ambre, à surveiller) ou à la remise
+                        en vente (vert) : la teinte annonce l'état d'arrivée.
+                        Pas de rouge : il est réservé à « Supprimer », juste à
+                        côté. */}
                     <Button
                       size="sm"
-                      variant="secondary"
+                      variant="soft"
+                      className={TONE_CLASSES[product.isAvailable ? 'warning' : 'success'].soft}
                       loading={mutation.isPending(`${product.id}:dispo`)}
                       disabled={mutation.pending}
                       onClick={() => toggleAvailability(product)}
@@ -381,14 +387,14 @@ export function MenuManager({
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="soft" className={NEUTRAL_ACTION}
                       onClick={() => setProductForm(product)}
                     >
                       Modifier
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="soft" className={DESTRUCTIVE_ACTION}
                       loading={mutation.isPending(`${product.id}:suppr`)}
                       disabled={mutation.pending}
                       onClick={() => deleteProduct(product)}
@@ -821,7 +827,7 @@ function ProductForm({
                 />
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="soft" className={DESTRUCTIVE_ACTION}
                   size="sm"
                   onClick={() =>
                     setVariants((current) => current.filter((_, i) => i !== index))
@@ -916,7 +922,7 @@ function ProductForm({
                   </label>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="soft" className={DESTRUCTIVE_ACTION}
                     size="sm"
                     onClick={() =>
                       setGroups((current) => current.filter((_, i) => i !== groupIndex))

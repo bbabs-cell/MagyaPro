@@ -10,7 +10,8 @@ import { PAYMENT_STATUS_LABELS } from '@/lib/payments/service';
 import { getProvider } from '@/lib/payments/registry';
 import { readOptions } from '@/lib/orders/option-snapshot';
 import { env } from '@/lib/env';
-import { ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { ORDER_STATUS_TONES, PAYMENT_STATUS_TONES } from '@/components/dashboard/order-status';
+import { TONE_CLASSES, railStyle } from '@/components/dashboard/tones';
 import { OrderActions } from '@/components/dashboard/order-actions';
 import { WhatsAppNotifyButton } from '@/components/dashboard/whatsapp-notify-button';
 import { PaymentVerifyButtons } from '@/components/dashboard/payment-verify-buttons';
@@ -75,16 +76,26 @@ export default async function OrderDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card className="p-5">
+          <Card className="p-5" style={railStyle(ORDER_STATUS_TONES[order.status])}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <Badge tone={ORDER_STATUS_TONES[order.status]}>
                   {ORDER_STATUS_LABELS[order.status]}
                 </Badge>
+                {/* Même pastille que dans la liste : vert encaissé, ambre à
+                    encaisser, neutre sur une commande annulée. */}
+                <Badge
+                  tone={
+                    order.status === 'CANCELLED'
+                      ? 'neutral'
+                      : (PAYMENT_STATUS_TONES[order.paymentStatus] ?? 'neutral')
+                  }
+                >
+                  {PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                </Badge>
                 <span className="text-sm text-ink-muted">
-                  Paiement : {PAYMENT_STATUS_LABELS[order.paymentStatus]}
                   {order.paymentProvider &&
-                    ` · ${getProvider(order.paymentProvider)?.label ?? order.paymentProvider}`}
+                    (getProvider(order.paymentProvider)?.label ?? order.paymentProvider)}
                 </span>
               </div>
 
@@ -188,7 +199,9 @@ export default async function OrderDetailPage({
                 <li key={event.id} className="flex gap-3 text-sm">
                   <span
                     aria-hidden="true"
-                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-faint"
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                      TONE_CLASSES[ORDER_STATUS_TONES[event.toStatus]].dot
+                    }`}
                   />
                   <span>
                     <span className="font-medium">

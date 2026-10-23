@@ -94,7 +94,7 @@ export default async function CustomersPage({
         />
       ) : (
         <div className="card overflow-x-auto p-4 sm:p-5">
-          <table className="table-stack w-full border-collapse text-sm">
+          <table className="table-stack table-stack-titled w-full border-collapse text-sm">
             <caption className="sr-only">Liste des clients du restaurant</caption>
             <thead>
               <tr className="border-b border-surface-border text-left text-xs uppercase tracking-wide text-ink-faint">
@@ -112,17 +112,21 @@ export default async function CustomersPage({
                     {customer.name}
                   </td>
                   <td data-label="Contact" className="py-3 pr-3">
-                    <a
-                      href={`tel:${customer.phone}`}
-                      className="block underline-offset-4 hover:underline"
-                    >
-                      {customer.phone}
-                    </a>
-                    {customer.email && (
-                      <span className="block text-xs text-ink-faint">
-                        {customer.email}
-                      </span>
-                    )}
+                    {/* Un seul bloc : sur la fiche mobile, le numéro et l'email
+                        se plaçaient côte à côte et le numéro se cassait. */}
+                    <div className="min-w-0">
+                      <a
+                        href={`tel:${customer.phone}`}
+                        className="block underline-offset-4 hover:underline"
+                      >
+                        {customer.phone}
+                      </a>
+                      {customer.email && (
+                        <span className="block text-xs text-ink-faint">
+                          {customer.email}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td data-label="Commandes" className="py-3 pr-3 text-right">
                     {customer.ordersCount}

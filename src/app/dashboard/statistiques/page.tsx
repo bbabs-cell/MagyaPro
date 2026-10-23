@@ -12,7 +12,7 @@ import {
   type PeriodKey,
 } from '@/lib/analytics';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
-import { Card, EmptyState, PageHeader, StatCard, changeProps } from '@/components/ui';
+import { Card, EmptyState, PageHeader, StatCard, changeProps, chipClass } from '@/components/ui';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { HourlyActivityChart } from '@/components/dashboard/hourly-chart';
 
@@ -58,9 +58,7 @@ export default async function AnalyticsPage({
             key={key}
             href={`/dashboard/statistiques?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
-              period === key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-            }`}
+            className={chipClass(period === key)}
           >
             {PERIODS[key].label}
           </a>
@@ -144,7 +142,7 @@ export default async function AnalyticsPage({
               {popular.length === 0 ? (
                 <p className="mt-4 text-sm text-ink-muted">Aucune vente sur la période.</p>
               ) : (
-                <table className="table-stack mt-4 w-full text-sm">
+                <table className="mt-4 w-full text-sm">
                   <caption className="sr-only">
                     Classement des plats par quantité vendue
                   </caption>

@@ -5,6 +5,12 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import {
+  DESTRUCTIVE_ACTION,
+  RESERVATION_STATUS_TONES,
+  TONE_CLASSES,
+  railStyle,
+} from '@/components/dashboard/tones';
 
 type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
@@ -17,13 +23,6 @@ type Reservation = {
   notes: string | null;
   status: ReservationStatus;
   confirmationCode: string;
-};
-
-const STATUS_TONE: Record<ReservationStatus, 'warning' | 'success' | 'danger' | 'neutral'> = {
-  PENDING: 'warning',
-  CONFIRMED: 'success',
-  CANCELLED: 'danger',
-  COMPLETED: 'neutral',
 };
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
@@ -136,11 +135,16 @@ export function ReservationsManager({
     const isLate = lateMinutes > 0;
 
     return (
-      <li className="flex flex-wrap items-start justify-between gap-3 py-3">
+      // Liseré à la couleur de l'état, comme les commandes : une réservation
+      // à confirmer se repère en faisant défiler, sans lire.
+      <li
+        className="flex flex-wrap items-start justify-between gap-3 py-3 pl-3"
+        style={railStyle(RESERVATION_STATUS_TONES[reservation.status])}
+      >
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{reservation.customerName}</span>
-            <Badge tone={STATUS_TONE[reservation.status]}>
+            <Badge tone={RESERVATION_STATUS_TONES[reservation.status]}>
               {STATUS_LABEL[reservation.status]}
             </Badge>
             {isLate && (
@@ -169,6 +173,8 @@ export function ReservationsManager({
             {reservation.status === 'PENDING' && (
               <Button
                 size="sm"
+                variant="soft"
+                className={TONE_CLASSES[RESERVATION_STATUS_TONES.CONFIRMED].soft}
                 loading={mutation.isPending(`${reservation.id}:CONFIRMED`)}
                 disabled={mutation.pending}
                 onClick={() => setStatus(reservation, 'CONFIRMED')}
@@ -178,18 +184,22 @@ export function ReservationsManager({
             )}
             {(reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') && (
               <>
+                {/* Chaque bouton a la couleur de l'état auquel il mène,
+                    avec un verbe : « Honorée » se lisait comme un statut. */}
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="soft"
+                  className={TONE_CLASSES[RESERVATION_STATUS_TONES.COMPLETED].soft}
                   loading={mutation.isPending(`${reservation.id}:COMPLETED`)}
                   disabled={mutation.pending}
                   onClick={() => setStatus(reservation, 'COMPLETED')}
                 >
-                  Honorée
+                  Marquer honorée
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="soft"
+                  className={DESTRUCTIVE_ACTION}
                   loading={mutation.isPending(`${reservation.id}:CANCELLED`)}
                   disabled={mutation.pending}
                   onClick={() => setStatus(reservation, 'CANCELLED')}

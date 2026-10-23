@@ -7,7 +7,7 @@ import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { OrdersBoard } from '@/components/dashboard/orders-board';
 import { ORDER_STATUS_TONES, TONE_CLASSES } from '@/components/dashboard/order-status';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
-import { EmptyState, LinkButton, PageHeader } from '@/components/ui';
+import { EmptyState, LinkButton, PageHeader, chipClass } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Commandes' };
 export const dynamic = 'force-dynamic';
@@ -151,9 +151,7 @@ export default async function OrdersPage({
                 key={value}
                 href={`/dashboard/commandes?statut=${value}`}
                 aria-current={active ? 'true' : undefined}
-                className={`inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  active ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-                }`}
+                className={chipClass(active)}
               >
                 {/* Pastille de la couleur de l'étape — la même que le liseré
                     des commandes : on fait le lien entre le filtre et la

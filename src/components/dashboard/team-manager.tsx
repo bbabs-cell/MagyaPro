@@ -12,6 +12,7 @@ import {
   type AssignableRole,
 } from '@/lib/rbac';
 import { Badge, Button, Card, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
 
 type Member = {
   id: string;
@@ -311,12 +312,12 @@ export function TeamManager({
 
               {canManage && member.role !== 'OWNER' && (
                 <div className="flex shrink-0 gap-1.5">
-                  <Button size="sm" variant="secondary" onClick={() => startEditing(member)}>
+                  <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => startEditing(member)}>
                     Modifier
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="soft" className={DESTRUCTIVE_ACTION}
                     disabled={pending}
                     onClick={() => remove(member)}
                   >

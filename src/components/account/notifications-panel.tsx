@@ -6,6 +6,7 @@ import Link from 'next/link';
 
 import { ApiError, api } from '@/lib/client/api';
 import { Badge, Button, Card } from '@/components/ui';
+import { railStyle } from '@/components/dashboard/tones';
 
 type NotificationItem = {
   id: string;
@@ -87,12 +88,18 @@ export function NotificationsPanel({
       <ul className="space-y-2">
         {notifications.map((notification) => (
           <li key={notification.id}>
-            <Card className={`p-4 ${notification.readAt ? 'opacity-60' : ''}`}>
+            {/* Non lue : liseré et badge braise, la couleur de ce qui attend
+                votre attention sur tout le tableau de bord. Le bleu
+                « information » ne la signalait pas. */}
+            <Card
+              className={`p-4 ${notification.readAt ? 'opacity-60' : ''}`}
+              style={notification.readAt ? undefined : railStyle('brand')}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium text-ink">
                     {notification.title}
-                    {!notification.readAt && <Badge tone="info">Nouveau</Badge>}
+                    {!notification.readAt && <Badge tone="brand">Nouveau</Badge>}
                   </p>
                   <p className="mt-1 text-sm text-ink-muted">{notification.body}</p>
                   <p className="mt-1 text-xs text-ink-faint">

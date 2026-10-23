@@ -6,6 +6,7 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { formatMoney, toMajor, toMinor } from '@/lib/money';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { DESTRUCTIVE_ACTION, NEUTRAL_ACTION } from '@/components/dashboard/tones';
 
 type Tier = {
   id: string;
@@ -219,7 +220,7 @@ export function LoyaltyManager({
               description="Créez un palier pour récompenser automatiquement vos clients les plus fidèles."
               action={
                 canManage ? (
-                  <Button size="sm" onClick={() => openEditor('new')}>
+                  <Button variant="secondary" size="sm" onClick={() => openEditor('new')}>
                     Créer un palier
                   </Button>
                 ) : undefined
@@ -245,12 +246,12 @@ export function LoyaltyManager({
 
                 {canManage && (
                   <div className="flex shrink-0 gap-1.5">
-                    <Button size="sm" variant="secondary" onClick={() => openEditor(tier)}>
+                    <Button size="sm" variant="soft" className={NEUTRAL_ACTION} onClick={() => openEditor(tier)}>
                       Modifier
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="soft" className={DESTRUCTIVE_ACTION}
                       loading={mutation.isPending(tier.id)}
                       disabled={mutation.pending}
                       onClick={() => remove(tier)}

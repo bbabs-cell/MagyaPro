@@ -7,6 +7,8 @@ import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { ORDER_STATUS_LABELS, ORDER_TRANSITIONS } from '@/lib/orders/status';
 import { AlertMessage, Button, Field, inputClass } from '@/components/ui';
+import { ORDER_ACTION_LABELS, ORDER_STATUS_TONES } from '@/components/dashboard/order-status';
+import { DESTRUCTIVE_ACTION, TONE_CLASSES } from '@/components/dashboard/tones';
 
 /**
  * Avancement du statut et encaissement, depuis la fiche commande.
@@ -90,7 +92,9 @@ export function OrderActions({
   const paidButton = canMarkPaid ? (
     <Button
       type="button"
-      variant={status === 'DELIVERED' ? 'primary' : 'secondary'}
+      // Vert comme un paiement encaissé — la même teinte que dans la liste.
+      variant="soft"
+      className={TONE_CLASSES.success.soft}
       loading={mutation.isPending('paiement')}
       disabled={pending}
       onClick={markPaid}
@@ -157,26 +161,32 @@ export function OrderActions({
       ) : (
         <div className="flex flex-wrap gap-2">
           {paidButton}
-          {transitions.map((next) =>
+          {[...transitions.filter((t) => t !== 'CANCELLED'), ...transitions.filter((t) => t === 'CANCELLED')].map((next) =>
             next === 'CANCELLED' ? (
               <Button
                 key={next}
                 type="button"
-                variant="ghost"
+                variant="soft"
+                className={DESTRUCTIVE_ACTION}
                 disabled={pending}
                 onClick={() => setCancelling(true)}
               >
                 Annuler la commande
               </Button>
             ) : (
+              // Mêmes verbes et mêmes teintes que les boutons de la liste des
+              // commandes : « Confirmer » en bleu, « Lancer la préparation »
+              // en ambre…
               <Button
                 key={next}
                 type="button"
+                variant="soft"
+                className={TONE_CLASSES[ORDER_STATUS_TONES[next]].soft}
                 loading={mutation.isPending(next)}
                 disabled={pending}
                 onClick={() => apply(next)}
               >
-                Marquer « {ORDER_STATUS_LABELS[next]} »
+                {ORDER_ACTION_LABELS[next]}
               </Button>
             ),
           )}

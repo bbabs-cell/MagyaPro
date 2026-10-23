@@ -5,6 +5,7 @@ import { useOptimistic, useState, type FormEvent } from 'react';
 import { api } from '@/lib/client/api';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
 import { AlertMessage, Badge, Button, Card, EmptyState, Field, inputClass } from '@/components/ui';
+import { NEUTRAL_ACTION, TABLE_STATUS_TONES, railStyle } from '@/components/dashboard/tones';
 
 type TableStatus = 'FREE' | 'OCCUPIED' | 'NEEDS_CLEANING';
 
@@ -20,12 +21,6 @@ const STATUS_LABEL: Record<TableStatus, string> = {
   FREE: 'Libre',
   OCCUPIED: 'Occupée',
   NEEDS_CLEANING: 'À nettoyer',
-};
-
-const STATUS_TONE: Record<TableStatus, 'success' | 'warning' | 'danger'> = {
-  FREE: 'success',
-  OCCUPIED: 'warning',
-  NEEDS_CLEANING: 'danger',
 };
 
 const STATUS_ORDER: TableStatus[] = ['FREE', 'OCCUPIED', 'NEEDS_CLEANING'];
@@ -153,7 +148,7 @@ export function TablesManager({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {shownTables.map((table) => (
-              <Card key={table.id} className="p-4">
+              <Card key={table.id} className="p-4" style={railStyle(TABLE_STATUS_TONES[table.status])}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium">{table.label}</p>
                   <button
@@ -163,7 +158,7 @@ export function TablesManager({
                     onClick={() => cycleStatus(table)}
                     title="Cliquer pour changer le statut"
                   >
-                    <Badge tone={STATUS_TONE[table.status]}>{STATUS_LABEL[table.status]}</Badge>
+                    <Badge tone={TABLE_STATUS_TONES[table.status]}>{STATUS_LABEL[table.status]}</Badge>
                   </button>
                 </div>
 
@@ -178,14 +173,14 @@ export function TablesManager({
                   <a
                     href={table.qrDataUrl}
                     download={`${table.label.replace(/\s+/g, '-').toLowerCase()}-qr.png`}
-                    className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium hover:brightness-95 ${NEUTRAL_ACTION}`}
                   >
                     Télécharger
                   </a>
                   <button
                     type="button"
                     onClick={() => copyLink(table)}
-                    className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-sunken"
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium hover:brightness-95 ${NEUTRAL_ACTION}`}
                   >
                     {copiedId === table.id ? 'Copié !' : 'Copier le lien'}
                   </button>
@@ -195,7 +190,7 @@ export function TablesManager({
                       disabled={mutation.pending}
                       aria-busy={mutation.isPending(`${table.id}:suppr`) || undefined}
                       onClick={() => remove(table)}
-                      className="rounded-lg border border-surface-border px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-state-bad hover:bg-state-bad-soft"
                     >
                       Supprimer
                     </button>

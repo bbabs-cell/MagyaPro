@@ -5,7 +5,7 @@ import { requireTenant } from '@/lib/tenant';
 import { formatMoney } from '@/lib/money';
 import { PERIODS, getDashboardMetrics, isPeriodKey, type PeriodKey } from '@/lib/analytics';
 import { getAverageRevenuePerWorkedDay, getExpensesSummary, getProductMargins } from '@/lib/finances';
-import { Card, PageHeader, StatCard } from '@/components/ui';
+import { Card, PageHeader, StatCard, chipClass } from '@/components/ui';
 import { ExpensesManager } from '@/components/dashboard/expenses-manager';
 
 export const metadata: Metadata = { title: 'Finances' };
@@ -60,9 +60,7 @@ export default async function FinancesPage({
             key={key}
             href={`/dashboard/finances?periode=${key}`}
             aria-current={period === key ? 'true' : undefined}
-            className={`shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
-              period === key ? 'bg-brand-strong text-brand-ink' : 'bg-surface text-ink-muted hover:text-ink'
-            }`}
+            className={chipClass(period === key)}
           >
             {PERIODS[key].label}
           </a>
@@ -105,7 +103,7 @@ export default async function FinancesPage({
             {/* `table-stack` replie la table en fiches sous 768 px, comme
                 partout ailleurs. Quatre colonnes de montants comprimées sur un
                 téléphone deviennent illisibles bien avant de déborder. */}
-            <table className="table-stack w-full text-sm">
+            <table className="table-stack table-stack-titled w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-ink-faint">
                   <th className="py-2 pr-3 font-medium">Plat</th>
@@ -120,7 +118,7 @@ export default async function FinancesPage({
                     <td data-label="Plat" className="py-2 pr-3">{product.name}</td>
                     <td data-label="Prix" className="py-2 pr-3 text-right">{formatMoney(product.price, currency)}</td>
                     <td data-label="Coût" className="py-2 pr-3 text-right">{formatMoney(product.costPrice, currency)}</td>
-                    <td data-label="Marge" className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    <td data-label="Marge" className={`py-2 text-right font-medium ${product.margin >= 0 ? 'text-state-ok' : 'text-state-bad'}`}>
                       {formatMoney(product.margin, currency)} ({product.marginPercent} %)
                     </td>
                   </tr>
