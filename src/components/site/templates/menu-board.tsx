@@ -1,4 +1,5 @@
 import { cx } from '@/components/ui';
+import { dishIcon } from '@/components/site/dish-icon';
 
 export type BoardItem = { name: string; price: string };
 
@@ -89,9 +90,12 @@ export function MenuBoard({
 }
 
 /**
- * Tuile d'un plat sans photo. Teintée de la couleur du restaurant, avec
- * l'initiale du plat en grand : la grille garde son rythme et son identité au
- * lieu d'alterner photos et cases grises.
+ * Tuile d'un plat sans photo : dégradé de la couleur du restaurant, trame
+ * légère, et une icône de cuisine déduite du nom du plat (`dishIcon`).
+ *
+ * Elle remplace une grosse initiale (« S », « V ») qui disait seulement qu'il
+ * manquait une image. L'icône flotte doucement (`dish-float`), sauf pour qui
+ * a demandé moins de mouvement.
  *
  * `tone="deep"` sert aux cartes dont le texte est posé en blanc sur l'image
  * (grille en mosaïque) : un fond foncé de la couleur du restaurant garde ce
@@ -99,11 +103,14 @@ export function MenuBoard({
  */
 export function DishPlaceholder({
   name,
+  category,
   tone = 'soft',
 }: {
   name: string;
+  category?: string | null;
   tone?: 'soft' | 'deep';
 }) {
+  const DishIcon = dishIcon(name, category);
   return (
     <div
       aria-hidden="true"
@@ -111,21 +118,24 @@ export function DishPlaceholder({
       style={{
         background:
           tone === 'deep'
-            ? 'color-mix(in srgb, var(--brand, #ff5e2e) 78%, #000)'
-            : 'color-mix(in srgb, var(--brand, #ff5e2e) 12%, var(--surface, #fbf8f2))',
+            ? 'radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--brand, #ff5e2e) 88%, #fff) 0%, color-mix(in srgb, var(--brand, #ff5e2e) 72%, #000) 70%)'
+            : 'radial-gradient(120% 90% at 30% 15%, color-mix(in srgb, var(--brand, #ff5e2e) 22%, var(--surface, #fbf8f2)) 0%, color-mix(in srgb, var(--brand, #ff5e2e) 9%, var(--surface, #fbf8f2)) 65%)',
       }}
     >
-      <span
-        className="select-none font-display text-[5.5rem] font-semibold leading-none"
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.12]"
         style={{
-          color:
-            tone === 'deep'
-              ? 'rgba(255, 255, 255, 0.18)'
-              : 'color-mix(in srgb, var(--brand, #ff5e2e) 45%, transparent)',
+          backgroundImage: `radial-gradient(circle, ${tone === 'deep' ? '#fff' : 'var(--brand, #ff5e2e)'} 1px, transparent 1.2px)`,
+          backgroundSize: '16px 16px',
         }}
-      >
-        {name.charAt(0).toUpperCase()}
-      </span>
+      />
+      <DishIcon
+        weight="duotone"
+        className="dish-float relative h-[42%] max-h-28 w-auto"
+        style={{
+          color: tone === 'deep' ? 'rgba(255, 255, 255, 0.55)' : 'color-mix(in srgb, var(--brand, #ff5e2e) 70%, #000)',
+        }}
+      />
     </div>
   );
 }

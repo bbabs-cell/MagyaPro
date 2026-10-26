@@ -10,6 +10,7 @@ import { templateRenderer } from '@/components/site/templates';
 import { ElegantHomePage } from '@/components/site/templates/elegant-home';
 import { MarqueeStrip, StreetFoodHomePage } from '@/components/site/templates/street-food-home';
 import { PrestigeHomePage } from '@/components/site/templates/prestige-home';
+import { ModernHomePage, type PopularProduct } from '@/components/site/templates/modern-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -67,6 +68,59 @@ export default async function RestaurantHomePage({ params }: Props) {
 
   const base = `/r/${host}`;
   const orderingEnabled = restaurant.settings?.orderingEnabled ?? true;
+
+  /**
+   * Les plats les plus commandés sur 30 jours, d'après les vraies commandes
+   * (hors annulées). Sans assez de ventes — restaurant qui démarre —, on
+   * complète avec ses plats marqués « Populaire », puis les premiers de la
+   * carte : la section n'est jamais vide, et n'invente jamais un chiffre
+   * (`orderedCount` reste à 0 pour ces compléments).
+   */
+  async function loadPopularProducts(restaurantId: string): Promise<PopularProduct[]> {
+    const since = new Date(Date.now() - 30 * 86_400_000);
+    const sold = await prisma.orderItem.groupBy({
+      by: ['productId'],
+      where: {
+        productId: { not: null },
+        order: { restaurantId, status: { not: 'CANCELLED' }, placedAt: { gte: since } },
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: 12,
+    });
+    const counts = new Map(sold.map((row) => [row.productId!, row._sum.quantity ?? 0]));
+
+    const all = categories.flatMap((category) =>
+      category.products
+        .filter((product) => product.isAvailable && product.badge !== 'SOLD_OUT')
+        .map((product) => ({ category, product })),
+    );
+    const ranked = [...all].sort((a, b) => {
+      const diff = (counts.get(b.product.id) ?? 0) - (counts.get(a.product.id) ?? 0);
+      if (diff !== 0) return diff;
+      return Number(b.product.badge === 'POPULAR') - Number(a.product.badge === 'POPULAR');
+    });
+
+    return ranked.slice(0, 6).map(({ category, product }) => ({
+      id: product.id,
+      slug: product.slug,
+      name: localize(product.name, { en: product.nameEn, ar: product.nameAr }, locale),
+      description: localizeNullable(
+        product.description,
+        { en: product.descriptionEn, ar: product.descriptionAr },
+        locale,
+      ),
+      imageUrl: product.imageUrl,
+      price: product.price,
+      compareAtPrice: product.compareAtPrice,
+      isAvailable: product.isAvailable,
+      badge: product.badge,
+      href: `${base}/plat/${product.slug}`,
+      hasOptions: product.variants.length > 0 || product.optionGroups.length > 0,
+      categoryName: localize(category.name, { en: category.nameEn, ar: category.nameAr }, locale),
+      orderedCount: counts.get(product.id) ?? 0,
+    }));
+  }
 
   // Aperçu de la carte sur l'accueil : les deux premières catégories suffisent
   // à donner envie, la page menu porte l'intégralité.
@@ -130,7 +184,7 @@ export default async function RestaurantHomePage({ params }: Props) {
   // défilent (histoire, chef, galerie, avis, localisation) plutôt que la
   // structure héros + aperçu des autres templates : c'est ce qui les
   // distingue vraiment, pas seulement leur palette.
-  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige']);
+  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige', 'modern']);
   if (ONE_PAGE_TEMPLATES.has(restaurant.templateKey)) {
     const now = new Date();
     const [entitlements, galleryImages, reviews, activePromotion] = await Promise.all([
@@ -196,7 +250,15 @@ export default async function RestaurantHomePage({ params }: Props) {
         <PageViewTracker restaurantId={restaurant.id} path="/" />
         <StructuredData restaurant={restaurant} openState={openState} />
 
-        {restaurant.templateKey === 'elegant' ? (
+        {restaurant.templateKey === 'modern' ? (
+          <ModernHomePage
+            data={{
+              ...commonData,
+              popular: await loadPopularProducts(restaurant.id),
+              reservationHref: hasFeature(entitlements, FEATURES.RESERVATIONS) ? `${base}/reservation` : null,
+            }}
+          />
+        ) : restaurant.templateKey === 'elegant' ? (
           <ElegantHomePage data={commonData} />
         ) : restaurant.templateKey === 'prestige' ? (
           <PrestigeHomePage data={commonData} />

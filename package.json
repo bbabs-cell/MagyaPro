@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1110.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "6.19.3",
     "barcode-detector": "^3.2.2",

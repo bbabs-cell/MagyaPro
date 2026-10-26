@@ -10,6 +10,7 @@ import { dirFor } from '@/lib/i18n/locales';
 import { siteFontStack, siteFontVariables } from '@/lib/site/fonts';
 import { cx } from '@/components/ui';
 import { CookieConsent } from '@/components/site/cookie-consent';
+import { formatMoney } from '@/lib/money';
 
 /**
  * Enveloppe commune à tous les templates : identité visuelle du restaurant,
@@ -43,13 +44,20 @@ export function SiteChrome({
   templateKey: string;
   children: React.ReactNode;
 }) {
-  const { itemCount } = useCart();
+  const { itemCount, estimatedSubtotal, currency } = useCart();
   const pathname = usePathname();
   const { locale, dict } = useI18n();
 
   // Les liens doivent rester valides que la page soit servie depuis un
   // sous-domaine (chemin `/menu`) ou depuis `/r/<slug>/menu` en aperçu.
   const base = pathname.startsWith(`/r/${host}`) ? `/r/${host}` : '';
+
+  // Pas sur le panier ni sur le suivi d'une commande : on y est déjà.
+  const showCartBar =
+    restaurant.orderingEnabled &&
+    itemCount > 0 &&
+    !pathname.endsWith('/panier') &&
+    !pathname.includes('/commande/');
 
   const nav = [
     { href: base || '/', label: dict.nav.home },
@@ -202,9 +210,34 @@ export function SiteChrome({
         </nav>
       </header>
 
-      <main id="contenu" className="flex-1">
+      <main id="contenu" className={cx('flex-1', showCartBar && 'pb-24 sm:pb-0')}>
         {children}
       </main>
+
+      {/* Barre de commande collante, sur téléphone seulement : dès le premier
+          article, le panier et son montant restent sous le pouce, où que l'on
+          soit dans la page. Le bouton « Panier » de l'en-tête, lui, disparaît
+          en haut de l'écran au premier défilement. */}
+      {showCartBar && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden print:hidden">
+          <Link
+            href={`${base}/panier`}
+            className="flex h-14 animate-slide-in-up items-center justify-between gap-3 rounded-2xl px-4 text-white shadow-[0_18px_40px_-14px_rgba(0,0,0,0.55)] active:scale-[0.98]"
+            style={{ backgroundColor: restaurant.primaryColor }}
+          >
+            <span className="flex items-center gap-3">
+              <span
+                key={itemCount}
+                className="flex h-8 min-w-8 animate-pop items-center justify-center rounded-full bg-white/25 px-2 text-sm font-bold tabular-nums"
+              >
+                {itemCount}
+              </span>
+              <span className="font-semibold">{dict.templates.ctaViewCart}</span>
+            </span>
+            <span className="font-semibold tabular-nums">{formatMoney(estimatedSubtotal, currency)}</span>
+          </Link>
+        </div>
+      )}
 
       <footer className="border-t border-surface-border bg-surface-sunken">
         <div className="container-page flex flex-col gap-3 py-8 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
