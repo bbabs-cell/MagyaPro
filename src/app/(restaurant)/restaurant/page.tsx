@@ -572,7 +572,7 @@ export default async function LandingPage() {
             </div>
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {templates.map((template) => {
-                const previewUrl = templatePreviewUrl(template.key);
+                const previewUrl = templatePreviewUrl(template.key, template.previewImageUrl);
                 return (
                 <div
                   key={template.id}

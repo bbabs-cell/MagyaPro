@@ -56,7 +56,7 @@ export default async function AppearancePage() {
           suggested:
             TEMPLATES.find((definition) => definition.key === template.key)
               ?.suggestedColors ?? null,
-          previewImageUrl: templatePreviewUrl(template.key),
+          previewImageUrl: templatePreviewUrl(template.key, template.previewImageUrl),
         }))}
       />
     </>

@@ -4,6 +4,7 @@ import { localStorageDriver } from '@/lib/storage/local';
 import { s3StorageDriver } from '@/lib/storage/s3';
 import type { StorageDriver, StoredFile } from '@/lib/storage/types';
 import { PRIVATE_FOLDERS, privateStorageAvailable, putPrivate } from '@/lib/storage/private';
+import { TEMPLATES } from '@/lib/templates/registry';
 
 export type { StorageDriver, StoredFile };
 
@@ -213,11 +214,23 @@ export async function uploadTemplatePreview(params: {
   return storage().put(key, buffer, detected);
 }
 
-/** URL publique d'une vignette de template, si le pilote de stockage la sert. */
-export function templatePreviewUrl(templateKey: string): string | null {
-  if (env.storageDriver !== 's3') return null;
-  const base = env.s3PublicBaseUrl;
-  return base ? `${base}/templates/${templateKey}.jpg` : null;
+const TEMPLATE_KEYS = new Set(TEMPLATES.map((template) => template.key));
+
+/**
+ * Aperçu d'un template.
+ *
+ * Par défaut, la capture livrée avec le code (`public/templates/<clé>.webp`,
+ * produite par `scripts/capture-template-previews.mjs`) : elle montre le vrai
+ * template et se met à jour dans la même PR que lui. Une image envoyée par le
+ * Super Admin (`Template.previewImageUrl`) la remplace tant qu'elle existe.
+ *
+ * Les anciennes vignettes à adresse fixe (`templates/<clé>.jpg` sur R2) ne
+ * sont plus lues : c'étaient des photos d'ambiance qui ne montraient pas le
+ * template, et rien en base ne les désignait.
+ */
+export function templatePreviewUrl(templateKey: string, override?: string | null): string | null {
+  if (override) return override;
+  return TEMPLATE_KEYS.has(templateKey) ? `/templates/${templateKey}.webp` : null;
 }
 
 /**

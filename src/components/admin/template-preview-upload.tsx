@@ -3,23 +3,25 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { ApiError, uploadFile } from '@/lib/client/api';
+import { api, ApiError, uploadFile } from '@/lib/client/api';
 import { downscaleImage } from '@/lib/client/downscale-image';
 
 /**
  * Vignette d'aperçu d'un template, avec envoi direct par le Super Admin.
  *
- * La clé de stockage est fixe par template (`templates/<key>.jpg`) : envoyer
- * une nouvelle image écrase l'ancienne à la même URL, donc un simple
- * `router.refresh()` suffit à la faire réapparaître partout où elle est
- * affichée (apparence, onboarding, admin) sans rien recâbler.
+ * Sans envoi, c'est la capture du vrai template, livrée avec le code. Une
+ * image envoyée la remplace partout (page vitrine, inscription, apparence) ;
+ * « Revenir à la capture » la retire.
  */
 export function TemplatePreviewUpload({
   templateKey,
   previewUrl,
+  customized,
 }: {
   templateKey: string;
   previewUrl: string | null;
+  /** Une image envoyée remplace la capture livrée avec le code. */
+  customized: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +45,19 @@ export function TemplatePreviewUpload({
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function reset() {
+    setUploading(true);
+    setError(null);
+    try {
+      await api.delete(`/api/admin/template-assets?templateKey=${encodeURIComponent(templateKey)}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "L'aperçu n'a pas pu être rétabli.");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -78,6 +93,16 @@ export function TemplatePreviewUpload({
       >
         {uploading ? 'Envoi…' : previewUrl ? "Remplacer l'aperçu" : 'Ajouter un aperçu'}
       </label>
+      {customized && (
+        <button
+          type="button"
+          onClick={() => void reset()}
+          disabled={uploading}
+          className="ms-2 inline-flex items-center rounded-lg px-2.5 py-1 text-xs text-fg/60 underline-offset-4 hover:underline disabled:opacity-50"
+        >
+          Revenir à la capture
+        </button>
+      )}
       {error && <p role="alert" className="mt-1.5 text-xs text-state-bad">{error}</p>}
     </div>
   );
