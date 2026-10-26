@@ -56,7 +56,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'traditional',
     name: 'Traditionnel',
     description:
-      'Héros plein cadre avec bandeau d\'infos pratiques, et carte organisée par pastilles de catégories.',
+      'Page unique de bistrot : ardoise du jour écrite à la craie, nappe vichy, photos scotchées et livre d’or.',
     suggestedColors: { primary: '#7c2d12', secondary: '#1c1917' },
     suggestedFont: 'Playfair Display',
     isPremium: false,
@@ -66,7 +66,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'elegant',
     name: 'Élégant',
     description:
-      'Minimalisme haute couture : initiale en filigrane géant, carte en une colonne, sans image, d\'un grand calme.',
+      'Minimalisme haute couture : nom qui se révèle, sélection en portraits, carte en une colonne, d’un grand calme.',
     suggestedColors: { primary: '#0f766e', secondary: '#0c0a09' },
     suggestedFont: 'Playfair Display',
     isPremium: true,

@@ -13,6 +13,7 @@ import { PrestigeHomePage } from '@/components/site/templates/prestige-home';
 import { ModernHomePage, type PopularProduct } from '@/components/site/templates/modern-home';
 import { AfricanPremiumHomePage } from '@/components/site/templates/african-premium-home';
 import { FastFoodHomePage } from '@/components/site/templates/fast-food-home';
+import { TraditionalHomePage } from '@/components/site/templates/traditional-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -185,7 +186,7 @@ export default async function RestaurantHomePage({ params }: Props) {
   // Ces templates sont des pages uniques qui défilent (histoire, chef,
   // galerie, avis, localisation) plutôt que la structure héros + aperçu des
   // autres : c'est ce qui les distingue vraiment, pas seulement leur palette.
-  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige', 'modern', 'african-premium', 'fast-food']);
+  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige', 'modern', 'african-premium', 'fast-food', 'traditional']);
   if (ONE_PAGE_TEMPLATES.has(restaurant.templateKey)) {
     const now = new Date();
     const [entitlements, galleryImages, reviews, activePromotion] = await Promise.all([
@@ -264,8 +265,10 @@ export default async function RestaurantHomePage({ params }: Props) {
           <AfricanPremiumHomePage data={await popularData()} />
         ) : restaurant.templateKey === 'fast-food' ? (
           <FastFoodHomePage data={await popularData()} />
+        ) : restaurant.templateKey === 'traditional' ? (
+          <TraditionalHomePage data={await popularData()} />
         ) : restaurant.templateKey === 'elegant' ? (
-          <ElegantHomePage data={commonData} />
+          <ElegantHomePage data={await popularData()} />
         ) : restaurant.templateKey === 'prestige' ? (
           <PrestigeHomePage data={commonData} />
         ) : (

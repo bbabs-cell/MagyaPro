@@ -386,7 +386,7 @@ async function HeroTraditional({ data }: { data: HeroData }) {
  */
 type InfoStripItem = { label: string; live?: boolean; href?: string };
 
-function TraditionalInfoStrip({ data }: { data: HeroData }) {
+export function TraditionalInfoStrip({ data }: { data: HeroData }) {
   const items: InfoStripItem[] = [{ label: data.openLabel, live: true }];
 
   if (data.addressLine) {
