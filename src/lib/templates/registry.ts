@@ -36,7 +36,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'african-premium',
     name: 'Africain premium',
     description:
-      'Éditorial doré : fond sombre texturé, cadre photo décalé et carte numérotée façon restaurant gastronomique.',
+      'Page unique de nuit, or et wax : motif textile animé, plats signature en arches et carte imprimée façon grande table.',
     suggestedColors: { primary: '#c2410c', secondary: '#1c1917' },
     suggestedFont: 'Poppins',
     isPremium: false,
@@ -46,7 +46,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'fast-food',
     name: 'Fast-food',
     description:
-      'Néo-brutaliste et énergique : blocs de couleur pleine teinte, ombres décalées façon autocollant, prix en pastille.',
+      'Page unique néo-brutaliste : plat vedette sur macaron tournant, autocollants qui se collent, bandeaux croisés.',
     suggestedColors: { primary: '#dc2626', secondary: '#111827' },
     suggestedFont: 'Space Grotesk',
     isPremium: false,
