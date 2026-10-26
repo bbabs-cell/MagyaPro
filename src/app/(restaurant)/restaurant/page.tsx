@@ -6,9 +6,9 @@ import { howItWorksImageUrl, platformLogoUrl, templatePreviewUrl } from '@/lib/s
 import { getActivePromo } from '@/lib/platform-settings';
 import { Logo } from '@/components/ui/logo';
 import { PlanGrid } from '@/components/marketing/plan-grid';
-import { Ticket } from '@/components/marketing/ticket';
 import { TemplateSketch } from '@/components/site/template-sketch';
 import { PromoBanner } from '@/components/marketing/promo-banner';
+import { KitchenDevices } from '@/components/marketing/kitchen-devices';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
 import { FEATURES, type Feature } from '@/lib/entitlements';
 import { optimizedImageProps } from '@/lib/optimized-image';
@@ -256,10 +256,9 @@ export default async function LandingPage() {
           }}
         />
         <div className="container-page relative py-20 sm:py-24 lg:py-28">
-          {/* Même structure que la page Boutique : la promesse à gauche, la
-              preuve imprimée à droite. C'est la parenté de marque — un seul
-              geste montré des deux côtés, pas une illustration recopiée. */}
-          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+          {/* Même structure que la page Boutique : la promesse à gauche, sa
+              preuve à droite. */}
+          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-10">
             <div className="fade-in-up max-w-2xl">
               <div className="flex items-center gap-3">
                 <Logo src={heroLogoUrl} showText={false} className="h-10 w-10" />
@@ -288,16 +287,16 @@ export default async function LandingPage() {
                   démonstration a rejoint la section « Voir MagyaPro en
                   situation » plus bas : trois appels à l'action côte à côte, le
                   visiteur n'en choisit aucun. */}
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/inscription"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#c93f1a] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-[#c93f1a] px-7 py-4 font-display text-sm font-semibold text-white transition-colors hover:bg-[#ff7145] active:translate-y-px"
                 >
                   Commencer gratuitement
                 </Link>
                 <Link
                   href="#fonctionnement"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/20 px-7 py-4 font-display text-sm font-medium text-white transition-colors hover:bg-white/5"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-white/20 px-7 py-4 font-display text-sm font-medium text-white transition-colors hover:bg-white/5"
                 >
                   Voir comment ça marche
                 </Link>
@@ -314,26 +313,12 @@ export default async function LandingPage() {
               )}
             </div>
 
-            {/* Le bon de cuisine — l'objet que ce produit fabrique vraiment.
-                Il ne totalise pas de l'argent mais du travail à faire :
-                c'est ce qui le distingue du ticket de caisse côté Boutique. */}
-            <div className="justify-self-center lg:justify-self-end">
-              <Ticket
-                tone="blanc"
-                header="Le Maquis d'Or"
-                meta="Bon n°34 · Table 7 · 19:42"
-                lines={[
-                  { kind: 'item', label: 'Poulet braisé', detail: '2 ×, bien cuit' },
-                  { kind: 'item', label: 'Attiéké poisson', detail: '1 ×' },
-                  { kind: 'item', label: 'Bissap maison', detail: '3 ×' },
-                  { kind: 'rule' },
-                  { kind: 'total', label: 'Reçu à', amount: '19:42' },
-                  { kind: 'item', label: 'En cuisine depuis', amount: '4 min' },
-                  { kind: 'rule' },
-                  { kind: 'note', text: 'Salle prévenue dès que c’est prêt' },
-                ]}
-                footer="À préparer"
-              />
+            {/* L'écran de cuisine, le vrai, sur les trois appareils d'un
+                restaurant — animé : voir `KitchenDevices`. Il remplace un bon
+                de commande dessiné : la promesse « de la commande à la
+                cuisine », montrée telle qu'elle existe. */}
+            <div className="w-full max-w-[760px] justify-self-center lg:justify-self-end xl:w-[calc(100%+3rem)] xl:max-w-none">
+              <KitchenDevices />
             </div>
           </div>
         </div>
