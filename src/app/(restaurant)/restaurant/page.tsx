@@ -212,7 +212,7 @@ export default async function LandingPage() {
     }),
     prisma.restaurant.findMany({
       where: { isDemo: true, status: 'ACTIVE' },
-      select: { name: true, slug: true, description: true, primaryColor: true },
+      select: { name: true, slug: true, description: true, primaryColor: true, coverUrl: true },
       take: 3,
     }),
     getActivePromo(),
@@ -629,23 +629,41 @@ export default async function LandingPage() {
               <Link
                 key={demo.slug}
                 href={`/r/${demo.slug}`}
-                className="hover-glow group rounded-2xl border border-surface-border bg-surface p-6 transition-all hover:-translate-y-1"
+                className="hover-glow group overflow-hidden rounded-2xl border border-surface-border bg-surface transition-all hover:-translate-y-1"
               >
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-10 w-10 rounded-xl shadow-sm"
+                {/* La couverture du restaurant, comme ses clients la voient en
+                    arrivant : on juge un site sur sa photo avant son nom. */}
+                <div
+                  className="relative h-44 w-full overflow-hidden"
                   style={{ backgroundColor: demo.primaryColor }}
-                />
-                <h3 className="mt-4 font-semibold text-ink">{demo.name}</h3>
-                {demo.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
-                    {demo.description}
+                >
+                  {demo.coverUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- couverture de démonstration, hôte de stockage arbitraire
+                    <img
+                      {...optimizedImageProps(demo.coverUrl, 640)}
+                      loading="lazy"
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  )}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-3 left-4 inline-block h-8 w-8 rounded-lg shadow-lg ring-2 ring-white/80"
+                    style={{ backgroundColor: demo.primaryColor }}
+                  />
+                </div>
+                <div className="p-6 pt-5">
+                  <h3 className="font-semibold text-ink">{demo.name}</h3>
+                  {demo.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
+                      {demo.description}
+                    </p>
+                  )}
+                  <p className="mt-3 flex items-center gap-1 text-sm font-medium text-brand-text">
+                    Voir le site
+                    <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
                   </p>
-                )}
-                <p className="mt-3 flex items-center gap-1 text-sm font-medium text-brand-text">
-                  Voir le site
-                  <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
-                </p>
+                </div>
               </Link>
             ))}
           </div>

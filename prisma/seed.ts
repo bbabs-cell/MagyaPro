@@ -16,6 +16,9 @@
  * l'application.
  */
 
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { randomBytes, scrypt as scryptCb } from 'node:crypto';
@@ -876,6 +879,57 @@ async function cleanDemo() {
   console.info(`✓ ${count} comptes de démonstration supprimés`);
 }
 
+/**
+ * Photos des restaurants de démonstration, rangées dans `public/demo/<slug>/` :
+ * `cover.webp` pour la couverture, `galerie-*.webp` pour la galerie, et un
+ * fichier par plat nommé d'après le slug du produit.
+ *
+ * Séparé de `seedDemo()` pour s'appliquer aussi aux démos déjà créées : on
+ * peut relancer le seed autant de fois qu'on veut, le résultat est le même.
+ */
+async function applyDemoPhotos() {
+  const root = join(process.cwd(), 'public', 'demo');
+  if (!existsSync(root)) return;
+
+  for (const definition of DEMO_RESTAURANTS) {
+    const dir = join(root, definition.slug);
+    if (!existsSync(dir)) continue;
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { slug: definition.slug },
+      select: { id: true },
+    });
+    if (!restaurant) continue;
+
+    const files = readdirSync(dir).filter((file) => file.endsWith('.webp')).sort();
+    const url = (file: string) => `/demo/${definition.slug}/${file}`;
+    let dishes = 0;
+
+    for (const file of files) {
+      if (file === 'cover.webp') {
+        await prisma.restaurant.update({ where: { id: restaurant.id }, data: { coverUrl: url(file) } });
+      } else if (!file.startsWith('galerie-')) {
+        const { count } = await prisma.product.updateMany({
+          where: { restaurantId: restaurant.id, slug: file.replace(/\.webp$/, '') },
+          data: { imageUrl: url(file) },
+        });
+        dishes += count;
+      }
+    }
+
+    // La galerie est réécrite à l'identique : seules les photos de démo sont
+    // remplacées, une photo ajoutée à la main reste en place.
+    const gallery = files.filter((file) => file.startsWith('galerie-'));
+    await prisma.galleryImage.deleteMany({
+      where: { restaurantId: restaurant.id, imageUrl: { startsWith: '/demo/' } },
+    });
+    await prisma.galleryImage.createMany({
+      data: gallery.map((file, position) => ({ restaurantId: restaurant.id, imageUrl: url(file), position })),
+    });
+
+    console.info(`✓ ${definition.name} : ${dishes} plats, ${gallery.length} photos de galerie`);
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -891,6 +945,7 @@ async function main() {
   if (!args.includes('--no-demo')) {
     console.info('\nDonnées de démonstration\n');
     await seedDemo();
+    await applyDemoPhotos();
     console.info(
       '\nComptes de démonstration : <slug>@demo.magyapro.app / Demo!2345',
     );
