@@ -8,6 +8,13 @@ import type { HeroData, MenuCategoryData } from '@/components/site/templates';
 import { getServerDictionary } from '@/lib/i18n/server';
 import type { Dictionary } from '@/lib/i18n/dictionary';
 import { formatDecimal } from '@/lib/numbers';
+import {
+  DishImage,
+  KineticTitle,
+  weekOrder,
+  type PopularHomeData,
+  type PopularProduct,
+} from '@/components/site/templates/home-parts';
 
 /**
  * Page d'accueil dédiée au template « elegant » — une seule page qui défile,
@@ -16,6 +23,10 @@ import { formatDecimal } from '@/lib/numbers';
  * dispersés sur plusieurs URL. Les autres templates gardent la structure
  * multi-pages (accueil courte + `/menu`, `/infos`…) : celle-ci est propre à
  * « elegant », qui vise justement à se démarquer des quatre autres.
+ *
+ * Mouvement : rare et lent, comme le reste. La couverture recule doucement,
+ * le nom se révèle mot à mot, un filet se trace sous lui ; plus bas, le récit
+ * s'encre à la lecture et la photo du chef glisse plus lentement que la page.
  */
 
 export type ElegantHomeData = {
@@ -45,17 +56,20 @@ export type ElegantHomeData = {
 
 const SECTION_LABEL_CLASS = 'text-xs font-semibold uppercase tracking-[0.4em] text-ink-faint';
 
-export async function ElegantHomePage({ data }: { data: ElegantHomeData }) {
+export async function ElegantHomePage({ data }: { data: PopularHomeData }) {
   const { locale, dict } = await getServerDictionary();
   const hasStory = Boolean(data.story);
   const hasChef = Boolean(data.chef?.name);
   const hasGallery = data.gallery.length > 0;
   const hasReviews = data.reviewsEnabled && data.reviews.length > 0;
+  const selection = data.popular.slice(0, 3);
+  const hasSelection = selection.length > 0;
 
   type Section = { id: string; label: string };
   const sections = ([
     hasStory && { id: 'histoire', label: dict.templates.navStory },
     hasChef && { id: 'chef', label: dict.templates.navChef },
+    hasSelection && { id: 'selection', label: dict.templates.sectionSelection },
     { id: 'carte', label: dict.templates.navMenu },
     hasGallery && { id: 'galerie', label: dict.templates.navGallery },
     hasReviews && { id: 'avis', label: dict.templates.navReviews },
@@ -85,6 +99,7 @@ export async function ElegantHomePage({ data }: { data: ElegantHomeData }) {
 
       {hasStory && <StorySection story={data.story!} dict={dict} />}
       {hasChef && <ChefSection chef={data.chef!} dict={dict} />}
+      {hasSelection && <SelectionSection products={selection} currency={data.currency} dict={dict} />}
 
       <MenuSection
         categories={data.menuCategories}
@@ -127,19 +142,23 @@ function ElegantHero({ data, dict }: { data: HeroData; dict: Dictionary }) {
           <img
             src={data.coverUrl!}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            fetchPriority="high"
+            decoding="async"
+            className="sd-kenburns absolute inset-0 -z-20 h-full w-full object-cover"
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/70"
+            className="absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/35 to-black/70"
           />
         </>
       ) : (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[24rem] font-semibold leading-none text-surface-sunken sm:text-[32rem]"
+          className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center"
         >
-          {data.name.charAt(0).toUpperCase()}
+          <span className="sd-rise select-none font-display text-[24rem] font-semibold leading-none text-surface-sunken sm:text-[32rem]">
+            {data.name.charAt(0).toUpperCase()}
+          </span>
         </span>
       )}
 
@@ -147,30 +166,30 @@ function ElegantHero({ data, dict }: { data: HeroData; dict: Dictionary }) {
         <div className={cx('mx-auto max-w-xl text-center', hasPhoto && 'text-white')}>
           <p
             className={cx(
-              'text-xs font-semibold uppercase tracking-[0.4em]',
+              'sd-rise text-xs font-semibold uppercase tracking-[0.4em]',
               hasPhoto ? 'text-white/70' : 'text-ink-faint',
             )}
           >
             {data.city ?? dict.templates.restaurant}
           </p>
-          <h1 className="mt-6 font-display text-6xl font-normal tracking-tight sm:text-7xl">
-            {data.name}
-          </h1>
+          <KineticTitle text={data.name} className="mt-6 font-display text-6xl font-normal tracking-tight sm:text-7xl" />
           <span
             aria-hidden="true"
-            className={cx('mx-auto mt-8 block h-px w-16', hasPhoto ? 'bg-white/30' : 'bg-ink/20')}
+            className={cx('sd-line mx-auto mt-8 block h-px w-24', hasPhoto ? 'bg-white/50' : 'bg-ink/30')}
+            style={{ '--d': '500ms' } as React.CSSProperties}
           />
           {data.description && (
             <p
               className={cx(
-                'mx-auto mt-8 max-w-md text-lg leading-relaxed',
+                'sd-rise mx-auto mt-8 max-w-md text-lg leading-relaxed',
                 hasPhoto ? 'text-white/85' : 'text-ink-muted',
               )}
+              style={{ '--d': '650ms' } as React.CSSProperties}
             >
               {data.description}
             </p>
           )}
-          <div className="mt-10 flex flex-col items-center gap-4">
+          <div className="sd-rise mt-10 flex flex-col items-center gap-4" style={{ '--d': '800ms' } as React.CSSProperties}>
             <Link
               href={data.menuHref}
               className={cx(
@@ -211,7 +230,7 @@ function StorySection({ story, dict }: { story: string; dict: Dictionary }) {
           <h2 id="histoire-titre" className={SECTION_LABEL_CLASS}>
             {dict.templates.sectionStory}
           </h2>
-          <p className="mx-auto mt-8 max-w-xl font-display text-2xl leading-relaxed sm:text-3xl">
+          <p className="sd-ink mx-auto mt-8 max-w-xl font-display text-2xl leading-relaxed sm:text-3xl">
             {story}
           </p>
         </div>
@@ -244,11 +263,12 @@ function ChefSection({
           <img
             src={chef.photoUrl!}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            className="sd-parallax absolute inset-0 -z-20 h-full w-full object-cover"
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"
+            className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/40 to-black/20"
           />
         </>
       )}
@@ -325,10 +345,14 @@ function MenuSection({
                             className="h-24 w-24 shrink-0 rounded-full object-cover ring-1 ring-surface-border"
                           />
                         ) : (
+                          // Sans photo, un monogramme dans un anneau fin plutôt
+                          // qu'un disque vide : la ligne garde son rythme.
                           <span
                             aria-hidden="true"
-                            className="h-24 w-24 shrink-0 rounded-full bg-surface-sunken"
-                          />
+                            className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full font-display text-3xl text-ink-faint ring-1 ring-surface-border"
+                          >
+                            {product.name.charAt(0).toUpperCase()}
+                          </span>
                         )}
                         <span className="min-w-0 flex-1">
                           <span className="font-display text-xl">{product.name}</span>
@@ -369,6 +393,50 @@ function MenuSection({
   );
 }
 
+/**
+ * La sélection : les trois plats les plus commandés, en portraits hauts et
+ * fins, côte à côte. Le prix n'apparaît qu'à la légende, en petites
+ * capitales — rien ne crie.
+ */
+function SelectionSection({
+  products,
+  currency,
+  dict,
+}: {
+  products: PopularProduct[];
+  currency: string;
+  dict: Dictionary;
+}) {
+  return (
+    <section id="selection" aria-labelledby="selection-titre" className="border-t border-surface-border bg-surface">
+      <div className="container-page py-20 sm:py-28">
+        <h2 id="selection-titre" className={cx(SECTION_LABEL_CLASS, 'text-center')}>
+          {dict.templates.sectionSelection}
+        </h2>
+        {/* Sur téléphone, un carrousel qu'on fait glisser du pouce : trois
+            portraits empilés prendraient plusieurs écrans. */}
+        <ul className="-mx-4 mt-14 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:mx-auto sm:grid sm:max-w-5xl sm:grid-cols-3 sm:gap-8 sm:overflow-visible sm:px-0 sm:pb-0">
+          {products.map((product, index) => (
+            <li
+              key={product.id}
+              className={cx('sd-reveal w-[68vw] max-w-[18rem] shrink-0 snap-center sm:w-auto sm:max-w-none', index === 1 && 'sm:translate-y-12')}
+            >
+              <Link href={product.href} className="group block text-center">
+                <DishImage product={product} className="aspect-[3/4] w-full" imageClassName="duration-1000" />
+                <span aria-hidden="true" className="mx-auto mt-6 block h-px w-8 bg-ink/30 transition-all duration-500 group-hover:w-16" />
+                <span className="mt-5 block font-display text-2xl">{product.name}</span>
+                <span className="mt-2 block text-xs uppercase tracking-[0.3em] text-ink-faint">
+                  {formatMoney(product.price, currency)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function GallerySection({
   images,
   dict,
@@ -382,9 +450,11 @@ function GallerySection({
         <h2 id="galerie-titre" className={cx(SECTION_LABEL_CLASS, 'text-center')}>
           {dict.templates.sectionGallery}
         </h2>
-        <div className="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {/* Moins de trois photos : la grille se resserre au centre plutôt que
+            de laisser une colonne vide à droite. */}
+        <div className={cx('mt-12 grid grid-cols-2 gap-2', images.length >= 3 ? 'sm:grid-cols-3' : 'mx-auto max-w-4xl')}>
           {images.map((image) => (
-            <figure key={image.id} className="overflow-hidden">
+            <figure key={image.id} className="sd-reveal overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element -- image de tenant */}
               <img
                 src={image.imageUrl}
@@ -431,9 +501,9 @@ function ReviewsSection({
           )}
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-4xl gap-8 sm:grid-cols-2">
+        <div className={cx('mx-auto mt-12 grid gap-8', reviews.length > 1 ? 'max-w-4xl sm:grid-cols-2' : 'max-w-xl')}>
           {reviews.slice(0, 6).map((review) => (
-            <figure key={review.id} className="text-center sm:text-start">
+            <figure key={review.id} className={cx('sd-reveal text-center', reviews.length > 1 && 'sm:text-start')}>
               <blockquote className="font-display text-lg italic leading-relaxed">
                 {review.comment ? `« ${review.comment} »` : '★'.repeat(review.rating)}
               </blockquote>
@@ -490,7 +560,7 @@ function LocationSection({
           )}
 
           <dl className="mt-8 space-y-4 text-sm">
-            {openingHours.map((hour) => (
+            {weekOrder(openingHours).map((hour) => (
               <div
                 key={hour.dayOfWeek}
                 className={cx(
@@ -546,9 +616,12 @@ function LocationSection({
               href={location.mapLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-full min-h-[320px] w-full items-center justify-center border border-white/15 text-sm text-white/70 hover:text-white"
+              className="group relative flex h-full min-h-[320px] w-full items-center justify-center border border-white/15 text-sm text-white/70 transition-colors hover:text-white"
+              style={{
+                backgroundImage: 'repeating-radial-gradient(circle at center, transparent 0 38px, rgba(255,255,255,0.07) 38px 39px)',
+              }}
             >
-              {dict.templates.viewOnMap}
+              <span className="bg-[#141110] px-4 py-2 tracking-wide">{dict.templates.viewOnMap}</span>
             </a>
           ) : null}
         </div>
