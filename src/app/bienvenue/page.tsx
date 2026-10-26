@@ -47,7 +47,7 @@ export default async function OnboardingPage() {
   const templates = await prisma.template.findMany({
     where: { isActive: true },
     orderBy: { position: 'asc' },
-    select: { key: true, name: true, description: true },
+    select: { key: true, name: true, description: true, previewImageUrl: true },
   });
 
   return (
@@ -92,7 +92,7 @@ export default async function OnboardingPage() {
             suggested:
               TEMPLATES.find((definition) => definition.key === template.key)
                 ?.suggestedColors ?? null,
-            previewImageUrl: templatePreviewUrl(template.key),
+            previewImageUrl: templatePreviewUrl(template.key, template.previewImageUrl),
           }))}
         />
       </div>

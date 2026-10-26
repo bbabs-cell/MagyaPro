@@ -55,7 +55,8 @@ export default async function AdminTemplatesPage() {
             <div key={template.id} className="rounded-2xl border border-fg/10 p-4">
               <TemplatePreviewUpload
                 templateKey={template.key}
-                previewUrl={templatePreviewUrl(template.key)}
+                previewUrl={templatePreviewUrl(template.key, template.previewImageUrl)}
+                customized={Boolean(template.previewImageUrl)}
               />
               <h2 className="flex flex-wrap items-center gap-2 font-medium">
                 {template.name}
