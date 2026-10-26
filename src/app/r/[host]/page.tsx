@@ -270,11 +270,11 @@ export default async function RestaurantHomePage({ params }: Props) {
         ) : restaurant.templateKey === 'elegant' ? (
           <ElegantHomePage data={await popularData()} />
         ) : restaurant.templateKey === 'prestige' ? (
-          <PrestigeHomePage data={commonData} />
+          <PrestigeHomePage data={await popularData()} />
         ) : (
           <StreetFoodHomePage
             data={{
-              ...commonData,
+              ...(await popularData()),
               offer: activePromotion
                 ? {
                     code: activePromotion.code,

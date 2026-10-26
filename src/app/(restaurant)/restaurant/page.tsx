@@ -130,7 +130,7 @@ const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
       {
         term: 'Une vitrine qui donne faim',
         detail:
-          'Cinq templates s’animent (Moderne, Africain premium, Fast-food, Traditionnel, Élégant) : votre nom se révèle, vos plats entrent en scène, et les plus commandés sont mis en avant d’après vos vraies ventes.',
+          'Les sept templates s’animent, chacun avec sa personnalité : votre nom se révèle, vos plats entrent en scène, et les plus commandés sont mis en avant d’après vos vraies ventes.',
       },
       {
         term: 'Le panier toujours sous le pouce',

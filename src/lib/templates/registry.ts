@@ -76,7 +76,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'street-food',
     name: 'Street Food',
     description:
-      'Page unique énergique : bandeau défilant, badges flottants, carte filtrable et offre en compte à rebours.',
+      'Marché de nuit au néon : enseigne qui s’allume, tickets de commande, avis façon messagerie, carte filtrable et offre à rebours.',
     suggestedColors: { primary: '#e8281a', secondary: '#f6a623' },
     suggestedFont: 'Poppins',
     isPremium: true,
@@ -86,7 +86,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'prestige',
     name: 'Prestige',
     description:
-      'Haute gastronomie : page unique fond noir et accent doré, grandes photos pleine largeur.',
+      'Haute gastronomie filmée comme du cinéma : bandes qui s’ouvrent sur la photo, menu dégustation en plans larges, galerie en pellicule.',
     suggestedColors: { primary: '#cda45e', secondary: '#0c0b09' },
     suggestedFont: 'Playfair Display',
     isPremium: true,
