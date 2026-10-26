@@ -934,6 +934,23 @@
     transform: scaleY(1);
   }
 }
+@keyframes kd-toast {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  12%,
+  62% {
+    opacity: 1;
+    transform: none;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
 @keyframes sd-parallax {
   from {
     transform: translateY(-7%) scale(1.12);
@@ -992,6 +1009,12 @@
   .sd-letterbox {
     animation: sd-letterbox 1.4s cubic-bezier(0.65, 0, 0.35, 1) backwards;
     animation-delay: 250ms;
+  }
+  /* Héros Restaurant : la notification de commande et la pastille « prête »
+     apparaissent puis s'effacent, en boucle, décalées l'une de l'autre. */
+  .kd-toast {
+    animation: kd-toast 7s cubic-bezier(0.22, 1, 0.36, 1) infinite backwards;
+    animation-delay: var(--d, 1.5s);
   }
   /* Autocollant qui se colle d'un coup, avec un léger rebond. */
   .sd-pop {
