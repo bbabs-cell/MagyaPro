@@ -12,8 +12,6 @@ import {
 import { PlatformLogoUpload } from '@/components/admin/platform-logo-upload';
 import { HowItWorksUpload } from '@/components/admin/how-it-works-upload';
 import { BoutiqueLandingUpload } from '@/components/admin/boutique-landing-upload';
-import { BoutiqueHowItWorksUpload } from '@/components/admin/boutique-how-it-works-upload';
-import { BoutiqueSectorUpload } from '@/components/admin/boutique-sector-upload';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
 const HOW_IT_WORKS_STEPS: Array<{ step: 1 | 2 | 3 | 4; title: string }> = [
@@ -93,16 +91,12 @@ export default async function AdminImagesPage() {
       >
         <h2 className="text-sm font-medium">Images « Comment ça fonctionne » — Boutique</h2>
         <p className="mt-1 text-xs text-fg/60">
-          Illustrent les 4 étapes sur <code>/boutique</code>, à la place du dégradé par défaut.
+          Livrées avec le code : ce sont des captures de l&apos;application, refaites par{' '}
+          <code>scripts/capture-boutique-illustrations.mjs</code> quand les écrans changent.
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {BOUTIQUE_HOW_IT_WORKS_STEPS.map(({ step, title }) => (
-            <BoutiqueHowItWorksUpload
-              key={step}
-              step={step}
-              title={title}
-              imageUrl={boutiqueHowItWorksImageUrl(step)}
-            />
+            <PlatformImagePreview key={step} title={`${step}. ${title}`} imageUrl={boutiqueHowItWorksImageUrl(step)} />
           ))}
         </div>
       </section>
@@ -113,20 +107,30 @@ export default async function AdminImagesPage() {
       >
         <h2 className="text-sm font-medium">Secteurs d&apos;activité — Boutique</h2>
         <p className="mt-1 text-xs text-fg/60">
-          Une image par secteur, affichée sur <code>/boutique</code> pour illustrer les commerces
-          que la plateforme sert.
+          Une image par secteur, affichée sur <code>/boutique</code>. Livrées avec le code, dans{' '}
+          <code>public/marketing/boutique/</code>.
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {BOUTIQUE_SECTORS.map((sector) => (
-            <BoutiqueSectorUpload
+            <PlatformImagePreview
               key={sector}
-              sector={sector}
-              label={BOUTIQUE_SECTOR_LABELS[sector]}
+              title={BOUTIQUE_SECTOR_LABELS[sector]}
               imageUrl={boutiqueSectorImageUrl(sector)}
             />
           ))}
         </div>
       </section>
     </>
+  );
+}
+
+/** Image livrée avec le code : on la montre, on ne la remplace pas d'ici. */
+function PlatformImagePreview({ title, imageUrl }: { title: string; imageUrl: string }) {
+  return (
+    <figure>
+      {/* eslint-disable-next-line @next/next/no-img-element -- image de plateforme */}
+      <img src={imageUrl} alt="" className="h-32 w-full rounded-lg object-cover" />
+      <figcaption className="mt-2 text-sm">{title}</figcaption>
+    </figure>
   );
 }
