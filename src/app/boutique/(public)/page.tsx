@@ -112,6 +112,11 @@ function featureGroups(additionalPercent: number): { group: string; items: Featu
           detail: 'Ouverture et fermeture de caisse, dépenses, bénéfice net.',
         },
         {
+          term: 'Un tableau de bord qui se lit d’un coup d’œil',
+          detail:
+            'Chaque état a sa couleur, la même partout : rupture en rouge, stock bas en ambre, commande fournisseur en route en bleu.',
+        },
+        {
           term: 'Des rôles pour l’équipe',
           detail:
             'Caissier, vendeur, gestionnaire de stock, comptable : chacun ne voit que ce que son poste demande.',

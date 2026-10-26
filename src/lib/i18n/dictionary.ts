@@ -131,6 +131,12 @@ export const DICTIONARY = {
       viewOnMap: 'Voir sur la carte →',
       ratingOutOf: (average: string, count: number) =>
         `${average} sur 5 · ${count} avis`,
+
+      sectionMostOrdered: 'Les plus commandés',
+      ctaViewCart: 'Voir le panier',
+      ctaCall: 'Appeler',
+      today: "Aujourd'hui",
+      orderedTimes: (count: number) => `${count} commande${count > 1 ? 's' : ''} ce mois-ci`,
     },
     cartPage: {
       title: 'Votre commande',
@@ -408,6 +414,12 @@ export const DICTIONARY = {
       viewOnMap: 'View on the map →',
       ratingOutOf: (average: string, count: number) =>
         `${average} out of 5 · ${count} review${count > 1 ? 's' : ''}`,
+
+      sectionMostOrdered: 'Most ordered',
+      ctaViewCart: 'View cart',
+      ctaCall: 'Call',
+      today: 'Today',
+      orderedTimes: (count: number) => `Ordered ${count} time${count > 1 ? 's' : ''} this month`,
     },
     cartPage: {
       title: 'Your order',
@@ -684,6 +696,12 @@ export const DICTIONARY = {
       viewOnMap: 'عرض على الخريطة ←',
       ratingOutOf: (average: string, count: number) =>
         `${average} من 5 · ${count} تقييم`,
+
+      sectionMostOrdered: 'الأكثر طلبًا',
+      ctaViewCart: 'عرض السلة',
+      ctaCall: 'اتصال',
+      today: 'اليوم',
+      orderedTimes: (count: number) => `طُلب ${count} مرة هذا الشهر`,
     },
     cartPage: {
       title: 'طلبك',

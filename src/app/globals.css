@@ -776,6 +776,150 @@
 }
 
 /* ------------------------------------------------------------------
+   Vitrines des restaurants : motion design.
+
+   Tout est en CSS : aucune bibliothèque à télécharger sur un réseau 3G.
+   Seuls `transform`, `opacity` et `background-position` bougent.
+
+   Deux familles :
+   - au chargement (`sd-word`, `sd-rise`) : le titre se révèle mot à mot,
+     puis le reste monte en cascade — la page « s'ouvre » ;
+   - au défilement (`sd-reveal`, `sd-ink`, `sd-snap-card`) : animations
+     liées à la position dans la page (`animation-timeline: view()`), en
+     amélioration progressive. Un navigateur qui ne les connaît pas affiche
+     simplement le contenu, sans effet ; rien n'est jamais caché.
+
+   Pour qui a demandé moins de mouvement, rien de tout cela ne s'applique :
+   les règles sont toutes sous `prefers-reduced-motion: no-preference`.
+   ------------------------------------------------------------------ */
+@keyframes sd-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) rotate(2deg);
+  }
+}
+@keyframes sd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes sd-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--sd-tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(calc(var(--sd-tilt, 0deg) * -1));
+  }
+}
+@keyframes sd-mesh {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(8%, -6%, 0) scale(1.12);
+  }
+  66% {
+    transform: translate3d(-6%, 5%, 0) scale(0.94);
+  }
+}
+@keyframes sd-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+}
+@keyframes sd-ink {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+@keyframes sd-ring {
+  from {
+    transform: scale(0.3);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes sd-snap {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Titre : chaque mot entre à son tour (`--i` posé par le composant). */
+  .sd-word {
+    display: inline-block;
+    animation: sd-word-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 90ms + 120ms);
+  }
+  .sd-rise {
+    animation: sd-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--d, 0ms);
+  }
+  /* Plats du héros et icônes des tuiles sans photo : flottement lent. */
+  .sd-float,
+  .dish-float {
+    animation: sd-float 7s ease-in-out infinite;
+    animation-delay: var(--d, 0ms);
+  }
+  /* Halos de couleur derrière le héros : dérive lente, jamais un clignotement. */
+  .sd-mesh {
+    animation: sd-mesh 22s ease-in-out infinite;
+    animation-delay: var(--d, 0ms);
+  }
+
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    /* Section qui apparaît en remontant doucement quand elle entre à l'écran. */
+    .sd-reveal {
+      animation: sd-reveal auto cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+    /* Texte qui « s'encre » au fil de la lecture : gris clair, puis couleur
+       du texte à mesure qu'il traverse l'écran. Hors de ce bloc, il reste
+       tout simplement dans sa couleur normale. */
+    .sd-ink {
+      color: transparent;
+      background-image: linear-gradient(
+        90deg,
+        var(--ink, #1f1c18) 0 50%,
+        color-mix(in srgb, var(--ink, #1f1c18) 22%, transparent) 50% 100%
+      );
+      background-size: 200% 100%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: sd-ink auto linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 55%;
+    }
+    /* Carrousel : la carte au centre est pleine, ses voisines en retrait. */
+    .sd-snap-card {
+      animation: sd-snap auto linear both;
+      animation-timeline: view(inline);
+    }
+  }
+}
+.sd-word {
+  display: inline-block;
+}
+
+/* ------------------------------------------------------------------
    Impression.
 
    Deux documents partent vraiment sur du papier : la facture remise au
