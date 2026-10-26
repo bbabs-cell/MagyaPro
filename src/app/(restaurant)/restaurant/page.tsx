@@ -12,6 +12,7 @@ import { PromoBanner } from '@/components/marketing/promo-banner';
 import { PresentationVideo } from '@/components/marketing/presentation-video';
 import { FEATURES, type Feature } from '@/lib/entitlements';
 import { optimizedImageProps } from '@/lib/optimized-image';
+import { getTemplate } from '@/lib/templates/registry';
 
 /**
  * Landing page.
@@ -67,6 +68,11 @@ const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
         feature: FEATURES.MULTIPLE_USERS,
       },
       {
+        term: 'Un tableau de bord qui se lit d’un coup d’œil',
+        detail:
+          'Chaque étape a sa couleur, la même sur tous les écrans : une commande à traiter, en préparation, terminée ou annulée se repère sans lire.',
+      },
+      {
         term: 'Livreurs',
         detail:
           'Vos livreurs prennent une course, encaissent à la remise et confirment la livraison, depuis leur téléphone.',
@@ -101,6 +107,11 @@ const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
         feature: FEATURES.LOYALTY,
       },
       {
+        term: 'Liens de suivi privés',
+        detail:
+          'Le lien de suivi d’une commande ou d’une réservation n’ouvre que celle-ci : impossible de deviner celui d’un autre client.',
+      },
+      {
         term: 'Codes promo',
         detail:
           'Remise en pourcentage ou en montant, avec dates de validité et limite d’utilisation.',
@@ -115,6 +126,16 @@ const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
         term: 'En trois langues',
         detail:
           'Le site s’affiche en français, en anglais ou en arabe — l’arabe de droite à gauche. Vos plats aussi, si vous saisissez leur traduction ; sinon ils restent en français.',
+      },
+      {
+        term: 'Une vitrine qui donne faim',
+        detail:
+          'Le template Moderne s’anime : votre nom se révèle, vos plats flottent, et vos plats les plus commandés sont mis en avant d’après vos vraies ventes.',
+      },
+      {
+        term: 'Le panier toujours sous le pouce',
+        detail:
+          'Sur téléphone, dès le premier plat ajouté, une barre garde le panier et son montant en bas de l’écran, jusqu’à la commande.',
       },
       {
         term: 'Statistiques',
@@ -575,11 +596,13 @@ export default async function LandingPage() {
                   </div>
                   <div className="p-5">
                     <h3 className="font-semibold text-ink">{template.name}</h3>
-                    {template.description && (
-                      <p className="mt-1.5 text-sm text-ink-muted">
-                        {template.description}
-                      </p>
-                    )}
+                    {/* Description tirée du code (`registry.ts`) plutôt que
+                        de la base : quand un template change, la page
+                        d'accueil le dit au déploiement suivant, sans
+                        migration à jouer. */}
+                    <p className="mt-1.5 text-sm text-ink-muted">
+                      {getTemplate(template.key).description || template.description}
+                    </p>
                   </div>
                 </div>
                 );

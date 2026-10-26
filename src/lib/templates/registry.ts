@@ -26,7 +26,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     key: 'modern',
     name: 'Moderne',
     description:
-      'Bento éditorial : volets asymétriques, halo de couleur en fond et menu en tuiles avec le produit vedette en grand.',
+      'Vitrine animée d’une seule page : votre nom qui se révèle, vos plats qui flottent, les plus commandés en carrousel et le panier toujours visible sur téléphone.',
     suggestedColors: { primary: '#e2483d', secondary: '#12151a' },
     suggestedFont: 'Inter',
     isPremium: false,
