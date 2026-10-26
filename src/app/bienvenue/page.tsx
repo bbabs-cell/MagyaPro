@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 import { getCurrentUser, requiresEmailVerification } from '@/lib/auth/session';
 import { getTenantContext } from '@/lib/tenant';
 import { templatePreviewUrl } from '@/lib/storage';
-import { TEMPLATES } from '@/lib/templates/registry';
+import { getTemplate, TEMPLATES } from '@/lib/templates/registry';
 import { OnboardingWizard } from '@/components/onboarding/wizard';
 
 export const metadata: Metadata = { title: 'Configuration de votre restaurant' };
@@ -86,6 +86,9 @@ export default async function OnboardingPage() {
           productCount={productCount}
           templates={templates.map((template) => ({
             ...template,
+            // La description du registre suit les refontes ; celle en base
+            // date de la création du template.
+            description: getTemplate(template.key).description || template.description,
             suggested:
               TEMPLATES.find((definition) => definition.key === template.key)
                 ?.suggestedColors ?? null,

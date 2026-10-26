@@ -11,6 +11,8 @@ import { ElegantHomePage } from '@/components/site/templates/elegant-home';
 import { MarqueeStrip, StreetFoodHomePage } from '@/components/site/templates/street-food-home';
 import { PrestigeHomePage } from '@/components/site/templates/prestige-home';
 import { ModernHomePage, type PopularProduct } from '@/components/site/templates/modern-home';
+import { AfricanPremiumHomePage } from '@/components/site/templates/african-premium-home';
+import { FastFoodHomePage } from '@/components/site/templates/fast-food-home';
 import { PageViewTracker } from '@/components/site/page-view-tracker';
 import { StructuredData } from '@/components/site/structured-data';
 import { getServerDictionary } from '@/lib/i18n/server';
@@ -180,11 +182,10 @@ export default async function RestaurantHomePage({ params }: Props) {
     board,
   };
 
-  // « elegant », « street-food » et « prestige » sont des pages uniques qui
-  // défilent (histoire, chef, galerie, avis, localisation) plutôt que la
-  // structure héros + aperçu des autres templates : c'est ce qui les
-  // distingue vraiment, pas seulement leur palette.
-  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige', 'modern']);
+  // Ces templates sont des pages uniques qui défilent (histoire, chef,
+  // galerie, avis, localisation) plutôt que la structure héros + aperçu des
+  // autres : c'est ce qui les distingue vraiment, pas seulement leur palette.
+  const ONE_PAGE_TEMPLATES = new Set(['elegant', 'street-food', 'prestige', 'modern', 'african-premium', 'fast-food']);
   if (ONE_PAGE_TEMPLATES.has(restaurant.templateKey)) {
     const now = new Date();
     const [entitlements, galleryImages, reviews, activePromotion] = await Promise.all([
@@ -245,19 +246,24 @@ export default async function RestaurantHomePage({ params }: Props) {
       },
     };
 
+    // Pages qui mettent en avant les plats les plus commandés.
+    const popularData = async () => ({
+      ...commonData,
+      popular: await loadPopularProducts(restaurant.id),
+      reservationHref: hasFeature(entitlements, FEATURES.RESERVATIONS) ? `${base}/reservation` : null,
+    });
+
     return (
       <>
         <PageViewTracker restaurantId={restaurant.id} path="/" />
         <StructuredData restaurant={restaurant} openState={openState} />
 
         {restaurant.templateKey === 'modern' ? (
-          <ModernHomePage
-            data={{
-              ...commonData,
-              popular: await loadPopularProducts(restaurant.id),
-              reservationHref: hasFeature(entitlements, FEATURES.RESERVATIONS) ? `${base}/reservation` : null,
-            }}
-          />
+          <ModernHomePage data={await popularData()} />
+        ) : restaurant.templateKey === 'african-premium' ? (
+          <AfricanPremiumHomePage data={await popularData()} />
+        ) : restaurant.templateKey === 'fast-food' ? (
+          <FastFoodHomePage data={await popularData()} />
         ) : restaurant.templateKey === 'elegant' ? (
           <ElegantHomePage data={commonData} />
         ) : restaurant.templateKey === 'prestige' ? (

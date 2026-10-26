@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { templatePreviewUrl } from '@/lib/storage';
-import { PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
+import { getTemplate, PREMIUM_TEMPLATE_KEYS, TEMPLATES } from '@/lib/templates/registry';
 import { AppearanceForm } from '@/components/dashboard/appearance-form';
 import { PageHeader } from '@/components/ui';
 
@@ -48,7 +48,9 @@ export default async function AppearancePage() {
         templates={templates.map((template) => ({
           key: template.key,
           name: template.name,
-          description: template.description,
+          // La description du registre suit les refontes ; celle en base
+          // date de la création du template.
+          description: getTemplate(template.key).description || template.description,
           isPremium: PREMIUM_TEMPLATE_KEYS.has(template.key),
           locked: PREMIUM_TEMPLATE_KEYS.has(template.key) && !premiumAllowed,
           suggested:

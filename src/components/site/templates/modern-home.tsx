@@ -14,8 +14,15 @@ import { getServerDictionary } from '@/lib/i18n/server';
 import { cx } from '@/components/ui';
 import { QuickAddButton } from '@/components/site/quick-add-button';
 import { DishPlaceholder } from '@/components/site/templates/menu-board';
-import { templateRenderer, type MenuProduct } from '@/components/site/templates';
-import type { ElegantHomeData } from '@/components/site/templates/elegant-home';
+import { templateRenderer } from '@/components/site/templates';
+import {
+  DishImage,
+  KineticTitle,
+  weekOrder,
+  whatsappDigits,
+  type PopularHomeData,
+  type PopularProduct,
+} from '@/components/site/templates/home-parts';
 
 /**
  * Template « Moderne » : une vitrine d'une seule page, pensée pour donner
@@ -36,61 +43,9 @@ import type { ElegantHomeData } from '@/components/site/templates/elegant-home';
  * ventes réelles, ses avis. Rien n'est inventé.
  */
 
-export type PopularProduct = MenuProduct & {
-  categoryName: string;
-  /** Quantité commandée sur les 30 derniers jours ; 0 quand on retombe sur la sélection du restaurant. */
-  orderedCount: number;
-};
-
-export type ModernHomeData = ElegantHomeData & {
-  popular: PopularProduct[];
-  reservationHref: string | null;
-};
-
-function DishImage({
-  product,
-  className,
-  priority = false,
-}: {
-  product: Pick<MenuProduct, 'name' | 'imageUrl'> & { categoryName?: string };
-  className?: string;
-  priority?: boolean;
-}) {
-  return (
-    <div className={cx('relative overflow-hidden', className)}>
-      {product.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- image de tenant, hôte arbitraire
-        <img
-          src={product.imageUrl}
-          alt=""
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-      ) : (
-        <DishPlaceholder name={product.name} category={product.categoryName} />
-      )}
-    </div>
-  );
-}
-
-/** Le nom du restaurant, mot par mot, pour l'entrée en cascade du titre. */
-function KineticTitle({ text }: { text: string }) {
-  const words = text.split(/\s+/).filter(Boolean);
-  return (
-    <h1 className="text-[2.75rem] font-bold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-      <span className="sr-only">{text}</span>
-      <span aria-hidden="true">
-        {words.map((word, index) => (
-          <span key={`${word}-${index}`} className="sd-word me-[0.22em]" style={{ '--i': index } as React.CSSProperties}>
-            {word}
-          </span>
-        ))}
-      </span>
-    </h1>
-  );
-}
+/** Alias historique : la page « Moderne » a été la première à les utiliser. */
+export type { PopularProduct };
+export type ModernHomeData = PopularHomeData;
 
 export async function ModernHomePage({ data }: { data: ModernHomeData }) {
   const { locale, dict } = await getServerDictionary();
@@ -99,7 +54,7 @@ export async function ModernHomePage({ data }: { data: ModernHomeData }) {
   const hero = data.hero;
   const days = dayNames(locale);
   const stage = data.popular.slice(0, 3);
-  const whatsapp = data.location.whatsappNumber?.replace(/[^\d]/g, '') ?? null;
+  const whatsapp = whatsappDigits(data.location.whatsappNumber);
   const hasStory = Boolean(data.story);
   const hasReviews = data.reviewsEnabled && data.reviews.length > 0;
 
@@ -146,7 +101,7 @@ export async function ModernHomePage({ data }: { data: ModernHomeData }) {
             </p>
 
             <div className="mt-6">
-              <KineticTitle text={hero.name} />
+              <KineticTitle text={hero.name} className="text-[2.75rem] font-bold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl" />
             </div>
 
             {hero.description && (
@@ -466,9 +421,7 @@ export async function ModernHomePage({ data }: { data: ModernHomeData }) {
             </h2>
             {data.openingHours.length > 0 ? (
               <dl className="mt-6 space-y-1">
-                {[...data.openingHours]
-                  .sort((a, b) => ((a.dayOfWeek + 6) % 7) - ((b.dayOfWeek + 6) % 7))
-                  .map((hour) => {
+                {weekOrder(data.openingHours).map((hour) => {
                     const isToday = hour.dayOfWeek === data.today;
                     return (
                       <div

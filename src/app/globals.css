@@ -861,6 +861,49 @@
   }
 }
 
+@keyframes sd-kenburns {
+  from {
+    transform: scale(1.14);
+  }
+}
+@keyframes sd-pattern {
+  to {
+    background-position: var(--sd-pattern-size, 96px) 0;
+  }
+}
+@keyframes sd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sd-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-18deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08) rotate(calc(var(--sd-tilt, 0deg) + 3deg));
+  }
+  100% {
+    transform: scale(1) rotate(var(--sd-tilt, 0deg));
+  }
+}
+@keyframes sd-slide {
+  from {
+    opacity: 0;
+    transform: translateX(var(--sd-from, -64px));
+  }
+}
+@keyframes sd-parallax {
+  from {
+    transform: translateY(-7%) scale(1.12);
+  }
+  to {
+    transform: translateY(7%) scale(1.12);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* Titre : chaque mot entre à son tour (`--i` posé par le composant). */
   .sd-word {
@@ -882,6 +925,25 @@
   .sd-mesh {
     animation: sd-mesh 22s ease-in-out infinite;
     animation-delay: var(--d, 0ms);
+  }
+
+  /* Photo de couverture : léger zoom arrière à l'ouverture de la page. */
+  .sd-kenburns {
+    animation: sd-kenburns 2.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  /* Motif textile (wax, bogolan) qui glisse lentement, comme un tissu tendu. */
+  .sd-pattern {
+    animation: sd-pattern var(--sd-pattern-speed, 30s) linear infinite;
+  }
+  /* Macaron en étoile du prix : rotation continue, très lente. */
+  .sd-spin {
+    animation: sd-spin 36s linear infinite;
+  }
+  /* Autocollant qui se colle d'un coup, avec un léger rebond. */
+  .sd-pop {
+    animation: sd-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    animation-delay: var(--d, 0ms);
+    transform: rotate(var(--sd-tilt, 0deg));
   }
 
   @supports ((animation-timeline: view()) and (animation-range: entry)) {
@@ -908,6 +970,17 @@
       animation-timeline: view();
       animation-range: entry 40% cover 55%;
     }
+    /* Rangée qui glisse depuis le côté (`--sd-from`) en entrant à l'écran. */
+    .sd-slide {
+      animation: sd-slide auto cubic-bezier(0.22, 1, 0.36, 1) backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+    /* Photo qui se décale plus lentement que la page : effet de profondeur. */
+    .sd-parallax {
+      animation: sd-parallax auto linear both;
+      animation-timeline: view();
+    }
     /* Carrousel : la carte au centre est pleine, ses voisines en retrait. */
     .sd-snap-card {
       animation: sd-snap auto linear both;
@@ -917,6 +990,10 @@
 }
 .sd-word {
   display: inline-block;
+}
+/* Sans animation, l'autocollant garde son inclinaison. */
+.sd-pop {
+  transform: rotate(var(--sd-tilt, 0deg));
 }
 
 /* ------------------------------------------------------------------

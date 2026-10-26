@@ -937,7 +937,7 @@ function FastFoodProductCard({
               {badgeLabels(dict)[product.badge]}
             </span>
           )}
-          <span className="absolute -bottom-3 end-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
+          <span className="absolute bottom-3 end-3 rotate-2 rounded-full border-2 border-black bg-white px-3 py-1 text-xs font-black text-black shadow-[3px_3px_0_rgba(0,0,0,0.15)]">
             {formatMoney(product.price, currency)}
           </span>
         </div>
