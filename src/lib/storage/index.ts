@@ -389,52 +389,24 @@ export function boutiqueLandingAssetUrl(): string | null {
 }
 
 /**
- * Illustrations de la section « Comment ça fonctionne » de la page d'accueil
- * MagyaPro Boutique (4 étapes) — équivalent de `uploadHowItWorksImage` côté
- * Restaurant, clé de stockage distincte puisque les deux produits n'ont pas
- * les mêmes étapes ni la même identité visuelle.
+ * Illustration d'une étape « Comment ça fonctionne » de la page Boutique.
+ *
+ * Livrée avec le code (`public/marketing/boutique/etape-<n>.webp`) : ce sont
+ * des captures de l'application, produites par
+ * `scripts/capture-boutique-illustrations.mjs`, qui suivent les écrans quand
+ * ils changent. Les anciennes illustrations envoyées en administration
+ * (`platform/boutique-how-it-works-<n>.jpg` sur R2) ne sont plus lues.
  */
-export async function uploadBoutiqueHowItWorksImage(params: {
-  file: File;
-  step: 1 | 2 | 3 | 4;
-}): Promise<StoredFile> {
-  const { file, step } = params;
-
-  if (file.size === 0) {
-    throw new ValidationError('Le fichier est vide.');
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new ValidationError(
-      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
-    );
-  }
-
-  const buffer = new Uint8Array(await file.arrayBuffer());
-  const detected = detectImageType(buffer);
-
-  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
-    throw new ValidationError(
-      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
-    );
-  }
-
-  const key = `platform/boutique-how-it-works-${step}.jpg`;
-  return storage().put(key, buffer, detected);
-}
-
-/** URL publique de l'illustration d'une étape « Comment ça fonctionne » Boutique. */
-export function boutiqueHowItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
-  if (env.storageDriver !== 's3') return null;
-  const base = env.s3PublicBaseUrl;
-  return base ? `${base}/platform/boutique-how-it-works-${step}.jpg` : null;
+export function boutiqueHowItWorksImageUrl(step: 1 | 2 | 3 | 4): string {
+  return `/marketing/boutique/etape-${step}.webp`;
 }
 
 /**
  * Secteurs illustrés par une image sur la page d'accueil Boutique. Sous-liste
  * choisie de `StoreBusinessType` : la vitrine met en avant quelques métiers
  * représentatifs, elle n'a pas à énumérer les douze secteurs proposés à
- * l'inscription. Ajouter une valeur ici crée un emplacement d'image de plus
- * dans l'espace admin.
+ * l'inscription. Ajouter une valeur ici demande son image dans
+ * `public/marketing/boutique/` (un test le vérifie).
  */
 export const BOUTIQUE_SECTORS = [
   'MERCERIE',
@@ -449,43 +421,13 @@ export const BOUTIQUE_SECTORS = [
 export type BoutiqueSector = (typeof BOUTIQUE_SECTORS)[number];
 
 /**
- * Image illustrant un secteur d'activité sur la page d'accueil MagyaPro
- * Boutique (ex. « Habillement », « Alimentation ») — une par valeur de
- * `StoreBusinessType`, même logique de clé fixe.
+ * Image d'un secteur d'activité sur la page Boutique, livrée avec le code
+ * (`public/marketing/boutique/secteur-<SECTEUR>.webp`). Les anciennes images
+ * envoyées en administration (`platform/boutique-sector-*.jpg` sur R2) ne
+ * sont plus lues : trois portaient un texte fautif (« VANDER DE … »).
  */
-export async function uploadBoutiqueSectorImage(params: {
-  file: File;
-  sector: BoutiqueSector;
-}): Promise<StoredFile> {
-  const { file, sector } = params;
-
-  if (file.size === 0) {
-    throw new ValidationError('Le fichier est vide.');
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new ValidationError(
-      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
-    );
-  }
-
-  const buffer = new Uint8Array(await file.arrayBuffer());
-  const detected = detectImageType(buffer);
-
-  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
-    throw new ValidationError(
-      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
-    );
-  }
-
-  const key = `platform/boutique-sector-${sector}.jpg`;
-  return storage().put(key, buffer, detected);
-}
-
-/** URL publique de l'image d'un secteur d'activité, sur la page d'accueil Boutique. */
-export function boutiqueSectorImageUrl(sector: BoutiqueSector): string | null {
-  if (env.storageDriver !== 's3') return null;
-  const base = env.s3PublicBaseUrl;
-  return base ? `${base}/platform/boutique-sector-${sector}.jpg` : null;
+export function boutiqueSectorImageUrl(sector: BoutiqueSector): string {
+  return `/marketing/boutique/secteur-${sector}.webp`;
 }
 
 /** Formats acceptés pour un son de notification. */
