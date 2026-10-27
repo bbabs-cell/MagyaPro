@@ -59,6 +59,8 @@ export type CreateOrderInput = {
    * oubliée : aucune commande récente n'est joignable par son identifiant.
    */
   accessTokenHash?: string;
+  /** Identifiant tiré par l'écran de prise de commande — voir `Order.clientRequestId`. */
+  clientRequestId?: string | null;
 };
 
 /**
@@ -148,6 +150,7 @@ export async function createOrder(input: CreateOrderInput) {
         paymentProvider: input.paymentProvider,
         tableId: input.tableId ?? null,
         accessTokenHash: input.accessTokenHash ?? createOrderAccess().hash,
+        clientRequestId: input.clientRequestId ?? null,
         customerName: input.customerName,
         customerPhone,
         customerEmail: input.customerEmail ?? null,

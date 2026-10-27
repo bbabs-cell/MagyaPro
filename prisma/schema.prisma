@@ -584,6 +584,13 @@ model Order {
   /// laisse son avis. `null` pour les commandes antérieures, dont le lien porte
   /// encore l'identifiant.
   accessTokenHash String?   @unique
+  /// Identifiant tiré par l'écran de prise de commande avant le premier envoi.
+  /// Une commande saisie au comptoir pendant une coupure attend sur l'appareil
+  /// et part au retour du réseau ; si la réponse se perd, elle est renvoyée.
+  /// Sans moyen de la reconnaître, le serveur la créait une seconde fois : deux
+  /// bons en cuisine pour un seul client. Facultatif : les commandes du site
+  /// public n'en portent pas.
+  clientRequestId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -602,6 +609,9 @@ model Order {
   loyaltyRewards LoyaltyReward[]
 
   @@unique([restaurantId, number])
+  /// Plusieurs `NULL` coexistent sans conflit : seules les commandes porteuses
+  /// d'un identifiant sont dédupliquées.
+  @@unique([restaurantId, clientRequestId])
   @@index([restaurantId, status])
   @@index([restaurantId, placedAt])
   @@index([customerId])

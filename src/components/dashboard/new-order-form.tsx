@@ -1,10 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { api } from '@/lib/client/api';
+import { ApiError, api } from '@/lib/client/api';
+import { enqueue, getQueue } from '@/lib/client/offline-queue';
 import { useServerMutation } from '@/lib/client/use-server-mutation';
+import { ordersQueueScope } from '@/lib/orders/offline-queue';
+import { useToast } from '@/components/ui/toast';
 import { formatMoney } from '@/lib/money';
 import { AlertMessage, Button, Card, Field, cx, inputClass } from '@/components/ui';
 
@@ -28,6 +31,12 @@ import { AlertMessage, Button, Card, Field, cx, inputClass } from '@/components/
  * promotion, des frais de zone — et c'est le serveur qui fait foi. Afficher un
  * sous-total permet d'annoncer un prix sans attendre ; le présenter comme
  * définitif serait mentir.
+ *
+ * **Hors connexion**, la commande n'est pas perdue : elle attend sur
+ * l'appareil et part d'elle-même au retour du réseau, comme une vente de la
+ * caisse Boutique (`OfflineQueueBar`). Elle porte un identifiant tiré ici,
+ * avant le premier envoi, pour que le serveur ne la crée pas deux fois si
+ * elle est renvoyée.
  */
 
 type Option = { id: string; name: string; priceDelta: number };
@@ -68,11 +77,13 @@ const FULFILLMENT_LABELS: Record<Fulfillment, string> = {
 };
 
 export function NewOrderForm({
+  restaurantId,
   products,
   zones,
   tables,
   currency,
 }: {
+  restaurantId: string;
   products: MenuProduct[];
   zones: DeliveryZoneChoice[];
   tables: TableChoice[];
@@ -80,6 +91,22 @@ export function NewOrderForm({
 }) {
   const router = useRouter();
   const mutation = useServerMutation();
+  const { show } = useToast();
+  /** Dernière commande gardée sur l'appareil faute de réseau. */
+  const [queuedOffline, setQueuedOffline] = useState(false);
+
+  // Le message « gardée sur cet appareil » s'efface quand la file est vide :
+  // le bandeau du haut l'a envoyée, et l'a dit. Le laisser affiché ferait
+  // croire qu'elle attend encore.
+  useEffect(() => {
+    if (!queuedOffline) return;
+    const timer = setInterval(() => {
+      if (!getQueue(ordersQueueScope(restaurantId)).some((item) => item.status === 'pending')) {
+        setQueuedOffline(false);
+      }
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [queuedOffline, restaurantId]);
 
   const [search, setSearch] = useState('');
   const [lines, setLines] = useState<Line[]>([]);
@@ -178,31 +205,72 @@ export function NewOrderForm({
     );
   }
 
+  function resetForm() {
+    setLines([]);
+    setCustomerName('');
+    setCustomerPhone('');
+    setDeliveryAddress('');
+    setInstructions('');
+    setPromoCode('');
+    setAlreadyPaid(false);
+    setSheetOpen(false);
+  }
+
   function submit() {
+    const payload = {
+      items: lines.map((line) => ({
+        productId: line.productId,
+        variantId: line.variantId,
+        optionIds: line.optionIds,
+        quantity: line.quantity,
+      })),
+      fulfillmentType: fulfillment,
+      deliveryZoneId: fulfillment === 'DELIVERY' ? zoneId : null,
+      tableId: fulfillment === 'DINE_IN' ? tableId || null : null,
+      customerName,
+      customerPhone: customerPhone || undefined,
+      deliveryAddress: fulfillment === 'DELIVERY' ? deliveryAddress : undefined,
+      instructions: instructions || undefined,
+      promoCode: promoCode || undefined,
+      alreadyPaid,
+      // Tiré avant le premier envoi : si la réponse se perd et que la
+      // commande repart, le serveur rend celle qu'il a déjà créée.
+      clientRequestId: crypto.randomUUID(),
+    };
+
+    setQueuedOffline(false);
     mutation.run(
-      () =>
-        api.post('/api/commandes', {
-          items: lines.map((line) => ({
-            productId: line.productId,
-            variantId: line.variantId,
-            optionIds: line.optionIds,
-            quantity: line.quantity,
-          })),
-          fulfillmentType: fulfillment,
-          deliveryZoneId: fulfillment === 'DELIVERY' ? zoneId : null,
-          tableId: fulfillment === 'DINE_IN' ? tableId || null : null,
-          customerName,
-          customerPhone: customerPhone || undefined,
-          deliveryAddress: fulfillment === 'DELIVERY' ? deliveryAddress : undefined,
-          instructions: instructions || undefined,
-          promoCode: promoCode || undefined,
-          alreadyPaid,
-        }),
+      async () => {
+        try {
+          await api.post('/api/commandes', payload);
+          return { queued: false };
+        } catch (err) {
+          // Pas de réseau : la commande attend sur l'appareil plutôt que
+          // d'être perdue. Toute autre erreur (plat épuisé, zone invalide…)
+          // reste affichée tout de suite : elle n'a rien à voir avec la
+          // connexion.
+          if (err instanceof ApiError && err.code === 'NETWORK_ERROR') {
+            enqueue(ordersQueueScope(restaurantId), payload);
+            return { queued: true };
+          }
+          throw err;
+        }
+      },
       {
         key: 'creation',
-        successMessage: 'Commande enregistrée, elle est partie en cuisine.',
         failureMessage: "La commande n'a pas pu être enregistrée.",
-        onSuccess: () => router.push('/dashboard/commandes'),
+        // Hors connexion, demander un nouveau rendu au serveur n'aboutirait
+        // pas ; en ligne, la page des commandes s'affiche fraîche.
+        skipRefresh: true,
+        onSuccess: ({ queued }) => {
+          if (queued) {
+            resetForm();
+            setQueuedOffline(true);
+            return;
+          }
+          show('Commande enregistrée, elle est partie en cuisine.', 'success');
+          router.push('/dashboard/commandes');
+        },
       },
     );
   }
@@ -401,6 +469,13 @@ export function NewOrderForm({
         </div>
 
         <AlertMessage message={mutation.error} className="mt-3" />
+
+        {queuedOffline && (
+          <div role="status" className="mt-3 rounded-xl bg-state-warn-soft px-4 py-3 text-sm text-state-warn">
+            Pas de connexion — commande gardée sur cet appareil. Elle partira en cuisine dès le
+            retour du réseau ; son numéro sera attribué à ce moment-là.
+          </div>
+        )}
 
         {lines.length === 0 ? (
           <p className="mt-3 text-sm text-ink-muted">

@@ -52,7 +52,7 @@ const FEATURE_GROUPS: { group: string; items: FeatureItem[] }[] = [
       {
         term: 'Commandes au comptoir et par téléphone',
         detail:
-          'Le client qui appelle ou qui commande sur place passe par le même circuit que le site : même cuisine, même suivi, même chiffre d’affaires.',
+          'Le client qui appelle ou qui commande sur place passe par le même circuit que le site : même cuisine, même suivi, même chiffre d’affaires. Le réseau tombe ? La commande attend sur l’appareil et part en cuisine dès son retour.',
         feature: FEATURES.COUNTER_ORDERS,
       },
       {
