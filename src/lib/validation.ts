@@ -411,6 +411,10 @@ export const staffOrderSchema = z.object({
     .or(z.literal('').transform(() => undefined)),
   /** Le client a réglé en même temps qu'il commandait — fréquent au comptoir. */
   alreadyPaid: z.boolean().default(false),
+  /** Tiré par l'écran avant le premier envoi, pour qu'une commande renvoyée
+   *  au retour du réseau ne soit pas créée deux fois — voir
+   *  `Order.clientRequestId`. Un UUID, pour qu'il ne se devine pas. */
+  clientRequestId: z.string().uuid().optional(),
 });
 
 export const orderStatusSchema = z.object({

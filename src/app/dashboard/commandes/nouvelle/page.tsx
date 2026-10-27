@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { NewOrderForm } from '@/components/dashboard/new-order-form';
+import { OfflineQueueBar } from '@/components/offline/offline-queue-bar';
+import { ordersQueueScope } from '@/lib/orders/offline-queue';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { Card, EmptyState, LinkButton, PageHeader } from '@/components/ui';
 
@@ -145,6 +147,10 @@ export default async function NewOrderPage() {
         }
       />
 
+      {/* Les commandes gardées sur l'appareil pendant une coupure : elles
+          partent d'elles-mêmes au retour du réseau. */}
+      <OfflineQueueBar scope={ordersQueueScope(restaurant.id)} endpoint="/api/commandes" noun="commande" />
+
       {products.length === 0 ? (
         <EmptyState
           title="Votre carte est vide"
@@ -152,6 +158,7 @@ export default async function NewOrderPage() {
         />
       ) : (
         <NewOrderForm
+          restaurantId={restaurant.id}
           currency={restaurant.currency}
           zones={zones}
           tables={tables}

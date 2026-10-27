@@ -5,6 +5,8 @@ import { prisma } from '@/lib/db';
 import { requireTenant } from '@/lib/tenant';
 import { ORDER_STATUS_LABELS } from '@/lib/orders/service';
 import { OrdersBoard } from '@/components/dashboard/orders-board';
+import { OfflineQueueBar } from '@/components/offline/offline-queue-bar';
+import { ordersQueueScope } from '@/lib/orders/offline-queue';
 import { ORDER_STATUS_TONES, TONE_CLASSES } from '@/components/dashboard/order-status';
 import { FEATURES, getEntitlements, hasFeature } from '@/lib/entitlements';
 import { EmptyState, LinkButton, PageHeader, chipClass } from '@/components/ui';
@@ -124,6 +126,12 @@ export default async function OrdersPage({
           ) : undefined
         }
       />
+
+      {/* Les commandes prises au comptoir pendant une coupure partent d'ici
+          aussi : c'est l'écran où l'on revient après la saisie. */}
+      {canTakeOrders && (
+        <OfflineQueueBar scope={ordersQueueScope(restaurant.id)} endpoint="/api/commandes" noun="commande" />
+      )}
 
       {/* Les pastilles passent à la ligne au lieu de défiler : sur dix filtres,
           « Toutes » sortait de l'écran par la droite sans que rien ne signale

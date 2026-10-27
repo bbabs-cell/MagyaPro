@@ -1,9 +1,9 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { recordStockMovement } from '@/lib/boutique/inventory';
 import { resolveVariantUnits, toBaseQuantity } from '@/lib/boutique/units-engine';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
+import { isUniqueConflictOn } from '@/lib/unique-conflict';
 import type { z } from 'zod';
 import type { storeSaleSchema } from '@/lib/validation';
 
@@ -267,7 +267,7 @@ export async function createSale(params: {
     // Deux tentatives de la même vente arrivées en même temps : la seconde
     // bute sur la contrainte d'unicité, sa transaction est annulée — compteur
     // de ventes et stock compris — et c'est la première qui est rendue.
-    if (input.clientRequestId && isClientRequestConflict(error)) {
+    if (input.clientRequestId && isUniqueConflictOn(error, 'clientRequestId')) {
       const existing = await findByClientRequest(storeId, input.clientRequestId);
       if (existing) return existing;
     }
@@ -292,29 +292,4 @@ function findByClientRequest(storeId: string, clientRequestId: string) {
     where: { storeId_clientRequestId: { storeId, clientRequestId } },
     include: { items: true, payments: true },
   });
-}
-
-/**
- * Violation de la contrainte d'unicité `(storeId, clientRequestId)`.
- *
- * Les colonnes en cause ne sont pas rangées au même endroit selon le moteur :
- * le client Prisma classique remplit `meta.target`, l'adaptateur de base de
- * données employé ici les place dans
- * `meta.driverAdapterError.cause.constraint.fields`, entre guillemets. Une
- * première version ne lisait que `target` : elle ne reconnaissait jamais le
- * conflit, et deux renvois simultanés faisaient échouer la seconde tentative
- * au lieu de rendre la vente. Le test de concurrence l'a montré.
- */
-function isClientRequestConflict(error: unknown): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') return false;
-  const meta = error.meta as
-    | {
-        target?: unknown;
-        driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
-      }
-    | undefined;
-  const fields = [meta?.target, meta?.driverAdapterError?.cause?.constraint?.fields]
-    .flatMap((value) => (Array.isArray(value) ? value : value == null ? [] : [value]))
-    .map((field) => String(field).replaceAll('"', ''));
-  return fields.includes('clientRequestId');
 }
