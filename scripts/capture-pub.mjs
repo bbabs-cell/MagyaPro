@@ -96,7 +96,7 @@ const BOUTIQUE_SHOTS = [
  * pas d'abonnement, et leur compte propriétaire tombe sur le mur de paiement.
  * La visite, elle, est faite pour être montrée.
  *
- * « Marché du Coin » est choisie parce que c'est la boutique du ticket de la
+ * « Marché du Coin » est choisie parce que c'est la boutique du héros de la
  * page d'accueil : on y vend réellement l'eau minérale à la bouteille et au
  * carton de douze, à deux prix indépendants.
  *

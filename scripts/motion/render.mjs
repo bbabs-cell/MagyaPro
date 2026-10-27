@@ -31,7 +31,7 @@
  *                                          # seulement l'affiche, dans public/videos/
  *
  *   node scripts/motion/render.mjs --pub [--produit boutique] [--format vertical]
- *                                          # la publicité (`pub.html`, 34 s Restaurant, 30 s Boutique),
+ *                                          # la publicité (`pub.html`, 34 s chacune),
  *                                          # celle des pages Restaurant et Boutique
  *   node scripts/motion/render.mjs --pub [--produit boutique] [--format vertical] --publier [--deja-rendue]
  *                                          # la publie sur le site, réencodée

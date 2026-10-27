@@ -5,8 +5,8 @@ import { useEffect, useRef } from 'react';
 /**
  * Vidéo de présentation, sur les pages Restaurant et Boutique.
  *
- * Depuis le choix du propriétaire, ce sont les **publicités** (34 s pour
- * Restaurant, 30 s pour Boutique ; `scripts/motion/pub.html`) qui tournent ici : plus denses que la première
+ * Depuis le choix du propriétaire, ce sont les **publicités** (34 s
+ * chacune ; `scripts/motion/pub.html`) qui tournent ici : plus denses que la première
  * vidéo, elles montrent le parcours principal puis les fonctionnalités qui
  * comptent. Les écrans animés y sont reconstitués d'après l'application
  * (couleurs, polices, libellés, produits des démos) — la légende le dit.
@@ -96,7 +96,7 @@ const VIDEOS = {
     captionClass: 'text-[#f3ece1]/60',
     size: '2,8 Mo',
     caption:
-      'MagyaPro Boutique en 30 secondes, sans son : un carton d’eau vendu au prix du carton, une vente encaissée sans réseau puis synchronisée, la rupture annoncée avant ; puis la commande vocale, le crédit client, les dates de péremption et plusieurs boutiques. Écrans reconstitués d’après l’application, sur une boutique de démonstration.',
+      'MagyaPro Boutique en 34 secondes, sans son : un carton d’eau vendu au prix du carton, la caisse de sept commerces qui défilent, chacun avec ses unités, une vente encaissée sans réseau puis synchronisée, la rupture annoncée avant ; puis la commande vocale, le crédit client, les dates de péremption et plusieurs boutiques. Écrans reconstitués d’après l’application, sur des boutiques de démonstration.',
   },
 } as const;
 

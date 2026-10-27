@@ -26,7 +26,9 @@
   Les vraies captures (`captures-pub/`) servent là où une image fixe suffit :
   la carte en ligne du client, qu'on fait défiler, et les sept vitrines
   (une par template, sur les restaurants de démonstration) qui défilent en
-  carrousel — `scripts/capture-template-previews.mjs` les produit.
+  carrousel — `scripts/capture-template-previews.mjs` les produit. Côté
+  Boutique, le même carrousel montre la caisse des sept commerces de
+  démonstration — `scripts/capture-boutique-illustrations.mjs`.
 
   `?produit=boutique` · `?format=vertical`
 -->
@@ -271,8 +273,10 @@
   const Q = new URLSearchParams(location.search);
   const V = Q.get('format') === 'vertical';
   const PRODUCT = Q.get('produit') === 'boutique' ? 'boutique' : 'restaurant';
-  // Restaurant : 3,8 s de plus que Boutique, pour le plan des vitrines.
-  window.DURATION = PRODUCT === 'boutique' ? 30 : 33.8;
+  // Les deux films durent autant : chacun a son plan de 3,8 s sur les
+  // vitrines (les sept templates côté Restaurant, les sept commerces côté
+  // Boutique).
+  window.DURATION = 33.8;
   if (V) document.body.classList.add('vertical');
   if (PRODUCT === 'boutique') document.body.classList.add('boutique');
   const W = V ? 1080 : 1920;
@@ -861,8 +865,51 @@
       css(s.go, { background: done ? '#2f7d4f' : '', transform: `scale(${lt > T[3] - 0.05 && lt < T[3] + 0.12 ? 0.96 : 1})` });
     });
 
-    // 3. Hors connexion : la caisse continue, puis la vente part.
-    shot(9.6, 14.2, (node) => {
+    // 3. Les commerces : la caisse des sept vitrines défile en carrousel,
+    //    chacune sur un téléphone, avec son secteur. Chacune vend dans ses
+    //    unités — le mètre, la pointure, la taille. Vraies captures
+    //    (`scripts/capture-boutique-illustrations.mjs`).
+    const COMMERCES = [
+      ['demo-fil-et-aiguille', 'Mercerie'], ['demo-pas-a-pas', 'Chaussures'], ['demo-wax-style', 'Habillement'],
+      ['demo-marche-du-coin', 'Alimentation'], ['demo-le-bon-outil', 'Quincaillerie'], ['demo-teranga-tech', 'Électronique'],
+      ['demo-eclat-naturel', 'Cosmétique'],
+    ];
+    shot(9.6, 13.4, (node) => {
+      const cap = caption([['eyebrow', 'Votre secteur'], ['big', 'Le mètre,'], ['big', 'la pointure,'], ['mono', 'le sac :'], ['mono', 'déjà en place.']]);
+      node.appendChild(cap);
+      const stage = el('<div class="obj stage3d" style="width:10px;height:10px"></div>');
+      node.appendChild(stage);
+      const phones = COMMERCES.map(([slug, name]) => {
+        const p = phone(`<img data-capture="bq-${slug}-tel.png" style="position:absolute;left:0;top:0;width:390px">`);
+        css(p, { position: 'absolute', left: '-207px', top: '-434px' });
+        const wrap = el('<div style="position:absolute;left:5px;top:5px;transform-style:preserve-3d"></div>');
+        const label = el(`<div style="position:absolute;left:0;top:470px;translate:-50% 0;white-space:nowrap;font:500 34px/1 'DM Mono',monospace;letter-spacing:.04em;color:var(--accent-2)">${name}</div>`);
+        wrap.append(p, label); stage.appendChild(wrap);
+        return { wrap, p, label };
+      });
+      return { cap, phones };
+    }, (s, lt, dur) => {
+      playCaption(s.cap, lt, dur);
+      const n = s.phones.length;
+      // Chaque commerce marque un temps au centre, puis le suivant glisse.
+      const k = span(0.45, dur - 0.45, lt) * (n - 1);
+      const i0 = Math.min(n - 1, Math.floor(k));
+      const c = i0 + smooth(clamp((k - i0) * 1.7 - 0.7));
+      const enter = arrive(span(0, 0.8, lt));
+      s.phones.forEach((ph, i) => {
+        const d = i - c, ad = Math.abs(d);
+        const ry = Math.max(-50, Math.min(50, -d * 32));
+        css(ph.wrap, {
+          transform: `translateX(${d * (V ? 360 : 300)}px) translateY(${(1 - enter) * 260 + Math.sin(lt * 1.1 + i) * 5}px) translateZ(${-ad * 240}px) rotateY(${ry}deg) scale(${V ? 0.9 : 0.72})`,
+          opacity: String(span(0, 0.35, lt) * clamp(2.4 - ad)),
+          zIndex: String(100 - Math.round(ad * 10)),
+        });
+        css(ph.label, { opacity: String(clamp(1 - ad * 2.2)) });
+      });
+    });
+
+    // 4. Hors connexion : la caisse continue, puis la vente part.
+    shot(13.4, 18.0, (node) => {
       const cap = caption([['eyebrow', 'Hors connexion'], ['big', 'Plus de réseau ?'], ['big', 'La caisse'], ['mono', 'continue d’encaisser.']]);
       node.appendChild(cap);
       const p = phone(`<div style="position:absolute;inset:0;background:var(--app-bg);color:var(--app-ink);padding:18px 18px;font:500 15px/1.4 Manrope">
@@ -901,8 +948,8 @@
       s.qt.textContent = synced ? 'La vente est arrivée sur le serveur.' : '1 vente en attente de synchronisation.';
     });
 
-    // 4. Les ruptures à venir, d'après les ventes réelles.
-    shot(14.2, 18.4, (node) => {
+    // 5. Les ruptures à venir, d'après les ventes réelles.
+    shot(18.0, 22.2, (node) => {
       const cap = caption([['eyebrow', 'Ruptures à venir'], ['big', 'La rupture'], ['big', 'annoncée avant,'], ['mono', 'd’après vos ventes.']]);
       node.appendChild(cap);
       const bars = [6, 9, 7, 11, 8, 12, 10, 14, 9, 13, 12, 15, 11, 16];
@@ -930,7 +977,7 @@
       css(s.lvl, { transform: `scale(${lt > 2.4 && lt < 2.6 ? 1.12 : 1})` });
     });
 
-    montage(18.4, 25.0, [
+    montage(22.2, 28.8, [
       { kicker: 'Commande vocale', caption: [['big', 'Dites-le,'], ['big', 'la caisse'], ['mono', 'remplit le panier.']],
         build: (card) => {
           const wave = el(`<div style="position:absolute;left:60px;right:60px;top:120px;height:140px;display:flex;align-items:center;gap:6px">${Array.from({ length: 48 }, () => '<i style="flex:1;border-radius:4px;background:var(--accent-2);height:10px"></i>').join('')}</div>`);
@@ -981,7 +1028,7 @@
         } },
     ]);
 
-    endCard(25.0, [['big', 'Vendez au carton'], ['big', 'comme à l’unité.'], ['mono', 'Même sans réseau.']], 'Un mois gratuit · sans carte bancaire');
+    endCard(28.8, [['big', 'Vendez au carton'], ['big', 'comme à l’unité.'], ['mono', 'Même sans réseau.']], 'Un mois gratuit · sans carte bancaire');
   }
 
   if (PRODUCT === 'boutique') boutique(); else restaurant();

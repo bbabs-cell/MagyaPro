@@ -758,6 +758,9 @@ const DEMO_STORES: DemoStoreDefinition[] = [
   },
 ];
 
+/** Les adresses des vitrines Boutique, pour vérifier qu'aucune n'est oubliée. */
+export const DEMO_STORE_SLUGS = DEMO_STORES.map((store) => store.slug);
+
 const DEMO_CUSTOMERS = [
   { name: 'Aïcha Diallo', phone: '+225 07 20 20 20' },
   { name: 'Moussa Sow', phone: '+221 77 30 30 30' },
