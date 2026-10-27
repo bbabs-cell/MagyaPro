@@ -115,6 +115,11 @@ type CartLine = {
 };
 
 /** Clé d'identité d'une ligne : un produit peut figurer plusieurs fois, une fois par unité. */
+/** La première lettre en capitale, le reste tel quel. */
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function lineKey(variantId: string, unitId: string | null): string {
   return `${variantId}:${unitId ?? 'base'}`;
 }
@@ -836,8 +841,11 @@ export function Pos({
                       </div>
                     </>
                   ) : (
+                    // « Pointure à choisir », pas « Choisissez pointure » : sans
+                    // article, la phrase est fautive, et l'article dépend du
+                    // genre d'un critère que le commerçant nomme lui-même.
                     <p className="mt-2 text-xs text-ink-faint">
-                      Choisissez {product.axes.map((axis) => axis.name.toLowerCase()).join(' et ')}{' '}
+                      {capitalize(product.axes.map((axis) => axis.name.toLowerCase()).join(' et '))} à choisir
                       pour ajouter au panier.
                     </p>
                   )}

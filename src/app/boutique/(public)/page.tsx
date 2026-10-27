@@ -5,12 +5,13 @@ import { prisma } from '@/lib/db';
 import { getActivePromo } from '@/lib/platform-settings';
 import {
   BOUTIQUE_SECTORS,
+  boutiqueDemoImageUrl,
   boutiqueHowItWorksImageUrl,
   boutiqueLandingAssetUrl,
   boutiqueSectorImageUrl,
 } from '@/lib/storage';
 import { StorePlanGrid } from '@/components/marketing/store-plan-grid';
-import { Ticket } from '@/components/marketing/ticket';
+import { BoutiqueDevices } from '@/components/marketing/boutique-devices';
 import { PromoBanner } from '@/components/marketing/promo-banner';
 import { DemoTourButton } from '@/components/boutique/demo-tour-button';
 import { SECTOR_LABELS, SECTOR_UNITS, UNIT_CATALOGUE } from '@/lib/boutique/unit-catalogue';
@@ -220,12 +221,11 @@ export default async function BoutiqueLandingPage() {
         />
         <div className="container-page relative py-20 sm:py-24 lg:py-28">
           {/* Deux colonnes plutôt qu'un bloc centré : le texte pose la
-              promesse, le ticket la prouve, côte à côte. Centré, il aurait
-              fallu faire défiler pour arriver à la preuve. */}
-          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20">
+              promesse, les écrans la prouvent, côte à côte. Même structure
+              que la page Restaurant. */}
+          <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-10">
             {/* Même entrée que côté Restaurant — le fondu de 180 ms du système,
-                pas une seconde animation. La promesse s'installe pendant que le
-                ticket, à côté, s'imprime. */}
+                pendant que les appareils montent à côté. */}
             <div className="fade-in-up max-w-2xl">
               <div className="flex items-center gap-3">
                 {logoUrl ? (
@@ -244,7 +244,7 @@ export default async function BoutiqueLandingPage() {
                 </span>
               </div>
 
-              {/* Le mot « carton » est composé dans la police du ticket : le
+              {/* Le mot « carton » est composé dans une police de ticket de caisse : le
                   titre et l'objet qu'il décrit parlent la même langue. Il
                   remplace le mot en dégradé, motif qu'on trouve sur la moitié
                   des pages de logiciels. */}
@@ -261,16 +261,16 @@ export default async function BoutiqueLandingPage() {
                 kilo. Elle encaisse même quand le réseau tombe.
               </p>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/boutique/inscription"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#e0bd52] px-7 py-4 font-display text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63]"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-[#e0bd52] px-7 py-4 font-display text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63]"
                 >
                   Commencer gratuitement
                 </Link>
                 <Link
                   href="/boutique#fonctionnement"
-                  className="inline-flex items-center justify-center rounded-xl border border-[#f3ece1]/20 px-7 py-4 font-display text-sm font-medium text-[#f3ece1] transition-colors hover:bg-[#f3ece1]/5"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-[#f3ece1]/20 px-7 py-4 font-display text-sm font-medium text-[#f3ece1] transition-colors hover:bg-[#f3ece1]/5"
                 >
                   Voir comment ça marche
                 </Link>
@@ -283,27 +283,12 @@ export default async function BoutiqueLandingPage() {
               )}
             </div>
 
-            {/* Élément signature. Ce ticket EST l'argument : le même produit y
-                part en bouteilles ET en carton, à deux prix indépendants.
-                Aucune phrase publicitaire ne dit cela aussi vite. */}
-            <div className="justify-self-center lg:justify-self-end">
-              <Ticket
-                tone="kraft"
-                header="Marché du Coin"
-                meta="Ticket n°412 · 18:07"
-                lines={[
-                  { kind: 'item', label: 'Eau minérale 1,5 L', detail: '3 bouteilles × 500', amount: '1 500' },
-                  { kind: 'item', label: 'Eau minérale 1,5 L', detail: '1 carton de 12', amount: '5 400' },
-                  { kind: 'item', label: 'Riz parfumé', detail: '2 kg × 900', amount: '1 800' },
-                  { kind: 'rule' },
-                  { kind: 'total', label: 'Total', amount: '8 700' },
-                  { kind: 'item', label: 'Espèces', amount: '10 000' },
-                  { kind: 'item', label: 'Rendu', amount: '1 300' },
-                  { kind: 'rule' },
-                  { kind: 'note', text: '12 bouteilles sorties du stock' },
-                ]}
-                footer="Merci de votre visite"
-              />
+            {/* MagyaPro Boutique, le vrai, sur les trois appareils d'un
+                commerce — animé : voir `BoutiqueDevices`. Il remplace un
+                ticket dessiné : la vente au sac et le stock qui baisse,
+                montrés tels qu'ils existent. */}
+            <div className="w-full max-w-[760px] justify-self-center lg:justify-self-end xl:w-[calc(100%+3rem)] xl:max-w-none">
+              <BoutiqueDevices />
             </div>
           </div>
         </div>
@@ -597,31 +582,54 @@ export default async function BoutiqueLandingPage() {
             </p>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {demos.map((demo) => (
-              <div
-                key={demo.slug}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6 transition-colors hover:border-white/20"
-              >
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-10 w-10 rounded-xl shadow-sm"
-                  style={{ backgroundColor: demo.primaryColor }}
-                />
-                <h3 className="mt-4 font-semibold text-[#f3ece1]">{demo.name}</h3>
-                <p className="mt-0.5 text-xs text-[#f3ece1]/50">{SECTOR_LABELS[demo.businessType] ?? demo.businessType}</p>
-                {demo.description && (
-                  <p className="mt-1.5 line-clamp-2 text-sm text-[#f3ece1]/60">{demo.description}</p>
-                )}
-                <div className="mt-4">
-                  <DemoTourButton
-                    slug={demo.slug}
-                    className="block w-full rounded-xl bg-[#e0bd52] px-3 py-2.5 text-center text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63] active:translate-y-px disabled:opacity-60"
-                  >
-                    Explorer le tableau de bord
-                  </DemoTourButton>
+            {demos.map((demo) => {
+              const imageUrl = boutiqueDemoImageUrl(demo.slug);
+              return (
+                <div
+                  key={demo.slug}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-colors hover:border-white/20"
+                >
+                  {/* La caisse de la vitrine, capturée : chaque secteur s'y
+                      reconnaît à ses unités — le mètre, la pointure, le sac. */}
+                  {imageUrl && (
+                    <div className="aspect-[4/3] overflow-hidden border-b border-white/10 bg-[#ebe4d8]">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- image de plateforme, servie par l'optimiseur */}
+                      <img
+                        {...optimizedImageProps(imageUrl, 360)}
+                        width={720}
+                        height={540}
+                        alt={`La caisse de ${demo.name}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover object-top"
+                      />
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-6">
+                    {!imageUrl && (
+                      <span
+                        aria-hidden="true"
+                        className="mb-4 inline-block h-10 w-10 rounded-xl shadow-sm"
+                        style={{ backgroundColor: demo.primaryColor }}
+                      />
+                    )}
+                    <h3 className="font-semibold text-[#f3ece1]">{demo.name}</h3>
+                    <p className="mt-0.5 text-xs text-[#f3ece1]/50">{SECTOR_LABELS[demo.businessType] ?? demo.businessType}</p>
+                    {demo.description && (
+                      <p className="mt-1.5 line-clamp-2 text-sm text-[#f3ece1]/60">{demo.description}</p>
+                    )}
+                    <div className="mt-auto pt-4">
+                      <DemoTourButton
+                        slug={demo.slug}
+                        className="block w-full rounded-xl bg-[#e0bd52] px-3 py-2.5 text-center text-sm font-semibold text-[#1c1712] transition-colors hover:bg-[#eccb63] active:translate-y-px disabled:opacity-60"
+                      >
+                        Explorer le tableau de bord
+                      </DemoTourButton>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}

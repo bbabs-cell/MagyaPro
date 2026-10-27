@@ -312,42 +312,16 @@ export function platformLogoUrl(): string | null {
 }
 
 /**
- * Illustrations de la section « Comment ça fonctionne » de la page d'accueil
- * (4 étapes) — même logique de clé fixe par étape que le logo de plateforme.
+ * Illustration d'une étape « Comment ça fonctionne » de la page Restaurant.
+ *
+ * Livrée avec le code (`public/marketing/restaurant/etape-<n>.webp`) : ce sont
+ * des captures de l'application, produites par
+ * `scripts/capture-restaurant-illustrations.mjs`, qui suivent les écrans quand
+ * ils changent. Les anciennes illustrations envoyées en administration
+ * (`platform/how-it-works-<n>.jpg` sur R2) ne sont plus lues.
  */
-export async function uploadHowItWorksImage(params: {
-  file: File;
-  step: 1 | 2 | 3 | 4;
-}): Promise<StoredFile> {
-  const { file, step } = params;
-
-  if (file.size === 0) {
-    throw new ValidationError('Le fichier est vide.');
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new ValidationError(
-      `L'image ne doit pas dépasser ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} Mo.`,
-    );
-  }
-
-  const buffer = new Uint8Array(await file.arrayBuffer());
-  const detected = detectImageType(buffer);
-
-  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected as never)) {
-    throw new ValidationError(
-      'Format non pris en charge. Utilisez une image JPEG, PNG, WebP ou AVIF.',
-    );
-  }
-
-  const key = `platform/how-it-works-${step}.jpg`;
-  return storage().put(key, buffer, detected);
-}
-
-/** URL publique de l'illustration d'une étape « Comment ça fonctionne ». */
-export function howItWorksImageUrl(step: 1 | 2 | 3 | 4): string | null {
-  if (env.storageDriver !== 's3') return null;
-  const base = env.s3PublicBaseUrl;
-  return base ? `${base}/platform/how-it-works-${step}.jpg` : null;
+export function howItWorksImageUrl(step: 1 | 2 | 3 | 4): string {
+  return `/marketing/restaurant/etape-${step}.webp`;
 }
 
 /**
@@ -428,6 +402,27 @@ export type BoutiqueSector = (typeof BOUTIQUE_SECTORS)[number];
  */
 export function boutiqueSectorImageUrl(sector: BoutiqueSector): string {
   return `/marketing/boutique/secteur-${sector}.webp`;
+}
+
+/**
+ * Les vitrines Boutique dont la caisse est capturée pour la page d'accueil
+ * (`public/marketing/boutique/vitrine-<slug>.webp`, produites par
+ * `scripts/capture-boutique-illustrations.mjs`). Une vitrine ajoutée sans
+ * capture garde sa carte sans image : le test des illustrations le signale.
+ */
+export const BOUTIQUE_DEMO_CAPTURES = [
+  'demo-fil-et-aiguille',
+  'demo-marche-du-coin',
+  'demo-wax-style',
+  'demo-pas-a-pas',
+  'demo-teranga-tech',
+  'demo-le-bon-outil',
+  'demo-eclat-naturel',
+] as const;
+
+/** La caisse capturée d'une vitrine Boutique, ou `null` si elle n'en a pas. */
+export function boutiqueDemoImageUrl(slug: string): string | null {
+  return (BOUTIQUE_DEMO_CAPTURES as readonly string[]).includes(slug) ? `/marketing/boutique/vitrine-${slug}.webp` : null;
 }
 
 /** Formats acceptés pour un son de notification. */

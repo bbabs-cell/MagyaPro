@@ -10,7 +10,6 @@ import {
   platformLogoUrl,
 } from '@/lib/storage';
 import { PlatformLogoUpload } from '@/components/admin/platform-logo-upload';
-import { HowItWorksUpload } from '@/components/admin/how-it-works-upload';
 import { BoutiqueLandingUpload } from '@/components/admin/boutique-landing-upload';
 import { SECTOR_LABELS } from '@/lib/boutique/unit-catalogue';
 
@@ -62,11 +61,12 @@ export default async function AdminImagesPage() {
       >
         <h2 className="text-sm font-medium">Images « Comment ça fonctionne » — Restaurant</h2>
         <p className="mt-1 text-xs text-fg/60">
-          Illustrent les 4 étapes sur <code>/restaurant</code>, avec un dégradé vertical automatique.
+          Livrées avec le code : ce sont des captures de l&apos;application, refaites par{' '}
+          <code>scripts/capture-restaurant-illustrations.mjs</code> quand les écrans changent.
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {HOW_IT_WORKS_STEPS.map(({ step, title }) => (
-            <HowItWorksUpload key={step} step={step} title={title} imageUrl={howItWorksImageUrl(step)} />
+            <PlatformImagePreview key={step} title={`${step}. ${title}`} imageUrl={howItWorksImageUrl(step)} />
           ))}
         </div>
       </section>
